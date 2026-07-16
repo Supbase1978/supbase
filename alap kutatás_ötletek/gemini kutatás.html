@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="hu">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SUP Platform Piackutatás</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #0f766e;
+            --primary-dark: #115e59;
+            --primary-light: #f0fdfa;
+            --secondary: #0369a1;
+            --secondary-light: #f0f9ff;
+            --text-dark: #0f172a;
+            --text-muted: #475569;
+            --bg-main: #f8fafc;
+            --bg-card: #ffffff;
+            --border: #e2e8f0;
+            --accent: #f59e0b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-main);
+            color: var(--text-dark);
+            line-height: 1.7;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 2.5rem 1.5rem;
+        }
+
+        header {
+            background: linear-gradient(135deg, #115e59 0%, #0f766e 50%, #0369a1 100%);
+            color: white;
+            padding: 3.5rem 2.5rem;
+            border-radius: 1.25rem;
+            margin-bottom: 3rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
+            position: relative;
+            overflow: hidden;
+        }
+
+        header::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        header h1 {
+            font-size: 2.25rem;
+            font-weight: 700;
+            line-height: 1.25;
+            margin-bottom: 1rem;
+            letter-spacing: -0.025em;
+        }
+
+        header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            max-width: 800px;
+            font-weight: 300;
+        }
+
+        .meta-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.15);
+            font-size: 0.875rem;
+        }
+
+        .meta-item strong {
+            display: block;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.25rem;
+            opacity: 0.8;
+        }
+
+        .toc {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 1rem;
+            padding: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .toc h2 {
+            font-size: 1.25rem;
+            color: var(--text-dark);
+            margin-bottom: 1rem;
+            border: none;
+            padding: 0;
+        }
+
+        .toc ul {
+            list-style: none;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 0.75rem;
+        }
+
+        .toc a {
+            color: var(--primary);
+            text-decoration: none;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            transition: color 0.2s;
+        }
+
+        .toc a::before {
+            content: "→";
+            margin-right: 0.5rem;
+            font-weight: bold;
+        }
+
+        .toc a:hover {
+            color: var(--primary-dark);
+            text-decoration: underline;
+        }
+
+        .section-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 1.25rem;
+            padding: 3rem;
+            margin-bottom: 2.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -2px rgba(0, 0, 0, 0.02);
+        }
+
+        h2 {
+            color: var(--primary);
+            font-size: 1.65rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 2px solid var(--primary-light);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        h3 {
+            color: var(--secondary);
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin: 2rem 0 1rem 0;
+        }
+
+        p {
+            margin-bottom: 1.25rem;
+            color: var(--text-dark);
+            text-align: justify;
+        }
+
+        ul,
+        ol {
+            margin-bottom: 1.5rem;
+            padding-left: 1.5rem;
+        }
+
+        li {
+            margin-bottom: 0.5rem;
+            color: var(--text-dark);
+        }
+
+        /* Táblázat stílusok */
+        .table-responsive {
+            overflow-x: auto;
+            margin: 2rem 0;
+            border-radius: 0.75rem;
+            border: 1px solid var(--border);
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 0.925rem;
+        }
+
+        th {
+            background-color: #f1f5f9;
+            color: var(--text-dark);
+            font-weight: 600;
+            padding: 1rem;
+            border-bottom: 2px solid var(--border);
+            white-space: nowrap;
+        }
+
+        td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border);
+            color: var(--text-dark);
+            vertical-align: top;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f8fafc;
+        }
+
+        tr:hover {
+            background-color: #f1f5f9;
+        }
+
+        /* Kódblokkok és ASCII art */
+        pre {
+            background: #1e293b;
+            color: #f8fafc;
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            overflow-x: auto;
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 0.85rem;
+            line-height: 1.5;
+            margin: 2rem 0;
+            box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.06);
+            border: 1px solid #334155;
+        }
+
+        code {
+            font-family: 'Consolas', 'Courier New', monospace;
+            background-color: #f1f5f9;
+            padding: 0.2rem 0.4rem;
+            border-radius: 0.25rem;
+            font-size: 0.875em;
+            color: #0f766e;
+        }
+
+        pre code {
+            background-color: transparent;
+            padding: 0;
+            color: inherit;
+            font-size: inherit;
+        }
+
+        /* Hivatkozások */
+        .cite-ref {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--secondary);
+            background-color: var(--secondary-light);
+            padding: 0.1rem 0.35rem;
+            border-radius: 0.25rem;
+            text-decoration: none;
+            vertical-align: super;
+            margin-left: 0.15rem;
+            transition: all 0.2s;
+        }
+
+        .cite-ref:hover {
+            background-color: var(--secondary);
+            color: white;
+        }
+
+        .source-list {
+            list-style: none;
+            padding-left: 0;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+            gap: 1rem;
+        }
+
+        .source-item {
+            background: #f8fafc;
+            border: 1px solid var(--border);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .source-num {
+            background: var(--primary);
+            color: white;
+            font-weight: 600;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            font-size: 0.75rem;
+        }
+
+        /* Figyelmeztető doboz */
+        .alert-box {
+            background-color: #fffbeb;
+            border-left: 4px solid var(--accent);
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            margin: 1.5rem 0;
+        }
+
+        .alert-box strong {
+            color: #b45309;
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+
+        footer {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.875rem;
+            margin-top: 4rem;
+            padding: 2rem 0;
+            border-top: 1px solid var(--border);
+        }
+
+        @media (max-width: 768px) {
+            .section-card {
+                padding: 1.5rem;
+            }
+
+            header {
+                padding: 2rem 1.5rem;
+            }
+
+            header h1 {
+                font-size: 1.75rem;
+            }
+
+            .source-list {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+
+        <!-- Header -->
+        <header>
+            <h1>Integrált magyarországi SUP-ökoszisztéma</h1>
+            <p>Részletes piacfelmérés, technológiai megvalósíthatósági tanulmány és Claude Code-alapú fejlesztési
+                architektúra</p>
+
+            <div class="meta-grid">
+                <div class="meta-item">
+                    <strong>Dokumentum típus</strong>
+                    Piackutatás & Megvalósíthatósági tanulmány
+                </div>
+                <div class="meta-item">
+                    <strong>Célpiac</strong>
+                    Magyarország (B2C és B2B)
+                </div>
+                <div class="meta-item">
+                    <strong>Fejlesztési fókusz</strong>
+                    Claude Code & Modern Web/Mobil Stack
+                </div>
+                <div class="meta-item">
+                    <strong>Dátum</strong>
+                    2026. július
+                </div>
+            </div>
+        </header>
+
+        <!-- Tartalomjegyzék -->
+        <div class="toc">
+            <h2>Tartalomjegyzék</h2>
+            <ul>
+                <li><a href="#piac-helyzetkep">1. Digitális SUP-piac helyzetképe</a></li>
+                <li><a href="#nepitelet-koncepcio">2. A "SUP Népítélet" koncepciója</a></li>
+                <li><a href="#b2b-integracio">3. B2B szolgáltatói integráció</a></li>
+                <li><a href="#jogi-szabalyozas">4. Vízreszállási szabályok és jogi háttér</a></li>
+                <li><a href="#weather-api">5. Időjárás, vízhőfok és viharjelzési API</a></li>
+                <li><a href="#tech-architektura">6. Technológiai architektúra és adatbázis</a></li>
+                <li><a href="#piacra-lepes">7. Piaci belépési és növekedési stratégia</a></li>
+            </ul>
+        </div>
+
+        <!-- 1. Szekció -->
+        <div id="piac-helyzetkep" class="section-card">
+            <h2>1. A hazai és nemzetközi digitális SUP-piac helyzetképe</h2>
+            <p>A magyarországi Stand Up Paddle (SUP) piac az elmúlt évtizedben a rekreációs sportok egyik leggyorsabban
+                növekvő szegmensévé vált, miközben a kapcsolódó digitális infrastruktúra rendkívül töredezett maradt<a
+                    class="cite-ref" href="#src-7">[7]</a><a class="cite-ref" href="#src-12">[12]</a><a class="cite-ref"
+                    href="#src-14">[14]</a>. A felhasználók jelenleg kénytelenek különböző, egymással nem kommunikáló
+                felületekről összegyűjteni a vízreszállási helyszíneket, a termékjellemzőket, a jogszabályi előírásokat,
+                valamint a meteorológiai adatokat<a class="cite-ref" href="#src-1">[1]</a><a class="cite-ref"
+                    href="#src-11">[11]</a><a class="cite-ref" href="#src-13">[13]</a><a class="cite-ref"
+                    href="#src-15">[15]</a>.</p>
+
+            <p>A hazai online teret jelenleg két fő információs portál dominálja: a <strong>SUPlife.hu</strong> és a
+                <strong>SUPmagazin.hu</strong><a class="cite-ref" href="#src-1">[1]</a><a class="cite-ref"
+                    href="#src-2">[2]</a>.
+            </p>
+
+            <p>A <strong>SUPlife.hu</strong> elsősorban magazinmárkaként és egy statikus szolgáltatói katalógusként, a
+                „SUP Navigátor”-ként működik<a class="cite-ref" href="#src-7">[7]</a><a class="cite-ref"
+                    href="#src-10">[10]</a><a class="cite-ref" href="#src-12">[12]</a>. Bár rendelkezik egy 42 pontot
+                számláló vízreszállási térképpel, ez a térkép statikus, nem tartalmaz valós idejű hidrológiai vagy
+                meteorológiai adatokat, és a felhasználói interakció is kimerül a legegyszerűbb csillagos
+                értékelésekben<a class="cite-ref" href="#src-1">[1]</a>. A szolgáltatók (kölcsönzők, iskolák,
+                túraszervezők, forgalmazók és egyesületek) éves fix díjas (15 000 és 99 000 HUF/év közötti) csomagok
+                alapján jelenhetnek meg a térképen, ami nem biztosít számukra dinamikus kapacitáskezelést vagy közvetlen
+                tranzakciós lehetőségeket<a class="cite-ref" href="#src-10">[10]</a><a class="cite-ref"
+                    href="#src-16">[16]</a>. A szállások és utazási irodák integrációja szinte teljesen hiányzik, a
+                meglévő szállásadatbázis elhanyagolható méretű<a class="cite-ref" href="#src-1">[1]</a><a
+                    class="cite-ref" href="#src-10">[10]</a>.</p>
+
+            <p>A <strong>SUPmagazin.hu</strong> elsősorban a függetlennek szánt, sport- és versenyfókuszú
+                terméktesztekre összpontosít<a class="cite-ref" href="#src-2">[2]</a><a class="cite-ref"
+                    href="#src-11">[11]</a>. Márton Karesz szakmai irányításával kidolgoztak egy rendkívül alapos, 10
+                kategóriából álló, maximálisan 50 pontos tesztelési rendszert (amely vizsgálja a stabilitást,
+                merevséget, menettulajdonságokat, komfortot, technológiát, összeszerelési minőséget, kiegészítőket,
+                ár-érték arányt és a garanciális hátteret)<a class="cite-ref" href="#src-2">[2]</a><a class="cite-ref"
+                    href="#src-17">[17]</a>. Ez a rendszer azonban cikkek formájában, statikusan jelenik meg, nem pedig
+                egy kereshető, strukturált, képekkel és gyári használati utasításokkal (manual) ellátott relációs
+                adatbázisban, amelyhez a felhasználók hozzáadhatnák saját véleményeiket<a class="cite-ref"
+                    href="#src-2">[2]</a><a class="cite-ref" href="#src-5">[5]</a>.</p>
+
+            <p>Nemzetközi szinten a <strong>Paddling.com</strong> által fejlesztett <strong>Go Paddling</strong>
+                (korábban Launch Sites) alkalmazás számít a legjelentősebb térképes adatbázisnak a maga több mint 25 000
+                globális pontjával<a class="cite-ref" href="#src-3">[3]</a>. Bár a Go Paddling hatalmas közösségi
+                adatbázist épített fel, a felhasználói visszajelzések komoly technológiai és funkcionális hiányosságokra
+                mutatnak rá: az alkalmazás lényegében egy egyszerű boat-ramp (csónakrámpa) térkép, amely nem enged
+                szűrni a kényelmi funkciókra (parkoló, mosdó, büfé), nem nyújt navigációs segítséget, instabil a
+                szerverkapcsolata, és a mentett kedvenc helyek nem szinkronizálódnak megfelelően a webes felülettel.</p>
+
+            <p>A termékadatbázisok terén a <strong>Supconnect</strong> és a <strong>SUP Board Guide</strong> jelenti a
+                globális mércét<a class="cite-ref" href="#src-4">[4]</a><a class="cite-ref" href="#src-5">[5]</a>. A
+                Supconnect több mint 175 modellt felölelő adatbázisa precízen szűrhető a felhasználói szint (kezdő,
+                középhaladó, haladó) és az alkalmazási terület (All-Around, Touring, Racing, Yoga, River, Surf, Kids,
+                Group, Fishing) szerint<a class="cite-ref" href="#src-4">[4]</a>. Ezek a platformok azonban nem
+                rendelkeznek helyi szolgáltatói integrációval, és teljesen függetlenek a lokális vízreszállási pontoktól
+                vagy az aktuális európai időjárási és viharjelzési rendszerektől.</p>
+
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Funkció / Tulajdonság</th>
+                            <th>SUPlife.hu</th>
+                            <th>SUPmagazin.hu</th>
+                            <th>Go Paddling App</th>
+                            <th>Supconnect</th>
+                            <th>Tervezett Integrált Platform</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Közös adatbázis (Web + App)</strong></td>
+                            <td>Csak weboldal</td>
+                            <td>Csak weboldal</td>
+                            <td>Csak mobilalkalmazás</td>
+                            <td>Csak weboldal</td>
+                            <td><strong>Igen (Web + iOS + Android)</strong></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Strukturált katalógus</strong></td>
+                            <td>Részleges (cikkek)</td>
+                            <td>Részleges (cikkek)</td>
+                            <td>Nincs</td>
+                            <td>Részletes adatbázis</td>
+                            <td><strong>Igen (Képekkel, PDF manuallal)</strong></td>
+                        </tr>
+                        <tr>
+                            <td><strong>SUP Népítélet</strong></td>
+                            <td>Nincs (csak 1-5 csillag)</td>
+                            <td>Nincs</td>
+                            <td>Alapszintű kommentek</td>
+                            <td>Nincs</td>
+                            <td><strong>Igen (Strukturált pontozás)</strong></td>
+                        </tr>
+                        <tr>
+                            <td><strong>B2B Szolgáltatói hálózat</strong></td>
+                            <td>Részleges (szállás nélkül)</td>
+                            <td>Nincs</td>
+                            <td>Nincs</td>
+                            <td>Nincs</td>
+                            <td><strong>Igen (Teljes integráció)</strong></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Valós idejű vízhőfok & szél</strong></td>
+                            <td>Nincs</td>
+                            <td>Nincs</td>
+                            <td>Nincs</td>
+                            <td>Nincs</td>
+                            <td><strong>Igen (HungaroMet + Open-Meteo)</strong></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 2. Szekció -->
+        <div id="nepitelet-koncepcio" class="section-card">
+            <h2>2. A „SUP Népítélet” és deszkakatalógus koncepciója</h2>
+            <p>A tervezett alkalmazás egyik legfontosabb megkülönböztető értéke a strukturált deszkakatalógus és a
+                közösségi véleményezési rendszer összekapcsolása. A piacon elérhető deszkák – különösen az inflatables
+                (felfújható iSUP) és a non-inflatables (merev, kompozit) modellek – technológiai paramétereit precíz
+                adatbázis-struktúrába kell szervezni<a class="cite-ref" href="#src-11">[11]</a><a class="cite-ref"
+                    href="#src-4">[4]</a>.</p>
+
+            <h3>Technológiai osztályozási rendszer</h3>
+            <ul>
+                <li><strong>Gyártási technológia:</strong> Knitted Drop-stitch mag, egy- vagy kétrétegű fúziós PVC
+                    (fusion PVC), ragasztott vagy hegesztett élek (welded seams), szénszálas (karbon) vagy üvegszálas
+                    merevítések (stringers)<a class="cite-ref" href="#src-12">[12]</a><a class="cite-ref"
+                        href="#src-11">[11]</a><a class="cite-ref" href="#src-5">[5]</a>.</li>
+                <li><strong>Fizikai dimenziók:</strong> Hosszúság (láb/inch és cm-ben, pl. 10'6" / 320 cm), szélesség
+                    (inch és cm-ben, pl. 32" / 81 cm), valamint vastagság (10 cm/4" vs 15 cm/6" vagy a prémium 4.7"
+                    vastagság, amely alacsonyabb súlypontot és jobb stabilitást biztosít)<a class="cite-ref"
+                        href="#src-12">[12]</a><a class="cite-ref" href="#src-11">[11]</a><a class="cite-ref"
+                        href="#src-5">[5]</a>.</li>
+                <li><strong>Űrtartalom és teherbírás:</strong> Literben megadott térfogat, amely meghatározza a
+                    felhajtóerőt. Kezdőknél az aranyszabály, hogy a testsúly 2,5–3-szorosa legyen az űrtartalom
+                    literben, míg haladóknél elegendő a 2–2,5-szeres szorzó<a class="cite-ref" href="#src-12">[12]</a>.
+                    A maximális terhelhetőséget szintén rögzíteni kell, ahol a biztonságos használati határ a megadott
+                    érték kétharmada<a class="cite-ref" href="#src-12">[12]</a>.</li>
+                <li><strong>Szkeg (Fin) rendszer:</strong> Slide-in (becsúsztatós), US Box vagy szerszámmentes rögzítésű
+                    (tool-less) szkegek száma és elrendezése (1 db túraszkeg a jobb iránytartásért vagy 3 db-os thruster
+                    elrendezés a fordulékonyságért).</li>
+                <li><strong>Kiegészítők minősége:</strong> Az alumínium (nehéz, süllyedő), üvegszálas vagy prémium
+                    karbon evezők típusa, a kézi vagy elektromos pumpák maximális PSI nyomása (15 PSI alap vs. 25–28 PSI
+                    prémium modelleknél) és a hordtáska strapabírása<a class="cite-ref" href="#src-11">[11]</a><a
+                        class="cite-ref" href="#src-2">[2]</a>.</li>
+            </ul>
+
+            <h3>A közösségi értékelés (Népítélet) felépítése</h3>
+            <p>A Totalcar mintájára épülő „SUP Népítélet” megakadályozza a kereskedők által generált marketing-hype-ot.
+                Sok olcsó, belépő szintű deszka (pl. a 50 000–70 000 HUF közötti budget modellek) már új korukban is
+                vetemetéssel küzd, vagy hajlékony a vízen, mint egy úszógumi. Az értékelési rendszernek az alábbi
+                számszerűsített elemekből kell állnia:</p>
+            <ul>
+                <li><strong>Stabilitás és merevség (1–10 skála):</strong> Mennyire hajlik be a deszka terhelés alatt,
+                    mennyire rezeg be hullámos vízen<a class="cite-ref" href="#src-11">[11]</a><a class="cite-ref"
+                        href="#src-2">[2]</a>.</li>
+                <li><strong>Menettulajdonságok (1–10 skála):</strong> Egyenesfutás (tracking), siklási hatékonyság
+                    (glide), fordulás és manőverezhetőség<a class="cite-ref" href="#src-11">[11]</a><a class="cite-ref"
+                        href="#src-2">[2]</a><a class="cite-ref" href="#src-5">[5]</a>.</li>
+                <li><strong>Tartósság és elhasználódás (1–10 skála):</strong> Szelephibák, ragasztási elválások az
+                    éleknél (seams), az EVA borítás (deckpad) tapadása és leválása az UV-sugárzás hatására<a
+                        class="cite-ref" href="#src-12">[12]</a><a class="cite-ref" href="#src-11">[11]</a>.</li>
+                <li><strong>Valós tulajdonosi viszony igazolása:</strong> Lehetőség a vásárlási bizonylat vagy a deszka
+                    egyedi sorozatszámának feltöltésére a „Hitelesített Vélemény” jelvény megszerzéséhez.</li>
+                <li><strong>Használati profil:</strong> Meg kell adni az evezős súlyát, magasságát, és hogy milyen
+                    típusú vízen (állóvíz, folyó, tenger) használja leggyakrabban a deszkát.</li>
+            </ul>
+        </div>
+
+        <!-- 3. Szekció -->
+        <div id="b2b-integracio" class="section-card">
+            <h2>3. B2B szolgáltatói ökoszisztéma integrációja</h2>
+            <p>A platform üzleti fenntarthatóságát egy olyan integrált B2B piactér és bemutatkozási felület biztosítja,
+                amely közvetlenül összekapcsolja az evezősöket a helyi turisztikai és sportszolgáltatókkal.</p>
+
+            <h3>Szolgáltatói szegmensek és funkcionális igényeik</h3>
+            <ul>
+                <li><strong>Túravezetők és Oktatók:</strong> Lehetőség strukturált túraútvonalak (pl. Gemenci ártér,
+                    Szigetköz ágrendszer, Hévíz-patak téli evezés) meghirdetésére, nehézségi szintek megadásával,
+                    létszámkerettel és felszerelés-bérlési opciókkal<a class="cite-ref" href="#src-14">[14]</a><a
+                        class="cite-ref" href="#src-13">[13]</a>.</li>
+                <li><strong>Kölcsönzők (Rentals):</strong> Valós idejű készlet- és kapacitáskezelő naptár, ahol a
+                    felhasználók közvetlenül az alkalmazáson keresztül foglalhatnak deszkákat a kívánt időpontra<a
+                        class="cite-ref" href="#src-10">[10]</a><a class="cite-ref" href="#src-2">[2]</a>.</li>
+                <li><strong>Szállások (Accommodations):</strong> Vízparti vagy vízpart-közeli kempingek, vendégházak és
+                    hotelek bemutatkozása, kifejezetten kiemelve a SUP-barát szolgáltatásokat (pl. zárt tároló a felfújt
+                    deszkáknak, saját stég vagy közvetlen vízparti lejáró)<a class="cite-ref" href="#src-10">[10]</a><a
+                        class="cite-ref" href="#src-2">[2]</a>.</li>
+                <li><strong>Utazási Irodák és Rendezvényszervezők:</strong> Egynapos vagy többnapos hazai és külföldi
+                    SUP-kalandok (pl. vitorlás-SUP túrák Szardínián vagy hullámszörf-táborok Srí Lankán) értékesítése,
+                    beépített fizetési kapuval<a class="cite-ref" href="#src-13">[13]</a>.</li>
+            </ul>
+
+            <h3>Üzleti modell és monetizációs lehetőségek</h3>
+            <ol>
+                <li><strong>Tranzakciós jutalék (SaaS modell):</strong> A közvetlen bérlések és túrafoglalások után a
+                    platform 5–10% közötti jutalékot von le, ami kockázatmentes a szolgáltatóknak.</li>
+                <li><strong>Kiemelt lokációs partnerség (B2B előfizetés):</strong> A szállások és kölcsönzők havi vagy
+                    éves előfizetési díj ellenében kiemelt jelölést kaphatnak a vízreszállási pontok térképén<a
+                        class="cite-ref" href="#src-10">[10]</a>.</li>
+                <li><strong>Felszerelés-értékesítési lead-generálás:</strong> A deszkakatalógusban elhelyezett
+                    hitelesített partnerboltok linkjei után (affiliate modell) jutalék gyűjthető minden egyes sikeres
+                    vásárlás után<a class="cite-ref" href="#src-11">[11]</a>.</li>
+            </ol>
+        </div>
+
+        <!-- 4. Szekció -->
+        <div id="jogi-szabalyozas" class="section-card">
+            <h2>4. Magyarországi vízreszállási szabályok, korlátozások és jogi háttér</h2>
+            <div class="alert-box">
+                <strong>Fontos jogi figyelmeztetés!</strong>
+                A hazai vizeken való sportolás rendkívül szigorú jogszabályi keretek közé van szorítva, amelyeket az
+                alkalmazásnak automatikusan, geofencing (földrajzi határok figyelése) segítségével kell közvetítenie a
+                felhasználók felé, megelőzve a súlyos bírságokat.
+            </div>
+
+            <h3>Jogszabályi besorolás és mentőmellény-kötelezettségek</h3>
+            <p>A SUP eszközök jogi státusza Magyarországon kettős, ami folyamatos bizonytalanságot szül a kezdők
+                körében:</p>
+            <ul>
+                <li><strong>Folyókon és csatornákon</strong> (Duna, Tisza, Tisza-tó, Mosoni-Duna, Rába, Ipoly,
+                    Ráckevei-Duna): A víziközlekedésről szóló 2000. évi XLII. törvény alapján a SUP <strong>vízi
+                        sporteszköznek</strong> minősül. Ennek megfelelően a Hajózási Szabályzat előírásai az
+                    irányadóak. <strong>A mentőmellény viselése a testen szigorúan kötelező!</strong> A mellény hiánya
+                    vagy nem megfelelő viselése esetén a vízirendészet fix 15 000 HUF, de esetenként akár 50 000 HUF-ig
+                    terjedő helyszíni bírságot szabhat ki.</li>
+                <li><strong>A Balatonon és a Velencei-tavon:</strong> Ezeken a tavakon a SUP <strong>strandeszköznek
+                        (úszóeszköznek)</strong> minősül, így használata a <strong>fürdéssel</strong> esik egy tekintet
+                    alá. Emiatt <strong>nem kötelező a mentőmellény használata</strong>, de a biztonság érdekében
+                    (különösen mély vízen) melegen ajánlott.</li>
+            </ul>
+
+            <h3>Hajózási és területi tilalmak</h3>
+            <p>A 46/2001. (XII. 27.) BM rendelet alapján a szabad vizeken történő tartózkodás során az alábbi tiltott
+                zónákat kell betartani:</p>
+            <ul>
+                <li><strong>Hajóútban történő fürdés/evezés tilalma:</strong> Szigorúan tilos a kijelölt hajóútban
+                    folyamatosan haladni. A hajóutat a lehető leggyorsabban, merőlegesen kell keresztezni.</li>
+                <li><strong>Műtárgyak és kikötők környezete:</strong> Tilos tartózkodni kikötők, komp- és révátkelők 100
+                    méteres körzetében, hidak, vízkivételi művek 100 méteres körzetében, valamint zsilipművek,
+                    vízlépcsők 300 méteres körzetében.</li>
+                <li><strong>Budapesti Duna-szakasz:</strong> Különösen kritikus szabály, hogy a Duna fővárosi szakaszára
+                    (a város belterületén) SUP-pal belépni <strong>szigorúan tilos</strong>, kivéve a hatóságilag
+                    engedélyezett, szervezett tömeges rendezvényeket.</li>
+                <li><strong>Éjszakai evezés:</strong> Éjszaka és korlátozott látási viszonyok között tilos SUP-ozni,
+                    kivéve ha a vízfelület mesterségesen megvilágított, de ekkor is csak a mélyvíz határáig.</li>
+            </ul>
+
+            <h3>Távolsági korlátok és életkori előírások</h3>
+            <p>A parttól való maximális eltávolodást kísérő vízijármű hiányában az alábbiak szerint korlátozza a
+                jogalkotó:</p>
+            <ul>
+                <li><em>Balaton déli (Somogy megyei) part:</em> legfeljebb <strong>1000 méter</strong>.</li>
+                <li><em>Balaton északi (Veszprém és Zala megyei) part:</em> legfeljebb <strong>500 méter</strong>.
+                    Emiatt a Balaton átevezése még a legszűkebb részeken is szabálytalan kísérőhajó nélkül!</li>
+                <li><em>Tisza-tó:</em> legfeljebb <strong>500 méter</strong>.</li>
+                <li><em>Életkori szabályok:</em> Hat éven aluli gyermek, valamint úszni nem tudó 12 éven aluli gyermek
+                    kizárólag felnőtt közvetlen felügyelete mellett fürödhet (és így SUP-ozhat) szabad vizekben.</li>
+            </ul>
+        </div>
+
+        <!-- 5. Szekció -->
+        <div id="weather-api" class="section-card">
+            <h2>5. Időjárás, vízhőmérséklet és viharjelzési API-integrációk</h2>
+            <p>Az alkalmazásnak valós idejű és előrejelzett adatokkal kell támogatnia a biztonságos evezést. Ehhez egy
+                hibrid adatgyűjtő modult kell fejleszteni, amely különböző API-forrásokból táplálkozik.</p>
+
+            <h3>1. Globális és tengeri meteorológia: Open-Meteo Marine Weather API</h3>
+            <p>Az <strong>Open-Meteo Marine API</strong> ingyenesen és nagy pontossággal biztosítja a szél- és
+                hullámadatokat<a class="cite-ref" href="#src-7">[7]</a>. A SUP-osok számára a legfontosabb paraméterek
+                az alábbiak:</p>
+            <ul>
+                <li><code>wind_speed_10m</code> és <code>wind_gusts_10m</code> (szélsebesség és széllökések): A 40 km/h
+                    feletti szél már komoly hullámokat kelthet a Balatonon, ami ellehetetleníti az állva evezést a
+                    rekreációs felhasználóknak.</li>
+                <li><code>wave_height</code> (hullámmagasság): A sekély északi és déli parti törések mentén kialakuló
+                    hullámok magassága kritikus a deszka stabilitása szempontjából<a class="cite-ref"
+                        href="#src-7">[7]</a>.</li>
+                <li><code>wind_direction</code> (szélirány): Különösen fontos a Balaton déli partján, ahol az északi
+                    szél gyorsan besodorhatja a gyanútlan evezőst a mélyvízbe.</li>
+            </ul>
+
+            <h3>2. Valós idejű vízhőmérsékletek és tavi viharjelzés</h3>
+            <p>A nemzetközi meteorológiai modellek (pl. ECMWF, GFS) pontatlanul becslik meg a sekély magyar állóvizek
+                hőmérsékletét. A hiteles adatok kinyeréséhez az alábbi forrásokat kell integrálni:</p>
+            <ul>
+                <li><strong>Országos Vízjelző Szolgálat (OVSZ) és HungaroMet mérőhálózat:</strong> A Balaton (Siófok,
+                    Balatonakali, Tihanyrév), a Velencei-tó (Agárd) és a Tisza-tó pontos vízhőmérsékletét a parttól 30
+                    méterre elhelyezett bóják mérik 1 méter mélységben.</li>
+                <li><strong>Tavi viharjelző API:</strong> A Balaton három medencéjére (Nyugati, Középső, Keleti),
+                    valamint a Velencei- és Tisza-tóra érvényes hivatalos viharjelzési fokozatokat valós időben kell
+                    szinkronizálni:
+                    <ul>
+                        <li><em>Alapfok:</em> Nincs korlátozás.</li>
+                        <li><em>I. fokú viharjelzés</em> (45 villanás/perc): Fürödni és SUP-ozni csak a parttól
+                            számított 500 méteren belül szabad.</li>
+                        <li><em>II. fokú viharjelzés</em> (90 villanás/perc): <strong>Szigorúan tilos a vízen
+                                tartózkodni</strong>, azonnali partraszállás kötelező.</li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+
+        <!-- 6. Szekció -->
+        <div id="tech-architektura" class="section-card">
+            <h2>6. Technológiai architektúra Claude Code-alapú fejlesztéshez</h2>
+            <p>Mivel a későbbi szoftverfejlesztést a <strong>Claude Code</strong> mesterséges intelligencia fogja
+                végezni, elengedhetetlen egy precíz, tiszta adatbázis-séma és rendszerarchitektúra felvázolása. Ez
+                minimalizálja az AI-hallucinációkat, és biztosítja, hogy azonnal működőképes kódot generáljon.</p>
+
+            <h3>Rendszerarchitektúra és szoftver-verem (Tech Stack)</h3>
+            <ul>
+                <li><strong>Backend:</strong> Node.js NestJS keretrendszerrel, amely tiszta TypeScript alapú, moduláris
+                    struktúrájával tökéletesen illeszkedik a Claude Code kódgenerálási képességeihez.</li>
+                <li><strong>Adatbázis:</strong> PostgreSQL a PostGIS kiterjesztéssel. A PostGIS elengedhetetlen a
+                    vízreszállási pontok koordinátáinak kezeléséhez, valamint a geofencing alapú távolsági és tiltási
+                    zónák (pl. 500m-es balatoni sáv) valós idejű, szerveroldali számításához.</li>
+                <li><strong>ORM:</strong> Prisma vagy TypeORM a sémák és migrációk tiszta kezeléséhez.</li>
+                <li><strong>Frontend:</strong> Flutter (cross-platform mobilalkalmazás Androidra és iOS-re) és Next.js
+                    (a weboldalhoz, amely közös REST/GraphQL API-n keresztül kommunikál a backenddel). A Next.js
+                    használata a deszkakatalógus és a Népítélet számára kritikus fontosságú a kiváló Google SEO
+                    (organikus elérés) biztosítása miatt.</li>
+            </ul>
+
+            <h3>Adatbázis-séma (Relációs séma tervezése)</h3>
+            <pre><code>+------------------+         +-------------------+         +-------------------+
+|      USERS       |         |    BOARD_MODELS   |         | WATER_BODY_SPOTS  |
++------------------+         +-------------------+         +-------------------+
+| id (PK)          |         | id (PK)           |         | id (PK)           |
+| email            |         | brand             |         | name              |
+| password_hash    | &lt;-----+ | model_name        |         | type (lake/river) |
+| role (user/prov) |         | construction_type |         | coordinates (GEOM)|
++------------------+         | length_cm         |         | county            |
+         |                   | width_cm          |         | safety_category   |
+         |                   | thickness_cm      |         +-------------------+
+         |                   | volume_liters     |                   |
+         |                   | max_payload       |                   |
+         |                   | manual_pdf_url    |                   |
+         |                   | image_url         |                   |
+         |                   +-------------------+                   |
+         |                             |                             |
+         v                             v                             v
++------------------+         +-------------------+         +-------------------+
+|  B2B_PROVIDERS   |         |   BOARD_REVIEWS   |         |   WEATHER_CACHE   |
++------------------+         +-------------------+         +-------------------+
+| id (PK)          |         | id (PK)           |         | id (PK)           |
+| user_id (FK)     |         | user_id (FK)      |         | spot_id (FK)      |
+| provider_type    |         | board_id (FK)     |         | air_temp          |
+| name             |         | rating (1-5)      |         | water_temp        |
+| coordinates      |         | body_text         |         | wind_speed        |
+| pricing_json     |         | wear_and_tear     |         | wind_direction    |
+| created_at       |         | user_weight_kg    |         | storm_warning     |
++------------------+         +-------------------+         +-------------------+</code></pre>
+        </div>
+
+        <!-- 7. Szekció -->
+        <div id="piacra-lepes" class="section-card">
+            <h2>7. Piaci belépési és növekedési stratégia</h2>
+            <p>Az integrált platform piacra lépése során nem ajánlott közvetlen, tőkeerős marketingháborút indítani a
+                beágyazott SUPlife.hu ellen. Ehelyett egy technológia- és közösségvezérelt, organikus növekedési
+                stratégiát kell alkalmazni.</p>
+
+            <h3>Hosszú távú növekedési fázisok</h3>
+            <ol>
+                <li><strong>1. fázis: Az organikus SEO-motor (A deszkakatalógus és a Népítélet elindítása):</strong> A
+                    fejlesztés első mérföldköveként a Next.js alapú webes deszkakatalógust kell publikálni. A
+                    keresőmotorok (Google) kiválóan indexelik a strukturált termékadatlapokat, a letölthető gyári
+                    kézikönyveket (manual) és a részletes, kulcsszavakban gazdag tulajdonosi véleményeket (pl. „Aqua
+                    Marina Monster vélemények”, „Gladiator Elite 11.6 teszt”)<a class="cite-ref"
+                        href="#src-12">[12]</a><a class="cite-ref" href="#src-11">[11]</a>. Ezzel a platform minimális
+                    marketingköltséggel, tisztán organikus keresések útján szerezheti meg az első 10 000 látogatóját,
+                    akik pontosan vásárlás vagy bérlés előtt állnak.</li>
+                <li><strong>2. fázis: A közösségi térkép és a geofencing biztonsági funkciók (Az applikáció
+                        bevezetése):</strong> Amint a weboldal stabil forgalmat generál, a látogatókat át kell terelni a
+                    Flutter alapú mobilalkalmazás letöltésére. A mobilalkalmazás letöltési kedvét olyan egyedi, máshol
+                    el nem érhető funkciókkal kell ösztönözni, mint a valós idejű tavi viharjelzés-riasztások és a
+                    folyami mentőmellény-figyelmeztetések a felhasználó aktuális GPS pozíciója alapján.</li>
+                <li><strong>3. fázis: A B2B hálózat monetizációja és a szállások integrációja:</strong> A kritikus tömeg
+                    elérése után a platform megkeresheti a vízparti szálláshelyeket (kempingeket, vendégházakat) és a
+                    helyi utazási irodákat/túraszervezőket. Számukra egy rendkívül vonzó ajánlatot kell prezentálni: míg
+                    a SUPlife.hu-n fix éves díjat kell fizetniük egy statikus megjelenésért, addig itt egy teljesen
+                    ingyenes alapprofilt kapnak, és csak a sikeresen közvetített bérlések vagy szállásfoglalások után
+                    fizetnek tranzakciós jutalékot. Ez megszünteti a belépési korlátot a kisvállalkozások számára.</li>
+            </ol>
+
+            <p>Összességében a tervezett platform nem csupán egy újabb információs weboldal lesz, hanem a magyar
+                SUP-közösség első számú digitális és biztonsági asszisztense, amely a modern szoftverarchitektúrának
+                köszönhetően könnyen és gyorsan implementálható lesz a Claude Code segítségével.</p>
+        </div>
+
+        <!-- Források (References) -->
+        <div class="section-card">
+            <h2>Elemzett Források jegyzéke</h2>
+            <ul class="source-list">
+                <li id="src-1" class="source-item">
+                    <span class="source-num">1</span>
+                    <div><strong>SUPlife.hu Ponttérkép</strong><br>A meglévő hazai vízreszállási helyek és alapvető
+                        szolgáltatási szűrők gyűjtőoldala.</div>
+                </li>
+                <li id="src-2" class="source-item">
+                    <span class="source-num">2</span>
+                    <div><strong>SUPmagazin.hu Tesztrendszer</strong><br>Márton Karesz egységes, 10 szempontos és 50
+                        pontos szakmai SUP tesztrendszere.</div>
+                </li>
+                <li id="src-3" class="source-item">
+                    <span class="source-num">3</span>
+                    <div><strong>Go Paddling App (Paddling.com)</strong><br>Nemzetközi térképes beszállóhely-adatbázis
+                        (25 000+ globális ponttal).</div>
+                </li>
+                <li id="src-4" class="source-item">
+                    <span class="source-num">4</span>
+                    <div><strong>Supconnect.com Gear Guide</strong><br>Nemzetközi prémium deszkakatalógus és
+                        professzionális szűrőrendszer.</div>
+                </li>
+                <li id="src-5" class="source-item">
+                    <span class="source-num">5</span>
+                    <div><strong>SUP Board Guide (supboardguide.com)</strong><br>A legrészletesebb globális iSUP- és
+                        felszerelés-tesztelési szakportál.</div>
+                </li>
+                <li id="src-7" class="source-item">
+                    <span class="source-num">6</span>
+                    <div><strong>SUPlife.hu Szabályok és Biztonság</strong><br>A hatályos tavi és folyami vízhasználati
+                        szabályzatok hazai elemzése.</div>
+                </li>
+                <li id="src-10" class="source-item">
+                    <span class="source-num">7</span>
+                    <div><strong>SUPlife Navigátor (suplife.hu/supnavigator)</strong><br>A hazai SUP B2B szolgáltatói
+                        adatbázis és annak jelenlegi technikai korlátai.</div>
+                </li>
+                <li id="src-11" class="source-item">
+                    <span class="source-num">8</span>
+                    <div><strong>Rendeljkinait.hu Szakmai SUP Útmutató</strong><br>Technológiai elemzés a drop-stitch,
+                        PVC rétegek és hegesztési eljárások kapcsán.</div>
+                </li>
+                <li id="src-12" class="source-item">
+                    <span class="source-num">9</span>
+                    <div><strong>SUPlife.hu Deszkaválasztási Kisokos</strong><br>A teherbírás, térfogat (liter) és a
+                        vastagság összefüggéseinek vizsgálata.</div>
+                </li>
+                <li id="src-13" class="source-item">
+                    <span class="source-num">10</span>
+                    <div><strong>SUP the Lifestyle / SUPHungary</strong><br>A hazai SUP turizmus, csoportos túrák és
+                        nemzetközi utazásszervezés mintapéldái.</div>
+                </li>
+                <li id="src-14" class="source-item">
+                    <span class="source-num">11</span>
+                    <div><strong>Magyar Vízitúra Portál (magyar-vizitura.hu)</strong><br>Vízirendészeti és Hajózási
+                        Szabályzati állásfoglalások a SUP eszközökről.</div>
+                </li>
+                <li id="src-15" class="source-item">
+                    <span class="source-num">12</span>
+                    <div><strong>BM 46/2001. (XII. 27.) rendelet</strong><br>A szabad vízen való tartózkodás és a tavi
+                        viharjelzések jogi szabályozása.</div>
+                </li>
+                <li id="src-16" class="source-item">
+                    <span class="source-num">13</span>
+                    <div><strong>SUPlife.hu Médiaajánlat</strong><br>A jelenlegi magyar hirdetési piac és a fix díjas
+                        B2B hirdetési modellek árazása.</div>
+                </li>
+                <li id="src-17" class="source-item">
+                    <span class="source-num">14</span>
+                    <div><strong>SUP Bázis Tisza-tó (Poroszló)</strong><br>Szakmai tapasztalatok a fogyasztói tévutakról
+                        és az olcsó budget deszkák hibáiról.</div>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Footer -->
+        <footer>
+            <p>© 2026 SUP Ökoszisztéma Projekt. Minden jog fenntartva.</p>
+            <p style="font-size: 0.75rem; margin-top: 0.5rem; opacity: 0.7;">Készült a Claude Code fejlesztés-előkészítő
+                piackutatása alapján.</p>
+        </footer>
+
+    </div>
+
+</body>
+
+</html>

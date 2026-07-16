@@ -1,0 +1,34 @@
+/*
+ * SUP Platform — VÉGLEGES design tokenek ("Hajnali tótükör", 2. kör)
+ * Forrás: SUP_PLATFORM_FEJLESZTESI_DOKUMENTACIO.md 2. fejezet (mérvadó)
+ *         + --caution-bg a Claude Design canvasról pótolva (Óvatosan-badge).
+ *
+ * A "biztonsági" blokk brandfüggetlen és FIX — módosítani TILOS.
+ * Státusz soha nem jelenhet meg csak színnel: mindig szín + ikon + szöveg.
+ */
+:root {
+  /* brand */
+  --ink-deep: #0E3B43;
+  --petrol: #14606B;
+  --petrol-text: #0E4B54;   /* AA kisszövegre */
+  --mist: #EEF3F4;          /* app háttér */
+  --surface: #FFFFFF;
+  --sand: #E9E2D4;
+  --amber: #E8A33C;         /* elsődleges CTA — mindig sötét szöveggel */
+  --text: #14282C;
+  --text-2: #3D5257;
+  --text-3: #5A6B6E;        /* min 12px, AA fehéren */
+  --line: #C4CDCE;
+
+  /* biztonsági — brandfüggetlen, FIX, tilos módosítani */
+  --safe: #1B8A4B;    --safe-text: #166B3D;    --safe-bg: #E3F2E8;
+  --caution: #B87500; --caution-text: #8F5C00; --caution-bg: #F7ECD8;
+  --danger: #C6392E;  --danger-text: #A32B22;  --danger-bg: #FBE4E1;
+  --stale: #4A5B5E;   /* elavult adat */
+
+  /* tipó + forma */
+  --font-display: 'Bricolage Grotesque';
+  --font-body: 'Instrument Sans';
+  --radius-card: 16px; --radius-cta: 14px;
+  --tap-min: 44px; --cta-height: 52px;
+}

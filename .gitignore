@@ -1,0 +1,15 @@
+node_modules/
+build/
+.react-router/
+.netlify/
+.env
+.env.*
+!.env.example
+.DS_Store
+.claude/settings.local.json
+coverage/
+playwright-report/
+test-results/
+
+# Claude Design export — csak olvasható referencia, nem verziózzuk (11.5)
+_design-source/

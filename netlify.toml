@@ -1,0 +1,9 @@
+# Netlify — SSR hosting (FEJLESZTESI_DOKUMENTACIO 1.1).
+# Az SSR-adapter (@netlify/vite-plugin-react-router) bekötése és az élesítés
+# az F1.10 lépés része; addig ez a fájl a build-parancsot rögzíti.
+[build]
+  command = "npm run build:web"
+  publish = "build/client"
+
+[dev]
+  command = "npm run dev"

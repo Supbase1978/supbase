@@ -1,0 +1,41 @@
+@import "tailwindcss";
+@import "../src/core/ui/tokens.css";
+
+/* Tailwind 4 theme-híd: a design tokenek utility-ként is elérhetők
+   (pl. bg-petrol, text-ink-deep, bg-caution-bg). A forrás mindig a
+   tokens.css — itt csak hivatkozunk rá, érték nem duplikálható. */
+@theme inline {
+  --color-ink-deep: var(--ink-deep);
+  --color-petrol: var(--petrol);
+  --color-petrol-text: var(--petrol-text);
+  --color-mist: var(--mist);
+  --color-surface: var(--surface);
+  --color-sand: var(--sand);
+  --color-amber: var(--amber);
+  --color-text: var(--text);
+  --color-text-2: var(--text-2);
+  --color-text-3: var(--text-3);
+  --color-line: var(--line);
+
+  --color-safe: var(--safe);
+  --color-safe-text: var(--safe-text);
+  --color-safe-bg: var(--safe-bg);
+  --color-caution: var(--caution);
+  --color-caution-text: var(--caution-text);
+  --color-caution-bg: var(--caution-bg);
+  --color-danger: var(--danger);
+  --color-danger-text: var(--danger-text);
+  --color-danger-bg: var(--danger-bg);
+  --color-stale: var(--stale);
+
+  --font-display: var(--font-display);
+  --font-body: var(--font-body);
+  --radius-card: var(--radius-card);
+  --radius-cta: var(--radius-cta);
+}
+
+body {
+  background: var(--mist);
+  color: var(--text);
+  font-family: var(--font-body), sans-serif;
+}

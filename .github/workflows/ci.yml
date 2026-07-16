@@ -1,0 +1,38 @@
+# SUP Platform CI — minőségkapuk (FEJLESZTESI_DOKUMENTACIO 10. fejezet)
+# KAPU-SZABÁLY: piros CI-val nincs merge — a subagentek sem kerülhetik meg.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  gates:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Típus-kapu (tsc strict)
+        run: npm run typecheck
+      - name: Lint-kapu (ESLint + modul-határok)
+        run: npm run lint
+      - name: Unit-kapu (Vitest)
+        run: npm test
+
+  # F1.2-től: RLS policy-tesztek (SQL-alapú, anon/user/moderator/admin szerepben)
+  # rls-tests:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - uses: supabase/setup-cli@v1
+  #     - run: supabase db start && supabase test db
+
+  # F1.10-től: Playwright e2e + axe a11y kapu; Semgrep minden PR-en, Snyk heti.
+  # e2e:
+  #   runs-on: ubuntu-latest
+  #   steps: ...
