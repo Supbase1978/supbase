@@ -13,3 +13,6 @@ test-results/
 
 # Claude Design export — csak olvasható referencia, nem verziózzuk (11.5)
 _design-source/
+
+# Gépfüggő MCP-konfig (github-official felülírás GH_TOKEN-nel) — nem publikus
+.mcp.json
