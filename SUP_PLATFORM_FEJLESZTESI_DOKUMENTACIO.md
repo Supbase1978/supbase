@@ -18,8 +18,8 @@ Magyar (később közép-európai) SUP-platform, amely négy, ma sehol együtt n
 **Nem funkcionális sarokkövek:** erős autentikáció · moduláris, utólag bővíthető felépítés · erős SEO (SSR + schema.org) · fizetés-készenlét (absztrakció, MVP-ben implementáció nélkül) · push értesítések (viharjelzés-riasztás) · i18n (hu elsődleges, en előkészítve) · offline-olvasás a biztonságkritikus adatokra · biztonsági szín- és adatkor-szemantika sérthetetlen.
 
 **Fázisok:**
-- **F1 (MVP, web-PWA):** Deszkaválasztó + Katalógus/Népítélet + Spot-térkép/SUP-index + szolgáltatói directory (lead-gen) + auth + SEO + web push.
-- **F2 (natív):** Capacitor iOS/Android buildek, natív push viharriasztással, offline térképcsomagok, túranapló + GPX.
+- **F1 (MVP, web-PWA):** Deszkaválasztó + Katalógus/Népítélet + Spot-térkép/SUP-index + szolgáltatói directory (lead-gen) + auth + SEO + web push + **jogi oldalak (ÁSZF, adatvédelmi nyilatkozat — a regisztráció személyes adatot gyűjt: e-mail, testsúly/magasság az ajánláshoz, GDPR-elfogadás a regisztrációnál).**
+- **F2 (natív):** Capacitor iOS/Android buildek, natív push viharriasztással, offline térképcsomagok, túranapló + GPX, **catalog-watch piacfigyelő pipeline** (automatikus modell-felderítés admin-jóváhagyással; terv: `docs/CATALOG_WATCH_TERV.md`, séma-előkészítés F1.5-ben).
 - **F3 (üzlet):** foglalási motor + Stripe Connect jutalék, használtdeszka-piactér, gamifikáció, advisor-adatriportok (B2B piackutatási termék).
 
 ---
@@ -500,7 +500,10 @@ F1.6  Advisor: wizard, algoritmus, eredmény-képernyő (1 nagy + 2 kompakt,
       ui-builder]
 F1.7  Providers: directory, profil, lead-form, claim-folyamat   [scaffolder]
 F1.8  SEO-réteg: JSON-LD, hreflang, sitemap, persona-landingek, OG-generálás
-      [scaffolder + reviewer ellenőrzéssel]
+      + jogi oldalak: ÁSZF + adatvédelmi nyilatkozat (statikus, kétnyelvű
+      route-ok) és elfogadás-checkbox a regisztrációban (visszamenőleg is,
+      consent-időbélyeggel a profiles-ban)   [scaffolder + reviewer
+      ellenőrzéssel; jogi oldalak: auth-security]
 F1.9  Web push + viharjelzés-pipeline end-to-end   [algo-engineer,
       auth-security]
 F1.10 Záró audit + e2e-csomag + security-átvilágítás + Netlify élesítés

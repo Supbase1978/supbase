@@ -12,10 +12,10 @@
 | F1.2 DB (séma + RLS + seed) | ⬜ következő | |
 | F1.3 Weather + SUP-index | ⬜ | |
 | F1.4 Spots + térkép | ⬜ | |
-| F1.5 Catalog + Reviews | ⬜ | |
+| F1.5 Catalog + Reviews | ⬜ | + catalog-watch séma-előkészítés (`docs/CATALOG_WATCH_TERV.md`: boards-életciklusmezők, catalog_sources, catalog_candidates, pg_trgm) |
 | F1.6 Advisor | ⬜ | |
 | F1.7 Providers | ⬜ | |
-| F1.8 SEO-réteg | ⬜ | |
+| F1.8 SEO-réteg | ⬜ | + jogi oldalak: ÁSZF + adatvédelmi nyilatkozat, consent-checkbox a regisztrációban (spec F1-fázislista + 11.4) |
 | F1.9 Push + viharjelzés | ⬜ | |
 | F1.10 Záró audit + élesítés | ⬜ | |
 
