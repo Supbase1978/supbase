@@ -1,0 +1,84 @@
+{
+  "status": {
+    "safe": "Biztonságos",
+    "caution": "Óvatosan",
+    "danger": "Veszélyes",
+    "stale": "Elavult adat"
+  },
+  "dataAge": {
+    "updatedMinutesAgo": "frissítve {{minutes}} perce",
+    "stale": "Elavult adat — 30 percnél régebbi"
+  },
+  "nav": {
+    "home": "Kezdőlap"
+  },
+  "home": {
+    "phase": "SUP Platform — F1 (MVP) fejlesztés alatt",
+    "appName": "[APPNÉV]",
+    "tagline": "Deszkaválasztó · Katalógus + Népítélet · Spot-térkép + SUP-index · Szolgáltatói directory"
+  },
+  "errors": {
+    "notFound": {
+      "title": "Az oldal nem található",
+      "message": "A keresett oldal nem található, vagy időközben megszűnt."
+    },
+    "generic": {
+      "title": "Hiba történt",
+      "message": "Váratlan hiba történt. Kérjük, próbáld újra később."
+    }
+  },
+  "actions": {
+    "save": "Mentés",
+    "cancel": "Mégse",
+    "close": "Bezárás",
+    "back": "Vissza"
+  },
+  "auth": {
+    "common": {
+      "emailLabel": "E-mail-cím",
+      "emailPlaceholder": "te@pelda.hu",
+      "passwordLabel": "Jelszó",
+      "or": "vagy"
+    },
+    "turnstile": {
+      "disabledNotice": "Bot-védelem (Turnstile) fejlesztői módban kikapcsolva."
+    },
+    "login": {
+      "title": "Belépés",
+      "subtitle": "Lépj be e-mail-címmel és jelszóval, vagy kérj varázslinket.",
+      "passwordMode": "Jelszóval",
+      "magicLinkMode": "Varázslinkkel",
+      "submit": "Belépés",
+      "magicLinkSubmit": "Varázslink kérése",
+      "magicLinkHint": "Jelszó helyett belépő linket küldünk az e-mail-címedre.",
+      "magicLinkSentTitle": "Nézd meg a postaládád",
+      "magicLinkSentBody": "Ha létezik fiók ezzel a címmel, elküldtük a belépő linket.",
+      "noAccount": "Még nincs fiókod?",
+      "signUpLink": "Regisztrálj"
+    },
+    "signup": {
+      "title": "Regisztráció",
+      "subtitle": "Hozz létre fiókot e-mail-címmel és jelszóval.",
+      "submit": "Fiók létrehozása",
+      "haveAccount": "Van már fiókod?",
+      "loginLink": "Lépj be",
+      "confirmationSentTitle": "Megerősítő e-mail elküldve",
+      "confirmationSentBody": "Elküldtük a megerősítő linket az e-mail-címedre. A megerősítésig böngészhetsz, de véleményt és jelentést nem írhatsz."
+    },
+    "logout": {
+      "submit": "Kijelentkezés"
+    },
+    "emailConfirm": {
+      "unconfirmedBanner": "Erősítsd meg az e-mail-címed a véleményíráshoz. A böngészés addig is működik.",
+      "callbackErrorTitle": "A megerősítés nem sikerült",
+      "callbackErrorBody": "A link lejárt vagy már felhasználtad. Kérj újat a belépésnél."
+    },
+    "errors": {
+      "invalidCredentials": "Hibás e-mail-cím vagy jelszó.",
+      "captchaRequired": "Kérjük, igazold, hogy nem vagy robot.",
+      "emailRequired": "Add meg az e-mail-címed.",
+      "passwordRequired": "Add meg a jelszavad.",
+      "unexpected": "Váratlan hiba történt. Kérjük, próbáld újra."
+    }
+  }
+}

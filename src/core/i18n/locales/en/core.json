@@ -1,0 +1,84 @@
+{
+  "status": {
+    "safe": "Safe",
+    "caution": "Caution",
+    "danger": "Danger",
+    "stale": "Outdated data"
+  },
+  "dataAge": {
+    "updatedMinutesAgo": "updated {{minutes}} min ago",
+    "stale": "Outdated data — older than 30 minutes"
+  },
+  "nav": {
+    "home": "Home"
+  },
+  "home": {
+    "phase": "SUP Platform — F1 (MVP) under development",
+    "appName": "[APPNAME]",
+    "tagline": "Board advisor · Catalog + community verdict · Spot map + SUP index · Provider directory"
+  },
+  "errors": {
+    "notFound": {
+      "title": "Page not found",
+      "message": "The page you are looking for does not exist or has been removed."
+    },
+    "generic": {
+      "title": "Something went wrong",
+      "message": "An unexpected error occurred. Please try again later."
+    }
+  },
+  "actions": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "close": "Close",
+    "back": "Back"
+  },
+  "auth": {
+    "common": {
+      "emailLabel": "Email address",
+      "emailPlaceholder": "you@example.com",
+      "passwordLabel": "Password",
+      "or": "or"
+    },
+    "turnstile": {
+      "disabledNotice": "Bot protection (Turnstile) is disabled in development mode."
+    },
+    "login": {
+      "title": "Sign in",
+      "subtitle": "Sign in with email and password, or request a magic link.",
+      "passwordMode": "With password",
+      "magicLinkMode": "With magic link",
+      "submit": "Sign in",
+      "magicLinkSubmit": "Send magic link",
+      "magicLinkHint": "Instead of a password, we email you a sign-in link.",
+      "magicLinkSentTitle": "Check your inbox",
+      "magicLinkSentBody": "If an account exists for this address, we have sent a sign-in link.",
+      "noAccount": "No account yet?",
+      "signUpLink": "Sign up"
+    },
+    "signup": {
+      "title": "Sign up",
+      "subtitle": "Create an account with your email and a password.",
+      "submit": "Create account",
+      "haveAccount": "Already have an account?",
+      "loginLink": "Sign in",
+      "confirmationSentTitle": "Confirmation email sent",
+      "confirmationSentBody": "We sent a confirmation link to your email. Until you confirm you can browse, but cannot post reviews or reports."
+    },
+    "logout": {
+      "submit": "Sign out"
+    },
+    "emailConfirm": {
+      "unconfirmedBanner": "Confirm your email to post reviews. Browsing keeps working in the meantime.",
+      "callbackErrorTitle": "Confirmation failed",
+      "callbackErrorBody": "The link expired or was already used. Request a new one at sign-in."
+    },
+    "errors": {
+      "invalidCredentials": "Invalid email or password.",
+      "captchaRequired": "Please verify that you are not a robot.",
+      "emailRequired": "Enter your email address.",
+      "passwordRequired": "Enter your password.",
+      "unexpected": "An unexpected error occurred. Please try again."
+    }
+  }
+}

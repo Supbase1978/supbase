@@ -1,3 +1,5 @@
+import { useMemo } from "react";
+import { I18nextProvider, useTranslation } from "react-i18next";
 import {
   isRouteErrorResponse,
   Links,
@@ -5,7 +7,10 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
+  useLocation,
 } from "react-router";
+
+import { createI18n, getLocaleFromPath } from "@core/i18n";
 
 import type { Route } from "./+types/root";
 import "./app.css";
@@ -24,8 +29,14 @@ export const links: Route.LinksFunction = () => [
 ];
 
 export function Layout({ children }: { children: React.ReactNode }) {
+  // Locale az URL-ből (8. + 6. fejezet: hu default prefix nélkül, en: /en/...).
+  // Az i18next-példány kérésenként/locale-onként új (SSR-biztos), a provider a
+  // Layoutban ül, így az ErrorBoundary is fordított szöveget kap.
+  const locale = getLocaleFromPath(useLocation().pathname);
+  const i18n = useMemo(() => createI18n(locale), [locale]);
+
   return (
-    <html lang="hu">
+    <html lang={locale}>
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -33,7 +44,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Links />
       </head>
       <body>
-        {children}
+        <I18nextProvider i18n={i18n}>{children}</I18nextProvider>
         <ScrollRestoration />
         <Scripts />
       </body>
@@ -46,25 +57,27 @@ export default function App() {
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
-  let message = "Hiba történt";
-  let details = "Váratlan hiba történt.";
+  const { t } = useTranslation("core");
+  const notFound = isRouteErrorResponse(error) && error.status === 404;
 
-  if (isRouteErrorResponse(error)) {
-    message = error.status === 404 ? "404" : "Hiba";
-    details =
-      error.status === 404
-        ? "A keresett oldal nem található."
-        : (error.statusText ?? details);
-  } else if (import.meta.env.DEV && error instanceof Error) {
+  const title = notFound ? t("errors.notFound.title") : t("errors.generic.title");
+  let details = notFound
+    ? t("errors.notFound.message")
+    : t("errors.generic.message");
+
+  if (!notFound && import.meta.env.DEV && error instanceof Error) {
     details = error.message;
   }
 
   return (
-    <main style={{ padding: "2rem", fontFamily: "var(--font-body)" }}>
-      <h1 style={{ fontFamily: "var(--font-display)", color: "var(--ink-deep)" }}>
-        {message}
+    <main className="p-8" style={{ fontFamily: "var(--font-body)" }}>
+      <h1
+        className="text-2xl font-semibold text-ink-deep"
+        style={{ fontFamily: "var(--font-display)" }}
+      >
+        {title}
       </h1>
-      <p style={{ color: "var(--text-2)" }}>{details}</p>
+      <p className="mt-2 text-text-2">{details}</p>
     </main>
   );
 }
