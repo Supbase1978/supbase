@@ -9,7 +9,7 @@
 import { createBrowserClient } from "@supabase/ssr";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-import { getSupabaseAnonKey, getSupabaseUrl } from "./env";
+import { getSupabasePublishableKey, getSupabaseUrl } from "./env";
 
 let client: SupabaseClient | null = null;
 
@@ -17,6 +17,6 @@ export function getSupabaseBrowserClient(): SupabaseClient {
   if (client) {
     return client;
   }
-  client = createBrowserClient(getSupabaseUrl(), getSupabaseAnonKey());
+  client = createBrowserClient(getSupabaseUrl(), getSupabasePublishableKey());
   return client;
 }

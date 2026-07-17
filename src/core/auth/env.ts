@@ -43,8 +43,8 @@ export function getSupabaseUrl(): string {
 }
 
 /** Supabase `anon` kulcs (publikus, RLS mögött). Hiányzik → beszédes Error híváskor. */
-export function getSupabaseAnonKey(): string {
-  return requireEnv("VITE_SUPABASE_ANON_KEY");
+export function getSupabasePublishableKey(): string {
+  return requireEnv("VITE_SUPABASE_PUBLISHABLE_KEY");
 }
 
 /**
@@ -53,7 +53,7 @@ export function getSupabaseAnonKey(): string {
  * session), anélkül hogy 500-at okoznának — a böngészés env nélkül is megy.
  */
 export function isSupabaseConfigured(): boolean {
-  return optionalEnv("VITE_SUPABASE_URL") !== null && optionalEnv("VITE_SUPABASE_ANON_KEY") !== null;
+  return optionalEnv("VITE_SUPABASE_URL") !== null && optionalEnv("VITE_SUPABASE_PUBLISHABLE_KEY") !== null;
 }
 
 /**

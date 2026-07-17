@@ -11,7 +11,7 @@
 import { createServerClient, parseCookieHeader, serializeCookieHeader } from "@supabase/ssr";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-import { getSupabaseAnonKey, getSupabaseUrl } from "./env";
+import { getSupabasePublishableKey, getSupabaseUrl } from "./env";
 
 export interface SupabaseServerContext {
   supabase: SupabaseClient;
@@ -27,7 +27,7 @@ export interface SupabaseServerContext {
 export function createSupabaseServerClient(request: Request): SupabaseServerContext {
   const headers = new Headers();
 
-  const supabase = createServerClient(getSupabaseUrl(), getSupabaseAnonKey(), {
+  const supabase = createServerClient(getSupabaseUrl(), getSupabasePublishableKey(), {
     cookies: {
       getAll() {
         return parseCookieHeader(request.headers.get("Cookie") ?? "");

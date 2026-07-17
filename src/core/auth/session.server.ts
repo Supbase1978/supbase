@@ -34,7 +34,7 @@ function supabaseUnavailable(): boolean {
   if (!warnedMissingEnv) {
     warnedMissingEnv = true;
     console.warn(
-      "[auth] Supabase env (VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY) nincs beállítva — " +
+      "[auth] Supabase env (VITE_SUPABASE_URL / VITE_SUPABASE_PUBLISHABLE_KEY) nincs beállítva — " +
         "a session-olvasás null-t ad (fail-closed). Állítsd be a .env-et a belépéshez (minta: .env.example).",
     );
   }

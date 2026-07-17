@@ -20,7 +20,7 @@ export { isEmailConfirmed } from "./email-confirmed";
 // Env-hozzáférés (izomorf, VITE_ prefixű publikus értékek).
 export {
   getSupabaseUrl,
-  getSupabaseAnonKey,
+  getSupabasePublishableKey,
   isSupabaseConfigured,
   getTurnstileSiteKey,
   isTurnstileEnabled,

@@ -6,7 +6,7 @@ describe("getUser / requireUser — fail-closed hiányzó Supabase-env mellett",
   beforeEach(() => {
     // Env nélkül nincs kliens: a session-olvasás null-t ad, nem dob (nem hív hálózatot).
     vi.stubEnv("VITE_SUPABASE_URL", "");
-    vi.stubEnv("VITE_SUPABASE_ANON_KEY", "");
+    vi.stubEnv("VITE_SUPABASE_PUBLISHABLE_KEY", "");
     vi.spyOn(console, "warn").mockImplementation(() => {});
   });
 

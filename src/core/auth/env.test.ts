@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
-  getSupabaseAnonKey,
+  getSupabasePublishableKey,
   getSupabaseUrl,
   getTurnstileSiteKey,
   isSupabaseConfigured,
@@ -19,40 +19,40 @@ describe("env — modul-import nem dob", () => {
   });
 });
 
-describe("getSupabaseUrl / getSupabaseAnonKey — beszédes hiba híváskor", () => {
+describe("getSupabaseUrl / getSupabasePublishableKey — beszédes hiba híváskor", () => {
   it("hiányzó VITE_SUPABASE_URL → beszédes Error a HÍVÁSKOR", () => {
     vi.stubEnv("VITE_SUPABASE_URL", "");
     expect(() => getSupabaseUrl()).toThrowError(/VITE_SUPABASE_URL/);
     expect(() => getSupabaseUrl()).toThrowError(/\.env\.example/);
   });
 
-  it("hiányzó VITE_SUPABASE_ANON_KEY → beszédes Error a HÍVÁSKOR", () => {
-    vi.stubEnv("VITE_SUPABASE_ANON_KEY", "");
-    expect(() => getSupabaseAnonKey()).toThrowError(/VITE_SUPABASE_ANON_KEY/);
+  it("hiányzó VITE_SUPABASE_PUBLISHABLE_KEY → beszédes Error a HÍVÁSKOR", () => {
+    vi.stubEnv("VITE_SUPABASE_PUBLISHABLE_KEY", "");
+    expect(() => getSupabasePublishableKey()).toThrowError(/VITE_SUPABASE_PUBLISHABLE_KEY/);
   });
 
   it("beállított env → visszaadja az értéket, nem dob", () => {
     vi.stubEnv("VITE_SUPABASE_URL", "https://proj.supabase.co");
-    vi.stubEnv("VITE_SUPABASE_ANON_KEY", "anon-key-123");
+    vi.stubEnv("VITE_SUPABASE_PUBLISHABLE_KEY", "sb_publishable_test_123");
     expect(getSupabaseUrl()).toBe("https://proj.supabase.co");
-    expect(getSupabaseAnonKey()).toBe("anon-key-123");
+    expect(getSupabasePublishableKey()).toBe("sb_publishable_test_123");
   });
 });
 
 describe("isSupabaseConfigured — nem dob, csak jelez", () => {
   it("hiányzó URL vagy kulcs → false (nem dob)", () => {
     vi.stubEnv("VITE_SUPABASE_URL", "");
-    vi.stubEnv("VITE_SUPABASE_ANON_KEY", "");
+    vi.stubEnv("VITE_SUPABASE_PUBLISHABLE_KEY", "");
     expect(isSupabaseConfigured()).toBe(false);
 
     vi.stubEnv("VITE_SUPABASE_URL", "https://proj.supabase.co");
-    vi.stubEnv("VITE_SUPABASE_ANON_KEY", "");
+    vi.stubEnv("VITE_SUPABASE_PUBLISHABLE_KEY", "");
     expect(isSupabaseConfigured()).toBe(false);
   });
 
   it("mindkettő beállítva → true", () => {
     vi.stubEnv("VITE_SUPABASE_URL", "https://proj.supabase.co");
-    vi.stubEnv("VITE_SUPABASE_ANON_KEY", "anon-key-123");
+    vi.stubEnv("VITE_SUPABASE_PUBLISHABLE_KEY", "sb_publishable_test_123");
     expect(isSupabaseConfigured()).toBe(true);
   });
 });
