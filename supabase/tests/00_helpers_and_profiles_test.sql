@@ -100,13 +100,15 @@ select is((select count(*)::int from public.profiles where id='11111111-1111-111
 
 -- ===========================================================================
 -- profiles_self_insert — pozitív + negatív (with check auth.uid() = id)
--- Az auto-profil trigger minden auth.users-höz profilt gyárt, ezért a self_insert
--- tiszta teszteléséhez profil NÉLKÜLI auth-usert hozunk létre (trigger-toggle).
+-- A self_insert tiszta teszteléséhez profil NÉLKÜLI auth-user kell. Az auth.users
+-- trigger-toggle NEM megy (a `postgres` nem tulajdonosa az auth.users-nek → "must be
+-- owner of table users"), ezért hagyjuk lefutni az auto-profilt, majd a keletkező
+-- profiles sort postgres-ként töröljük (a postgres a public.profiles tulajdonosa,
+-- RLS force nélkül átmegy rajta).
 -- ===========================================================================
-alter table auth.users disable trigger on_auth_user_created;
 insert into auth.users (id, aud, role, email, email_confirmed_at) values
   ('66666666-6666-6666-6666-666666666666','authenticated','authenticated','user6@test.dev', now());
-alter table auth.users enable trigger on_auth_user_created;
+delete from public.profiles where id='66666666-6666-6666-6666-666666666666';
 
 -- Negatív: user1 NEM hozhat létre profilt más id-vel (with check bukik → 42501).
 set local role authenticated;
