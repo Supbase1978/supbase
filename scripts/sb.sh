@@ -7,8 +7,14 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
-if [ -z "${SUPABASE_ACCESS_TOKEN:-}" ] && [ -f "$ROOT/.env" ]; then
-  SUPABASE_ACCESS_TOKEN="$(sed -n 's/^[[:space:]]*SUPABASE_ACCESS_TOKEN=//p' "$ROOT/.env" | tail -1)"
+# A .env-beli token az ELSŐDLEGES: a shell-profil (~/.zshrc) globálisan
+# exportált SUPABASE_ACCESS_TOKEN-je a RÉGI fiókhoz tartozik, és árnyékolná —
+# ezért itt a .env felülírja az örökölt env-változót.
+if [ -f "$ROOT/.env" ]; then
+  ENV_TOKEN="$(sed -n 's/^[[:space:]]*SUPABASE_ACCESS_TOKEN=//p' "$ROOT/.env" | tail -1 | tr -d '[:space:]')"
+  if [ -n "$ENV_TOKEN" ]; then
+    SUPABASE_ACCESS_TOKEN="$ENV_TOKEN"
+  fi
 fi
 
 if [ -z "${SUPABASE_ACCESS_TOKEN:-}" ]; then
