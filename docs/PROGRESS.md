@@ -115,7 +115,7 @@ Kiosztás: db-engineer (2 kör) + reviewer (2 kör). Helyi kapuk záráskor zöl
 - 7 pgTAP tesztfájl (`supabase/tests/00,10,20,30,40,45,50`), tranzakció+rollback
   mintával; szerepek: anon / user (confirmed/unconfirmed) / moderator / admin /
   tulajdonos vs. idegen / service_role.
-- `seed.sql`: 9 márka, 20 deszka (+20 ár), 15 spot, 5 provider, 33
+- `seed.sql`: 9 márka, 20 deszka (+20 ár), 15 spot, 5 provider, 32
   advisor_weights kulcs (`supindex.*` defaultokkal, `storm.level1_cap=3.9`,
   `storm.level2_cap=0`).
 - CI `rls-tests` job élesítve: setup-cli 2.100.1 (pinnelt) → `supabase db start`
@@ -144,8 +144,9 @@ Function így teszi); CI első futásán ellenőrizni, hogy a `db start` seedel.
 
 **Környezet:** Supabase-projekt linkelve („Supbase", ref `pycsqnthxaytwaptbiph`)
 — CLI CSAK a `npm run sb --` wrapperrel (lásd CLAUDE.md: zshrc-token-csapda).
-A migrációk a távoli projektre még NINCSENEK kitolva (`npm run sb -- db push`
-a CI-zöld után esedékes).
+A 12 migráció + seed a távoli projektre kitolva (2026-07-18, `db push
+--include-seed`); élesben ellenőrizve: 20 boards / 15 spots / 5 providers /
+32 advisor_weights, anon írás 401.
 
 **Megjegyzések a következő lépéshez (F1.3):**
 - `supindex.*` kulcsok a seedben — az algo-engineer validálja a sávokat,
