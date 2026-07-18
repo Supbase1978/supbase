@@ -40,3 +40,4 @@ Minden architekturális és designdöntés ott van rögzítve; eltérés csak in
 - Útvonal-aliasok: `~/*` → `app/*`, `@core/*` → `src/core/*`, `@modules/*` → `src/modules/*`.
 - `_design-source/` = Claude Design export, **csak olvasható referencia** (gitignore-olt); komponens onnan nem másolható át, a `core/ui`-ban épül újra.
 - Fordítható tartalmi mező mindig `jsonb` (`{"hu": ..., "en": ...}`); UI-szöveg i18next namespace-ből, hardcode tilos.
+- **Supabase CLI: CSAK a wrapperrel** — `npm run sb -- <parancs>` (vagy `scripts/sb.sh`). Nyers `supabase` parancs TILOS: a gép shell-profilja (`~/.zshrc`) egy RÉGI fiók `SUPABASE_ACCESS_TOKEN`-jét exportálja globálisan, ezért wrapper nélkül a CLI a rossz fiókban (7 idegen projekt) landol. A wrapper a `.env`-beli tokent kényszeríti (projekt: „Supbase", ref `pycsqnthxaytwaptbiph`). Ha a CLI váratlanul más projekteket lát: először az env-árnyékolásra gyanakodj, ne a tokenre.
