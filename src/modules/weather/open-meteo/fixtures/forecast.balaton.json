@@ -1,0 +1,19 @@
+{
+  "latitude": 46.85,
+  "longitude": 17.75,
+  "timezone": "UTC",
+  "current_units": {
+    "time": "iso8601",
+    "temperature_2m": "°C",
+    "wind_speed_10m": "km/h",
+    "wind_gusts_10m": "km/h",
+    "wind_direction_10m": "°"
+  },
+  "current": {
+    "time": "2026-07-18T12:00",
+    "temperature_2m": 24.6,
+    "wind_speed_10m": 18.4,
+    "wind_gusts_10m": 31.2,
+    "wind_direction_10m": 205
+  }
+}

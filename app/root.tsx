@@ -11,6 +11,9 @@ import {
 } from "react-router";
 
 import { createI18n, getLocaleFromPath } from "@core/i18n";
+// Modul-namespace-ek regisztrációja (import-mellékhatás) — új modul fordítása
+// a src/modules/registry-i18n.ts-ben kötendő be, ehhez a fájlhoz nem kell nyúlni.
+import "@modules/registry-i18n";
 
 import type { Route } from "./+types/root";
 import "./app.css";

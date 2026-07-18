@@ -1,0 +1,28 @@
+{
+  "status": {
+    "safe": "Excellent",
+    "caution": "Caution",
+    "danger": "Dangerous",
+    "forbidden": "Forbidden"
+  },
+  "flag": {
+    "offshoreWind": "Offshore wind",
+    "offshoreWindHint": "The wind pushes from the shore toward open water — do not drift away from the shore.",
+    "neoprene": "Cold water — wetsuit recommended"
+  },
+  "stale": {
+    "label": "Stale data",
+    "hint": "The reading is more than 30 minutes old — not current."
+  },
+  "reason": {
+    "storm": {
+      "level2": "Level 2 storm warning — staying on the water is forbidden, return to shore immediately.",
+      "level1": "Level 1 storm warning in effect — the index is capped at {{index}}, proceed with caution only."
+    },
+    "offshore": "Offshore wind {{wind}} km/h — elevated danger, stay close to the shore.",
+    "strongWind": "Strong wind ({{wind}} km/h) — conditions are dangerous.",
+    "cold": "Cold water ({{temp}} °C) — wetsuit recommended, higher risk of hypothermia.",
+    "moderateWind": "Moderate wind ({{wind}} km/h) — paddle with caution.",
+    "good": "Pleasant conditions ({{wind}} km/h wind) — excellent for paddling."
+  }
+}

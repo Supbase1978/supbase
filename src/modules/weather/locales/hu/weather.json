@@ -1,0 +1,28 @@
+{
+  "status": {
+    "safe": "Kiváló",
+    "caution": "Óvatosan",
+    "danger": "Veszélyes",
+    "forbidden": "Tilos"
+  },
+  "flag": {
+    "offshoreWind": "Besodró szél",
+    "offshoreWindHint": "A szél a part felől a nyílt víz felé sodor — a parttól ne távolodj el.",
+    "neoprene": "Hideg víz — neoprén ajánlott"
+  },
+  "stale": {
+    "label": "Elavult adat",
+    "hint": "A mérés több mint 30 perce frissült — nem aktuális."
+  },
+  "reason": {
+    "storm": {
+      "level2": "Másodfokú viharjelzés — tilos a vízen tartózkodni, azonnali partraszállás.",
+      "level1": "Elsőfokú viharjelzés van érvényben — az index legfeljebb {{index}}, csak óvatosan."
+    },
+    "offshore": "Besodró (parttól elsodró) szél {{wind}} km/h — fokozott veszély, maradj a part közelében.",
+    "strongWind": "Erős szél ({{wind}} km/h) — a körülmények veszélyesek.",
+    "cold": "Hideg víz ({{temp}} °C) — neoprén ajánlott, a kihűlés kockázata nő.",
+    "moderateWind": "Mérsékelt szél ({{wind}} km/h) — óvatosan evezhető.",
+    "good": "Kellemes körülmények ({{wind}} km/h szél) — kiváló evezéshez."
+  }
+}

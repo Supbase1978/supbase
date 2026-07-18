@@ -10,7 +10,7 @@
 | F1.0 Projekt-setup | ✅ kész (2026-07-17) | részletek lent |
 | F1.1 Core (auth, i18n, ui-primitívek…) | ✅ kész (2026-07-17) | reviewer-jóváhagyással; részletek lent |
 | F1.2 DB (séma + RLS + seed) | ✅ kész (2026-07-18) | reviewer-jóváhagyással; futási verifikáció a CI rls-tests jobban |
-| F1.3 Weather + SUP-index | ⬜ | |
+| F1.3 Weather + SUP-index | 🔄 folyamatban | 1. kör kész (algoritmus+adapter); hátra: weather-sync + BM OKF scraper Edge Function + cron, reviewer-kör |
 | F1.4 Spots + térkép | ⬜ | |
 | F1.5 Catalog + Reviews | ⬜ | + catalog-watch séma-előkészítés (`docs/CATALOG_WATCH_TERV.md`: boards-életciklusmezők, catalog_sources, catalog_candidates, pg_trgm) |
 | F1.6 Advisor | ⬜ | |
@@ -154,3 +154,28 @@ A 12 migráció + seed a távoli projektre kitolva (2026-07-18, `db push
 - A Gauge küszöb-defaultjai (F1.1-jegyzet) innen kötendők be.
 - Weather-írás kizárólag service_role (nincs write-policy) — az Edge Function
   ehhez igazodjon.
+
+## F1.3 — Weather + SUP-index (folyamatban)
+
+**1. kör kész (2026-07-18, algo-engineer + karmester-integráció):**
+- `src/modules/weather/`: route-mentes manifeszt + registry-regisztráció.
+- SUP-index (`sup-index/`): tiszta `computeSupIndex` az 5.1 mind a 6 lépésével
+  (storm-override a végén alkalmazva; offshore-szektor `angularDelta`-val;
+  minden küszöb/súly konfigból). Kimenet: index (1 tizedes) + státusz-enum
+  (safe/caution/danger) + flagek (besodró, neoprén, viharfok) + indoklás
+  i18n-kulcsként (nem kész mondat). Táblázatos határeset-tesztek (sávhatárok,
+  pont 3,9 plafon, pont 15 lökés/offshore-szélminimum, pont 14 °C, 4,0/7,0).
+- Konfig: `config.ts` (típus + defaultok, seed-kulcsokkal egyező) +
+  `config.server.ts` (advisor_weights `supindex.*` olvasó, fallback defaultokra).
+- Open-Meteo adapter: forecast + marine (tengeri vízhő; belvíznél null — F1),
+  injektálható fetch, parse fixture-tesztekkel; null-biztos parse (karmester-fix).
+- i18n: `weather` namespace (hu forrás + en tükör), bekötés az ÚJ
+  `src/modules/registry-i18n.ts`-en át (app/root.tsx importálja; új modul
+  fordítása ide kötendő — a registry.ts-be azért nem, mert azt a RR7
+  config-loader is behúzza, és a manifesztnek mellékhatás-mentesnek kell lennie).
+
+**Hátra (2. kör):** weather-sync Edge Function (Open-Meteo → weather_snapshots,
+service_role) + BM OKF viharjelzés-scraper + cron (szezonban 5 perc) +
+HydroInfo vízállás; majd reviewer-kör (F1.3 kritikus lépés).
+**Megjegyzés:** az 1. kört az algo-engineer session-limit szakította meg — a
+hiányzó adapter-tesztet és az i18n-bekötést a karmester pótolta.

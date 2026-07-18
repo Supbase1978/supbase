@@ -1,0 +1,13 @@
+{
+  "latitude": 45.07,
+  "longitude": 13.64,
+  "timezone": "UTC",
+  "current_units": {
+    "time": "iso8601",
+    "sea_surface_temperature": "°C"
+  },
+  "current": {
+    "time": "2026-07-18T12:00",
+    "sea_surface_temperature": 21.3
+  }
+}
