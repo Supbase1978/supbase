@@ -380,6 +380,16 @@ deno_version = 2
 # [edge_runtime.secrets]
 # secret_key = "env(SECRET_VALUE)"
 
+# Cron-hívott Edge Functionök (9. fejezet viharjelzés-pipeline). A verify_jwt a
+# platform-default is, de itt KŐBE VÉSVE a véletlen kikapcsolás ellen: a cron a
+# service_role JWT-vel hív, publikus/anon hívás tilos. A weather_snapshots-ba
+# csak a service_role írhat (nincs write-policy, 3.2).
+[functions.weather-sync]
+verify_jwt = true
+
+[functions.storm-alert]
+verify_jwt = true
+
 [analytics]
 enabled = true
 port = 54327

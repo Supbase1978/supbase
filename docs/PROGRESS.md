@@ -10,7 +10,7 @@
 | F1.0 Projekt-setup | ✅ kész (2026-07-17) | részletek lent |
 | F1.1 Core (auth, i18n, ui-primitívek…) | ✅ kész (2026-07-17) | reviewer-jóváhagyással; részletek lent |
 | F1.2 DB (séma + RLS + seed) | ✅ kész (2026-07-18) | reviewer-jóváhagyással; futási verifikáció a CI rls-tests jobban |
-| F1.3 Weather + SUP-index | 🔄 folyamatban | 1. kör kész (algoritmus+adapter); hátra: weather-sync + BM OKF scraper Edge Function + cron, reviewer-kör |
+| F1.3 Weather + SUP-index | ✅ kód kész (2026-07-18) | reviewer-jóváhagyva (M1 storm-scrape-fix beépítve); hátra: functions deploy + cron bekötés (kézi, README-runbook) |
 | F1.4 Spots + térkép | ⬜ | |
 | F1.5 Catalog + Reviews | ⬜ | + catalog-watch séma-előkészítés (`docs/CATALOG_WATCH_TERV.md`: boards-életciklusmezők, catalog_sources, catalog_candidates, pg_trgm) |
 | F1.6 Advisor | ⬜ | |
@@ -174,8 +174,45 @@ A 12 migráció + seed a távoli projektre kitolva (2026-07-18, `db push
   fordítása ide kötendő — a registry.ts-be azért nem, mert azt a RR7
   config-loader is behúzza, és a manifesztnek mellékhatás-mentesnek kell lennie).
 
-**Hátra (2. kör):** weather-sync Edge Function (Open-Meteo → weather_snapshots,
-service_role) + BM OKF viharjelzés-scraper + cron (szezonban 5 perc) +
-HydroInfo vízállás; majd reviewer-kör (F1.3 kritikus lépés).
+**2. kör kész (2026-07-18, algo-engineer): Edge Functionök + cron-előkészítés.**
+- `supabase/functions/_shared/` — Deno- ÉS Node-semleges tiszta logika (nincs
+  Deno API / `jsr:` import / I/O), Vitesttel tesztelve: `types.ts`, `sup-index.ts`
+  (a webes `computeSupIndex` bit-azonos portja + `parseSupIndexConfig`),
+  `open-meteo.ts` (parse + injektálható fetch), `storm-scrape.ts` (BM OKF
+  tag-toleráns parse + `detectStormLevelChanges`), `weather-sync.ts` és
+  `storm-alert.ts` (tiszta batch-orchestrátorok injektált I/O-val, hibatűrők).
+- `weather-sync/index.ts` + `storm-alert/index.ts` — vékony Deno-héjak (service-
+  role kliens, valós fetch); a repo `tsconfig`-jából kizárva (`*/index.ts`),
+  a `_shared` viszont typecheckelt + tesztelt.
+- Konfig-bővítés: `tsconfig` (`allowImportingTsExtensions`, index.ts-kizárás),
+  `vitest` include (`supabase/functions/**/*.test.ts`), eslint Deno-globális.
+- 44 új Vitest-teszt (OKF-fixture 3 állapot, szintváltás 0→1/1→2/2→0/nincs,
+  batch spot-hibatűrés, storm-override újraszámítás) — hálózat nélkül. Kapuk
+  zöldek: typecheck · lint · 212 vitest.
+- `supabase/functions/README.md`: deploy (`npm run sb -- functions deploy …`) +
+  cron (Dashboard scheduled VAGY pg_cron+pg_net SQL; óránként / 5 perc ápr–okt).
+- **Forrás-választás:** OMSZ viharjelzés (`STORM_SOURCE_URL`, default met.hu
+  balatoni oldal) — a hivatalos kiadó, és a négy körzet pontosan a
+  `storm_warning_region` seed-értékekkel egyezik; a parser szöveg-alapú, forrás-
+  váltásra csak env + needle-lista kell.
+
+**Reviewer-kör (2026-07-18): JÓVÁHAGYVA.** A két SUP-index implementáció
+bit-azonossága, az adatkor-szabály, a modul-szerződés és a fail-safe viselkedés
+tételesen ellenőrizve. Findingok: M1 (storm-scrape tagadás-vakság — a
+storm-alert élesítése előtt KÖTELEZŐ; azonnal javítva negáció-kezeléssel +
+UNKNOWN állapottal) · m2 (README: a default forrás csak Balaton-körzetet fed —
+javítva) · m6 (explicit verify_jwt=true a config.toml-ben — javítva).
+
+**Follow-upok (nem blokkolók, célfázissal):**
+- m3 → F1.3-utó: `supindex.stale_minutes` seed-kulcs holt (a stale-küszöb a
+  core `STALE_THRESHOLD_MINUTES` konstansa) — bekötni vagy seedből kivenni.
+- m4 → F1.9: Open-Meteo `observed_at` (current.time) tárolása/használata a
+  `fetched_at` mellett.
+- m5 → F1.4 ÁTADÁSI FELTÉTEL: II. foknál (`flags.stormLevel===2`) a UI-nak
+  „Tilos" státuszt kell rendernie (i18n `status.forbidden`), NEM a
+  danger-„Veszélyes"-t — a status-enum önmagában nem elég.
+
+**Hátra (F1.3 zárás):** deploy+cron bekötése (kézi, runbook a README-ben;
+felhasználói jóváhagyással); F1.9-hook: `notifyStormChange()` push + HydroInfo.
 **Megjegyzés:** az 1. kört az algo-engineer session-limit szakította meg — a
 hiányzó adapter-tesztet és az i18n-bekötést a karmester pótolta.

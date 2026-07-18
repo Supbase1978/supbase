@@ -76,4 +76,12 @@ export default tseslint.config(
       ],
     },
   },
+  {
+    // Supabase Edge Functions Deno-runtime alatt futnak: a `Deno` globális
+    // itt ismert. A tiszta logika a `_shared`-ben Node/Vitest alatt is fut.
+    files: ["supabase/functions/**/*.ts"],
+    languageOptions: {
+      globals: { Deno: "readonly" },
+    },
+  },
 );
