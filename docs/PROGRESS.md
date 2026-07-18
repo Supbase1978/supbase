@@ -9,7 +9,7 @@
 |---|---|---|
 | F1.0 Projekt-setup | ✅ kész (2026-07-17) | részletek lent |
 | F1.1 Core (auth, i18n, ui-primitívek…) | ✅ kész (2026-07-17) | reviewer-jóváhagyással; részletek lent |
-| F1.2 DB (séma + RLS + seed) | ⬜ következő | |
+| F1.2 DB (séma + RLS + seed) | ✅ kész (2026-07-18) | reviewer-jóváhagyással; futási verifikáció a CI rls-tests jobban |
 | F1.3 Weather + SUP-index | ⬜ | |
 | F1.4 Spots + térkép | ⬜ | |
 | F1.5 Catalog + Reviews | ⬜ | + catalog-watch séma-előkészítés (`docs/CATALOG_WATCH_TERV.md`: boards-életciklusmezők, catalog_sources, catalog_candidates, pg_trgm) |
@@ -100,3 +100,56 @@ karmester-integráció, reviewer-jóváhagyás. Kapuk záráskor: typecheck · l
   konfigból jönnek majd.
 - Vitest `environmentMatchGlobs` deprecation-warningot ír (működik) — később
   projects-alapú konfigra váltható.
+
+## F1.2 — DB: teljes séma + RLS + tesztek + seed (2026-07-18)
+
+Kiosztás: db-engineer (2 kör) + reviewer (2 kör). Helyi kapuk záráskor zöldek
+(typecheck · lint · 104 vitest); a futási verifikáció a CI `rls-tests` jobja
+(helyben nincs Docker/Postgres — a pgTAP-tesztek először a CI-ban futnak élesben).
+
+**Elkészült:**
+- 12 migráció (`supabase/migrations/`): core (extensions, helpers, profiles,
+  orders, push_subscriptions, gdpr_anonymize) + modulonként saját fájl
+  (catalog, reviews, spots, weather, advisor, providers) — modul-szerződés
+  szerint. Minden táblán RLS + minden policyhoz pozitív ÉS negatív pgTAP-teszt.
+- 7 pgTAP tesztfájl (`supabase/tests/00,10,20,30,40,45,50`), tranzakció+rollback
+  mintával; szerepek: anon / user (confirmed/unconfirmed) / moderator / admin /
+  tulajdonos vs. idegen / service_role.
+- `seed.sql`: 9 márka, 20 deszka (+20 ár), 15 spot, 5 provider, 33
+  advisor_weights kulcs (`supindex.*` defaultokkal, `storm.level1_cap=3.9`,
+  `storm.level2_cap=0`).
+- CI `rls-tests` job élesítve: setup-cli 2.100.1 (pinnelt) → `supabase db start`
+  → `supabase test db --local`.
+- Security definer helperek `set search_path=''`-vel; column-védő triggerek:
+  `profiles.role`, `board_reviews.verified_owner/status`, `providers.verified/
+  tier`, `orders.status/provider_ref/amount_huf/currency/kind/user_id`.
+- GDPR `anonymize_user`: csak service_role hívhatja (REST-ről admin sem);
+  sentinel-profil, review-duplikátum-kezelés, leads/sessions null-ozás,
+  push-törlés.
+
+**Audit/review során javított hibák (tanulság):**
+- BLOKKOLÓ: 8 hexjegyű „UUID"-literálok a seedben+tesztekben (Postgres 32
+  hexjegyet vár) → kanonikus pad-elés. A seed emiatt az első `db start`-on
+  elhasalt volna.
+- BLOKKOLÓ: hiányzó `pgtap` extension → minden tesztben `create extension if
+  not exists pgtap` (rollback-kel efemer).
+- Logikai: RLS USING-gal szűrt UPDATE 0 sort érint és NEM dob kivételt →
+  `throws_ok` helyett 0-soros minta + érték-változatlanság assert.
+- MAJOR (reviewer): orders pénzügyi mezők user-írhatósága; providers.tier
+  önemelés → trigger-védelem + negatív tesztek.
+
+**Follow-up (nem blokkoló):** `amount_huf` update-revert külön assert;
+`anonymize_user` runbook-jegyzet (service_role-claimmel hívandó — az Edge
+Function így teszi); CI első futásán ellenőrizni, hogy a `db start` seedel.
+
+**Környezet:** Supabase-projekt linkelve („Supbase", ref `pycsqnthxaytwaptbiph`)
+— CLI CSAK a `npm run sb --` wrapperrel (lásd CLAUDE.md: zshrc-token-csapda).
+A migrációk a távoli projektre még NINCSENEK kitolva (`npm run sb -- db push`
+a CI-zöld után esedékes).
+
+**Megjegyzések a következő lépéshez (F1.3):**
+- `supindex.*` kulcsok a seedben — az algo-engineer validálja a sávokat,
+  különösen `storm.level2_cap=0` (II. fok → index 0, spec 9. fejezet).
+- A Gauge küszöb-defaultjai (F1.1-jegyzet) innen kötendők be.
+- Weather-írás kizárólag service_role (nincs write-policy) — az Edge Function
+  ehhez igazodjon.

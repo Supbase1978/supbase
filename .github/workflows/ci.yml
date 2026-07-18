@@ -24,13 +24,19 @@ jobs:
       - name: Unit-kapu (Vitest)
         run: npm test
 
-  # F1.2-től: RLS policy-tesztek (SQL-alapú, anon/user/moderator/admin szerepben)
-  # rls-tests:
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #     - uses: supabase/setup-cli@v1
-  #     - run: supabase db start && supabase test db
+  # F1.2-től: RLS policy-tesztek (pgTAP, anon/user(confirmed/unconfirmed)/moderator/admin
+  # szerepben). Tiszta lokális Supabase-en futnak: migrációk + seed → pgTAP tesztek.
+  rls-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.100.1
+      - name: Lokális Postgres (migrációk + seed)
+        run: supabase db start
+      - name: RLS policy-tesztek (pgTAP)
+        run: supabase test db --local
 
   # F1.10-től: Playwright e2e + axe a11y kapu; Semgrep minden PR-en, Snyk heti.
   # e2e:
