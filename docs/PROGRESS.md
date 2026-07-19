@@ -10,7 +10,7 @@
 | F1.0 Projekt-setup | ✅ kész (2026-07-17) | részletek lent |
 | F1.1 Core (auth, i18n, ui-primitívek…) | ✅ kész (2026-07-17) | reviewer-jóváhagyással; részletek lent |
 | F1.2 DB (séma + RLS + seed) | ✅ kész (2026-07-18) | reviewer-jóváhagyással; futási verifikáció a CI rls-tests jobban |
-| F1.3 Weather + SUP-index | ✅ kód kész (2026-07-18) | reviewer-jóváhagyva (M1 storm-scrape-fix beépítve); hátra: functions deploy + cron bekötés (kézi, README-runbook) |
+| F1.3 Weather + SUP-index | ✅ kész (2026-07-19) | reviewer-jóváhagyva; Edge Functionök deployolva, cron aktív, élesben end-to-end verifikálva |
 | F1.4 Spots + térkép | ⬜ | |
 | F1.5 Catalog + Reviews | ⬜ | + catalog-watch séma-előkészítés (`docs/CATALOG_WATCH_TERV.md`: boards-életciklusmezők, catalog_sources, catalog_candidates, pg_trgm) |
 | F1.6 Advisor | ⬜ | |
@@ -18,6 +18,37 @@
 | F1.8 SEO-réteg | ⬜ | + jogi oldalak: ÁSZF + adatvédelmi nyilatkozat, consent-checkbox a regisztrációban (spec F1-fázislista + 11.4) |
 | F1.9 Push + viharjelzés | ⬜ | |
 | F1.10 Záró audit + élesítés | ⬜ | |
+
+## ITINER a következő sessionnek (2026-07-19-i állapot)
+
+**Következő lépés: F1.4 — Spots-modul: térkép (MapLibre), spot-lista/adatlap,
+rétegek, spot_reports [ui-builder + scaffolder].** Induláskor olvasd el az
+F1.3-fejezet follow-upjait, KIEMELTEN az m5 átadási feltételt: II. fokú
+viharjelzésnél (`flags.stormLevel===2`) a UI „Tilos"-t (i18n `status.forbidden`)
+renderel, NEM a danger-„Veszélyes"-t. A weather-modul fogyasztása:
+`src/modules/weather/` (computeSupIndex, reading.ts a stale-hez, weather i18n
+namespace); a friss adat a `weather_snapshots`-ból jön (óránkénti cron tölti).
+
+**Nyitott kis tételek (nem blokkolók):**
+- m3: `supindex.stale_minutes` holt seed-kulcs — bekötni vagy kivenni (db-engineer).
+- m4 (F1.9): Open-Meteo `observed_at` tárolása a `fetched_at` mellett.
+- F1.2-reviewer follow-up: `amount_huf` update-revert assert; `anonymize_user`
+  runbook-jegyzet (service_role-claimmel hívandó).
+- Biztonsági ajánlás: a `.env`-beli Supabase access token forgatható (a session
+  során fájlba/beszélgetésbe került); a ~/.zshrc:5 régi globális token-exportja
+  kivehető, ha a régi projektekhez már nem kell.
+- storm-alert szezonon kívül: a cron hónapmezeje (`4-10`) intézi; ellenőrzés
+  tavasszal.
+
+**Környezet-emlékeztetők:** Supabase CLI CSAK `npm run sb --` wrapperrel
+(CLAUDE.md, zshrc-csapda) · a gépen nincs Docker/helyi Postgres — RLS-teszt
+verifikáció a CI `rls-tests` jobban · deploy/cron/SQL a Management API-n vagy
+a wrapperen át megy, éles művelethez felhasználói jóváhagyás kell.
+
+**Távolabbi, már bejegyzett tételek:** F1.5-nél catalog-watch séma-előkészítés
+(`docs/CATALOG_WATCH_TERV.md`) · F1.8-nál ÁSZF + adatvédelmi nyilatkozat +
+consent-checkbox · F1.9-nél `notifyStormChange()` push + HydroInfo vízállás +
+Fertő-forrás kérdése.
 
 ## F1.0 — Projekt-setup (2026-07-17)
 
@@ -212,7 +243,24 @@ javítva) · m6 (explicit verify_jwt=true a config.toml-ben — javítva).
   „Tilos" státuszt kell rendernie (i18n `status.forbidden`), NEM a
   danger-„Veszélyes"-t — a status-enum önmagában nem elég.
 
-**Hátra (F1.3 zárás):** deploy+cron bekötése (kézi, runbook a README-ben;
-felhasználói jóváhagyással); F1.9-hook: `notifyStormChange()` push + HydroInfo.
-**Megjegyzés:** az 1. kört az algo-engineer session-limit szakította meg — a
-hiányzó adapter-tesztet és az i18n-bekötést a karmester pótolta.
+**Élesítés (2026-07-18/19, felhasználói jóváhagyással) — KÉSZ:**
+- Mindkét Edge Function deployolva a „Supbase" projektre (`npm run sb --
+  functions deploy weather-sync|storm-alert`).
+- Cron aktív (pg_cron + pg_net): `weather-sync-hourly` (`0 * * * *`) és
+  `storm-alert-5min-season` (`*/5 * * 4-10 *`). A service-kulcs a Supabase
+  **Vaultban** (`edge_invoke_key`) — a cron-parancsok a
+  `vault.decrypted_secrets`-ből olvassák, literálként sehol nincs.
+- Éles verifikáció: weather-sync → 200, 15/15 spot snapshot + SUP-index
+  (3–10 közti értékek); storm-alert → 200, 3 körzet scrape, pozitívan
+  megerősített 0-s fokozat, `verify_jwt` 401 auth nélkül.
+- **Éles teszt fogta + javítva:** az eredeti forrás-URL 404 volt → valódi
+  forrás felderítve: met.hu TAVANKÉNTI `main.php` (Balaton medencénként; 0-s
+  állapot szövege: „a viharjelző rendszer ALAPON VAN" — felvéve a pozitív
+  minták közé). Körzet→URL forráslista (`DEFAULT_STORM_SOURCES`,
+  `STORM_SOURCES` env-felülírás), fokozat-ikon (`viharjelzesN.png`) másodlagos
+  jelként, szöveg–kép eltérésnél a magasabb győz. Valódi letöltött fixture-ök.
+  **Fertő-korlát:** nincs HungaroMet-forrása → unknown/fail-safe (README).
+
+**Megjegyzés:** az 1. kört az algo-engineer session-limit szakította meg (a
+hiányzó adapter-tesztet és az i18n-bekötést a karmester pótolta); a forrás-
+átállítást session-limit + classifier-kiesés miatt szintén a karmester írta.
