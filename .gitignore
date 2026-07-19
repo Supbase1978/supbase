@@ -10,6 +10,7 @@ build/
 coverage/
 playwright-report/
 test-results/
+.playwright-mcp/
 
 # Claude Design export — csak olvasható referencia, nem verziózzuk (11.5)
 _design-source/

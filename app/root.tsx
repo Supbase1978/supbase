@@ -16,6 +16,7 @@ import { createI18n, getLocaleFromPath } from "@core/i18n";
 import "@modules/registry-i18n";
 
 import type { Route } from "./+types/root";
+import { AppNav } from "./nav";
 import "./app.css";
 
 export const links: Route.LinksFunction = () => [
@@ -56,7 +57,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
-  return <Outlet />;
+  return (
+    <>
+      <AppNav />
+      <Outlet />
+    </>
+  );
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {

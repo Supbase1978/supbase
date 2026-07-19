@@ -11,7 +11,7 @@
 | F1.1 Core (auth, i18n, ui-primitívek…) | ✅ kész (2026-07-17) | reviewer-jóváhagyással; részletek lent |
 | F1.2 DB (séma + RLS + seed) | ✅ kész (2026-07-18) | reviewer-jóváhagyással; futási verifikáció a CI rls-tests jobban |
 | F1.3 Weather + SUP-index | ✅ kész (2026-07-19) | reviewer-jóváhagyva; Edge Functionök deployolva, cron aktív, élesben end-to-end verifikálva |
-| F1.4 Spots + térkép | ⬜ | |
+| F1.4 Spots + térkép | ✅ kész (2026-07-19) | scaffolder+ui-builder+karmester; MapLibre-térkép, adatlap, spot_reports; élesben verifikálva (m5 „Tilos" éles II. fokon) |
 | F1.5 Catalog + Reviews | ⬜ | + catalog-watch séma-előkészítés (`docs/CATALOG_WATCH_TERV.md`: boards-életciklusmezők, catalog_sources, catalog_candidates, pg_trgm) |
 | F1.6 Advisor | ⬜ | |
 | F1.7 Providers | ⬜ | |
@@ -21,17 +21,31 @@
 
 ## ITINER a következő sessionnek (2026-07-19-i állapot)
 
-**Következő lépés: F1.4 — Spots-modul: térkép (MapLibre), spot-lista/adatlap,
-rétegek, spot_reports [ui-builder + scaffolder].** Induláskor olvasd el az
-F1.3-fejezet follow-upjait, KIEMELTEN az m5 átadási feltételt: II. fokú
-viharjelzésnél (`flags.stormLevel===2`) a UI „Tilos"-t (i18n `status.forbidden`)
-renderel, NEM a danger-„Veszélyes"-t. A weather-modul fogyasztása:
-`src/modules/weather/` (computeSupIndex, reading.ts a stale-hez, weather i18n
-namespace); a friss adat a `weather_snapshots`-ból jön (óránkénti cron tölti).
+**Következő lépés: F1.5 — Catalog + Reviews: deszka-adatlap, Népítélet-blokk
+(mérce-eloszlással), vélemény-flow (e-mail-gate!), flag + admin-moderáció
+[ui-builder, auth-security, scaffolder].** Plusz a catalog-watch séma-
+előkészítés (`docs/CATALOG_WATCH_TERV.md`: boards-életciklusmezők,
+catalog_sources, catalog_candidates, pg_trgm). Mintaként az F1.4 spots-modul
+áll rendelkezésre (modul-váz + route-loader/action + UI-komponensek +
+i18n-namespace + registry-i18n bekötés). A vélemény-írás RLS-gate-je
+(megerősített e-mail) ugyanaz a minta, mint a spot_reports action-jében
+(`app/routes/spotok.$slug.tsx`: requireUser + isEmailConfirmed).
 
 **Nyitott kis tételek (nem blokkolók):**
 - m3: `supindex.stale_minutes` holt seed-kulcs — bekötni vagy kivenni (db-engineer).
 - m4 (F1.9): Open-Meteo `observed_at` tárolása a `fetched_at` mellett.
+- **F1.4-utó (geom-forma):** a PostGIS `geom` a projekt PostgREST-jén
+  GeoJSON-OBJEKTUMKÉNT jön (`{type:"Point",coordinates:[lng,lat]}`), nem EWKB
+  hexként — a `data/wkb.ts` `pointFromGeom`-ja mindkettőt kezeli. Ha később
+  `distinct on`-nézetet/RPC-t vezetünk be a snapshotokhoz (lásd lent), a geom-
+  select formája ellenőrizendő.
+- **F1.4-utó (snapshot-lekérdezés):** `listLatestSnapshots` naiv (utolsó 200
+  sor + JS-reduce). Spot-/snapshot-szám növekedésénél `distinct on (spot_id)
+  ... order by spot_id, fetched_at desc` nézet/RPC (db-engineer).
+- **F1.4-utó (MapLibre-warning):** az OpenFreeMap-stílus renderelésekor 3×
+  „Expected value to be of type number, but found null" konzol-warning jön a
+  maplibre-gl workeréből (stílus-kifejezés, nem a mi kódunk) — ártalmatlan,
+  de F1.10 audit-nál nézni, elnémítható-e.
 - F1.2-reviewer follow-up: `amount_huf` update-revert assert; `anonymize_user`
   runbook-jegyzet (service_role-claimmel hívandó).
 - Biztonsági ajánlás: a `.env`-beli Supabase access token forgatható (a session
@@ -264,3 +278,66 @@ javítva) · m6 (explicit verify_jwt=true a config.toml-ben — javítva).
 **Megjegyzés:** az 1. kört az algo-engineer session-limit szakította meg (a
 hiányzó adapter-tesztet és az i18n-bekötést a karmester pótolta); a forrás-
 átállítást session-limit + classifier-kiesés miatt szintén a karmester írta.
+
+## F1.4 — Spots + térkép (2026-07-19)
+
+Kiosztás: scaffolder (modul-váz) → ui-builder (UI) → karmester-integráció +
+verifikáció. A ui-buildert session-limit szakította meg; a route-integrációt
+(SpotMap/SpotCard/StormAlert bekötése a loaderekbe), az éles verifikációt és a
+javításokat a karmester végezte. Kapuk záráskor zöldek: typecheck · lint ·
+265 vitest (18 új F1.4-teszt).
+
+**Elkészült:**
+- `src/modules/spots/`: route-os manifeszt (`spotok`, `spotok/:slug`) +
+  registry- és registry-i18n-regisztráció; `spots` i18n-namespace (hu forrás,
+  en tükör; kulcs-paritás ellenőrizve).
+- **Modul-szerződés betartva:** a spots-modul NEM importál a weather-modulból —
+  a SUP-index kiértékelés (`evaluateSnapshot`) kizárólag a route-rétegben
+  (`app/routes/spotok*.tsx`) történik, a spots saját `SpotStatus` típusára
+  képezve. Az m5 „forbidden" leképezés (`storm_level===2 → "forbidden"`) is itt.
+- `data/wkb.ts`: `parseEwkbPoint` (EWKB hex) + `pointFromGeom` (GeoJSON-objektum
+  VAGY hex — az éles PostgREST-forma GeoJSON, lásd follow-up); `data/spots.server.ts`
+  injektált klienssel (listSpots, getSpotBySlug slug-alak-guarddal, latest-
+  snapshot reduce, reports CRUD).
+- `ui/SpotMap.tsx`: MapLibre GL, kizárólag kliens-oldali init (dinamikus import,
+  SSR-placeholder), OpenFreeMap kulcs nélküli stílus, OSM-attribúció; token-
+  színes + színtévesztő-biztos (eltérő ikon-geometria) markerek, popup
+  „Adatlap"-linkkel, réteg-kapcsolók (Spotok/Védett területek).
+- `ui/SpotCard.tsx`: Waterline (kártyán VONAL), StatusBadge, DataAge, flag-
+  jelvények. `ui/StormAlertScreen.tsx`: teljes képernyős, nem eldugható
+  `role="alertdialog"`, 3 MIT TEGYÉL-lépés, amber vízimentő-CTA sötét felirattal
+  (`tel:+36303838383`), forrás+időbélyeg.
+- Lista-route: térkép + waterType-szűrőchipek (a térkép a szűrt listát kapja) +
+  SpotCard-rács. Adatlap-route: fejléc-StatusBadge, Gauge (küszöbök a
+  `supindex.*` konfigból), indoklás (weather reason-kulcs a route-rétegben
+  fordítva), stale-blokk, besodró/neoprén figyelmeztetések, természetvédelmi
+  sáv, mini-térkép, jelentés-lista + űrlap (requireUser + e-mail-gate).
+- Fejléc-navigáció: `app/nav.tsx` a modul-manifesztek `primary` nav-
+  bejegyzéseiből (registry-vezérelt — új modul automatikusan megjelenik).
+
+**Éles verifikáció (Playwright, dev-szerver a távoli „Supbase" projekttel):**
+- Lista: 15 marker renderel a térképen, kártyák helyes SUP-index/státusz/
+  adatkor-jelzéssel; a waterType-szűrő a kártyákat ÉS a markereket is szűri.
+- **m5 ÁTADÁSI FELTÉTEL ÉLESBEN IGAZOLVA:** a verifikáció közben a storm-alert
+  cron valós II. fokot állított a Balatonra → a Balaton-spotok „Tilos · 0,0"-t
+  mutatnak (nem „Veszélyes"), az adatlapon a teljes képernyős StormAlertScreen
+  renderel (alertdialog, MIT TEGYÉL, vízimentő-CTA, forrás „bm-okf").
+- Adatlap: Gauge kitöltött+csíkozott (stale) állapotban, indoklás, adatmezők,
+  404 ismeretlen slugra.
+
+**Verifikáció fogta + javítva (a karmester javításai):**
+- **BLOKKOLÓ volt:** a térképen 0 marker jelent meg — a PostgREST a `geom`-ot
+  GeoJSON-objektumként adja, nem EWKB hexként, amire a `parseEwkbPoint` épült.
+  → `pointFromGeom` mindkét formára (GeoJSON + hex), a route-ok erre váltva,
+  `SpotRow.geom: unknown`, 4 új teszt. (15/15 marker renderel.)
+- **Layout-hiba:** az adatlap mini-térképe 0 magas volt (`h-full` a SpotMap
+  bázisán tartalom-magasságú `<section>`-ben 0-ra oldódott) → `h-full` kivéve a
+  bázisból, a magasságot a hívó explicit `className`-je adja (a `min-h` alsó
+  korlát marad). (240px, a marker a Tiszán renderel.)
+- **Biztonsági keményítés:** `getSpotBySlug` a slug-ot nyersen fűzte a PostgREST
+  `.or()` szűrő-stringbe → slug-alak-guard (`^[a-z0-9-]+$`) a szűrő-injektálás
+  ellen, 4 negatív teszt.
+
+**Follow-upok (nem blokkolók) — az ITINER „Nyitott kis tételek" közé felvéve:**
+geom-forma dokumentálva, `listLatestSnapshots` distinct-on-nézetre cserélhető,
+MapLibre null-warning az F1.10 auditra.

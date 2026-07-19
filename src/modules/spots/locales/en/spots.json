@@ -1,0 +1,97 @@
+{
+  "nav": {
+    "spots": "Spots"
+  },
+  "list": {
+    "title": "Spots",
+    "lead": "Explore Hungary's SUP spots — current water conditions and SUP index for every location.",
+    "empty": "No spots are available yet."
+  },
+  "waterType": {
+    "to": "Lake",
+    "folyo": "River",
+    "holtag": "Oxbow lake",
+    "csatorna": "Canal"
+  },
+  "difficulty": {
+    "konnyu": "Easy",
+    "kozepes": "Intermediate",
+    "halado": "Advanced"
+  },
+  "status": {
+    "safe": "Excellent",
+    "caution": "Caution",
+    "danger": "Dangerous",
+    "forbidden": "Forbidden",
+    "unknown": "No data"
+  },
+  "stale": {
+    "label": "Stale data",
+    "hint": "The reading is more than 30 minutes old — not current."
+  },
+  "flag": {
+    "offshoreWind": "Offshore wind",
+    "offshoreWindHint": "The wind pushes from the shore toward open water — do not drift away from the shore.",
+    "neoprene": "Cold water — wetsuit recommended"
+  },
+  "map": {
+    "title": "Map",
+    "layers": "Layers",
+    "layerSpots": "Spots",
+    "layerProtected": "Protected areas",
+    "openDetail": "Details",
+    "focusMap": "The spot's location on the map"
+  },
+  "detail": {
+    "season": "Season",
+    "access": "Access",
+    "safety": "Safety notes",
+    "protectedArea": "Protected area",
+    "protectedRules": "Rules",
+    "supIndex": "SUP index",
+    "region": "Region",
+    "stormRegion": "Storm warning region",
+    "noSnapshot": "There is no reading for this spot yet.",
+    "wind": "Wind",
+    "gust": "Gust",
+    "waterTemp": "Water temperature",
+    "airTemp": "Air temperature",
+    "wave": "Wave",
+    "map": "Map"
+  },
+  "reports": {
+    "title": "Recent reports",
+    "empty": "No reports have been submitted for this spot yet.",
+    "formTitle": "I was just here",
+    "conditionsLabel": "Conditions",
+    "conditions": {
+      "nyugodt": "Calm",
+      "fodrozodo": "Rippled",
+      "hullamzo": "Choppy",
+      "veszelyes": "Dangerous"
+    },
+    "note": "Note (optional)",
+    "submit": "Submit report",
+    "loginPrompt": "Sign in to submit a report.",
+    "loginCta": "Sign in",
+    "confirmPrompt": "Confirm your e-mail address to submit this.",
+    "success": "Thank you, your report has been recorded.",
+    "error": "Submission failed — please try again.",
+    "invalidConditions": "Invalid condition value."
+  },
+  "stormAlert": {
+    "eyebrow": "Level 2 storm warning",
+    "headline": "Get to shore now!",
+    "body": "A level 2 storm warning is in effect near {{spotName}} — staying on the water with a SUP is forbidden and life-threatening.",
+    "bodyGust": "Expected gusts: {{gust}} km/h.",
+    "whatToDo": "WHAT TO DO",
+    "steps": {
+      "1": "Paddle to the nearest shore — not necessarily back to your starting point if that is farther away.",
+      "2": "If you cannot reach the shore: kneel down, reduce your wind profile, keep your ankle leash on.",
+      "3": "If you are in trouble, call water rescue: +36 30 383 8383."
+    },
+    "callRescue": "Call water rescue",
+    "source": "Source",
+    "updated": "Updated"
+  }
+}

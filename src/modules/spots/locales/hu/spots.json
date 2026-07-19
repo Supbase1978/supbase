@@ -1,0 +1,97 @@
+{
+  "nav": {
+    "spots": "Spotok"
+  },
+  "list": {
+    "title": "Spotok",
+    "lead": "Fedezd fel Magyarország SUP-spotjait — aktuális vízi körülmények és SUP-index minden helyszínen.",
+    "empty": "Egyelőre nincs elérhető spot."
+  },
+  "waterType": {
+    "to": "Tó",
+    "folyo": "Folyó",
+    "holtag": "Holtág",
+    "csatorna": "Csatorna"
+  },
+  "difficulty": {
+    "konnyu": "Könnyű",
+    "kozepes": "Közepes",
+    "halado": "Haladó"
+  },
+  "status": {
+    "safe": "Kiváló",
+    "caution": "Óvatosan",
+    "danger": "Veszélyes",
+    "forbidden": "Tilos",
+    "unknown": "Nincs adat"
+  },
+  "stale": {
+    "label": "Elavult adat",
+    "hint": "A mérés több mint 30 perce frissült — nem aktuális."
+  },
+  "flag": {
+    "offshoreWind": "Besodró szél",
+    "offshoreWindHint": "A szél a part felől a nyílt víz felé sodor — a parttól ne távolodj el.",
+    "neoprene": "Hideg víz — neoprén ajánlott"
+  },
+  "map": {
+    "title": "Térkép",
+    "layers": "Rétegek",
+    "layerSpots": "Spotok",
+    "layerProtected": "Védett területek",
+    "openDetail": "Adatlap",
+    "focusMap": "A spot helye a térképen"
+  },
+  "detail": {
+    "season": "Szezon",
+    "access": "Megközelítés",
+    "safety": "Biztonsági tudnivalók",
+    "protectedArea": "Természetvédelmi terület",
+    "protectedRules": "Szabályok",
+    "supIndex": "SUP-index",
+    "region": "Régió",
+    "stormRegion": "Viharjelzési körzet",
+    "noSnapshot": "Ehhez a spothoz még nincs mérés.",
+    "wind": "Szél",
+    "gust": "Lökés",
+    "waterTemp": "Vízhőmérséklet",
+    "airTemp": "Léghőmérséklet",
+    "wave": "Hullámzás",
+    "map": "Térkép"
+  },
+  "reports": {
+    "title": "Friss jelentések",
+    "empty": "Ehhez a spothoz még nem érkezett jelentés.",
+    "formTitle": "Most itt voltam",
+    "conditionsLabel": "Körülmények",
+    "conditions": {
+      "nyugodt": "Nyugodt",
+      "fodrozodo": "Fodrozódó",
+      "hullamzo": "Hullámzó",
+      "veszelyes": "Veszélyes"
+    },
+    "note": "Megjegyzés (opcionális)",
+    "submit": "Jelentés beküldése",
+    "loginPrompt": "Jelentés beküldéséhez jelentkezz be.",
+    "loginCta": "Belépés",
+    "confirmPrompt": "A beküldéshez erősítsd meg az e-mail-címed.",
+    "success": "Köszönjük, a jelentésed rögzítettük.",
+    "error": "A beküldés nem sikerült — próbáld újra.",
+    "invalidConditions": "Érvénytelen körülmény-érték."
+  },
+  "stormAlert": {
+    "eyebrow": "II. fokú viharjelzés",
+    "headline": "Azonnal menj partra!",
+    "body": "{{spotName}} környékén másodfokú viharjelzés van érvényben — SUP-pal a vízen tartózkodni tilos és életveszélyes.",
+    "bodyGust": "Várható széllökés: {{gust}} km/h.",
+    "whatToDo": "MIT TEGYÉL",
+    "steps": {
+      "1": "Evezz a legközelebbi part felé — ne a kiindulási pont felé, ha az messzebb van.",
+      "2": "Ha nem érsz partot: térdelj le, csökkentsd a szélfelületet, a bokapórázt ne oldd ki.",
+      "3": "Baj esetén hívd a vízimentőket: +36 30 383 8383."
+    },
+    "callRescue": "Vízimentők hívása",
+    "source": "Forrás",
+    "updated": "Frissítve"
+  }
+}

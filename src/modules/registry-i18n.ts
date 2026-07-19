@@ -7,3 +7,4 @@
  * importálja (bundle-kontextus, tsconfig-alias él).
  */
 import "./weather/i18n";
+import "./spots/i18n";
