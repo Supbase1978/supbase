@@ -1,0 +1,68 @@
+{
+  "block": {
+    "title": "Népítélet",
+    "count": "{{count}} értékelés",
+    "recommend": "{{percent}}% ajánlaná",
+    "verifiedCount": "{{count}} hitelesített tulajdonos",
+    "empty": "Erről a deszkáról még nincs értékelés — legyél te az első!"
+  },
+  "dim": {
+    "overall": "Összesített",
+    "stability": "Stabilitás",
+    "glide": "Siklás",
+    "build": "Építés/minőség",
+    "value": "Ár-érték"
+  },
+  "verifiedOwner": "Hitelesített tulajdonos",
+  "waterType": {
+    "to": "Tó",
+    "folyo": "Folyó",
+    "tenger": "Tenger"
+  },
+  "form": {
+    "title": "Írj értékelést",
+    "overall": "Összbenyomás",
+    "stability": "Stabilitás",
+    "glide": "Siklás",
+    "build": "Építés/minőség",
+    "value": "Ár-érték",
+    "pros": "Mi tetszett?",
+    "cons": "Mi nem tetszett?",
+    "usedWaterType": "Hol használtad?",
+    "submit": "Értékelés beküldése",
+    "loginPrompt": "Értékelés írásához jelentkezz be.",
+    "loginCta": "Belépés",
+    "confirmPrompt": "A beküldéshez erősítsd meg az e-mail-címed.",
+    "alreadyReviewed": "Erről a deszkáról már írtál értékelést.",
+    "success": "Köszönjük az értékelésed!",
+    "error": "A beküldés nem sikerült.",
+    "invalidRating": "Az összbenyomás 1–5 közötti kötelező."
+  },
+  "flag": {
+    "action": "Jelentés",
+    "reason": "Jelentés oka",
+    "reasonOption": {
+      "spam": "Spam",
+      "offensive": "Sértő",
+      "fake": "Hamis",
+      "other": "Egyéb"
+    },
+    "submit": "Jelentés elküldése",
+    "success": "Köszönjük, megvizsgáljuk.",
+    "error": "A jelentés nem sikerült.",
+    "loginPrompt": "Jelentéshez jelentkezz be."
+  },
+  "admin": {
+    "title": "Vélemény-moderáció",
+    "pending": "Jóváhagyásra vár",
+    "flagged": "Jelentett vélemények",
+    "hide": "Elrejtés",
+    "unhide": "Újra közzététel",
+    "verify": "Hitelesített tulajdonos jelölése",
+    "unverify": "Hitelesítés visszavonása",
+    "resolveFlag": "Jelzés lezárása",
+    "empty": "Nincs moderálandó elem.",
+    "reasonLabel": "Ok",
+    "statusLabel": "Állapot"
+  }
+}

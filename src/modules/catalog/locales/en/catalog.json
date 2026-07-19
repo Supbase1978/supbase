@@ -1,0 +1,42 @@
+{
+  "nav": {
+    "boards": "Boards"
+  },
+  "list": {
+    "title": "Boards",
+    "lead": "Browse SUP boards — specs, community verdict and shop prices in one place.",
+    "empty": "No boards available yet."
+  },
+  "boardType": {
+    "allround": "All-round",
+    "touring": "Touring",
+    "race": "Race",
+    "yoga": "Yoga",
+    "kids": "Kids",
+    "fishing": "Fishing",
+    "river": "River"
+  },
+  "inflatable": {
+    "true": "Inflatable",
+    "false": "Rigid"
+  },
+  "spec": {
+    "length": "Length",
+    "width": "Width",
+    "thickness": "Thickness",
+    "volume": "Volume",
+    "weight": "Weight",
+    "maxLoad": "Max load",
+    "riderWeight": "Rider weight",
+    "stabilityIndex": "Stability index",
+    "year": "Year"
+  },
+  "detail": {
+    "description": "Description",
+    "specs": "Specs",
+    "prices": "Where to buy",
+    "priceFrom": "from",
+    "manual": "Manual",
+    "noPrices": "No shop price at the moment."
+  }
+}

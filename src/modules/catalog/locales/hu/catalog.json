@@ -1,0 +1,42 @@
+{
+  "nav": {
+    "boards": "Deszkák"
+  },
+  "list": {
+    "title": "Deszkák",
+    "lead": "Böngéssz a SUP-deszkák között — paraméterek, Népítélet és bolti árak egy helyen.",
+    "empty": "Egyelőre nincs elérhető deszka."
+  },
+  "boardType": {
+    "allround": "Allround",
+    "touring": "Túra",
+    "race": "Verseny",
+    "yoga": "Jóga",
+    "kids": "Gyerek",
+    "fishing": "Horgász",
+    "river": "Folyó"
+  },
+  "inflatable": {
+    "true": "Felfújható",
+    "false": "Merev"
+  },
+  "spec": {
+    "length": "Hossz",
+    "width": "Szélesség",
+    "thickness": "Vastagság",
+    "volume": "Térfogat",
+    "weight": "Tömeg",
+    "maxLoad": "Max terhelés",
+    "riderWeight": "Ajánlott testsúly",
+    "stabilityIndex": "Stabilitási index",
+    "year": "Évjárat"
+  },
+  "detail": {
+    "description": "Leírás",
+    "specs": "Paraméterek",
+    "prices": "Hol kapható",
+    "priceFrom": "-tól",
+    "manual": "Kézikönyv",
+    "noPrices": "Jelenleg nincs bolti ár."
+  }
+}

@@ -12,7 +12,7 @@
 | F1.2 DB (séma + RLS + seed) | ✅ kész (2026-07-18) | reviewer-jóváhagyással; futási verifikáció a CI rls-tests jobban |
 | F1.3 Weather + SUP-index | ✅ kész (2026-07-19) | reviewer-jóváhagyva; Edge Functionök deployolva, cron aktív, élesben end-to-end verifikálva |
 | F1.4 Spots + térkép | ✅ kész (2026-07-19) | scaffolder+ui-builder+karmester; MapLibre-térkép, adatlap, spot_reports; élesben verifikálva (m5 „Tilos" éles II. fokon) |
-| F1.5 Catalog + Reviews | ⬜ | + catalog-watch séma-előkészítés (`docs/CATALOG_WATCH_TERV.md`: boards-életciklusmezők, catalog_sources, catalog_candidates, pg_trgm) |
+| F1.5 Catalog + Reviews | 🟡 mag kész (2026-07-19) | catalog+reviews modulok, deszka-lista/adatlap, Népítélet-aggregátor, e-mail-gate-elt vélemény+flag flow, admin-moderáció; verifikálva. HÁTRA: UI-polish (RatingBar/hero), catalog-watch séma-előkészítés, auth-flow verifikáció |
 | F1.6 Advisor | ⬜ | |
 | F1.7 Providers | ⬜ | |
 | F1.8 SEO-réteg | ⬜ | + jogi oldalak: ÁSZF + adatvédelmi nyilatkozat, consent-checkbox a regisztrációban (spec F1-fázislista + 11.4) |
@@ -21,15 +21,23 @@
 
 ## ITINER a következő sessionnek (2026-07-19-i állapot)
 
-**Következő lépés: F1.5 — Catalog + Reviews: deszka-adatlap, Népítélet-blokk
-(mérce-eloszlással), vélemény-flow (e-mail-gate!), flag + admin-moderáció
-[ui-builder, auth-security, scaffolder].** Plusz a catalog-watch séma-
-előkészítés (`docs/CATALOG_WATCH_TERV.md`: boards-életciklusmezők,
-catalog_sources, catalog_candidates, pg_trgm). Mintaként az F1.4 spots-modul
-áll rendelkezésre (modul-váz + route-loader/action + UI-komponensek +
-i18n-namespace + registry-i18n bekötés). A vélemény-írás RLS-gate-je
-(megerősített e-mail) ugyanaz a minta, mint a spot_reports action-jében
-(`app/routes/spotok.$slug.tsx`: requireUser + isEmailConfirmed).
+**Következő lépés: F1.5 BEFEJEZÉSE — a funkcionális mag KÉSZ és verifikálva
+(lásd az F1.5-fejezetet lent), három tétel maradt:**
+1. **UI-polish (ui-builder):** a Népítélet dimenzió-sorok RatingBar-ra (10-seg,
+   NEM a biztonsági Gauge, NEM danger-piros; a szám mindig a sáv mellett),
+   deszka-hero (kép), BoardCard-finomítás, flag-UX (felugró forma). A route-ok
+   már átadják a `dimensionsTen`/`overallTen` 10-es értékeket és minden propot.
+2. **catalog-watch séma-előkészítés (db-engineer):** `docs/CATALOG_WATCH_TERV.md`
+   „Adatmodell" szakasza — ÚJ migráció: boards-életciklusmezők, `catalog_sources`,
+   `catalog_candidates`, pg_trgm. A catalog `BoardRow` típus bővítendő az új
+   életciklus-mezőkkel, ha bekerülnek.
+3. **auth-flow verifikáció:** a vélemény-beküldés + Népítélet-adattal-render +
+   admin-moderáció bejelentkezett, megerősített (moderátor) userrel — ehhez
+   teszt-fiók kell (a mostani verifikáció a kijelentkezett/gate-elt állapotot +
+   az RLS-t/aggregátor-unit-teszteket fedte).
+
+Mintaként az F1.4 spots-modul áll rendelkezésre; a vélemény/flag RLS-gate ugyanaz
+a minta, mint a spot_reports action-jében.
 
 **Nyitott kis tételek (nem blokkolók):**
 - m3: `supindex.stale_minutes` holt seed-kulcs — bekötni vagy kivenni (db-engineer).
@@ -341,3 +349,51 @@ javításokat a karmester végezte. Kapuk záráskor zöldek: typecheck · lint 
 **Follow-upok (nem blokkolók) — az ITINER „Nyitott kis tételek" közé felvéve:**
 geom-forma dokumentálva, `listLatestSnapshots` distinct-on-nézetre cserélhető,
 MapLibre null-warning az F1.10 auditra.
+
+## F1.5 — Catalog + Reviews (2026-07-19, funkcionális mag)
+
+A scaffolder session-limitbe futott (a subagent-kvóta ezen a napon szűk volt),
+így a teljes vázat a karmester írta, az F1.4-mintát követve. A DB-séma és RLS
+már F1.2-ben kész (catalog + reviews migrációk), ezért F1.5 UI + route +
+adatréteg + i18n, ÚJ core-migráció nélkül. Kapuk zöldek: typecheck · lint ·
+276 vitest (11 új). Éles Playwright-verifikáció (dev + távoli „Supbase").
+
+**Elkészült:**
+- **Két külön modul** a modul-szerződés szerint: `catalog` (brands/boards/
+  board_prices adat + deszka-lista/adatlap) és `reviews` (board_reviews/
+  review_flags adat + Népítélet-aggregátor + admin-moderáció). A catalog NEM
+  importál reviews-t és fordítva — a deszka-adatlap a KETTŐT a ROUTE-rétegben
+  (`app/routes/deszkak.$slug.tsx`) komponálja (mint a spots↔weather).
+- `catalog/data/boards.server.ts`: listBoards (brand-join), getBoardBySlug
+  (slug-alak-guard `^[a-z0-9-]+$` a `.or()` szűrő-injektálás ellen, negatív
+  teszt), listBoardPrices (legolcsóbb elöl).
+- `reviews/aggregate.ts`: tiszta `computeReviewAggregate` (csak publikált sorok;
+  count, avgOverall 1–5, dimenzió-átlagok, %ajánlaná, verifiedCount) + `toTen`
+  (1–5 → 10-es mérce); táblázatos határeset-tesztek (üres, hidden-szűrés,
+  kerekítés 4,55→4,6, null-dimenzió, %recommend, verified).
+- `reviews/data/reviews.server.ts`: listReviews (publishedOnly), getUserReview
+  (1/deszka), insertReview (rating 1–5 validálás + `23505` unique→„már írtál"),
+  insertFlag, és ADMIN: listPendingReviews, listFlaggedReviews (feloldatlan
+  jelzés → két lépéses JS-párosítás), setReviewStatus, setVerifiedOwner,
+  resolveFlag (moderátori jog, RLS + requireRole a védőháló).
+- Route-ok: `/deszkak` (lista), `/deszkak/:slug` (adatlap: hero + spec + Népítélet
+  + vélemény-lista + e-mail-gate-elt vélemény-űrlap + flag + árak; action
+  `intent`-tel review/flag), `/admin/velemenyek` (reviews adminPanel,
+  requireRole('moderator') loaderben ÉS actionben, moderációs gombok).
+- i18n: `catalog` + `reviews` namespace (hu forrás, en tükör, kulcs-paritás
+  ellenőrizve); a nav automatikusan hozza a „Deszkák"-at.
+
+**Verifikáció (Playwright + curl):** lista 20 deszkával renderel (típus-badge,
+méret + stabilitási index); adatlap: Ride 10'6" fejléc + ár „429 000 Ft-tól",
+Paraméterek, Népítélet ÜRES-állapot, vélemény-űrlap login-gate, árak; admin
+route 302 (requireRole átirányít kijelentkezve); 404 ismeretlen slugra; nincs
+konzol-hiba.
+
+**Token-megkötés a ui-builder-polishoz (route-kommentben is):** a Népítélet
+mércék NEM a biztonsági Gauge-ot használják (veszély-szemantika), és a `--danger`
+(piros) értékelés-sávon TILOS — külön RatingBar kell (petrol/semleges v.
+safe/caution), a szám mindig a sáv mellett. A loader már átadja a 10-es
+`dimensionsTen`/`overallTen` értékeket.
+
+**HÁTRA (lásd ITINER):** UI-polish (RatingBar/hero/flag-UX), catalog-watch
+séma-előkészítés (db-engineer), auth-flow verifikáció teszt-fiókkal.

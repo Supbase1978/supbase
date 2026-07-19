@@ -1,0 +1,68 @@
+{
+  "block": {
+    "title": "Community verdict",
+    "count": "{{count}} reviews",
+    "recommend": "{{percent}}% would recommend",
+    "verifiedCount": "{{count}} verified owners",
+    "empty": "No reviews for this board yet — be the first!"
+  },
+  "dim": {
+    "overall": "Overall",
+    "stability": "Stability",
+    "glide": "Glide",
+    "build": "Build quality",
+    "value": "Value"
+  },
+  "verifiedOwner": "Verified owner",
+  "waterType": {
+    "to": "Lake",
+    "folyo": "River",
+    "tenger": "Sea"
+  },
+  "form": {
+    "title": "Write a review",
+    "overall": "Overall impression",
+    "stability": "Stability",
+    "glide": "Glide",
+    "build": "Build quality",
+    "value": "Value",
+    "pros": "What did you like?",
+    "cons": "What didn't you like?",
+    "usedWaterType": "Where did you use it?",
+    "submit": "Submit review",
+    "loginPrompt": "Log in to write a review.",
+    "loginCta": "Log in",
+    "confirmPrompt": "Confirm your email to submit.",
+    "alreadyReviewed": "You have already reviewed this board.",
+    "success": "Thanks for your review!",
+    "error": "Submission failed.",
+    "invalidRating": "Overall impression (1–5) is required."
+  },
+  "flag": {
+    "action": "Report",
+    "reason": "Reason",
+    "reasonOption": {
+      "spam": "Spam",
+      "offensive": "Offensive",
+      "fake": "Fake",
+      "other": "Other"
+    },
+    "submit": "Send report",
+    "success": "Thanks, we'll look into it.",
+    "error": "Report failed.",
+    "loginPrompt": "Log in to report."
+  },
+  "admin": {
+    "title": "Review moderation",
+    "pending": "Awaiting approval",
+    "flagged": "Reported reviews",
+    "hide": "Hide",
+    "unhide": "Republish",
+    "verify": "Mark verified owner",
+    "unverify": "Revoke verification",
+    "resolveFlag": "Resolve flag",
+    "empty": "Nothing to moderate.",
+    "reasonLabel": "Reason",
+    "statusLabel": "Status"
+  }
+}
