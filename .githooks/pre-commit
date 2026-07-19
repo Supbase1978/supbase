@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+# Commit-kapu (CLAUDE.md „Kapu-szabály"): piros típus- vagy lint-hibával nincs
+# commit. A típus-ellenőrzés előbb `react-router typegen`-t futtat (npm-scriptek).
+# Bekötés: a package.json `prepare` scriptje állítja `git config core.hooksPath
+# .githooks`-ra (npm install után); kézzel: `git config core.hooksPath .githooks`.
+set -e
+
+cd "$(git rev-parse --show-toplevel)"
+
+echo "▶ pre-commit: typecheck…"
+npm run --silent typecheck
+
+echo "▶ pre-commit: lint…"
+npm run --silent lint
+
+echo "✓ pre-commit: típus + lint zöld"

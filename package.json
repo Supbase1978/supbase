@@ -10,7 +10,8 @@
     "typecheck": "react-router typegen && tsc --noEmit",
     "lint": "eslint .",
     "test": "vitest run --passWithNoTests",
-    "sb": "bash scripts/sb.sh"
+    "sb": "bash scripts/sb.sh",
+    "prepare": "git config core.hooksPath .githooks || true"
   },
   "dependencies": {
     "@react-router/node": "^7.6.0",

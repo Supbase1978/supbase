@@ -4,6 +4,13 @@
 [build]
   command = "npm run build:web"
   publish = "build/client"
+  # AUTO-DEPLOY KIKAPCSOLVA F1.10-ig: minden push buildjét kihagyjuk, KIVÉVE ha
+  # a legutolsó commit üzenete tartalmazza a `[deploy]` jelölőt. Az `ignore`
+  # parancs exit 0 = build kihagyása, exit 1 = build fut; a `!` negálja a
+  # grepet, így jelölő NÉLKÜL kihagy. Szándékos deployhoz: `[deploy]` a commit-
+  # üzenetbe (vagy a Netlify UI-ból „Trigger deploy"). Lokál-fejlesztésnél így
+  # nem fogy a build-perc minden pushra.
+  ignore = "! git log -1 --pretty=%B | grep -qF '[deploy]'"
 
 [dev]
   command = "npm run dev"
