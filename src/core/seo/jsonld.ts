@@ -47,7 +47,7 @@ export interface ProductJsonLdInput {
   offers?: JsonLdOffer | JsonLdOffer[];
 }
 
-/** `Product` + `AggregateRating` + `Review` (Népítélet) + `Offer` (board_prices) — deszka-adatlap. */
+/** `Product` + `AggregateRating` + `Review` (Közös nevező) + `Offer` (board_prices) — deszka-adatlap. */
 export function productJsonLd(input: ProductJsonLdInput): JsonLdObject {
   const jsonLd: JsonLdObject = {
     "@context": "https://schema.org",

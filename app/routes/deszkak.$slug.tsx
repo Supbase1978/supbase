@@ -1,13 +1,11 @@
 /**
  * /deszkak/:slug — deszka-adatlap (F1.5). A catalog (deszka) és a reviews
- * (Népítélet) modul összekötése KIZÁRÓLAG itt, a route-rétegben történik
+ * (Közös nevező) modul összekötése KIZÁRÓLAG itt, a route-rétegben történik
  * (1.3 modul-szerződés: a catalog nem importál reviews-t és fordítva).
  *
- * A komponens F1.5-vázként natív form-elemekkel épül; a ui-builder cseréli a
- * Népítélet-blokkot RatingBar-okra és finomítja a rétegeket (TODO-k jelölik).
- * TOKEN-MEGKÖTÉS (ui-builder): az értékelés-sávok NEM a biztonsági Gauge-ot
- * használják (az veszély-szemantikájú), és a `--danger` (piros) értékelés-sávon
- * TILOS — külön RatingBar (petrol/semleges vagy safe/caution), a szám mindig ott.
+ * A komponens a modulok UI-komponenseiből komponál: `BoardHero`, `ReviewSummary`
+ * (RatingBar-okkal — NEM a biztonsági Gauge, NEM danger), `ReviewCard` +
+ * `FlagButton`, plusz a natív vélemény-űrlap (e-mail-gate).
  */
 import { useTranslation } from "react-i18next";
 import { data, Form, Link } from "react-router";
@@ -18,6 +16,7 @@ import { isEmailConfirmed } from "@core/auth/email-confirmed";
 import { getLocaleFromPath, pickTranslated } from "@core/i18n";
 import { Button, Card, StatusBadge } from "@core/ui";
 import { getBoardBySlug, listBoardPrices } from "@modules/catalog/data/boards.server";
+import { BoardHero } from "@modules/catalog/ui/BoardHero";
 import { computeReviewAggregate, toTen } from "@modules/reviews/aggregate";
 import {
   getUserReview,
@@ -25,11 +24,13 @@ import {
   insertReview,
   listReviews,
 } from "@modules/reviews/data/reviews.server";
+import { FlagButton } from "@modules/reviews/ui/FlagButton";
+import { ReviewCard } from "@modules/reviews/ui/ReviewCard";
+import { ReviewSummary } from "@modules/reviews/ui/ReviewSummary";
 import {
   isFlagReason,
   isUsedWaterType,
   REVIEW_DIMENSIONS,
-  REVIEW_FLAG_REASONS,
   USED_WATER_TYPES,
   type ReviewDimension,
 } from "@modules/reviews/types";
@@ -91,6 +92,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
       inflatable: board.inflatable,
       stabilityIndex: board.stability_index,
       manualUrl: board.manual_url,
+      imageUrl: board.image_url,
       description: pickTranslated(board.description, locale) || null,
     },
     prices: prices.map((p) => ({
@@ -100,7 +102,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
       priceHuf: p.price_huf,
     })),
     aggregate,
-    // A Népítélet-mércékhez 10-es skálázott dimenzió-értékek (1–5 → *2).
+    // A Közös nevező-mércékhez 10-es skálázott dimenzió-értékek (1–5 → *2).
     dimensionsTen: Object.fromEntries(
       REVIEW_DIMENSIONS.map((dim) => [dim, toTen(aggregate.perDimension[dim])]),
     ) as Record<ReviewDimension, number | null>,
@@ -198,25 +200,18 @@ export const meta: Route.MetaFunction = ({ data: loaderData }) => {
 const RATING_OPTIONS = [1, 2, 3, 4, 5] as const;
 
 export default function BoardDetailRoute({ loaderData, actionData }: Route.ComponentProps) {
-  const { t, i18n } = useTranslation("catalog");
-  const { t: tr } = useTranslation("reviews");
+  const { t } = useTranslation("catalog");
+  const { t: tr, i18n } = useTranslation("reviews");
   const { board, prices, aggregate, dimensionsTen, overallTen, reviews, reviewForm } = loaderData;
 
   const cheapest = prices.length > 0 ? prices[0] : null;
   const nf = new Intl.NumberFormat(i18n.language);
-  const fmt1 = (v: number | null) =>
-    v === null
-      ? "—"
-      : new Intl.NumberFormat(i18n.language, {
-          minimumFractionDigits: 1,
-          maximumFractionDigits: 1,
-        }).format(v);
+  const canFlag = reviewForm.isLoggedIn && reviewForm.isEmailConfirmed;
 
   return (
     <main className="mx-auto flex min-h-svh max-w-3xl flex-col gap-6 p-4 sm:p-6">
       <header className="flex flex-col gap-2">
-        {/* TODO(ui-builder): deszka-hero (kép, „X% neked"-badge az advisorból F1.6). */}
-        <div className="h-40 w-full rounded-[var(--radius-card)] bg-mist" aria-hidden="true" />
+        <BoardHero modelName={board.modelName} imageUrl={board.imageUrl} />
         <div className="flex flex-wrap items-baseline justify-between gap-2">
           <h1
             className="text-3xl font-semibold text-ink-deep"
@@ -255,96 +250,24 @@ export default function BoardDetailRoute({ loaderData, actionData }: Route.Compo
         ) : null}
       </Card>
 
-      {/* Népítélet */}
-      <section className="flex flex-col gap-2">
-        <div className="flex items-baseline justify-between">
-          <h2 className="text-lg font-semibold text-ink-deep">{tr("block.title")}</h2>
-          {aggregate.count > 0 ? (
-            <span className="text-sm text-text-2">
-              {tr("block.count", { count: aggregate.count })}
-            </span>
-          ) : null}
-        </div>
-
-        {aggregate.count === 0 ? (
-          <Card>
-            <p className="text-sm text-text-2">{tr("block.empty")}</p>
-          </Card>
-        ) : (
-          <Card>
-            {/* TODO(ui-builder): a dimenzió-sorok RatingBar-ra (10-seg, NEM Gauge,
-                NEM danger); nagy átlag + % ajánlaná + hitelesített-szám. */}
-            <div className="flex items-center gap-4">
-              <span
-                className="text-4xl font-bold text-ink-deep"
-                style={{ fontFamily: "var(--font-display)" }}
-              >
-                {fmt1(aggregate.avgOverall)}
-              </span>
-              <div className="flex flex-col text-sm text-text-2">
-                <span>{tr("block.recommend", { percent: aggregate.percentRecommend })}</span>
-                {aggregate.verifiedCount > 0 ? (
-                  <span>{tr("block.verifiedCount", { count: aggregate.verifiedCount })}</span>
-                ) : null}
-              </div>
-            </div>
-            <dl className="mt-3 flex flex-col gap-1 text-sm text-text-2">
-              {REVIEW_DIMENSIONS.map((dim) => (
-                <div key={dim} className="flex items-center justify-between gap-3">
-                  <dt>{tr(`dim.${dim}`)}</dt>
-                  <dd className="font-semibold text-petrol-text">{fmt1(dimensionsTen[dim])}</dd>
-                </div>
-              ))}
-            </dl>
-            <p className="sr-only">{fmt1(overallTen)}</p>
-          </Card>
-        )}
-      </section>
+      {/* Közös nevező */}
+      <ReviewSummary
+        count={aggregate.count}
+        overall={aggregate.avgOverall}
+        overallTen={overallTen}
+        percentRecommend={aggregate.percentRecommend}
+        verifiedCount={aggregate.verifiedCount}
+        dimensionsTen={dimensionsTen}
+      />
 
       {/* Vélemény-lista */}
       {reviews.length > 0 ? (
         <ul className="flex flex-col gap-3">
           {reviews.map((review) => (
             <li key={review.id}>
-              <Card>
-                <div className="flex items-center justify-between gap-2">
-                  {review.verifiedOwner ? (
-                    <StatusBadge status="safe" label={tr("verifiedOwner")} />
-                  ) : (
-                    <span />
-                  )}
-                  <span className="text-sm font-semibold text-text">★ {review.ratingOverall}</span>
-                </div>
-                {review.textPros ? (
-                  <p className="mt-2 text-sm text-text-2">{review.textPros}</p>
-                ) : null}
-                {review.textCons ? (
-                  <p className="mt-1 text-sm text-text-3">{review.textCons}</p>
-                ) : null}
-                {/* TODO(ui-builder): flag-gomb egy kis felugró/rejtett formmal
-                    (reviewId + reason select). A gate: reviewForm.isLoggedIn. */}
-                {reviewForm.isLoggedIn && reviewForm.isEmailConfirmed ? (
-                  <Form method="post" className="mt-2 flex items-center gap-2">
-                    <input type="hidden" name="intent" value="flag" />
-                    <input type="hidden" name="reviewId" value={review.id} />
-                    <select
-                      name="reason"
-                      aria-label={tr("flag.reason")}
-                      defaultValue={REVIEW_FLAG_REASONS[0]}
-                      className="rounded-[var(--radius-card)] border border-line px-2 py-1 text-xs"
-                    >
-                      {REVIEW_FLAG_REASONS.map((reason) => (
-                        <option key={reason} value={reason}>
-                          {tr(`flag.reasonOption.${reason}`)}
-                        </option>
-                      ))}
-                    </select>
-                    <Button type="submit" variant="ghost">
-                      {tr("flag.action")}
-                    </Button>
-                  </Form>
-                ) : null}
-              </Card>
+              <ReviewCard review={review}>
+                {canFlag ? <FlagButton reviewId={review.id} /> : null}
+              </ReviewCard>
             </li>
           ))}
         </ul>

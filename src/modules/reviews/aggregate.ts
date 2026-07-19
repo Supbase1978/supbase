@@ -1,5 +1,5 @@
 /**
- * Tiszta Népítélet-aggregátor (3.1 board_reviews → ReviewAggregate). Csak a
+ * Tiszta Közös nevező-aggregátor (3.1 board_reviews → ReviewAggregate). Csak a
  * `status === 'published'` sorokat számolja; mellékhatás-mentes és injektált
  * bemeneten dolgozik → Supabase nélkül tesztelhető.
  */

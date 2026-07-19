@@ -6,7 +6,7 @@
  * követelmény két része:
  *   1) a felhasználó auth-rekordja törlődik;
  *   2) a `board_reviews` / `spot_reports` NEM törlődnek, hanem ANONIMIZÁLÓDNAK
- *      ("törölt felhasználó") — a Népítélet-aggregátumok így nem sérülnek.
+ *      ("törölt felhasználó") — a Közös nevező-aggregátumok így nem sérülnek.
  *
  * Az Edge Function + a hozzá tartozó SQL (anonimizáló UPDATE, majd auth-user
  * törlés) az F1.2+ feladata. Addig ez a váz beszédes `NotImplementedError`-ral

@@ -11,14 +11,14 @@
 Magyar (később közép-európai) SUP-platform, amely négy, ma sehol együtt nem létező modult egyesít:
 
 1. **Deszkaválasztó** — kétrétegű ajánlómotor (kemény szűrés + súlyozott pontozás), a platform fő belépési pontja és növekedési motorja.
-2. **Katalógus + Népítélet** — strukturált deszka-adatbázis közösségi, többdimenziós értékelésekkel.
+2. **Katalógus + Közös nevező** — strukturált deszka-adatbázis közösségi, többdimenziós értékelésekkel.
 3. **Spot-térkép + SUP-index** — SUP-ozható vizek valós idejű, SUP-specifikus időjárással, viharjelzéssel, természetvédelmi rétegekkel.
 4. **Szolgáltatói directory (B2B)** — kölcsönzők, túravezetők, oktatók; MVP-ben lead-gen, később foglalás + jutalék.
 
 **Nem funkcionális sarokkövek:** erős autentikáció · moduláris, utólag bővíthető felépítés · erős SEO (SSR + schema.org) · fizetés-készenlét (absztrakció, MVP-ben implementáció nélkül) · push értesítések (viharjelzés-riasztás) · i18n (hu elsődleges, en előkészítve) · offline-olvasás a biztonságkritikus adatokra · biztonsági szín- és adatkor-szemantika sérthetetlen.
 
 **Fázisok:**
-- **F1 (MVP, web-PWA):** Deszkaválasztó + Katalógus/Népítélet + Spot-térkép/SUP-index + szolgáltatói directory (lead-gen) + auth + SEO + web push + **jogi oldalak (ÁSZF, adatvédelmi nyilatkozat — a regisztráció személyes adatot gyűjt: e-mail, testsúly/magasság az ajánláshoz, GDPR-elfogadás a regisztrációnál).**
+- **F1 (MVP, web-PWA):** Deszkaválasztó + Katalógus/Közös nevező + Spot-térkép/SUP-index + szolgáltatói directory (lead-gen) + auth + SEO + web push + **jogi oldalak (ÁSZF, adatvédelmi nyilatkozat — a regisztráció személyes adatot gyűjt: e-mail, testsúly/magasság az ajánláshoz, GDPR-elfogadás a regisztrációnál).**
 - **F2 (natív):** Capacitor iOS/Android buildek, natív push viharriasztással, offline térképcsomagok, túranapló + GPX, **catalog-watch piacfigyelő pipeline** (automatikus modell-felderítés admin-jóváhagyással; terv: `docs/CATALOG_WATCH_TERV.md`, séma-előkészítés F1.5-ben).
 - **F3 (üzlet):** foglalási motor + Stripe Connect jutalék, használtdeszka-piactér, gamifikáció, advisor-adatriportok (B2B piackutatási termék).
 
@@ -70,7 +70,7 @@ A kód **nem tudhatja build-időben**, melyik célra megy: platform-különbség
   /modules
     /advisor              # Deszkaválasztó
     /catalog              # deszka-adatbázis + adatlapok
-    /reviews              # Népítélet (katalógustól KÜLÖN modul!)
+    /reviews              # Közös nevező (katalógustól KÜLÖN modul!)
     /spots                # spotok, spot-adatlap, spot-jelentések
     /weather              # SUP-index, időjárás-adapterek, viharjelzés
     /providers            # B2B directory
@@ -127,7 +127,7 @@ A Claude Design 2. körének kimenete. **Ezek az értékek véglegesek**, a `src
 
 **Kőbe vésett komponens-szabályok:**
 1. **Vízfelszín-vonal** (signature): kártyákon és kompakt nézetekben ez jelzi a SUP-indexet. Négy állapot: nyugodt (sima, `--safe`), fodrozódó (`--caution`), töredezett (`--danger`), elavult (szaggatott, `--stale`). A forma önmagában is megkülönböztet (színtévesztő-biztos).
-2. **Vízmérce** (10 szegmens): kizárólag részletező nézetekben (spot-adatlap SUP-index bontás, Népítélet-eloszlás). Kártya = vonal, adatlap = mérce; a kettő ugyanazt az indexet mutatja.
+2. **Vízmérce** (10 szegmens): kizárólag részletező nézetekben (spot-adatlap SUP-index bontás, Közös nevező-eloszlás). Kártya = vonal, adatlap = mérce; a kettő ugyanazt az indexet mutatja.
 3. **Státusz mindig szín + ikon + szöveg** hármasban jelenik meg, soha nem csak színnel.
 4. **II. fokú viharjelzés** = teljes képernyős, nem eldugható riasztás, "MIT TEGYÉL" lépésekkel és vízimentő-hívás gombbal (+36 30 383 8383), forrás- és időbélyeg-felirattal.
 5. **Adatkor**: minden időjárás/vízadat mellett `frissítve X perce`; 30 percnél régebbi adat automatikusan "Elavult adat" state-be vált (vonal szaggatottra, mérce csíkozottra). Cache-elt viharjelzés SOHA nem jelenhet meg aktuálisként.
@@ -183,7 +183,7 @@ create table board_prices (               -- ártörténet → árfigyelő (F3 p
   recorded_at timestamptz default now()
 );
 
--- REVIEWS (Népítélet)
+-- REVIEWS (Közös nevező)
 create table board_reviews (
   id uuid primary key default gen_random_uuid(),
   board_id uuid references boards not null,
@@ -366,7 +366,7 @@ A súlyok/sávok az `advisor_weights` mintájára konfig-táblából jönnek (ku
 
 2. réteg — PONTOZÁS (0–100, advisor_weights táblából):
    stabilitás-illeszkedés (kezdőnek szélesség+térfogat-ráhagyás)   súly: 30
-   Népítélet-átlag (ha ≥5 értékelés; különben semleges 50%)        súly: 25
+   Közös nevező-átlag (ha ≥5 értékelés; különben semleges 50%)        súly: 25
    ár/érték (ársávon belüli pozíció × rating_value)                súly: 20
    cél-specifikus fit (túra→hossz+kiel, folyó→orr/szkeg, stb.)     súly: 15
    elérhetőség/frissesség (model_year, bolti készlet)              súly: 10
@@ -382,10 +382,10 @@ minden futás → advisor_sessions insert (anonim is)
 
 ## 6. SEO-stratégia (erős követelmény)
 
-1. **SSR minden publikus oldalra** (RR7 loaderek): deszka-adatlapok, Népítélet-oldalak, spot-oldalak, szolgáltatói profilok, Deszkaválasztó landing. Az app-jellegű, bejelentkezett nézetek lehetnek kliens-oldaliak.
+1. **SSR minden publikus oldalra** (RR7 loaderek): deszka-adatlapok, Közös nevező-oldalak, spot-oldalak, szolgáltatói profilok, Deszkaválasztó landing. Az app-jellegű, bejelentkezett nézetek lehetnek kliens-oldaliak.
 2. **Locale-slugok + hreflang:** URL-séma `/{locale}/deszkak/{slug}` (hu alapértelmezett, prefix nélkül: `/deszkak/...`; en: `/en/boards/...`). A `slug` jsonb mezőből; `hreflang` + `x-default` minden oldalon.
 3. **Strukturált adat (JSON-LD) — ez hozza a SERP-csillagokat:**
-   - deszka-adatlap: `Product` + `AggregateRating` + `Review` (a Népítéletből) + `Offer` (board_prices) → csillagos találat a "XY SUP vélemény" keresésekre;
+   - deszka-adatlap: `Product` + `AggregateRating` + `Review` (a Közös nevezőből) + `Offer` (board_prices) → csillagos találat a "XY SUP vélemény" keresésekre;
    - spot: `Place` + geo; szolgáltató: `LocalBusiness`; GYIK-blokkok: `FAQPage`.
 4. **Programmatic SEO oldalak** a Deszkaválasztóból: persona-landingek statikusan generálva ("SUP kezdőknek 100 kg felett", "családi SUP tanácsadó", "folyami SUP választó") — mindegyik előre kitöltött wizard-linkkel.
 5. **Technikai kapuk:** sitemap.xml (locale-onként, generált), canonical, OG-képek (deszkánként generált megosztás-kártya — a Facebook-csoportos terjedés miatt kiemelt!), Core Web Vitals budget (LCP < 2,5 s a mist-háttér + font preload mellett), `robots.txt`.
@@ -492,7 +492,7 @@ F1.3  Weather-modul: Open-Meteo adapter, BM OKF scraper Edge Function + cron,
       SUP-index számítás + unit-tesztek, stale-logika   [algo-engineer]
 F1.4  Spots-modul: térkép (MapLibre), spot-lista/adatlap, rétegek,
       spot_reports   [ui-builder + scaffolder]
-F1.5  Catalog + Reviews: adatlap, Népítélet-blokk (mérce-eloszlással),
+F1.5  Catalog + Reviews: adatlap, Közös nevező-blokk (mérce-eloszlással),
       vélemény-flow (e-mail-gate!), flag + admin-moderáció   [ui-builder,
       auth-security, scaffolder]
 F1.6  Advisor: wizard, algoritmus, eredmény-képernyő (1 nagy + 2 kompakt,

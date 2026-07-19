@@ -1,15 +1,13 @@
 /**
- * /deszkak — deszka-lista (F1.5 váz). VÉKONY loader: boards + brand-join. A
- * komponens F1.4-mintára egyszerű kártya-rács; a ui-builder cseréli BoardCard-ra
- * (kép, ár-sáv, méret-chipek), lásd a TODO(ui-builder) kommenteket.
+ * /deszkak — deszka-lista. VÉKONY loader: boards + brand-join; a komponens a
+ * catalog `BoardCard`-jaiból komponál rácsot.
  */
 import { useTranslation } from "react-i18next";
-import { Link } from "react-router";
 
 import { createSupabaseServerClient } from "@core/auth/supabase.server";
 import { getLocaleFromPath, pickTranslated } from "@core/i18n";
-import { Card } from "@core/ui";
 import { listBoards } from "@modules/catalog/data/boards.server";
+import { BoardCard } from "@modules/catalog/ui/BoardCard";
 
 import type { Route } from "./+types/deszkak";
 
@@ -61,36 +59,7 @@ export default function BoardsListRoute({ loaderData }: Route.ComponentProps) {
         <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {items.map((item) => (
             <li key={item.id}>
-              {/* TODO(ui-builder): BoardCard (kép-placeholder, ár-sáv,
-                  méret-chipek, board_type-badge). */}
-              <Card className="h-full">
-                <Link to={`/deszkak/${item.slug}`} className="flex flex-col gap-2">
-                  <div
-                    className="h-32 w-full rounded-[var(--radius-card)] bg-mist"
-                    aria-hidden="true"
-                  />
-                  <div className="flex items-baseline justify-between gap-2">
-                    <span className="text-lg font-semibold text-ink-deep">{item.modelName}</span>
-                    <span className="rounded-full bg-mist px-2.5 py-1 text-xs font-semibold text-text-2">
-                      {t(`boardType.${item.boardType}`)}
-                    </span>
-                  </div>
-                  {item.brandName ? (
-                    <span className="text-sm text-text-2">{item.brandName}</span>
-                  ) : null}
-                  <div className="flex flex-wrap gap-2 text-xs text-text-3">
-                    {item.lengthCm && item.widthCm ? (
-                      <span>
-                        {item.lengthCm} × {item.widthCm} cm
-                      </span>
-                    ) : null}
-                    {item.volumeL ? <span>· {item.volumeL} l</span> : null}
-                    {item.stabilityIndex !== null ? (
-                      <span>· {t("spec.stabilityIndex")}: {item.stabilityIndex}</span>
-                    ) : null}
-                  </div>
-                </Link>
-              </Card>
+              <BoardCard board={item} className="h-full" />
             </li>
           ))}
         </ul>

@@ -10,7 +10,7 @@ export const meta: Route.MetaFunction = () => {
     {
       name: "description",
       content:
-        "Deszkaválasztó, katalógus Népítélettel, SUP-index a magyar vizekre és szolgáltatói directory — egy helyen.",
+        "Deszkaválasztó, katalógus Közös nevezővel, SUP-index a magyar vizekre és szolgáltatói directory — egy helyen.",
     },
   ];
 };

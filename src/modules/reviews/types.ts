@@ -57,7 +57,7 @@ export interface ReviewFlagRow {
   created_at: string;
 }
 
-/** A Népítélet-dimenziók (a board_reviews rating_* oszlopaival egyezők). */
+/** A Közös nevező-dimenziók (a board_reviews rating_* oszlopaival egyezők). */
 export type ReviewDimension = "stability" | "glide" | "build" | "value";
 
 export const REVIEW_DIMENSIONS: readonly ReviewDimension[] = [
@@ -68,7 +68,7 @@ export const REVIEW_DIMENSIONS: readonly ReviewDimension[] = [
 ];
 
 /**
- * A publikált vélemények aggregátuma (Népítélet-blokk). Az átlagok 1–5 skálán,
+ * A publikált vélemények aggregátuma (Közös nevező-blokk). Az átlagok 1–5 skálán,
  * 1 tizedesre kerekítve; a 10-es mércéhez a `toTen` helper skáláz.
  */
 export interface ReviewAggregate {

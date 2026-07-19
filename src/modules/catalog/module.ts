@@ -2,7 +2,7 @@
  * catalog modul-manifeszt (1.3 modul-szerződés).
  *
  * A deszka-lista (`/deszkak`) és -adatlap (`/deszkak/:slug`) route-jai. Az
- * adatlap a `reviews` modul Népítélet-adatát is mutatja, de a KETTŐ össze-
+ * adatlap a `reviews` modul Közös nevező-adatát is mutatja, de a KETTŐ össze-
  * kötése a ROUTE-rétegben történik (a catalog nem importál reviews-t —
  * modul→modul import tilos). A manifeszt mellékhatás-mentes (csak típus-import),
  * az i18n-namespace regisztrációja a `./i18n` mellékhatás-modulban él.

@@ -12,7 +12,7 @@
 | F1.2 DB (séma + RLS + seed) | ✅ kész (2026-07-18) | reviewer-jóváhagyással; futási verifikáció a CI rls-tests jobban |
 | F1.3 Weather + SUP-index | ✅ kész (2026-07-19) | reviewer-jóváhagyva; Edge Functionök deployolva, cron aktív, élesben end-to-end verifikálva |
 | F1.4 Spots + térkép | ✅ kész (2026-07-19) | scaffolder+ui-builder+karmester; MapLibre-térkép, adatlap, spot_reports; élesben verifikálva (m5 „Tilos" éles II. fokon) |
-| F1.5 Catalog + Reviews | 🟡 mag kész (2026-07-19) | catalog+reviews modulok, deszka-lista/adatlap, Népítélet-aggregátor, e-mail-gate-elt vélemény+flag flow, admin-moderáció; verifikálva. HÁTRA: UI-polish (RatingBar/hero), catalog-watch séma-előkészítés, auth-flow verifikáció |
+| F1.5 Catalog + Reviews | 🟡 mag + UI-polish kész (2026-07-19) | catalog+reviews modulok, deszka-lista/adatlap, „Közös nevező"-blokk RatingBar-okkal (átnevezve: Népítélet→Közös nevező, színkiemelt evező-szójáték), e-mail-gate-elt vélemény+flag flow, admin-moderáció; verifikálva. HÁTRA: catalog-watch séma-előkészítés, auth-flow verifikáció teszt-fiókkal |
 | F1.6 Advisor | ⬜ | |
 | F1.7 Providers | ⬜ | |
 | F1.8 SEO-réteg | ⬜ | + jogi oldalak: ÁSZF + adatvédelmi nyilatkozat, consent-checkbox a regisztrációban (spec F1-fázislista + 11.4) |
@@ -21,20 +21,24 @@
 
 ## ITINER a következő sessionnek (2026-07-19-i állapot)
 
-**Következő lépés: F1.5 BEFEJEZÉSE — a funkcionális mag KÉSZ és verifikálva
-(lásd az F1.5-fejezetet lent), három tétel maradt:**
-1. **UI-polish (ui-builder):** a Népítélet dimenzió-sorok RatingBar-ra (10-seg,
-   NEM a biztonsági Gauge, NEM danger-piros; a szám mindig a sáv mellett),
-   deszka-hero (kép), BoardCard-finomítás, flag-UX (felugró forma). A route-ok
-   már átadják a `dimensionsTen`/`overallTen` 10-es értékeket és minden propot.
-2. **catalog-watch séma-előkészítés (db-engineer):** `docs/CATALOG_WATCH_TERV.md`
+**Következő lépés: F1.5 BEFEJEZÉSE — a mag + UI-polish KÉSZ és verifikálva
+(lásd az F1.5-fejezetet lent), KÉT tétel maradt:**
+1. **catalog-watch séma-előkészítés (db-engineer):** `docs/CATALOG_WATCH_TERV.md`
    „Adatmodell" szakasza — ÚJ migráció: boards-életciklusmezők, `catalog_sources`,
    `catalog_candidates`, pg_trgm. A catalog `BoardRow` típus bővítendő az új
    életciklus-mezőkkel, ha bekerülnek.
-3. **auth-flow verifikáció:** a vélemény-beküldés + Népítélet-adattal-render +
+2. **auth-flow verifikáció:** a vélemény-beküldés + Közös nevező-adattal-render +
    admin-moderáció bejelentkezett, megerősített (moderátor) userrel — ehhez
    teszt-fiók kell (a mostani verifikáció a kijelentkezett/gate-elt állapotot +
-   az RLS-t/aggregátor-unit-teszteket fedte).
+   az RLS-t/aggregátor- és komponens-unit-teszteket fedte).
+
+**KÉSZ (UI-polish, 2026-07-19):** átnevezés „Népítélet" → **„Közös nevező"**
+(idióma + rejtett evezős szójáték; a blokk-címben az „evező" rész színkiemelt,
+`--caution-text`). Új komponensek: `reviews/ui/{RatingBar,ReviewSummary,ReviewCard,
+FlagButton}` (RatingBar 10-seg, küszöb-szín ≥7 safe / <7 caution, SOHA danger;
+szám mindig a sáv mellett) + `catalog/ui/{BoardCard,BoardHero}`; a route-ok ezekből
+komponálnak. Élesben verifikálva; a „van-adat" út `RatingBar.test`/`ReviewSummary.test`
+alatt. Kapuk: typecheck · lint · 284 vitest (8 új).
 
 Mintaként az F1.4 spots-modul áll rendelkezésre; a vélemény/flag RLS-gate ugyanaz
 a minta, mint a spot_reports action-jében.
@@ -361,7 +365,7 @@ adatréteg + i18n, ÚJ core-migráció nélkül. Kapuk zöldek: typecheck · lin
 **Elkészült:**
 - **Két külön modul** a modul-szerződés szerint: `catalog` (brands/boards/
   board_prices adat + deszka-lista/adatlap) és `reviews` (board_reviews/
-  review_flags adat + Népítélet-aggregátor + admin-moderáció). A catalog NEM
+  review_flags adat + Közös nevező-aggregátor + admin-moderáció). A catalog NEM
   importál reviews-t és fordítva — a deszka-adatlap a KETTŐT a ROUTE-rétegben
   (`app/routes/deszkak.$slug.tsx`) komponálja (mint a spots↔weather).
 - `catalog/data/boards.server.ts`: listBoards (brand-join), getBoardBySlug
@@ -376,7 +380,7 @@ adatréteg + i18n, ÚJ core-migráció nélkül. Kapuk zöldek: typecheck · lin
   insertFlag, és ADMIN: listPendingReviews, listFlaggedReviews (feloldatlan
   jelzés → két lépéses JS-párosítás), setReviewStatus, setVerifiedOwner,
   resolveFlag (moderátori jog, RLS + requireRole a védőháló).
-- Route-ok: `/deszkak` (lista), `/deszkak/:slug` (adatlap: hero + spec + Népítélet
+- Route-ok: `/deszkak` (lista), `/deszkak/:slug` (adatlap: hero + spec + Közös nevező
   + vélemény-lista + e-mail-gate-elt vélemény-űrlap + flag + árak; action
   `intent`-tel review/flag), `/admin/velemenyek` (reviews adminPanel,
   requireRole('moderator') loaderben ÉS actionben, moderációs gombok).
@@ -385,11 +389,11 @@ adatréteg + i18n, ÚJ core-migráció nélkül. Kapuk zöldek: typecheck · lin
 
 **Verifikáció (Playwright + curl):** lista 20 deszkával renderel (típus-badge,
 méret + stabilitási index); adatlap: Ride 10'6" fejléc + ár „429 000 Ft-tól",
-Paraméterek, Népítélet ÜRES-állapot, vélemény-űrlap login-gate, árak; admin
+Paraméterek, Közös nevező ÜRES-állapot, vélemény-űrlap login-gate, árak; admin
 route 302 (requireRole átirányít kijelentkezve); 404 ismeretlen slugra; nincs
 konzol-hiba.
 
-**Token-megkötés a ui-builder-polishoz (route-kommentben is):** a Népítélet
+**Token-megkötés a ui-builder-polishoz (route-kommentben is):** a Közös nevező
 mércék NEM a biztonsági Gauge-ot használják (veszély-szemantika), és a `--danger`
 (piros) értékelés-sávon TILOS — külön RatingBar kell (petrol/semleges v.
 safe/caution), a szám mindig a sáv mellett. A loader már átadja a 10-es

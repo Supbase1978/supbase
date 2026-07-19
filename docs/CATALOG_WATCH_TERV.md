@@ -81,7 +81,7 @@ változatlan — a figyelő maga is csak jelölt- és ártáblákba ír.
   forrás sem látott, az `discontinued`-JELÖLT lesz — az admin erősíti meg
   (státusz: `discontinued`, `discontinued_at` kitöltve).
 - Az `availability_hu`-t a figyelő állítja: van-e aktuálisan aktív HU
-  bolt-listing. A kifutott modell NEM törlődik (a Népítélet-vélemények és a
+  bolt-listing. A kifutott modell NEM törlődik (a Közös nevező-vélemények és a
   Deszkaválasztó-történet megmarad; adatlapján „már nem kapható" jelzés).
 
 ## Adatmodell (F1.5-ben, ÚJ migrációként — az F1.2-es catalog-migrációt nem bolygatja)

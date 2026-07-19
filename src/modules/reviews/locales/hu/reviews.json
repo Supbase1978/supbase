@@ -1,6 +1,6 @@
 {
   "block": {
-    "title": "Népítélet",
+    "title": "Közös nevező",
     "count": "{{count}} értékelés",
     "recommend": "{{percent}}% ajánlaná",
     "verifiedCount": "{{count}} hitelesített tulajdonos",

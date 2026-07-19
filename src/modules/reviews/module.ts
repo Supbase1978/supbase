@@ -1,7 +1,7 @@
 /**
  * reviews modul-manifeszt (1.3 modul-szerződés).
  *
- * A Népítélet (board_reviews) a catalog deszka-adatlapján jelenik meg, ezért a
+ * A Közös nevező (board_reviews) a catalog deszka-adatlapján jelenik meg, ezért a
  * modulnak NINCS saját publikus route-ja — a vélemény-írás/flag actionök a
  * `deszkak/:slug` route-on élnek (a route-réteg importálja a reviews adat-
  * rétegét; a reviews nem importál catalog-ot). Egyetlen felülete az admin
