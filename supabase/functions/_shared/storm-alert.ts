@@ -12,9 +12,10 @@
  */
 import { computeSupIndex, type SupIndexConfig } from "./sup-index.ts";
 import {
+  detectPageLevel,
   detectStormLevelChanges,
-  parseStormWarnings,
   type StormLevelChange,
+  type StormSource,
 } from "./storm-scrape.ts";
 import type { StormLevel, WaterType, WeatherSnapshotRow } from "./types.ts";
 
@@ -41,8 +42,10 @@ export interface RegionState {
 }
 
 export interface StormAlertDeps {
-  /** A viharjelzés-oldal HTML-je (index.ts: fetch a forrásra). */
-  fetchWarningsHtml: () => Promise<string>;
+  /** Körzetenkénti forrás-oldalak (default: DEFAULT_STORM_SOURCES; Fertő nincs). */
+  sources: readonly StormSource[];
+  /** Egy forrás-URL HTML-jének letöltése (index.ts: valós fetch). */
+  fetchHtml: (url: string) => Promise<string>;
   /** Körzet-állapotok a DB-ből (előző szint + spotok legutóbbi snapshotja). */
   getRegionStates: () => Promise<RegionState[]>;
   /** Egy weather_snapshots sor beszúrása (service_role kliens). */
@@ -53,11 +56,14 @@ export interface StormAlertDeps {
 }
 
 export interface StormAlertSummary {
+  /** A friss scrape körzetenkénti fokozata (csak a megerősített körzetek). */
+  levels: Record<string, StormLevel>;
   /** A detektált körzet-szintváltások (from → to). */
   changes: StormLevelChange[];
   /** Beírt bm-okf snapshotok száma. */
   snapshotsWritten: number;
-  /** Körzetek, amelyeknél az írás/feldolgozás hibázott (hibatűrés). */
+  /** Körzetek, amelyeknél a fetch/parse/írás hibázott (hibatűrés — a körzet
+   * ilyenkor unknown: az utolsó ismert szint marad, leminősítés nincs). */
   errors: { region: string; message: string }[];
 }
 
@@ -115,12 +121,24 @@ export function buildStormSnapshotRow(
 
 /**
  * A teljes storm-alert futás. Determinisztikus, körzetenként hibatűrő: egy
- * körzet írás-hibája nem viszi a többit. Csak a TÉNYLEGES szintváltásoknál ír.
+ * körzet fetch-/írás-hibája nem viszi a többit. Fetch-hibás vagy nem
+ * megerősített (unknown) körzet KIMARAD a current-ből → az utolsó ismert szint
+ * él tovább (leminősítéshez pozitív megerősítés kell — M1, biztonságkritikus).
+ * Csak a TÉNYLEGES szintváltásoknál ír.
  */
 export async function runStormAlert(deps: StormAlertDeps): Promise<StormAlertSummary> {
   const now = deps.now ?? (() => new Date());
-  const html = await deps.fetchWarningsHtml();
-  const current = parseStormWarnings(html);
+  const errors: { region: string; message: string }[] = [];
+
+  const current = new Map<string, StormLevel>();
+  for (const { region, url } of deps.sources) {
+    try {
+      const level = detectPageLevel(await deps.fetchHtml(url));
+      if (level !== "unknown") current.set(region, level);
+    } catch (err) {
+      errors.push({ region, message: errorMessage(err) });
+    }
+  }
 
   const regionStates = await deps.getRegionStates();
   const previous = new Map<string, StormLevel>(
@@ -133,7 +151,6 @@ export async function runStormAlert(deps: StormAlertDeps): Promise<StormAlertSum
   const changes = detectStormLevelChanges(previous, current);
 
   const fetchedAt = now().toISOString();
-  const errors: { region: string; message: string }[] = [];
   let snapshotsWritten = 0;
 
   for (const change of changes) {
@@ -150,5 +167,10 @@ export async function runStormAlert(deps: StormAlertDeps): Promise<StormAlertSum
     }
   }
 
-  return { changes, snapshotsWritten, errors };
+  return {
+    levels: Object.fromEntries(current),
+    changes,
+    snapshotsWritten,
+    errors,
+  };
 }

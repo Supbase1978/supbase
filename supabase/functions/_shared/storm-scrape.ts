@@ -1,17 +1,50 @@
 /**
- * BM OKF viharjelzés-scraper — parse-logika (9. fejezet pipeline 1. lépése).
+ * Tavi viharjelzés-scraper — parse-logika (9. fejezet pipeline 1. lépése).
  *
- * FORRÁS: a magyarországi tavak (Balaton, Velencei-tó, Tisza-tó, Fertő) hivatalos
- * viharjelzését az OMSZ adja ki; a `storm_warning_region` seed-értékek pontosan
- * ezt a négy körzetet fedik. A scrape a körzetenkénti aktuális FOKOZAT szöveges
- * megjelölését keresi (nincs jelzés / I. fok / II. fok) — a parser SZÖVEG-alapú
- * és tag-toleráns, hogy a forrásoldal HTML-átrendezésére ne törjön el.
+ * FORRÁS (élőben verifikálva, 2026-07-19): a tavi viharjelzést a HungaroMet
+ * (volt OMSZ) adja ki, TAVANKÉNTI tartalom-oldalakon (`.../viharjelzes/main.php`),
+ * tiszta szöveges jelzéssel („A Tisza tavon elsőfokú viharjelzés érvényes.") és
+ * fokozat-képpel (`/images/elemek/viharjelzesN.png`). A Balaton-oldal
+ * medencénként ad mondatot — körzet-szinten a LEGMAGASABB fokozat számít.
+ * A Fertőre a HungaroMet NEM ad oldalt (más üzemeltető) — az F1-ben forrás
+ * nélkül marad: unknown → az utolsó ismert szint él tovább (fail-safe).
+ *
+ * A parser SZÖVEG-alapú és tag-toleráns (HTML-átrendezésre nem törik), a
+ * fokozat-kép másodlagos jel: szöveg–kép eltérésnél a MAGASABB fokozat győz
+ * (fail-safe felfelé).
  *
  * FONTOS (2. fejezet 5. szabály): cache-elt viharjelzés SOHA nem jelenhet meg
  * aktuálisként — a snapshot fetched_at-ja a scrape pillanata; a régiséget a
  * felhasználói réteg a szokásos 30 perces stale-küszöbbel kezeli.
  */
 import type { StormLevel } from "./types.ts";
+
+/** Egy viharjelzési körzet forrás-oldala. */
+export interface StormSource {
+  /** Kanonikus körzetnév (== spots.storm_warning_region seed-érték). */
+  region: string;
+  /** A körzet tartalom-oldala (met.hu tavankénti main.php). */
+  url: string;
+}
+
+/**
+ * Default forrás-lista (env-ből felülírható: STORM_SOURCES JSON). A Fertő
+ * szándékosan hiányzik: nincs HungaroMet-forrása (F1-korlát, README).
+ */
+export const DEFAULT_STORM_SOURCES: readonly StormSource[] = [
+  {
+    region: "Balaton",
+    url: "https://www.met.hu/idojaras/tavaink/balaton/viharjelzes/main.php",
+  },
+  {
+    region: "Velencei-tó",
+    url: "https://www.met.hu/idojaras/tavaink/velencei-to/viharjelzes/main.php",
+  },
+  {
+    region: "Tisza-tó",
+    url: "https://www.met.hu/idojaras/tavaink/tisza-to/viharjelzes/main.php",
+  },
+];
 
 /**
  * A viharjelzési körzetek kanonikus nevei (== spots.storm_warning_region seed).
@@ -72,6 +105,10 @@ const LEVEL1_NEEDLES = [
  * essen ide. Csak explicit "nincs viharjelzés" / "viharjelzés megszűnt/feloldva".
  */
 const NO_WARNING_PATTERNS = [
+  // met.hu tavankénti oldal 0-s állapota (élőben megfigyelt szöveg):
+  // "A Tisza tavon a viharjelző rendszer alapon van."
+  "viharjelző rendszer alapon",
+  "viharjelzo rendszer alapon",
   "nincs viharjelz",
   "nincs érvényben",
   "nincs ervenyben",
@@ -131,6 +168,37 @@ export function detectLevel(window: string): DetectedLevel {
   if (hasNonNegatedMatch(window, LEVEL1_NEEDLES)) return 1;
   if (NO_WARNING_PATTERNS.some((p) => window.includes(p))) return 0;
   return "unknown";
+}
+
+/**
+ * Fokozat-kép mint MÁSODLAGOS jel: a met.hu tavankénti oldalain a jelzést a
+ * `/images/elemek/viharjelzesN.png` ikon (is) hordozza, ahol N a fokozat (0/1/2).
+ * A nyers HTML-en fut (a stripHtml az img tageket eldobná). Több találatnál
+ * (Balaton-medencék) a legmagasabb számít.
+ */
+export function detectImageLevel(html: string): DetectedLevel {
+  let max: DetectedLevel = "unknown";
+  for (const m of html.matchAll(/viharjelzes(\d)\.(?:png|gif|jpe?g)/gi)) {
+    const n = Number(m[1]);
+    const level: StormLevel = n >= 2 ? 2 : n === 1 ? 1 : 0;
+    if (max === "unknown" || level > max) max = level;
+  }
+  return max;
+}
+
+/**
+ * Egy KÖRZETI forrás-oldal (tavankénti main.php) fokozata. Szöveg-jel
+ * (detectLevel a teljes oldal-szövegen: több medence-mondatnál a II. fok
+ * needle-jei elsőbbséget élveznek → maximum-szemantika) + kép-jel
+ * (detectImageLevel); eltérésnél a MAGASABB győz (fail-safe felfelé).
+ * Ha egyik jel sincs → unknown (a hívó az utolsó ismert szintet tartja).
+ */
+export function detectPageLevel(html: string): DetectedLevel {
+  const textLevel = detectLevel(stripHtml(html));
+  const imageLevel = detectImageLevel(html);
+  if (textLevel === "unknown") return imageLevel;
+  if (imageLevel === "unknown") return textLevel;
+  return Math.max(textLevel, imageLevel) as StormLevel;
 }
 
 /**

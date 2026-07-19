@@ -7,7 +7,9 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 import {
+  detectImageLevel,
   detectLevel,
+  detectPageLevel,
   detectStormLevelChanges,
   parseStormWarnings,
   stripHtml,
@@ -171,5 +173,56 @@ describe("detectStormLevelChanges", () => {
     expect(changes).toEqual<StormLevelChange[]>([
       { region: "Balaton", from: 0, to: 1 },
     ]);
+  });
+});
+
+describe("detectImageLevel — viharjelzesN.png másodlagos jel", () => {
+  it("valódi 0-s oldal: viharjelzes0.png → 0", () => {
+    expect(detectImageLevel(fixture("methu.tisza-to.html"))).toBe(0);
+  });
+
+  it("több medence-ikon → a legmagasabb számít", () => {
+    expect(detectImageLevel(fixture("methu.balaton.mixed12.html"))).toBe(2);
+  });
+
+  it("kép nélkül → unknown", () => {
+    expect(detectImageLevel("<p>szöveg kép nélkül</p>")).toBe("unknown");
+  });
+});
+
+describe("detectPageLevel — met.hu tavankénti main.php", () => {
+  it("valódi 0-s letöltések („a viharjelző rendszer alapon van”) → 0", () => {
+    expect(detectPageLevel(fixture("methu.balaton.html"))).toBe(0);
+    expect(detectPageLevel(fixture("methu.velencei-to.html"))).toBe(0);
+    expect(detectPageLevel(fixture("methu.tisza-to.html"))).toBe(0);
+  });
+
+  it("I. fokú oldal (élőben megfigyelt formátum) → 1", () => {
+    expect(detectPageLevel(fixture("methu.balaton.level1.html"))).toBe(1);
+  });
+
+  it("II. fokú oldal → 2", () => {
+    expect(detectPageLevel(fixture("methu.velencei-to.level2.html"))).toBe(2);
+  });
+
+  it("vegyes medence-fokozat (II+I+I) → körzet-szinten a maximum: 2", () => {
+    expect(detectPageLevel(fixture("methu.balaton.mixed12.html"))).toBe(2);
+  });
+
+  it("szöveg–kép eltérésnél a magasabb győz (fail-safe felfelé)", () => {
+    const html =
+      "<img src='/images/elemek/viharjelzes2.png'>" +
+      "<p>A tavon elsőfokú viharjelzés érvényes.</p>";
+    expect(detectPageLevel(html)).toBe(2);
+  });
+
+  it("se szöveg-, se kép-jel → unknown (nincs hamis leminősítés)", () => {
+    expect(detectPageLevel("<nav>Balaton | menü | lábléc</nav>")).toBe("unknown");
+  });
+
+  it("tagadott fokozat önmagában nem jelzés: „nincs másodfokú…” → unknown", () => {
+    expect(detectPageLevel("<p>ma nincs másodfokú viharjelzés kilátásban</p>")).toBe(
+      "unknown",
+    );
   });
 });

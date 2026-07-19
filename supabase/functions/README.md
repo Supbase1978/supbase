@@ -40,25 +40,30 @@ szintváltás-detektálás → szintváltásnál új `weather_snapshots` sor
 nem aktuális). A push-küldés maga **F1.9** — most csak a szintváltás naplózása és
 egy `notifyStormChange()` TODO-hook marad (lásd `_shared/storm-alert.ts`).
 
-## Viharjelzés-forrás
+## Viharjelzés-forrás (élőben verifikálva, 2026-07-19)
 
-A `storm-alert` a `STORM_SOURCE_URL` env-változóból olvassa a scrape-forrást
-(default: OMSZ balatoni viharjelzés, `https://www.met.hu/idojaras/viharjelzes/balaton/`).
-A parser (`_shared/storm-scrape.ts`) **szöveg-alapú és tag-toleráns**: körzetenként
-(Balaton / Velencei-tó / Tisza-tó / Fertő) a fokozat-kulcsszavakat keresi
-(`nincs` / `I. fokú` / `II. fokú` · `előkészítő` / `vészjelzés`), a II. fokot
-mindig az I. előtt ellenőrizve. A forrás HTML-átrendezésére nem törik el; új
-forrásra váltáshoz elég a `STORM_SOURCE_URL` és szükség esetén a
-`STORM_REGIONS` needle-listák bővítése.
+A tavi viharjelzést a **HungaroMet** adja ki, **tavankénti** tartalom-oldalakon
+(`.../tavaink/<tó>/viharjelzes/main.php`) — tiszta szöveges jelzéssel („A Tisza
+tavon elsőfokú viharjelzés érvényes." / 0-s állapotban: „…a viharjelző rendszer
+**alapon van**.") és fokozat-ikonnal (`/images/elemek/viharjelzesN.png`). A
+`storm-alert` KÖRZETENKÉNT scrape-el (`DEFAULT_STORM_SOURCES`):
 
-> ⚠️ **ÉLESÍTÉS ELŐTT KÖTELEZŐ (m2):** a default `STORM_SOURCE_URL` (met.hu
-> **balatoni** oldal) CSAK a **Balaton** körzetet fedi — a Velencei-tó, Tisza-tó
-> és Fertő fokozata ott nem szerepel. Az éles cronhoz **összes-körzetes forrás**
-> (egyetlen, mind a négy tavat listázó oldal) vagy **körzetenkénti URL-lista**
-> kell (a `STORM_SOURCE_URL` felülírásával / a héj több-forrásos bővítésével).
-> Amíg ez nincs beállítva, a hiányzó három körzet a parse-ban `unknown` marad,
-> ezért a szint-detektálás **az utolsó ismert szinten hagyja** őket
-> (fail-safe: pozitív megerősítés nélkül NINCS leminősítés — M1).
+- Balaton → `https://www.met.hu/idojaras/tavaink/balaton/viharjelzes/main.php`
+  (medencénként ad mondatot; körzet-szinten a LEGMAGASABB fokozat számít)
+- Velencei-tó → `https://www.met.hu/idojaras/tavaink/velencei-to/viharjelzes/main.php`
+- Tisza-tó → `https://www.met.hu/idojaras/tavaink/tisza-to/viharjelzes/main.php`
+
+Felülírás a `STORM_SOURCES` env-vel (JSON: `{"Balaton":"https://..."}`).
+A parser (`_shared/storm-scrape.ts`, `detectPageLevel`) **szöveg-alapú és
+tag-toleráns**, a fokozat-ikon másodlagos jel — szöveg–kép eltérésnél a
+MAGASABB fokozat győz (fail-safe felfelé); tagadás-tudatos (M1): leminősítés
+(→0) CSAK pozitív megerősítésre („alapon van" / „nincs viharjelzés" /
+„megszűnt"), egyébként `unknown` → az utolsó ismert szint él tovább.
+
+> ⚠️ **Fertő-korlát (F1):** a Fertőre a HungaroMet NEM ad viharjelzés-oldalt
+> (más üzemeltetőjű rendszer) — a körzet forrás nélkül `unknown`, azaz az
+> utolsó ismert szinten marad (leminősítés/riasztás nem történik). Fertő-forrás
+> bekötése: új bejegyzés a `STORM_SOURCES`-ben, ha lesz scrape-elhető forrás.
 
 ## Deploy (kézi — NE a CI-ból)
 
@@ -72,7 +77,7 @@ npm run sb -- functions deploy storm-alert
 
 # a service-role kulcsot a Supabase automatikusan injektálja (SUPABASE_URL,
 # SUPABASE_SERVICE_ROLE_KEY). A viharjelzés-forrás felülírása (opcionális):
-npm run sb -- secrets set STORM_SOURCE_URL="https://www.met.hu/idojaras/viharjelzes/balaton/"
+npm run sb -- secrets set STORM_SOURCES='{"Balaton":"https://www.met.hu/idojaras/tavaink/balaton/viharjelzes/main.php"}'
 ```
 
 > A `weather_snapshots`-ba csak a **service_role** írhat (nincs write-policy, 3.2)

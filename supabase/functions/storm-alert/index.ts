@@ -7,7 +7,9 @@
  * a fájl NEM tesztelt és NEM typecheckelt a repo `tsc`-jével (Deno-runtime).
  *
  * A push-küldés F1.9 — itt csak a szintváltás naplózása + notifyStormChange TODO.
- * ENV: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, STORM_SOURCE_URL (a scrape-forrás).
+ * ENV: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, STORM_SOURCES (opcionális JSON:
+ * {"Balaton":"https://...","Velencei-tó":"..."} — default: DEFAULT_STORM_SOURCES,
+ * a met.hu tavankénti main.php oldalak; a Fertőnek nincs forrása, F1-korlát).
  */
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
@@ -20,10 +22,27 @@ import {
   type RegionSpotState,
   type RegionState,
 } from "../_shared/storm-alert.ts";
+import {
+  DEFAULT_STORM_SOURCES,
+  type StormSource,
+} from "../_shared/storm-scrape.ts";
 import type { StormLevel, WaterType, WeatherSnapshotRow } from "../_shared/types.ts";
 
-/** A viharjelzés-forrás — env-ből felülírható (default: OMSZ balatoni viharjelzés). */
-const DEFAULT_STORM_SOURCE = "https://www.met.hu/idojaras/viharjelzes/balaton/";
+/** STORM_SOURCES env (JSON: körzet→URL) → forrás-lista; hibás JSON → default. */
+function resolveSources(): readonly StormSource[] {
+  const raw = Deno.env.get("STORM_SOURCES");
+  if (!raw) return DEFAULT_STORM_SOURCES;
+  try {
+    const parsed = JSON.parse(raw) as Record<string, unknown>;
+    const sources = Object.entries(parsed)
+      .filter((e): e is [string, string] => typeof e[1] === "string")
+      .map(([region, url]) => ({ region, url }));
+    return sources.length > 0 ? sources : DEFAULT_STORM_SOURCES;
+  } catch {
+    console.error("STORM_SOURCES: érvénytelen JSON — default forrás-lista él");
+    return DEFAULT_STORM_SOURCES;
+  }
+}
 
 interface SpotRow {
   id: string;
@@ -54,7 +73,7 @@ Deno.serve(async () => {
       { status: 500, headers: { "content-type": "application/json" } },
     );
   }
-  const sourceUrl = Deno.env.get("STORM_SOURCE_URL") ?? DEFAULT_STORM_SOURCE;
+  const sources = resolveSources();
 
   const supabase = createClient(url, serviceKey, {
     auth: { persistSession: false },
@@ -68,7 +87,8 @@ Deno.serve(async () => {
 
   const summary = await runStormAlert({
     config,
-    fetchWarningsHtml: async (): Promise<string> => {
+    sources,
+    fetchHtml: async (sourceUrl: string): Promise<string> => {
       const res = await fetch(sourceUrl, {
         headers: { "user-agent": "sup-platform-storm-alert/1.0" },
       });
@@ -132,7 +152,7 @@ Deno.serve(async () => {
     },
   });
 
-  return new Response(JSON.stringify({ source: sourceUrl, ...summary }), {
+  return new Response(JSON.stringify({ sources, ...summary }), {
     status: 200,
     headers: { "content-type": "application/json" },
   });
