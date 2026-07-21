@@ -1,0 +1,86 @@
+{
+  "nav": {
+    "advisor": "Board advisor"
+  },
+  "wizard": {
+    "title": "Board advisor",
+    "lead": "Five quick questions — and we'll show you which board fits you.",
+    "step": "{{current}}/{{total}} step",
+    "back": "Back",
+    "next": "Next",
+    "submit": "Recommend a board",
+    "weight": {
+      "q": "What's your body weight?",
+      "unit": "kg"
+    },
+    "passenger": {
+      "q": "Will you take a passenger along?"
+    },
+    "experience": {
+      "q": "How experienced are you?"
+    },
+    "water": {
+      "q": "Where will you paddle most often?"
+    },
+    "use": {
+      "q": "What will you mainly use it for?"
+    },
+    "budget": {
+      "q": "What's your upper budget? (optional)",
+      "any": "No limit",
+      "unit": "HUF"
+    },
+    "storage": {
+      "q": "How will you store it?"
+    },
+    "error": {
+      "invalidWeight": "Enter your body weight between 30 and 200 kg to continue."
+    }
+  },
+  "passenger": {
+    "none": "Alone",
+    "child": "Child",
+    "dog": "Dog"
+  },
+  "water": {
+    "to": "Large lake",
+    "folyo": "River",
+    "vedett": "Sheltered small water"
+  },
+  "storage": {
+    "any": "Doesn't matter",
+    "inflatable_only": "Inflatable only"
+  },
+  "result": {
+    "title": "Your boards",
+    "topMatch": "Best match",
+    "otherMatches": "More recommendations",
+    "matchLabel": "{{score}}% match",
+    "viewBoard": "View board",
+    "restart": "New search",
+    "empty": "We didn't find a board for these criteria — try loosening the budget or storage filter.",
+    "share": "Share"
+  },
+  "reason": {
+    "volume": "The {{volume}} l volume gives comfortable headroom at {{level}} level.",
+    "stability": "Wide, stable board — confident for a {{level}} paddler.",
+    "maxLoad": "The {{maxLoad}} kg load capacity easily handles the {{effWeight}} kg load.",
+    "reviews": "The community rated it {{avg}}/5 ({{count}} reviews).",
+    "value": "Good value: {{price}} Ft within your range.",
+    "purpose": "Designed for {{use}} use.",
+    "availability": "Available at home, fresh {{year}} model.",
+    "fresh": "Current, {{year}} model year."
+  },
+  "level": {
+    "kezdo": "beginner",
+    "halado": "intermediate",
+    "versenyzo": "racer"
+  },
+  "use": {
+    "allround": "Allround",
+    "tura": "Touring",
+    "verseny": "Racing",
+    "joga": "Yoga",
+    "horgasz": "Fishing"
+  }
+}

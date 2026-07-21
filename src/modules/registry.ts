@@ -7,6 +7,7 @@ import { weatherModule } from "./weather/module";
 import { spotsModule } from "./spots/module";
 import { catalogModule } from "./catalog/module";
 import { reviewsModule } from "./reviews/module";
+import { advisorModule } from "./advisor/module";
 
 /**
  * Modul-regiszter — az EGYETLEN hely, ahol új modult regisztrálni kell.
@@ -18,4 +19,5 @@ export const modules: readonly ModuleManifest[] = [
   spotsModule,
   catalogModule,
   reviewsModule,
+  advisorModule,
 ];

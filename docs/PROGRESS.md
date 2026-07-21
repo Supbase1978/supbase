@@ -12,8 +12,8 @@
 | F1.2 DB (séma + RLS + seed) | ✅ kész (2026-07-18) | reviewer-jóváhagyással; futási verifikáció a CI rls-tests jobban |
 | F1.3 Weather + SUP-index | ✅ kész (2026-07-19) | reviewer-jóváhagyva; Edge Functionök deployolva, cron aktív, élesben end-to-end verifikálva |
 | F1.4 Spots + térkép | ✅ kész (2026-07-19) | scaffolder+ui-builder+karmester; MapLibre-térkép, adatlap, spot_reports; élesben verifikálva (m5 „Tilos" éles II. fokon) |
-| F1.5 Catalog + Reviews | ✅ kész (2026-07-21) | catalog+reviews modulok, deszka-lista/adatlap, „Közös nevező"-blokk RatingBar-okkal (átnevezve: Népítélet→Közös nevező, színkiemelt evező-szójáték), e-mail-gate-elt vélemény+flag flow, admin-moderáció, catalog-watch séma-előkészítés (migráció+RLS+pgTAP). Nyitott: auth-flow verifikáció teszt-fiókkal (nem blokkoló) |
-| F1.6 Advisor | ⬜ | |
+| F1.5 Catalog + Reviews | ✅ kész (2026-07-21) | catalog+reviews modulok, deszka-lista/adatlap, „Közös nevező"-blokk RatingBar-okkal (átnevezve: Népítélet→Közös nevező, színkiemelt evező-szójáték), e-mail-gate-elt vélemény+flag flow, admin-moderáció, catalog-watch séma-előkészítés. Vélemény-flow bejelentkezett teszt-fiókkal ÉLESBEN verifikálva (Közös nevező adattal renderel) |
+| F1.6 Advisor | ✅ kész (2026-07-21) | algo-engineer (kétrétegű algoritmus) + ui-builder/karmester (wizard + eredmény + route + session-log); wizard end-to-end élesben verifikálva. Nyitott: admin-moderáció verifikáció a szerep-forrás javítása után (lásd role-forrás finding) |
 | F1.7 Providers | ⬜ | |
 | F1.8 SEO-réteg | ⬜ | + jogi oldalak: ÁSZF + adatvédelmi nyilatkozat, consent-checkbox a regisztrációban (spec F1-fázislista + 11.4) |
 | F1.9 Push + viharjelzés | ⬜ | |
@@ -21,21 +21,28 @@
 
 ## ITINER a következő sessionnek (2026-07-21-i állapot)
 
-**Következő lépés: F1.6 — Advisor (Deszkaválasztó): wizard, algoritmus (5.2
-kétrétegű), eredmény-képernyő (1 nagy + 2 kompakt, megosztás-kártya OG-képpel),
-`advisor_sessions` logolás [algo-engineer, ui-builder].** A séma és seed
-(`advisor_weights`) F1.2-ben kész; a súlyok deploy nélkül hangolhatók (PecAI-
-minta). Mintaként a SUP-index (F1.3, tiszta `computeSupIndex` + konfig-olvasó)
-és az F1.4/F1.5 modul-szerkezet áll rendelkezésre. Az eredmény a katalógus-
-adatlapokra linkel (a „X% neked"-badge helye a `BoardHero`-ban már jelölt).
+**Következő lépés: F1.7 — Providers (szolgáltatói directory): directory-lista,
+profil-oldal, lead-form, claim-folyamat (admin-jóváhagyással) [scaffolder].**
+A séma+RLS F1.2-ben kész (providers, provider_leads, provider_spots). Mintaként
+az F1.4/F1.5/F1.6 modul-szerkezet (modul-váz + route-loader/action + UI +
+i18n). A lead-form insert-gate hasonló a spot_reports/review mintához.
 
-**F1.5 LEZÁRVA (2026-07-21):** a mag + UI-polish + catalog-watch séma-előkészítés
-kész (lásd az F1.5-fejezetet lent). Egy nyitott, NEM blokkoló tétel maradt:
-- **auth-flow verifikáció:** a vélemény-beküldés + Közös nevező-adattal-render +
-  admin-moderáció bejelentkezett, megerősített (moderátor) userrel — ehhez
-  teszt-fiók kell. A mostani lefedettség: kijelentkezett/gate-elt állapot
-  (böngésző) + RLS (CI pgTAP) + aggregátor/komponens unit-tesztek. Célszerű az
-  F1.10 auditnál egy teszt-fiókkal end-to-end végigvinni.
+**Teszt-fiókok (2026-07-21, a felhasználó Studio-SQL-lel hozta létre):**
+admin = `endre.sztellik@gmail.com` (profiles.role='admin'); teszt-user =
+`teszt@sup-platform.test` / `Teszt_1234` (sima user, megerősített). A vélemény-
+flow ezzel élesben verifikálva.
+
+**BLOKKOLÓ FINDING — szerep-forrás inkonzisztencia (auth-security):** a
+`getUserRole` (`src/core/auth/roles.ts:45`) a JWT `app_metadata.role`-t olvassa,
+DE az RLS (`is_admin()`/`is_moderator()` → `current_user_role()`) a
+`profiles.role`-t. A kettő DIVERGÁL: a profiles-ban admin fiók 403-at kap az
+app-réteg guardokon, ha az `app_metadata.role` nincs beállítva. Az F1.2-jegyzet
+szerint a szerep-forrásnak a `profiles`-nak kéne lennie, de a rewire elmaradt.
+Teendő: `getUserRole`/`requireRole` a `profiles.role`-ból olvasson (VAGY az
+admin-létrehozás/promotálás mindig szinkronban tartsa az `app_metadata.role`-t).
+Ideiglenes áthidalás a teszthez: `update auth.users set raw_app_meta_data =
+raw_app_meta_data || '{"role":"admin"}'::jsonb where email='...admin...'` +
+újralépés. Admin-moderáció verifikáció ezután futtatható.
 
 **Nyitott kis tételek (nem blokkolók):**
 - m3: `supindex.stale_minutes` holt seed-kulcs — bekötni vagy kivenni (db-engineer).
@@ -411,3 +418,45 @@ default-ok). A `BoardRow` típus bővítve. Migráció NINCS kitolva — CI `rls
 futtatja, éles `db push` a felhasználó jóváhagyásával (lokál-first munkamenet).
 
 **HÁTRA (nem blokkoló):** auth-flow verifikáció teszt-fiókkal (lásd ITINER).
+
+## F1.6 — Advisor / Deszkaválasztó (2026-07-21)
+
+Kiosztás: algo-engineer (tiszta algoritmus-mag) → ui-builder (wizard + eredmény +
+route) → karmester-integráció + verifikáció. A ui-buildert a végén kapcsolat-
+megszakadás érte (a route-fájl + UI-komponensek a karmester írta). Kapuk zöldek:
+typecheck · lint · 335 vitest (~38 új advisor-teszt).
+
+**Elkészült:**
+- `src/modules/advisor/select/`: tiszta kétrétegű ajánló (5.2). 1. réteg kemény
+  szűrés (térfogat=súly×szint-szorzó, terhelhetőség×0,66≥effektív súly, HU-
+  elérhetőség, tárolás, budget, cél→board_type mapping); 2. réteg 0–100
+  pontozás (stabilitás-illeszkedés tapasztalat-függő, Közös nevező-átlag ≥5
+  vélemény/semleges, ár-érték, cél-fit, elérhetőség/frissesség) — súlyok az
+  `advisor_weights`-ből (config.ts/config.server.ts, fail-safe DEFAULT). Az
+  algoritmus STRUKTURÁLIS bemeneten dolgozik (`BoardForAdvisor[]`), NEM importál
+  catalog/reviews-t; az indoklás determinisztikus {key, params} (level/use
+  nested i18n-kulcs). Táblázatos határeset-tesztek.
+- `src/modules/advisor/ui/AdvisorWizard.tsx` (5 lépéses kliens-wizard: testsúly+
+  utas, tapasztalat, víz, cél, budget+tárolás; progress-bar, opció-kártyák,
+  amber CTA sötét felirattal) + `AdvisorResult.tsx` (1 nagy + 2 kompakt ajánlás,
+  „X% neked" amber-badge, feloldott indoklások, adatlap-linkek; megosztás
+  OG-képe F1.8).
+- `app/routes/deszkavalaszto.tsx`: a catalog+reviews+advisor összekötése a
+  route-rétegben — boards+legolcsóbb ár+publikált-vélemény-aggregátum →
+  `BoardForAdvisor[]` → `recommendBoards` → advisor_sessions insert (anonim is,
+  best-effort) → display-DTO. Adat-helperek: catalog `listCheapestPriceByBoard`
+  (+pickCheapestPerBoard teszt), reviews `listAllPublishedReviews`.
+- advisor i18n (hu forrás + en tükör): nav + wizard.* + result.* + reason/level/use.
+- `nav`: „Deszkaválasztó" (order 5) a fejlécben (registry-vezérelt).
+
+**Éles verifikáció (Playwright + dev + távoli „Supbase"):**
+- Wizard end-to-end: 85 kg / kezdő / allround / nagy tó lefutás → top ajánlás
+  X100 11'0" (65% neked, 189 000 Ft) + 2 kompakt, a feloldott indoklásokkal
+  (térfogat/kezdő szint, allround cél, terhelhetőség), adatlap-linkekkel.
+- **F1.5 vélemény-flow ÉLESBEN lezárva** a `teszt@sup-platform.test` userrel:
+  vélemény beküldve → a Közös nevező „van-adat" nézete renderel (5,0 átlag,
+  100% ajánlaná, dimenzió-mércék 10-es skálán), a form „már írtál" + „Köszönjük"
+  állapotra váltott.
+- **Admin-moderáció verifikáció FÜGGŐBEN:** a `/admin/velemenyek` adminként is
+  403 — a szerep-forrás inkonzisztencia (lásd ITINER BLOKKOLÓ FINDING) miatt.
+  A guard maga helyesen véd (jogosulatlanra 403).

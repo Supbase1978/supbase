@@ -1,0 +1,86 @@
+{
+  "nav": {
+    "advisor": "Deszkaválasztó"
+  },
+  "wizard": {
+    "title": "Deszkaválasztó",
+    "lead": "Öt gyors kérdés — és mutatjuk, melyik deszka illik hozzád.",
+    "step": "{{current}}/{{total}} lépés",
+    "back": "Vissza",
+    "next": "Tovább",
+    "submit": "Ajánlj deszkát",
+    "weight": {
+      "q": "Mennyi a testsúlyod?",
+      "unit": "kg"
+    },
+    "passenger": {
+      "q": "Viszel magaddal utast?"
+    },
+    "experience": {
+      "q": "Mennyire vagy gyakorlott?"
+    },
+    "water": {
+      "q": "Hol fogsz leggyakrabban evezni?"
+    },
+    "use": {
+      "q": "Mire használnád főként?"
+    },
+    "budget": {
+      "q": "Mi a felső árkereted? (opcionális)",
+      "any": "Nincs korlát",
+      "unit": "Ft"
+    },
+    "storage": {
+      "q": "Hogyan tárolnád?"
+    },
+    "error": {
+      "invalidWeight": "Add meg a testsúlyod 30 és 200 kg között a folytatáshoz."
+    }
+  },
+  "passenger": {
+    "none": "Egyedül",
+    "child": "Gyerek",
+    "dog": "Kutya"
+  },
+  "water": {
+    "to": "Nagy tó",
+    "folyo": "Folyó",
+    "vedett": "Védett kisvíz"
+  },
+  "storage": {
+    "any": "Mindegy",
+    "inflatable_only": "Csak felfújható"
+  },
+  "result": {
+    "title": "A te deszkáid",
+    "topMatch": "Legjobb választás",
+    "otherMatches": "További ajánlások",
+    "matchLabel": "{{score}}% neked",
+    "viewBoard": "Adatlap",
+    "restart": "Új keresés",
+    "empty": "A megadott feltételekre nem találtunk deszkát — lazíts az árkereten vagy a tároláson.",
+    "share": "Megosztás"
+  },
+  "reason": {
+    "volume": "A(z) {{volume}} l térfogat kényelmes ráhagyást ad {{level}} szinten.",
+    "stability": "Széles, stabil deszka — {{level}} evezőnek magabiztos.",
+    "maxLoad": "A {{maxLoad}} kg terhelhetőség bőven bírja a {{effWeight}} kg-os terhelést.",
+    "reviews": "A közösség {{avg}}/5-re értékelte ({{count}} vélemény).",
+    "value": "Jó ár-érték: {{price}} Ft a sávodban.",
+    "purpose": "{{use}} használatra tervezve.",
+    "availability": "Kapható itthon, friss {{year}}-es modell.",
+    "fresh": "Aktuális, {{year}}-es évjárat."
+  },
+  "level": {
+    "kezdo": "kezdő",
+    "halado": "haladó",
+    "versenyzo": "versenyző"
+  },
+  "use": {
+    "allround": "Allround",
+    "tura": "Túra",
+    "verseny": "Verseny",
+    "joga": "Jóga",
+    "horgasz": "Horgász"
+  }
+}

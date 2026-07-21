@@ -40,6 +40,19 @@ export async function listReviews(
   return data as BoardReviewRow[];
 }
 
+/**
+ * MINDEN publikált vélemény, board-tól függetlenül (F1.6 Deszkaválasztó: a
+ * route boardonként csoportosítja + `computeReviewAggregate`-tel aggregálja,
+ * hogy egy query-vel álljon elő az összes deszka Közös nevező-átlaga).
+ */
+export async function listAllPublishedReviews(supabase: SupabaseClient): Promise<BoardReviewRow[]> {
+  const { data, error } = await supabase.from("board_reviews").select("*").eq("status", "published");
+  if (error || !data) {
+    return [];
+  }
+  return data as BoardReviewRow[];
+}
+
 /** Az adott user véleménye erre a deszkára (unique board_id+user_id), null ha nincs. */
 export async function getUserReview(
   supabase: SupabaseClient,

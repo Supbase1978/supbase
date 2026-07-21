@@ -60,3 +60,32 @@ export async function listBoardPrices(
   }
   return data as BoardPriceRow[];
 }
+
+/**
+ * Tiszta reduce-logika: boardonként a legolcsóbb `price_huf` (F1.6 Deszkaválasztó
+ * ár-sáv szűrő/ár-érték pontszámhoz). Külön exportálva, hogy Supabase-mockolás
+ * nélkül, önmagában tesztelhető legyen (a spots `pickLatestPerSpot` mintájára).
+ */
+export function pickCheapestPerBoard(
+  rows: readonly Pick<BoardPriceRow, "board_id" | "price_huf">[],
+): Map<string, number> {
+  const map = new Map<string, number>();
+  for (const row of rows) {
+    const current = map.get(row.board_id);
+    if (current === undefined || row.price_huf < current) {
+      map.set(row.board_id, row.price_huf);
+    }
+  }
+  return map;
+}
+
+/** Minden `board_prices` sor egy queryben, boardonként a MIN `price_huf`-ra redukálva. */
+export async function listCheapestPriceByBoard(
+  supabase: SupabaseClient,
+): Promise<Map<string, number>> {
+  const { data, error } = await supabase.from("board_prices").select("board_id, price_huf");
+  if (error || !data) {
+    return new Map();
+  }
+  return pickCheapestPerBoard(data as Pick<BoardPriceRow, "board_id" | "price_huf">[]);
+}

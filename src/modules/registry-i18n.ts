@@ -10,3 +10,4 @@ import "./weather/i18n";
 import "./spots/i18n";
 import "./catalog/i18n";
 import "./reviews/i18n";
+import "./advisor/i18n";
