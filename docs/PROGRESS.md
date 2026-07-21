@@ -12,36 +12,30 @@
 | F1.2 DB (séma + RLS + seed) | ✅ kész (2026-07-18) | reviewer-jóváhagyással; futási verifikáció a CI rls-tests jobban |
 | F1.3 Weather + SUP-index | ✅ kész (2026-07-19) | reviewer-jóváhagyva; Edge Functionök deployolva, cron aktív, élesben end-to-end verifikálva |
 | F1.4 Spots + térkép | ✅ kész (2026-07-19) | scaffolder+ui-builder+karmester; MapLibre-térkép, adatlap, spot_reports; élesben verifikálva (m5 „Tilos" éles II. fokon) |
-| F1.5 Catalog + Reviews | 🟡 mag + UI-polish kész (2026-07-19) | catalog+reviews modulok, deszka-lista/adatlap, „Közös nevező"-blokk RatingBar-okkal (átnevezve: Népítélet→Közös nevező, színkiemelt evező-szójáték), e-mail-gate-elt vélemény+flag flow, admin-moderáció; verifikálva. HÁTRA: catalog-watch séma-előkészítés, auth-flow verifikáció teszt-fiókkal |
+| F1.5 Catalog + Reviews | ✅ kész (2026-07-21) | catalog+reviews modulok, deszka-lista/adatlap, „Közös nevező"-blokk RatingBar-okkal (átnevezve: Népítélet→Közös nevező, színkiemelt evező-szójáték), e-mail-gate-elt vélemény+flag flow, admin-moderáció, catalog-watch séma-előkészítés (migráció+RLS+pgTAP). Nyitott: auth-flow verifikáció teszt-fiókkal (nem blokkoló) |
 | F1.6 Advisor | ⬜ | |
 | F1.7 Providers | ⬜ | |
 | F1.8 SEO-réteg | ⬜ | + jogi oldalak: ÁSZF + adatvédelmi nyilatkozat, consent-checkbox a regisztrációban (spec F1-fázislista + 11.4) |
 | F1.9 Push + viharjelzés | ⬜ | |
 | F1.10 Záró audit + élesítés | ⬜ | |
 
-## ITINER a következő sessionnek (2026-07-19-i állapot)
+## ITINER a következő sessionnek (2026-07-21-i állapot)
 
-**Következő lépés: F1.5 BEFEJEZÉSE — a mag + UI-polish KÉSZ és verifikálva
-(lásd az F1.5-fejezetet lent), KÉT tétel maradt:**
-1. **catalog-watch séma-előkészítés (db-engineer):** `docs/CATALOG_WATCH_TERV.md`
-   „Adatmodell" szakasza — ÚJ migráció: boards-életciklusmezők, `catalog_sources`,
-   `catalog_candidates`, pg_trgm. A catalog `BoardRow` típus bővítendő az új
-   életciklus-mezőkkel, ha bekerülnek.
-2. **auth-flow verifikáció:** a vélemény-beküldés + Közös nevező-adattal-render +
-   admin-moderáció bejelentkezett, megerősített (moderátor) userrel — ehhez
-   teszt-fiók kell (a mostani verifikáció a kijelentkezett/gate-elt állapotot +
-   az RLS-t/aggregátor- és komponens-unit-teszteket fedte).
+**Következő lépés: F1.6 — Advisor (Deszkaválasztó): wizard, algoritmus (5.2
+kétrétegű), eredmény-képernyő (1 nagy + 2 kompakt, megosztás-kártya OG-képpel),
+`advisor_sessions` logolás [algo-engineer, ui-builder].** A séma és seed
+(`advisor_weights`) F1.2-ben kész; a súlyok deploy nélkül hangolhatók (PecAI-
+minta). Mintaként a SUP-index (F1.3, tiszta `computeSupIndex` + konfig-olvasó)
+és az F1.4/F1.5 modul-szerkezet áll rendelkezésre. Az eredmény a katalógus-
+adatlapokra linkel (a „X% neked"-badge helye a `BoardHero`-ban már jelölt).
 
-**KÉSZ (UI-polish, 2026-07-19):** átnevezés „Népítélet" → **„Közös nevező"**
-(idióma + rejtett evezős szójáték; a blokk-címben az „evező" rész színkiemelt,
-`--caution-text`). Új komponensek: `reviews/ui/{RatingBar,ReviewSummary,ReviewCard,
-FlagButton}` (RatingBar 10-seg, küszöb-szín ≥7 safe / <7 caution, SOHA danger;
-szám mindig a sáv mellett) + `catalog/ui/{BoardCard,BoardHero}`; a route-ok ezekből
-komponálnak. Élesben verifikálva; a „van-adat" út `RatingBar.test`/`ReviewSummary.test`
-alatt. Kapuk: typecheck · lint · 284 vitest (8 új).
-
-Mintaként az F1.4 spots-modul áll rendelkezésre; a vélemény/flag RLS-gate ugyanaz
-a minta, mint a spot_reports action-jében.
+**F1.5 LEZÁRVA (2026-07-21):** a mag + UI-polish + catalog-watch séma-előkészítés
+kész (lásd az F1.5-fejezetet lent). Egy nyitott, NEM blokkoló tétel maradt:
+- **auth-flow verifikáció:** a vélemény-beküldés + Közös nevező-adattal-render +
+  admin-moderáció bejelentkezett, megerősített (moderátor) userrel — ehhez
+  teszt-fiók kell. A mostani lefedettség: kijelentkezett/gate-elt állapot
+  (böngésző) + RLS (CI pgTAP) + aggregátor/komponens unit-tesztek. Célszerű az
+  F1.10 auditnál egy teszt-fiókkal end-to-end végigvinni.
 
 **Nyitott kis tételek (nem blokkolók):**
 - m3: `supindex.stale_minutes` holt seed-kulcs — bekötni vagy kivenni (db-engineer).
@@ -399,5 +393,21 @@ mércék NEM a biztonsági Gauge-ot használják (veszély-szemantika), és a `-
 safe/caution), a szám mindig a sáv mellett. A loader már átadja a 10-es
 `dimensionsTen`/`overallTen` értékeket.
 
-**HÁTRA (lásd ITINER):** UI-polish (RatingBar/hero/flag-UX), catalog-watch
-séma-előkészítés (db-engineer), auth-flow verifikáció teszt-fiókkal.
+**UI-polish (2026-07-21):** átnevezés „Népítélet" → „Közös nevező" (színkiemelt
+evező-szójáték a blokk-címben, `--caution-text`); új komponensek
+`reviews/ui/{RatingBar,ReviewSummary,ReviewCard,FlagButton}` +
+`catalog/ui/{BoardCard,BoardHero}`, a route-ok ezekből komponálnak. A RatingBar
+NEM a biztonsági Gauge (küszöb-szín ≥7 safe / <7 caution, SOHA danger; a szám
+mindig a sáv mellett). 8 új komponens-teszt.
+
+**catalog-watch séma-előkészítés (2026-07-21, `docs/CATALOG_WATCH_TERV.md`):**
+ÚJ migráció `20260717091600_catalog_watch.sql` (additív, az F1.2-catalogot nem
+bolygatja): boards életciklus-mezők (`status` active|discontinued|unverified +
+first/last_seen_at + discontinued_at), `catalog_sources`, `catalog_candidates`
+(mindkettő RLS: select ÉS write CSAK moderator/admin — kurált/belső tartalom),
+`pg_trgm` + trigram GIN index a modell-névre (fuzzy dedup). pgTAP:
+`12_catalog_watch_test.sql` (mod ír/olvas; user/anon se olvas, se ír; boards
+default-ok). A `BoardRow` típus bővítve. Migráció NINCS kitolva — CI `rls-tests`
+futtatja, éles `db push` a felhasználó jóváhagyásával (lokál-first munkamenet).
+
+**HÁTRA (nem blokkoló):** auth-flow verifikáció teszt-fiókkal (lásd ITINER).

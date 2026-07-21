@@ -23,6 +23,12 @@ export const BOARD_TYPES: readonly BoardType[] = [
   "river",
 ];
 
+/**
+ * boards.status életciklus (catalog-watch migráció, docs/CATALOG_WATCH_TERV.md):
+ * `active` · `discontinued` (kifutott, nem törlődik) · `unverified` (jelölt-eredetű).
+ */
+export type BoardStatus = "active" | "discontinued" | "unverified";
+
 /** `public.brands` sor (3.1). */
 export interface BrandRow {
   id: string;
@@ -54,6 +60,11 @@ export interface BoardRow {
   /** Generált oszlop (3.1), csak olvasható. */
   stability_index: number | null;
   created_at: string;
+  // catalog-watch életciklus-mezők (20260717091600 migráció) — a figyelő tölti.
+  status: BoardStatus;
+  first_seen_at: string;
+  last_seen_at: string | null;
+  discontinued_at: string | null;
 }
 
 /** boards + brand-join (PostgREST `brand:brands(*)`). */
