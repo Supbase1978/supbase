@@ -15,7 +15,7 @@ import { redirect } from "react-router";
 import { getLocaleFromPath, localizePath } from "@core/i18n";
 
 import { isSupabaseConfigured } from "./env";
-import { getUserRole, hasRole, type Role } from "./roles";
+import { defaultRole, hasRole, isRole, type Role } from "./roles";
 import { createSupabaseServerClient } from "./supabase.server";
 
 const LOGIN_PATH = "/belepes";
@@ -82,10 +82,20 @@ export async function requireUser(request: Request): Promise<User> {
  * Szint-guard: előbb bejelentkezést vár, majd a szerep-hierarchiát ellenőrzi.
  * Elégtelen jog → 403 Response (a felhasználó be van lépve, nem a belépőre
  * dobjuk vissza).
+ *
+ * A szerep AUTORITATÍV forrása a `profiles.role`, a `current_user_role()`
+ * SECURITY DEFINER helperen át kiolvasva — EZ ugyanaz a forrás, amit az RLS
+ * (`is_moderator()`/`is_admin()`) is használ, így az app-réteg és az adatbázis
+ * SOHA nem divergál (korábban a `getUserRole` a JWT `app_metadata`-t olvasta,
+ * ami eltérhetett a profiles-tól). Ismeretlen/hibás RPC-válasz → fail-closed
+ * `defaultRole` (ismeretlen SOHA nem ad emelt jogot).
  */
 export async function requireRole(request: Request, required: Role): Promise<User> {
   const user = await requireUser(request);
-  if (!hasRole(getUserRole(user), required)) {
+  const { supabase } = createSupabaseServerClient(request);
+  const { data, error } = await supabase.rpc("current_user_role");
+  const role = !error && isRole(data) ? data : defaultRole;
+  if (!hasRole(role, required)) {
     throw new Response("Forbidden", { status: 403, statusText: "Forbidden" });
   }
   return user;

@@ -21,28 +21,56 @@
 
 ## ITINER a következő sessionnek (2026-07-21-i állapot)
 
-**Következő lépés: F1.7 — Providers (szolgáltatói directory): directory-lista,
-profil-oldal, lead-form, claim-folyamat (admin-jóváhagyással) [scaffolder].**
-A séma+RLS F1.2-ben kész (providers, provider_leads, provider_spots). Mintaként
-az F1.4/F1.5/F1.6 modul-szerkezet (modul-váz + route-loader/action + UI +
-i18n). A lead-form insert-gate hasonló a spot_reports/review mintához.
+**Következő lépések (sorrendben):**
+
+0. **AZONNALI MIKRO-LÉPÉS (böngésző, ~5 perc):** admin-moderáció verifikáció a
+   most javított szerep-forrással. `npm run dev` → belépés adminként
+   (`endre.sztellik@gmail.com` / `Endremek_78`) → `/admin/velemenyek` (most 200)
+   → moderációs akciók (elrejtés/hitelesített-tulajdonos/jelzés-lezárás) a
+   teszt-user X100-véleményén. Ezzel az F1.5/F1.6 admin-ága teljesen zöld.
+
+1. **F1.7 — Providers (szolgáltatói directory) [scaffolder]:** directory-lista,
+   profil-oldal, lead-form, claim-folyamat (admin-jóváhagyással). A séma+RLS
+   F1.2-ben kész (providers, provider_leads, provider_spots). Mintaként az
+   F1.4/F1.5/F1.6 modul-szerkezet (modul-váz + route-loader/action + UI + i18n).
+   A lead-form insert-gate hasonló a spot_reports/review mintához. A `providers`
+   már seedelve (5 sor), a `provider_spots` köti a spotokhoz.
+
+2. **F1.8 — SEO-réteg + jogi oldalak [scaffolder + auth-security]:** JSON-LD
+   (a `@core/seo` builderek már megvannak: Product/Place/LocalBusiness/FAQPage),
+   hreflang, sitemap, persona-landingek, **OG-kép-generálás** (advisor megosztás-
+   kártya + deszka-adatlap); ÁSZF + adatvédelmi nyilatkozat (statikus kétnyelvű
+   route-ok) + **consent-checkbox a regisztrációban** (visszamenőleg is,
+   consent-időbélyeggel a profiles-ban). A meta-k jelenleg hardcode HU-k a
+   route-okban (home/deszkak/spotok/deszkavalaszto) — F1.8 köti loader-alapú,
+   locale-helyes `buildMeta`-ra.
+
+3. **F1.9 — Web push + viharjelzés-pipeline end-to-end [algo-engineer, auth-
+   security]:** `notifyStormChange()` (a storm-alert Edge Function már fut, cron
+   aktív), `push_subscriptions` join → küldés, II. fok teljes-képernyős push;
+   HydroInfo vízállás-forrás; Fertő-forrás kérdése. Itt jön be az m4 follow-up
+   (Open-Meteo `observed_at`) is.
+
+4. **F1.10 — Záró audit + e2e + security + Netlify élesítés [karmester + test-
+   runner + security-auditor + reviewer]:** Playwright e2e-csomag, axe-a11y,
+   Semgrep+Snyk, **Netlify SSR-adapter bekötése** (`@netlify/vite-plugin-react-
+   router`) + a `[deploy]`-gated build élesítése, éles `db push` (a catalog-watch
+   migráció is), a nyitott kis tételek lezárása (lásd lent).
 
 **Teszt-fiókok (2026-07-21, a felhasználó Studio-SQL-lel hozta létre):**
 admin = `endre.sztellik@gmail.com` (profiles.role='admin'); teszt-user =
 `teszt@sup-platform.test` / `Teszt_1234` (sima user, megerősített). A vélemény-
 flow ezzel élesben verifikálva.
 
-**BLOKKOLÓ FINDING — szerep-forrás inkonzisztencia (auth-security):** a
-`getUserRole` (`src/core/auth/roles.ts:45`) a JWT `app_metadata.role`-t olvassa,
-DE az RLS (`is_admin()`/`is_moderator()` → `current_user_role()`) a
-`profiles.role`-t. A kettő DIVERGÁL: a profiles-ban admin fiók 403-at kap az
-app-réteg guardokon, ha az `app_metadata.role` nincs beállítva. Az F1.2-jegyzet
-szerint a szerep-forrásnak a `profiles`-nak kéne lennie, de a rewire elmaradt.
-Teendő: `getUserRole`/`requireRole` a `profiles.role`-ból olvasson (VAGY az
-admin-létrehozás/promotálás mindig szinkronban tartsa az `app_metadata.role`-t).
-Ideiglenes áthidalás a teszthez: `update auth.users set raw_app_meta_data =
-raw_app_meta_data || '{"role":"admin"}'::jsonb where email='...admin...'` +
-újralépés. Admin-moderáció verifikáció ezután futtatható.
+**Szerep-forrás JAVÍTVA (2026-07-22):** a `requireRole` (`session.server.ts`)
+mostantól a `current_user_role()` RPC-ből olvassa a szerepet — UGYANAZ a
+`profiles.role`-forrás, amit az RLS is használ, így az app-réteg és a DB nem
+divergál. A `getUserRole` (roles.ts) csak NEM-autoritatív JWT-hint maradt
+(dokumentálva). Kapuk zöldek. **Következő MIKRO-lépés (böngészőben, dev-vel):**
+admin (`endre.sztellik@gmail.com`) belépés → `/admin/velemenyek` most 200-at ad
+(korábban 403); moderációs akciók végigkattintása (elrejtés / hitelesített-
+tulajdonos / jelzés-lezárás). A teszt-userrel írt vélemény (X100 11'0") kész
+alany a moderációhoz. Ezután az F1.5/F1.6 admin-ága is teljesen zöld.
 
 **Nyitott kis tételek (nem blokkolók):**
 - m3: `supindex.stale_minutes` holt seed-kulcs — bekötni vagy kivenni (db-engineer).

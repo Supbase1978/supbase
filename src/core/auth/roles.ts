@@ -38,9 +38,11 @@ export function hasRole(userRole: Role, required: Role): boolean {
 }
 
 /**
- * A user szerepének kiolvasása védett defaulttal. F1.1-ben a JWT
- * `app_metadata.role` claimjéből; F1.2-től a `profiles`-alapú érték is ide
- * köthető be, az API változatlanul marad.
+ * NEM AUTORITATÍV szerep-hint a JWT `app_metadata.role` claimből (védett
+ * defaulttal). A jogosultsági döntés AUTORITATÍV forrása a `profiles.role`, amit
+ * a `requireRole` a `current_user_role()` RPC-n át olvas (ugyanaz, mint az RLS)
+ * — ez a függvény csak gyors, hálózat nélküli UI-hintekhez való, ahol az
+ * esetleges JWT–profiles eltérés nem biztonsági kockázat. Auth-döntéshez TILOS.
  */
 export function getUserRole(
   user: Pick<User, "app_metadata"> | null | undefined,
