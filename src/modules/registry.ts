@@ -8,6 +8,7 @@ import { spotsModule } from "./spots/module";
 import { catalogModule } from "./catalog/module";
 import { reviewsModule } from "./reviews/module";
 import { advisorModule } from "./advisor/module";
+import { providersModule } from "./providers/module";
 
 /**
  * Modul-regiszter — az EGYETLEN hely, ahol új modult regisztrálni kell.
@@ -20,4 +21,5 @@ export const modules: readonly ModuleManifest[] = [
   catalogModule,
   reviewsModule,
   advisorModule,
+  providersModule,
 ];

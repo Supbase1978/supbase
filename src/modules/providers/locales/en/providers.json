@@ -1,0 +1,75 @@
+{
+  "nav": {
+    "providers": "Providers"
+  },
+  "list": {
+    "title": "Providers",
+    "lead": "SUP rentals, tour operators, instructors and stays across Hungary's waters.",
+    "empty": "No providers match the filter yet.",
+    "addOwn": "List your service"
+  },
+  "type": {
+    "rental": "Rental",
+    "tour": "Tour",
+    "lesson": "Lesson",
+    "accommodation": "Accommodation"
+  },
+  "tier": {
+    "premium": "Featured"
+  },
+  "verified": {
+    "badge": "Verified",
+    "hint": "This provider has been verified by the platform."
+  },
+  "profile": {
+    "backToList": "Back to list",
+    "contact": "Contact",
+    "email": "Email",
+    "phone": "Phone",
+    "website": "Website",
+    "linkedSpots": "Related spots",
+    "noContact": "No contact details provided.",
+    "notFound": "The requested provider was not found."
+  },
+  "lead": {
+    "title": "Send an enquiry",
+    "lead": "Message the provider — they receive it directly.",
+    "name": "Your name",
+    "email": "Your email",
+    "message": "Message",
+    "submit": "Send enquiry",
+    "success": "Thank you! Your enquiry has been forwarded to the provider.",
+    "invalidEmail": "Please enter a valid email address.",
+    "error": "Could not send the enquiry. Please try again."
+  },
+  "new": {
+    "title": "List your service",
+    "lead": "Add your service to the directory. After it appears, one of our admins will verify the profile.",
+    "name": "Service name",
+    "types": "Service types",
+    "typesHint": "Choose at least one.",
+    "description": "Description",
+    "email": "Contact email",
+    "phone": "Phone",
+    "website": "Website",
+    "submit": "Submit",
+    "pendingNotice": "Profile submitted — awaiting verification. It appears with a “Verification pending” marker in the directory until an admin approves it.",
+    "loginRequired": "You need to sign in to register.",
+    "missingName": "Please provide the service name.",
+    "missingType": "Please choose at least one service type.",
+    "error": "Submission failed. Please try again."
+  },
+  "status": {
+    "unverifiedBadge": "Verification pending"
+  },
+  "admin": {
+    "title": "Provider verification",
+    "pending": "Providers awaiting verification",
+    "empty": "No providers awaiting verification.",
+    "verify": "Verify",
+    "unverify": "Revoke verification",
+    "owned": "Claimed profile",
+    "unowned": "No owner",
+    "verifiedList": "Verified providers"
+  }
+}

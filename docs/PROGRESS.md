@@ -13,8 +13,8 @@
 | F1.3 Weather + SUP-index | ✅ kész (2026-07-19) | reviewer-jóváhagyva; Edge Functionök deployolva, cron aktív, élesben end-to-end verifikálva |
 | F1.4 Spots + térkép | ✅ kész (2026-07-19) | scaffolder+ui-builder+karmester; MapLibre-térkép, adatlap, spot_reports; élesben verifikálva (m5 „Tilos" éles II. fokon) |
 | F1.5 Catalog + Reviews | ✅ kész (2026-07-21) | catalog+reviews modulok, deszka-lista/adatlap, „Közös nevező"-blokk RatingBar-okkal (átnevezve: Népítélet→Közös nevező, színkiemelt evező-szójáték), e-mail-gate-elt vélemény+flag flow, admin-moderáció, catalog-watch séma-előkészítés. Vélemény-flow bejelentkezett teszt-fiókkal ÉLESBEN verifikálva (Közös nevező adattal renderel) |
-| F1.6 Advisor | ✅ kész (2026-07-21) | algo-engineer (kétrétegű algoritmus) + ui-builder/karmester (wizard + eredmény + route + session-log); wizard end-to-end élesben verifikálva. Nyitott: admin-moderáció verifikáció a szerep-forrás javítása után (lásd role-forrás finding) |
-| F1.7 Providers | ⬜ | |
+| F1.6 Advisor | ✅ kész (2026-07-21) | algo-engineer (kétrétegű algoritmus) + ui-builder/karmester (wizard + eredmény + route + session-log); wizard end-to-end élesben verifikálva. Admin-moderáció böngészőben VERIFIKÁLVA (2026-07-24, lásd F1.6-szakasz) — az admin-ág teljesen zöld |
+| F1.7 Providers | ✅ kész (2026-07-24) | directory-lista + profil + lead-form + saját-listing (claim/regisztráció) + admin-hitelesítő panel; mind az 5 flow böngészőben élesben verifikálva. Részletek lent |
 | F1.8 SEO-réteg | ⬜ | + jogi oldalak: ÁSZF + adatvédelmi nyilatkozat, consent-checkbox a regisztrációban (spec F1-fázislista + 11.4) |
 | F1.9 Push + viharjelzés | ⬜ | |
 | F1.10 Záró audit + élesítés | ⬜ | |
@@ -23,18 +23,16 @@
 
 **Következő lépések (sorrendben):**
 
-0. **AZONNALI MIKRO-LÉPÉS (böngésző, ~5 perc):** admin-moderáció verifikáció a
-   most javított szerep-forrással. `npm run dev` → belépés adminként
-   (`endre.sztellik@gmail.com` / `Endremek_78`) → `/admin/velemenyek` (most 200)
-   → moderációs akciók (elrejtés/hitelesített-tulajdonos/jelzés-lezárás) a
-   teszt-user X100-véleményén. Ezzel az F1.5/F1.6 admin-ága teljesen zöld.
+0. ~~AZONNALI MIKRO-LÉPÉS: admin-moderáció verifikáció~~ ✅ **KÉSZ (2026-07-24).**
+   `/admin/velemenyek` adminként 200 (korábban 403 — szerep-forrás javítás
+   böngészőben igazolva). Flag→panel→elrejtés (hidden, kiesik a Közös nevezőből)
+   →újra-közzététel→jelzés-lezárás végigkattintva, demo-adat helyreállítva.
+   Megjegyzés: a `verified_owner` kapcsoló a UI-ban csak a „Jóváhagyásra vár"
+   szekcióban jelenik meg — F1.5-ben nincs pending-queue (a vélemény azonnal
+   publikált), így a jelentett/publikált nézetben nem elérhető (nem blokkoló;
+   ugyanaz a Form-POST→action→RLS mechanizmus).
 
-1. **F1.7 — Providers (szolgáltatói directory) [scaffolder]:** directory-lista,
-   profil-oldal, lead-form, claim-folyamat (admin-jóváhagyással). A séma+RLS
-   F1.2-ben kész (providers, provider_leads, provider_spots). Mintaként az
-   F1.4/F1.5/F1.6 modul-szerkezet (modul-váz + route-loader/action + UI + i18n).
-   A lead-form insert-gate hasonló a spot_reports/review mintához. A `providers`
-   már seedelve (5 sor), a `provider_spots` köti a spotokhoz.
+1. ~~F1.7 — Providers~~ ✅ **KÉSZ (2026-07-24).** Lásd az F1.7-szakaszt lent.
 
 2. **F1.8 — SEO-réteg + jogi oldalak [scaffolder + auth-security]:** JSON-LD
    (a `@core/seo` builderek már megvannak: Product/Place/LocalBusiness/FAQPage),
@@ -485,6 +483,73 @@ typecheck · lint · 335 vitest (~38 új advisor-teszt).
   vélemény beküldve → a Közös nevező „van-adat" nézete renderel (5,0 átlag,
   100% ajánlaná, dimenzió-mércék 10-es skálán), a form „már írtál" + „Köszönjük"
   állapotra váltott.
-- **Admin-moderáció verifikáció FÜGGŐBEN:** a `/admin/velemenyek` adminként is
-  403 — a szerep-forrás inkonzisztencia (lásd ITINER BLOKKOLÓ FINDING) miatt.
-  A guard maga helyesen véd (jogosulatlanra 403).
+- **Admin-moderáció verifikáció KÉSZ (2026-07-24, böngésző + éles „Supbase"):**
+  a szerep-forrás javítás után `/admin/velemenyek` adminként **200** (korábban
+  403). Végigkattintva: jelentés az adatlapról → megjelenik a panel „Jelentett
+  vélemények" listájában → **elrejtés** (státusz `hidden`, a vélemény kiesik a
+  publikus `published`-only Közös nevezőből) → **újra közzététel** (`published`)
+  → **jelzés lezárása** (`resolved`, panel tiszta). Végállapot helyreállítva
+  (Közös nevező 5,0 / 1 értékelés). A `verified_owner` kapcsoló csak a
+  „Jóváhagyásra vár" (pending) szekcióban látszik — F1.5-ben nincs pending-queue,
+  ezért a mostani flow-ban nem elérhető (nem blokkoló, azonos mechanizmus).
+
+## F1.7 — Providers / szolgáltatói directory (2026-07-24)
+
+Kiosztás: karmester (az F1.4/F1.5/F1.6 modul-mintát követve). A DB-séma és RLS
+már F1.2-ben kész (providers + provider_spots + provider_leads migráció), ezért
+F1.7 = modul + route + adatréteg + UI + i18n, ÚJ migráció nélkül. Kapuk zöldek:
+typecheck · lint · 341 vitest (6 új providers-teszt). Éles Playwright-verifikáció
+(dev + távoli „Supbase", admin-session).
+
+**Elkészült (`src/modules/providers/`):**
+- `types.ts` (ProviderRow/Service-type/Tier/Lead + linked-spot), `module.ts`
+  (routes: `szolgaltatok`, `szolgaltatok/uj` [requiresAuth], `szolgaltatok/:slug`;
+  adminPanel: `szolgaltatok`; nav order 20), `i18n.ts` + `locales/{hu,en}`
+  (kulcs-paritás), registry + registry-i18n regisztráció.
+- `data/providers.server.ts`: `listProviders` (+ tiszta `sortProvidersForList` —
+  premium elöl, azon belül név), `getProviderBySlug` (slug-alak-guard `^[a-z0-9-]+$`
+  a `.or()` szűrő-injektálás ellen), `listLinkedSpots` (provider_spots→spots join),
+  `insertLead` (insert-gate: e-mail-forma + RLS `provider_leads_insert_any`),
+  `insertProvider` (owner=self; tiszta `slugify` ékezet-hajtással + `resolveUniqueSlug`
+  ütközés-feloldás; verified/tier a triggerrel biztonságos defaultra), admin
+  `listProvidersByVerified` + `setProviderVerified`. 6 unit-teszt (slugify, sort).
+- `ui/ProviderCard.tsx`: név + típus-chipek + „Kiemelt" (semleges chip, NEM
+  StatusBadge) + „Hitelesített" (biztonsági StatusBadge safe) / „Hitelesítés
+  folyamatban" jelvény + leírás-kivonat.
+- Route-ok: `/szolgaltatok` (lista + típus-szűrőchipek + „regisztráld" CTA),
+  `/szolgaltatok/:slug` (profil: fejléc + jelvények + elérhetőség + kapcsolódó
+  spotok [route-rétegben kötve, a providers NEM importál spots-t] + lead-form),
+  `/szolgaltatok/uj` (requireUser; saját listing felvétele → redirect az új
+  profilra), `/admin/szolgaltatok` (requireRole('**admin**') — a `verified`
+  jelvényt a `protect_provider_columns` trigger CSAK adminnak engedi, a
+  moderátor verify-ja némán no-op lenne; verify/unverify).
+
+**Éles verifikáció (Playwright, mind az 5 flow):**
+- Directory: 5 seed-szolgáltató, típus-szűrő, kártyák; nav-ban „Szolgáltatók".
+- Profil (SUP Balaton): elérhetőség (mailto), kapcsolódó spotok (Balatonföldvár +
+  Siófok, /spotok-linkkel), lead-form e-mail-előtöltéssel a session-ből.
+- Lead beküldve → „Köszönjük!" (insert-gate zöld).
+- Admin-panel: Tisza-tavi hitelesítve → átkerült a „Hitelesített" szekcióba, a
+  publikus listán „Hitelesített" StatusBadge jelenik meg (trigger adminnak engedi).
+- Új listing: „Balázs SUP TúraBázis" beküldve → slug `balazs-sup-turabazis`
+  (ékezet-hajtás), redirect a profilra, „Hitelesítés folyamatban" (a trigger
+  user-insertnél verified=false-ra kényszerít ✓). Nincs valós konzol-hiba.
+
+**Follow-upok / nyitott kis tételek (nem blokkolók):**
+- **Seed↔trigger interakció:** a `providers` seed közvetlen SQL-inserttel fut
+  (nincs `auth.uid()` → `is_admin()`=false), így a `protect_provider_columns`
+  trigger a seed `tier='premium'`/`verified` szándékát felülírja `free`/`false`-ra.
+  Ezért élesben EGYETLEN provider sem premium/verified alapból. Ha demo-jelleggel
+  kell hitelesített/kiemelt példa: seed UTÁNI admin-update, vagy a seed-context
+  triggerkerülése (db-engineer, F1.10 seed-revízió). A `sortProvidersForList`
+  premium-elöl logikája helyes, csak nincs premium sor az adatban.
+- **Meglévő seed-listing „átvétele" (owner=null → user):** a jelenlegi claim =
+  önkiszolgáló ÚJ listing (owner=self). A már seedelt, gazdátlan sorok user általi
+  átvétele owner-hozzárendelést igényelne, amit az RLS csak adminnak enged — ehhez
+  külön `provider_claims` request/approve tábla (ÚJ migráció, db-engineer) kellene.
+  Elhalasztva; nem blokkoló.
+- **Éles teszt-artefaktumok (a verifikáció hagyta a távoli DB-ben):** „Balázs SUP
+  TúraBázis" provider (owner=admin), egy lead a SUP Balatonon, és a Tisza-tavi
+  `verified=true`. Ártalmatlan dev-adat; az F1.10 tiszta `db push --include-seed`
+  reset-eli. Nincs törlő-UI (admin-panel csak verifikál); DB-törlés a rossz-projekt
+  token-csapda miatt szándékosan elmaradt.

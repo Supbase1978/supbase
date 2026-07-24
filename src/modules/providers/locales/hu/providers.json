@@ -1,0 +1,75 @@
+{
+  "nav": {
+    "providers": "Szolgáltatók"
+  },
+  "list": {
+    "title": "Szolgáltatók",
+    "lead": "SUP-kölcsönzők, túraszervezők, oktatók és szállások Magyarország vizein.",
+    "empty": "Egyelőre nincs a szűrőnek megfelelő szolgáltató.",
+    "addOwn": "Regisztráld a szolgáltatásod"
+  },
+  "type": {
+    "rental": "Kölcsönzés",
+    "tour": "Túra",
+    "lesson": "Oktatás",
+    "accommodation": "Szállás"
+  },
+  "tier": {
+    "premium": "Kiemelt"
+  },
+  "verified": {
+    "badge": "Hitelesített",
+    "hint": "A szolgáltatót a platform ellenőrizte."
+  },
+  "profile": {
+    "backToList": "Vissza a listához",
+    "contact": "Elérhetőség",
+    "email": "E-mail",
+    "phone": "Telefon",
+    "website": "Weboldal",
+    "linkedSpots": "Kapcsolódó spotok",
+    "noContact": "Nincs megadott elérhetőség.",
+    "notFound": "A keresett szolgáltató nem található."
+  },
+  "lead": {
+    "title": "Érdeklődés küldése",
+    "lead": "Írj a szolgáltatónak — az üzenetet közvetlenül megkapja.",
+    "name": "Neved",
+    "email": "E-mail-címed",
+    "message": "Üzenet",
+    "submit": "Érdeklődés elküldése",
+    "success": "Köszönjük! Az érdeklődésedet továbbítottuk a szolgáltatónak.",
+    "invalidEmail": "Adj meg egy érvényes e-mail-címet.",
+    "error": "Az érdeklődést nem sikerült elküldeni. Próbáld újra."
+  },
+  "new": {
+    "title": "Regisztráld a szolgáltatásod",
+    "lead": "Vedd fel a szolgáltatásod a directoryba. A megjelenés után egy adminunk hitelesíti a profilt.",
+    "name": "Szolgáltatás neve",
+    "types": "Szolgáltatás-fajták",
+    "typesHint": "Legalább egyet válassz.",
+    "description": "Leírás",
+    "email": "Kapcsolattartó e-mail",
+    "phone": "Telefon",
+    "website": "Weboldal",
+    "submit": "Beküldés",
+    "pendingNotice": "A profil beküldve — hitelesítésre vár. A directoryban „Hitelesítés folyamatban” jelöléssel jelenik meg, amíg egy admin jóváhagyja.",
+    "loginRequired": "A regisztrációhoz be kell jelentkezned.",
+    "missingName": "Add meg a szolgáltatás nevét.",
+    "missingType": "Válassz legalább egy szolgáltatás-fajtát.",
+    "error": "A beküldés nem sikerült. Próbáld újra."
+  },
+  "status": {
+    "unverifiedBadge": "Hitelesítés folyamatban"
+  },
+  "admin": {
+    "title": "Szolgáltató-hitelesítés",
+    "pending": "Hitelesítésre váró szolgáltatók",
+    "empty": "Nincs hitelesítésre váró szolgáltató.",
+    "verify": "Hitelesítés",
+    "unverify": "Hitelesítés visszavonása",
+    "owned": "Átvett profil",
+    "unowned": "Nincs tulajdonos",
+    "verifiedList": "Hitelesített szolgáltatók"
+  }
+}

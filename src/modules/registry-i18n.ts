@@ -11,3 +11,4 @@ import "./spots/i18n";
 import "./catalog/i18n";
 import "./reviews/i18n";
 import "./advisor/i18n";
+import "./providers/i18n";
