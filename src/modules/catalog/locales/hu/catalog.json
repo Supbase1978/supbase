@@ -2,6 +2,16 @@
   "nav": {
     "boards": "Deszkák"
   },
+  "seo": {
+    "list": {
+      "title": "SUP-deszkák katalógusa — paraméterek, vélemények, árak | [APPNÉV]",
+      "description": "Böngéssz a SUP-deszkák között: méretek, stabilitási index, Közös nevező vélemények és bolti árak egy helyen."
+    },
+    "detail": {
+      "title": "{{model}} teszt és adatlap | [APPNÉV]",
+      "description": "{{model}}{{brandSuffix}} — paraméterek, stabilitási index, Közös nevező vélemények és legjobb árak."
+    }
+  },
   "list": {
     "title": "Deszkák",
     "lead": "Böngéssz a SUP-deszkák között — paraméterek, Közös nevező és bolti árak egy helyen.",

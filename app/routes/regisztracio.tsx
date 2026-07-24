@@ -14,10 +14,12 @@ import {
 } from "@core/auth";
 import { createSupabaseServerClient } from "@core/auth/supabase.server";
 import { getUser, safeRedirect } from "@core/auth/session.server";
+import { CONSENT_VERSION } from "@core/consent/config";
 import { Button, Card } from "@core/ui";
 
 import { AuthField } from "../auth/AuthField";
 import { AuthNotice } from "../auth/AuthNotice";
+import { OAuthButtons } from "../auth/OAuthButtons";
 import { useAuthT } from "../auth/auth-i18n";
 import type { Route } from "./+types/regisztracio";
 
@@ -51,6 +53,11 @@ export async function action({ request }: Route.ActionArgs) {
   if (!password) {
     return { ok: false as const, errorKey: "auth.errors.passwordRequired" };
   }
+  // Kötelező beleegyezés (ÁSZF + adatvédelmi). A tényleges naplózás a signup-
+  // metaadatból, a `record_signup_consents` triggerrel történik (user_consents).
+  if (formData.get("consent") !== "on") {
+    return { ok: false as const, errorKey: "auth.errors.consentRequired" };
+  }
 
   const captchaToken = readCaptchaToken(formData);
   if (isTurnstileEnabled() && !captchaToken) {
@@ -64,7 +71,13 @@ export async function action({ request }: Route.ActionArgs) {
   const { error } = await supabase.auth.signUp({
     email,
     password,
-    options: { captchaToken, emailRedirectTo },
+    options: {
+      captchaToken,
+      emailRedirectTo,
+      // A consent-szándék a metaadatban utazik; a trigger a user létrejöttekor
+      // naplózza (az e-mail-megerősítés miatt itt még nincs aktív session).
+      data: { consent_version: CONSENT_VERSION },
+    },
   });
   if (error) {
     return { ok: false as const, errorKey: "auth.errors.unexpected" };
@@ -116,6 +129,25 @@ export default function SignupRoute({ loaderData, actionData }: Route.ComponentP
               required
             />
 
+            <label className="flex items-start gap-2 text-sm text-text-2">
+              <input
+                type="checkbox"
+                name="consent"
+                required
+                className="mt-0.5 size-4 shrink-0"
+              />
+              <span>
+                {t("auth.signup.consentLabel")}{" "}
+                <Link to="/aszf" className="font-semibold text-petrol underline">
+                  {t("auth.signup.termsLink")}
+                </Link>
+                {" · "}
+                <Link to="/adatvedelem" className="font-semibold text-petrol underline">
+                  {t("auth.signup.privacyLink")}
+                </Link>
+              </span>
+            </label>
+
             <Turnstile disabledLabel={t("auth.turnstile.disabledNotice")} />
 
             <Button type="submit" variant="primary">
@@ -123,6 +155,8 @@ export default function SignupRoute({ loaderData, actionData }: Route.ComponentP
             </Button>
           </Form>
         ) : null}
+
+        {!confirmationSent ? <OAuthButtons redirectTo={loaderData.redirectTo} /> : null}
       </Card>
 
       <p className="text-center text-sm text-text-2">

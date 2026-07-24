@@ -15,7 +15,7 @@
 | F1.5 Catalog + Reviews | ✅ kész (2026-07-21) | catalog+reviews modulok, deszka-lista/adatlap, „Közös nevező"-blokk RatingBar-okkal (átnevezve: Népítélet→Közös nevező, színkiemelt evező-szójáték), e-mail-gate-elt vélemény+flag flow, admin-moderáció, catalog-watch séma-előkészítés. Vélemény-flow bejelentkezett teszt-fiókkal ÉLESBEN verifikálva (Közös nevező adattal renderel) |
 | F1.6 Advisor | ✅ kész (2026-07-21) | algo-engineer (kétrétegű algoritmus) + ui-builder/karmester (wizard + eredmény + route + session-log); wizard end-to-end élesben verifikálva. Admin-moderáció böngészőben VERIFIKÁLVA (2026-07-24, lásd F1.6-szakasz) — az admin-ág teljesen zöld |
 | F1.7 Providers | ✅ kész (2026-07-24) | directory-lista + profil + lead-form + saját-listing (claim/regisztráció) + admin-hitelesítő panel; mind az 5 flow böngészőben élesben verifikálva. Részletek lent |
-| F1.8 SEO-réteg | ⬜ | + jogi oldalak: ÁSZF + adatvédelmi nyilatkozat, consent-checkbox a regisztrációban (spec F1-fázislista + 11.4) |
+| F1.8 SEO-réteg | ✅ mag kész (2026-07-24) | loader-alapú meta+hreflang, JSON-LD, sitemap+robots, consent (user_consents migráció + regisztrációs checkbox + re-consent), ÁSZF+adatvédelmi. HÁTRA: OG-kép-generálás + persona-landingek (F1.8b) + a consent-migráció éles push. Részletek lent |
 | F1.9 Push + viharjelzés | ⬜ | |
 | F1.10 Záró audit + élesítés | ⬜ | |
 
@@ -34,7 +34,15 @@
 
 1. ~~F1.7 — Providers~~ ✅ **KÉSZ (2026-07-24).** Lásd az F1.7-szakaszt lent.
 
-2. **F1.8 — SEO-réteg + jogi oldalak [scaffolder + auth-security]:** JSON-LD
+2. ~~F1.8 — SEO-réteg + jogi + consent~~ ✅ **MAG KÉSZ (2026-07-24).** Lásd az
+   F1.8-szakaszt lent. HÁTRA (F1.8b): OG-kép-generálás + persona-landingek; és
+   egy ÚJ igény: **regisztráció-bővítés** — jelszó-emlékeztető (elfelejtett jelszó)
+   + Google/Apple közösségi belépés (Supabase Auth natívan; Dashboard-konfig kell).
+   A jogi szövegek már utalnak a közösségi belépésre. A consent-migráció (`090500`)
+   éles push-a jóváhagyással.
+
+   Az EREDETI F1.8-terv referenciaként:
+   **F1.8 — SEO-réteg + jogi oldalak [scaffolder + auth-security]:** JSON-LD
    (a `@core/seo` builderek már megvannak: Product/Place/LocalBusiness/FAQPage),
    hreflang, sitemap, persona-landingek, **OG-kép-generálás** (advisor megosztás-
    kártya + deszka-adatlap); ÁSZF + adatvédelmi nyilatkozat (statikus kétnyelvű
@@ -553,3 +561,86 @@ typecheck · lint · 341 vitest (6 új providers-teszt). Éles Playwright-verifi
   `verified=true`. Ártalmatlan dev-adat; az F1.10 tiszta `db push --include-seed`
   reset-eli. Nincs törlő-UI (admin-panel csak verifikál); DB-törlés a rossz-projekt
   token-csapda miatt szándékosan elmaradt.
+
+## F1.8 — SEO-réteg + consent + jogi oldalak (2026-07-24)
+
+Kiosztás: karmester (scaffolder+auth-security-minta). Kapuk zöldek: typecheck ·
+lint · 359 vitest (+15 új: page-seo, sitemap, consent). SSR/curl-verifikáció a
+dev-szerveren. A `user_consents` migráció + pgTAP a CI `rls-tests` jobban fut
+(lokálisan nincs Docker/Postgres); éles push jóváhagyással.
+
+**Mag KÉSZ (5 al-lépés):**
+1. **Loader-alapú meta + hreflang** (`@core/seo/page-seo` `buildPageSeo` +
+   `serverT` szerver-oldali fordító + `siteOrigin`/`absoluteUrl`; `VITE_PUBLIC_SITE_URL`
+   env vagy kérés-origin fallback). Minden fő route-on (home, deszkak[/:slug],
+   spotok[/:slug], deszkavalaszto, szolgaltatok[/:slug]) locale-helyes title/
+   description/OG + canonical + hreflang. SEO-kulcsok a namespace-ekben (hu+en).
+2. **JSON-LD** az adatlapokon (`@core/seo/json-ld` `<JsonLd>` + a meglévő builderek):
+   Product+AggregateRating+Offer (deszka), Place+geo (spot), LocalBusiness (provider).
+3. **sitemap.xml + robots.txt** resource route-ok (`@core/seo/sitemap`
+   `buildSitemapXml`; dinamikus slugok a 3 modulból; 96 URL). robots tiltja az
+   /admin, /auth, /szolgaltatok/uj, /kijelentkezes utakat + sitemapre mutat.
+4. **Consent** (verziózott, jövőálló): ÚJ core-migráció `20260717090500_core_user_consents.sql`
+   — `user_consents (user_id, kind, version, granted_at)` append-only napló, RLS
+   (own select/insert, admin delete), `record_signup_consents` trigger (a
+   signup-metaadatból írja, mert az e-mail-megerősítés miatt regkor nincs session).
+   `@core/consent` (CONSENT_VERSION="2026-07", REQUIRED=[terms,privacy] + marketing
+   jövőre; `getMissingRequiredConsents`/`recordConsents`). Regisztrációs
+   **checkbox** (kötelező, ÁSZF+adatvédelmi linkkel, `consent_version` metaadat).
+   **Retroaktív re-consent:** `/beleegyezes` route + root-loader banner (bejelentkezett
+   usernél a hiányzó consent-et jelzi; fail-safe, ha a tábla még nincs kitolva).
+5. **Jogi oldalak** (`@core/legal`): `/aszf` + `/adatvedelem` kétnyelvű, strukturált
+   tartalommal (a Hullám-projekt `ÁSZF_SEO/aszf-maradjaktivpecs.md` struktúrája
+   alapján, SUP-platformra adaptálva: időjárás/SUP-index-disclaimer, szolgáltatói-
+   directory-disclaimer, felhasználói tartalom). Cégadatok `[KITÖLTENDŐ: …]`
+   placeholderek (`entity.ts`, verzióhoz kötve). Lábléc a site-wide eléréshez.
+   **A közösségi belépésre (Google/Apple) már utal az ÁSZF 7. és az adatvédelmi
+   2./4. szakasza** (a most kért reg-bővítéshez).
+
+**Fontos SEO-döntés (javítás):** a `/en/...` route-ok NINCSENEK bekötve (en csak
+CEE-terjeszkedésnél élesedik), ezért bevezetve az `activeLocales=["hu"]` — a
+hreflang/sitemap CSAK élő locale-t hirdet (nincs 404-es /en URL a crawlernek).
+Amikor az en-routing élesedik: `activeLocales`-hez add az `en`-t.
+
+**Jogi tartalom forrás (referencia):** a felhasználó saját, más projektben
+használt ÁSZF-anyagai: `/Volumes/Endre_Samsung1T/Hullám/weblap/ÁSZF_SEO/`
+(`aszf-maradjaktivpecs.md` kész minta, `aszf-kitoltendo.md` a kitöltendő cégadat-
+mezők, `cookie-tajekoztato-maradjaktivpecs.md`). A codesummon.org/terms
+GDPR-struktúrája is irányadó volt az adatvédelmihez.
+
+**HÁTRA (F1.8b / F1.10):**
+- **OG-kép dinamikus generálás** (advisor megosztás-kártya + deszka-adatlap) —
+  technikai döntéssel (satori/resvg vagy edge function). Elhalasztva.
+- **Persona-landingek** — terméki definíció kell.
+- **`user_consents` migráció éles push** (jóváhagyással) — addig a re-consent
+  banner fail-safe kikapcsolt (a tábla hiánya nem crashel).
+- **Cégadatok kitöltése** a jogi oldalakon (`entity.ts` `[KITÖLTENDŐ: …]`).
+
+## F1.8b — Regisztráció-bővítés: jelszó-visszaállítás + Google/Apple belépés (2026-07-24)
+
+Kód KÉSZ (a felhasználó kérésére, „mindhárom mód most", együtt az F1.8-cal).
+Supabase Auth natív — nem építettünk sajátot. Kapuk zöldek: typecheck · lint · 359 vitest.
+
+**Elkészült:**
+- `/auth/oauth` action-route: `signInWithOAuth({provider})` (allowlist: google|apple)
+  → provider-redirect; a visszatérést a MEGLÉVŐ `/auth/callback` kezeli
+  (exchangeCodeForSession). `safeRedirect` a redirectTo-n (nincs open-redirect).
+- `app/auth/OAuthButtons.tsx`: „Folytatás Google/Apple-fiókkal" (POST `/auth/oauth`,
+  progressive enhancement) — bekötve a `/belepes` és `/regisztracio` oldalra.
+- `/elfelejtett-jelszo`: `resetPasswordForEmail` (Turnstile, user-enumeráció ellen
+  mindig „elküldve"; redirectTo = `/auth/callback?redirectTo=/uj-jelszo`).
+- `/uj-jelszo`: requireUser (recovery-session a callback után) → `updateUser({password})`,
+  min. 8 karakter. „Elfelejtetted a jelszavad?" link a belépőn.
+- i18n: auth.oauth / forgotPassword / newPassword kulcsok (hu+en) + error-kulcsok.
+- Verifikáció (curl, anon): a gombok + linkek renderelnek, a guardok (302) állnak.
+
+**OAuth↔consent (megoldva):** az OAuth-signup KIHAGYJA a reg-consent-checkboxot,
+de az F1.8 retroaktív re-consent bannere elkapja: első belépéskor a `/beleegyezes`
+oldalra irányítja. Így a közösségi belépő userek is elfogadják a feltételeket.
+
+**FELHASZNÁLÓI TEENDŐ (Dashboard, kód nélkül nem él élesben):**
+- **Google:** Google Cloud OAuth 2.0 kliens (client ID + secret) → Supabase
+  Dashboard → Authentication → Providers → Google. Redirect URL: a Supabase
+  callback (`https://<project>.supabase.co/auth/v1/callback`). Ingyenes.
+- **Apple:** Apple Developer-fiók (~99 USD/év), Services ID + kulcs → Providers → Apple.
+- Bekapcsolásig a gombok redirectelnek, de a Supabase provider-hibára fut (a kód kész).

@@ -18,7 +18,10 @@ import { data, Form, Link } from "react-router";
 import { getUser, requireUser } from "@core/auth/session.server";
 import { createSupabaseServerClient } from "@core/auth/supabase.server";
 import { isEmailConfirmed } from "@core/auth/email-confirmed";
-import { getLocaleFromPath, pickTranslated } from "@core/i18n";
+import { getLocaleFromPath, pickTranslated, serverT } from "@core/i18n";
+import { absoluteUrl, buildPageSeo } from "@core/seo/page-seo";
+import { placeJsonLd } from "@core/seo/jsonld";
+import { JsonLd } from "@core/seo/json-ld";
 import { Button, Card, DataAge, Gauge, minutesSince, StatusBadge } from "@core/ui";
 import { SpotMap } from "@modules/spots/ui/SpotMap";
 import { StormAlertScreen } from "@modules/spots/ui/StormAlertScreen";
@@ -114,7 +117,32 @@ export async function loader({ request, params }: Route.LoaderArgs) {
   const point = pointFromGeom(spotRow.geom);
   const evaluation = snapshotRow ? evaluateSpotSnapshot(spotRow, snapshotRow, config) : null;
 
+  const t = serverT(locale, "spots");
+  const detailPath = `/spotok/${pickTranslated(spotRow.slug, locale)}`;
+  const regionSuffix = spotRow.region ? ` — ${spotRow.region}` : "";
+  const spotDescription = pickTranslated(spotRow.season_info, locale) || undefined;
+  const seo = buildPageSeo({
+    request,
+    locale,
+    path: detailPath,
+    title: t("seo.detail.title", { spot: spotRow.name }),
+    description: t("seo.detail.description", { spot: spotRow.name, regionSuffix }),
+  });
+
+  const jsonLd =
+    point !== null
+      ? placeJsonLd({
+          name: spotRow.name,
+          description: spotDescription,
+          url: absoluteUrl(request, detailPath, locale),
+          latitude: point.lat,
+          longitude: point.lng,
+        })
+      : null;
+
   return {
+    seo,
+    jsonLd,
     spot: {
       id: spotRow.id,
       slug: pickTranslated(spotRow.slug, locale),
@@ -218,9 +246,7 @@ export async function action({ request, params }: Route.ActionArgs) {
   return data<ActionResult>({ ok: true }, { headers });
 }
 
-export const meta: Route.MetaFunction = ({ data: loaderData }) => {
-  return [{ title: `[APPNÉV] — ${loaderData?.spot.name ?? "Spot"}` }];
-};
+export const meta: Route.MetaFunction = ({ data }) => data?.seo ?? [];
 
 const STATUS_SEVERITY: Record<SpotStatus, "safe" | "caution" | "danger"> = {
   safe: "safe",
@@ -232,7 +258,7 @@ const STATUS_SEVERITY: Record<SpotStatus, "safe" | "caution" | "danger"> = {
 
 export default function SpotDetailRoute({ loaderData, actionData }: Route.ComponentProps) {
   const { t, i18n } = useTranslation("spots");
-  const { spot, snapshot, evaluation, gaugeThresholds, reports, reportForm } = loaderData;
+  const { spot, snapshot, evaluation, gaugeThresholds, reports, reportForm, jsonLd } = loaderData;
 
   const formattedIndex = evaluation
     ? new Intl.NumberFormat(i18n.language, {
@@ -244,6 +270,7 @@ export default function SpotDetailRoute({ loaderData, actionData }: Route.Compon
 
   return (
     <main className="mx-auto flex min-h-svh max-w-3xl flex-col gap-6 p-4 sm:p-6">
+      {jsonLd ? <JsonLd data={jsonLd} /> : null}
       {/* II. fokú viharjelzés: teljes képernyős, NEM eldugható riasztás a
           tartalom FÖLÉ (2. fejezet 4. pont; F1.3-reviewer m5). */}
       {evaluation?.status === "forbidden" && snapshot ? (

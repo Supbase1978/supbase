@@ -9,7 +9,8 @@ import { useTranslation } from "react-i18next";
 import { Link } from "react-router";
 
 import { createSupabaseServerClient } from "@core/auth/supabase.server";
-import { getLocaleFromPath, pickTranslated } from "@core/i18n";
+import { getLocaleFromPath, pickTranslated, serverT } from "@core/i18n";
+import { buildPageSeo } from "@core/seo/page-seo";
 import { cx } from "@core/ui";
 import { listProviders } from "@modules/providers/data/providers.server";
 import { ProviderCard, type ProviderCardData } from "@modules/providers/ui/ProviderCard";
@@ -33,12 +34,19 @@ export async function loader({ request }: Route.LoaderArgs) {
     verified: provider.verified,
   }));
 
-  return { items };
+  const t = serverT(locale, "providers");
+  const seo = buildPageSeo({
+    request,
+    locale,
+    path: "/szolgaltatok",
+    title: t("seo.list.title"),
+    description: t("seo.list.description"),
+  });
+
+  return { items, seo };
 }
 
-export const meta: Route.MetaFunction = () => {
-  return [{ title: "[APPNÉV] — Szolgáltatók" }];
-};
+export const meta: Route.MetaFunction = ({ data }) => data?.seo ?? [];
 
 export default function ProvidersListRoute({ loaderData }: Route.ComponentProps) {
   const { t } = useTranslation("providers");

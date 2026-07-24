@@ -5,7 +5,8 @@
 import { useTranslation } from "react-i18next";
 
 import { createSupabaseServerClient } from "@core/auth/supabase.server";
-import { getLocaleFromPath, pickTranslated } from "@core/i18n";
+import { getLocaleFromPath, pickTranslated, serverT } from "@core/i18n";
+import { buildPageSeo } from "@core/seo/page-seo";
 import { listBoards } from "@modules/catalog/data/boards.server";
 import { BoardCard } from "@modules/catalog/ui/BoardCard";
 
@@ -30,12 +31,19 @@ export async function loader({ request }: Route.LoaderArgs) {
     imageUrl: board.image_url,
   }));
 
-  return { items };
+  const t = serverT(locale, "catalog");
+  const seo = buildPageSeo({
+    request,
+    locale,
+    path: "/deszkak",
+    title: t("seo.list.title"),
+    description: t("seo.list.description"),
+  });
+
+  return { items, seo };
 }
 
-export const meta: Route.MetaFunction = () => {
-  return [{ title: "[APPNÉV] — Deszkák" }];
-};
+export const meta: Route.MetaFunction = ({ data }) => data?.seo ?? [];
 
 export default function BoardsListRoute({ loaderData }: Route.ComponentProps) {
   const { t } = useTranslation("catalog");

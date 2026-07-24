@@ -13,7 +13,10 @@ import { data, Form, Link } from "react-router";
 import { getUser, requireUser } from "@core/auth/session.server";
 import { createSupabaseServerClient } from "@core/auth/supabase.server";
 import { isEmailConfirmed } from "@core/auth/email-confirmed";
-import { getLocaleFromPath, pickTranslated } from "@core/i18n";
+import { getLocaleFromPath, pickTranslated, serverT } from "@core/i18n";
+import { absoluteUrl, buildPageSeo } from "@core/seo/page-seo";
+import { productJsonLd } from "@core/seo/jsonld";
+import { JsonLd } from "@core/seo/json-ld";
 import { Button, Card, StatusBadge } from "@core/ui";
 import { getBoardBySlug, listBoardPrices } from "@modules/catalog/data/boards.server";
 import { BoardHero } from "@modules/catalog/ui/BoardHero";
@@ -73,7 +76,40 @@ export async function loader({ request, params }: Route.LoaderArgs) {
   const aggregate = computeReviewAggregate(reviewRows);
   const ownReview = user ? await getUserReview(supabase, board.id, user.id) : null;
 
+  const t = serverT(locale, "catalog");
+  const detailPath = `/deszkak/${pickTranslated(board.slug, locale)}`;
+  const canonicalUrl = absoluteUrl(request, detailPath, locale);
+  const brandSuffix = board.brand?.name ? ` — ${board.brand.name}` : "";
+  const description = pickTranslated(board.description, locale) || undefined;
+  const seo = buildPageSeo({
+    request,
+    locale,
+    path: detailPath,
+    title: t("seo.detail.title", { model: board.model_name }),
+    description: t("seo.detail.description", { model: board.model_name, brandSuffix }),
+  });
+
+  const jsonLd = productJsonLd({
+    name: board.model_name,
+    description,
+    brand: board.brand?.name ?? undefined,
+    url: canonicalUrl,
+    image: board.image_url ?? undefined,
+    aggregateRating:
+      aggregate.count > 0 && aggregate.avgOverall !== null
+        ? { ratingValue: aggregate.avgOverall, reviewCount: aggregate.count }
+        : undefined,
+    offers: prices.map((p) => ({
+      price: p.price_huf,
+      priceCurrency: "HUF",
+      url: p.url ?? undefined,
+      availability: "https://schema.org/InStock" as const,
+    })),
+  });
+
   return {
+    seo,
+    jsonLd,
     board: {
       id: board.id,
       slug: pickTranslated(board.slug, locale),
@@ -193,16 +229,15 @@ export async function action({ request, params }: Route.ActionArgs) {
     : data<ActionResult>({ ok: false, errorKey: result.errorKey }, { headers });
 }
 
-export const meta: Route.MetaFunction = ({ data: loaderData }) => {
-  return [{ title: `[APPNÉV] — ${loaderData?.board.modelName ?? "Deszka"}` }];
-};
+export const meta: Route.MetaFunction = ({ data }) => data?.seo ?? [];
 
 const RATING_OPTIONS = [1, 2, 3, 4, 5] as const;
 
 export default function BoardDetailRoute({ loaderData, actionData }: Route.ComponentProps) {
   const { t } = useTranslation("catalog");
   const { t: tr, i18n } = useTranslation("reviews");
-  const { board, prices, aggregate, dimensionsTen, overallTen, reviews, reviewForm } = loaderData;
+  const { board, prices, aggregate, dimensionsTen, overallTen, reviews, reviewForm, jsonLd } =
+    loaderData;
 
   const cheapest = prices.length > 0 ? prices[0] : null;
   const nf = new Intl.NumberFormat(i18n.language);
@@ -210,6 +245,7 @@ export default function BoardDetailRoute({ loaderData, actionData }: Route.Compo
 
   return (
     <main className="mx-auto flex min-h-svh max-w-3xl flex-col gap-6 p-4 sm:p-6">
+      <JsonLd data={jsonLd} />
       <header className="flex flex-col gap-2">
         <BoardHero modelName={board.modelName} imageUrl={board.imageUrl} />
         <div className="flex flex-wrap items-baseline justify-between gap-2">

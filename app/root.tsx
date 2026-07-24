@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { I18nextProvider, useTranslation } from "react-i18next";
 import {
   isRouteErrorResponse,
+  Link,
   Links,
   Meta,
   Outlet,
@@ -10,7 +11,10 @@ import {
   useLocation,
 } from "react-router";
 
-import { createI18n, getLocaleFromPath } from "@core/i18n";
+import { getUser } from "@core/auth/session.server";
+import { createSupabaseServerClient } from "@core/auth/supabase.server";
+import { hasMissingRequiredConsents } from "@core/consent/consent.server";
+import { createI18n, getLocaleFromPath, stripLocale } from "@core/i18n";
 // Modul-namespace-ek regisztrációja (import-mellékhatás) — új modul fordítása
 // a src/modules/registry-i18n.ts-ben kötendő be, ehhez a fájlhoz nem kell nyúlni.
 import "@modules/registry-i18n";
@@ -31,6 +35,17 @@ export const links: Route.LinksFunction = () => [
     href: "https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;600;700&family=Instrument+Sans:wght@400;500;600&display=swap",
   },
 ];
+
+export async function loader({ request }: Route.LoaderArgs) {
+  // Retroaktív consent-ellenőrzés: csak bejelentkezett usernél megy DB-hez
+  // (anon → azonnal false). Egy indexelt lekérdezés; fail-safe false.
+  const user = await getUser(request);
+  if (!user) {
+    return { needsConsent: false };
+  }
+  const { supabase } = createSupabaseServerClient(request);
+  return { needsConsent: await hasMissingRequiredConsents(supabase, user.id) };
+}
 
 export function Layout({ children }: { children: React.ReactNode }) {
   // Locale az URL-ből (8. + 6. fejezet: hu default prefix nélkül, en: /en/...).
@@ -56,12 +71,53 @@ export function Layout({ children }: { children: React.ReactNode }) {
   );
 }
 
-export default function App() {
+export default function App({ loaderData }: Route.ComponentProps) {
   return (
     <>
+      {loaderData?.needsConsent ? <ConsentBanner /> : null}
       <AppNav />
       <Outlet />
+      <SiteFooter />
     </>
+  );
+}
+
+/** Lábléc a jogi oldalak site-wide elérhetőségéhez (F1.8). */
+function SiteFooter() {
+  const { t } = useTranslation("core");
+  return (
+    <footer className="mt-8 border-t border-line px-4 py-6 text-center text-sm text-text-3">
+      <nav className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
+        <Link to="/aszf" className="hover:text-petrol-text hover:underline">
+          {t("consent.termsLink")}
+        </Link>
+        <Link to="/adatvedelem" className="hover:text-petrol-text hover:underline">
+          {t("consent.privacyLink")}
+        </Link>
+      </nav>
+    </footer>
+  );
+}
+
+/**
+ * Retroaktív re-consent banner (F1.8). Akkor jelenik meg, ha a bejelentkezett
+ * usernek hiányzik az aktuális verziójú kötelező beleegyezése — a `/beleegyezes`
+ * felületre visz. A consent-oldalon magán NEM jelenik meg (elkerüli a redundanciát).
+ * Amber (caution) sáv, sötét felirattal — a `--danger` interakciós elemen tilos.
+ */
+function ConsentBanner() {
+  const { t } = useTranslation("core");
+  const path = stripLocale(useLocation().pathname);
+  if (path === "/beleegyezes") {
+    return null;
+  }
+  return (
+    <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 bg-caution-bg px-4 py-2 text-center text-sm text-caution-text">
+      <span>{t("consent.banner")}</span>
+      <Link to="/beleegyezes" className="font-bold text-caution-text underline">
+        {t("consent.bannerCta")}
+      </Link>
+    </div>
   );
 }
 

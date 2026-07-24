@@ -8,7 +8,7 @@
  * regiszteréből épül fel; új namespace a `registerNamespace` hívással
  * kapcsolódik be (modulonként, a modul `module.ts`-éből).
  */
-import i18next, { type i18n } from "i18next";
+import i18next, { type i18n, type TFunction } from "i18next";
 import { initReactI18next } from "react-i18next";
 
 import { defaultLocale, locales, type Locale } from "./config";
@@ -45,4 +45,22 @@ export function createI18n(locale: Locale): i18n {
   });
 
   return instance;
+}
+
+/**
+ * Szerver-oldali fordító route-loaderekhez (pl. locale-helyes SEO-meta). A
+ * `useTranslation`/`t` csak komponensben él; a loaderben ezzel fordítunk. Az
+ * i18next-példányok locale-onként memoizáltak (a resource-fa statikus, a példány
+ * fordításra állapotmentes — nem szivárog kérések között, szemben egy megosztott
+ * *renderelő* példánnyal). Egy adott namespace kulcsaira kötött `t`-t ad vissza.
+ */
+const serverInstances = new Map<Locale, i18n>();
+
+export function serverT(locale: Locale, namespace: string): TFunction {
+  let instance = serverInstances.get(locale);
+  if (!instance) {
+    instance = createI18n(locale);
+    serverInstances.set(locale, instance);
+  }
+  return instance.getFixedT(locale, namespace);
 }

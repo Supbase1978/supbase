@@ -1,19 +1,26 @@
 import { useTranslation } from "react-i18next";
 
+import { getLocaleFromPath, serverT } from "@core/i18n";
+import { buildPageSeo } from "@core/seo/page-seo";
+
 import type { Route } from "./+types/home";
 
-// Meta: az F1.8 SEO-réteg köti át loader-alapú, locale-helyes buildMeta-ra
-// (@core/seo) — addig a hu alap-locale szövege áll itt.
-export const meta: Route.MetaFunction = () => {
-  return [
-    { title: "[APPNÉV] — SUP deszkaválasztó, spotok, közösség" },
-    {
-      name: "description",
-      content:
-        "Deszkaválasztó, katalógus Közös nevezővel, SUP-index a magyar vizekre és szolgáltatói directory — egy helyen.",
-    },
-  ];
-};
+export async function loader({ request }: Route.LoaderArgs) {
+  const locale = getLocaleFromPath(new URL(request.url).pathname);
+  const t = serverT(locale, "core");
+  return {
+    seo: buildPageSeo({
+      request,
+      locale,
+      path: "/",
+      title: t("seo.home.title"),
+      description: t("seo.home.description"),
+    }),
+  };
+}
+
+// Locale-helyes SEO-meta a loaderből (F1.8): title/description/OG + canonical + hreflang.
+export const meta: Route.MetaFunction = ({ data }) => data?.seo ?? [];
 
 export default function Home() {
   const { t } = useTranslation("core");

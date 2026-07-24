@@ -20,5 +20,17 @@ export default [
   route("regisztracio", "routes/regisztracio.tsx"),
   route("auth/callback", "routes/auth.callback.tsx"),
   route("kijelentkezes", "routes/kijelentkezes.tsx"),
+  // Reg-bővítés (F1.8b): közösségi belépés + jelszó-visszaállítás.
+  route("auth/oauth", "routes/auth.oauth.tsx"),
+  route("elfelejtett-jelszo", "routes/elfelejtett-jelszo.tsx"),
+  route("uj-jelszo", "routes/uj-jelszo.tsx"),
+  // Retroaktív re-consent felület (F1.8) — a root-banner innen kér elfogadást.
+  route("beleegyezes", "routes/beleegyezes.tsx"),
+  // SEO resource route-ok (F1.8) — nincs komponens, a loader XML/text választ ad.
+  route("sitemap.xml", "routes/sitemap-xml.ts"),
+  route("robots.txt", "routes/robots-txt.ts"),
+  // Jogi oldalak (F1.8) — statikus, kétnyelvű ÁSZF + adatvédelmi tájékoztató.
+  route("aszf", "routes/aszf.tsx"),
+  route("adatvedelem", "routes/adatvedelem.tsx"),
   ...moduleRoutes,
 ] satisfies RouteConfig;

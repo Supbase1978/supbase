@@ -17,6 +17,24 @@
     "appName": "[APPNÉV]",
     "tagline": "Deszkaválasztó · Katalógus + Közös nevező · Spot-térkép + SUP-index · Szolgáltatói directory"
   },
+  "seo": {
+    "home": {
+      "title": "[APPNÉV] — SUP deszkaválasztó, spotok, közösség",
+      "description": "Deszkaválasztó, katalógus Közös nevezővel, SUP-index a magyar vizekre és szolgáltatói directory — egy helyen."
+    }
+  },
+  "consent": {
+    "title": "Feltételek elfogadása",
+    "banner": "Frissültek a feltételeink. Kérjük, tekintsd át és fogadd el.",
+    "bannerCta": "Áttekintés",
+    "prompt": "A feltételeink frissültek. A folytatáshoz kérjük, fogadd el az ÁSZF-et és az adatvédelmi tájékoztatót.",
+    "upToDateTitle": "Minden rendben",
+    "upToDateBody": "Az aktuális feltételeket már elfogadtad. Nincs teendő.",
+    "termsLink": "ÁSZF",
+    "privacyLink": "Adatvédelmi tájékoztató",
+    "accept": "Elfogadom",
+    "error": "A mentés nem sikerült. Kérjük, próbáld újra."
+  },
   "errors": {
     "notFound": {
       "title": "Az oldal nem található",
@@ -53,8 +71,28 @@
       "magicLinkHint": "Jelszó helyett belépő linket küldünk az e-mail-címedre.",
       "magicLinkSentTitle": "Nézd meg a postaládád",
       "magicLinkSentBody": "Ha létezik fiók ezzel a címmel, elküldtük a belépő linket.",
+      "forgotPassword": "Elfelejtetted a jelszavad?",
       "noAccount": "Még nincs fiókod?",
       "signUpLink": "Regisztrálj"
+    },
+    "oauth": {
+      "continueGoogle": "Folytatás Google-fiókkal",
+      "continueApple": "Folytatás Apple-fiókkal"
+    },
+    "forgotPassword": {
+      "title": "Elfelejtett jelszó",
+      "subtitle": "Add meg az e-mail-címed, és küldünk egy jelszó-visszaállító linket.",
+      "submit": "Visszaállító link kérése",
+      "sentTitle": "Nézd meg a postaládád",
+      "sentBody": "Ha létezik fiók ezzel a címmel, elküldtük a jelszó-visszaállító linket.",
+      "backToLogin": "Vissza a belépéshez"
+    },
+    "newPassword": {
+      "title": "Új jelszó beállítása",
+      "subtitle": "Add meg az új jelszavad.",
+      "passwordLabel": "Új jelszó",
+      "submit": "Jelszó mentése",
+      "success": "A jelszavad frissült. Mostantól az új jelszóval léphetsz be."
     },
     "signup": {
       "title": "Regisztráció",
@@ -63,7 +101,10 @@
       "haveAccount": "Van már fiókod?",
       "loginLink": "Lépj be",
       "confirmationSentTitle": "Megerősítő e-mail elküldve",
-      "confirmationSentBody": "Elküldtük a megerősítő linket az e-mail-címedre. A megerősítésig böngészhetsz, de véleményt és jelentést nem írhatsz."
+      "confirmationSentBody": "Elküldtük a megerősítő linket az e-mail-címedre. A megerősítésig böngészhetsz, de véleményt és jelentést nem írhatsz.",
+      "consentLabel": "Elfogadom az ÁSZF-et és az adatvédelmi tájékoztatót.",
+      "termsLink": "ÁSZF",
+      "privacyLink": "Adatvédelmi tájékoztató"
     },
     "logout": {
       "submit": "Kijelentkezés"
@@ -78,6 +119,10 @@
       "captchaRequired": "Kérjük, igazold, hogy nem vagy robot.",
       "emailRequired": "Add meg az e-mail-címed.",
       "passwordRequired": "Add meg a jelszavad.",
+      "passwordTooShort": "A jelszónak legalább 8 karakternek kell lennie.",
+      "consentRequired": "A folytatáshoz el kell fogadnod az ÁSZF-et és az adatvédelmi tájékoztatót.",
+      "oauthError": "A közösségi belépés nem indítható. Kérjük, próbáld újra később.",
+      "passwordResetFailed": "A jelszó mentése nem sikerült. A link lejárhatott — kérj újat.",
       "unexpected": "Váratlan hiba történt. Kérjük, próbáld újra."
     }
   }

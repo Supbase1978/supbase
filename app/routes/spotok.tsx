@@ -13,7 +13,8 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 
 import { createSupabaseServerClient } from "@core/auth/supabase.server";
-import { getLocaleFromPath, pickTranslated } from "@core/i18n";
+import { getLocaleFromPath, pickTranslated, serverT } from "@core/i18n";
+import { buildPageSeo } from "@core/seo/page-seo";
 import { cx } from "@core/ui";
 import { listLatestSnapshots, listSpots } from "@modules/spots/data/spots.server";
 import { pointFromGeom } from "@modules/spots/data/wkb";
@@ -128,15 +129,22 @@ export async function loader({ request }: Route.LoaderArgs) {
     };
   });
 
-  return { items };
+  const t = serverT(locale, "spots");
+  const seo = buildPageSeo({
+    request,
+    locale,
+    path: "/spotok",
+    title: t("seo.list.title"),
+    description: t("seo.list.description"),
+  });
+
+  return { items, seo };
 }
 
 /** A szűrőchipek sorrendje — a spots.water_type CHECK-értékei (3.1). */
 const WATER_TYPE_FILTERS: readonly WaterType[] = ["to", "folyo", "holtag", "csatorna"];
 
-export const meta: Route.MetaFunction = () => {
-  return [{ title: "[APPNÉV] — Spotok" }];
-};
+export const meta: Route.MetaFunction = ({ data }) => data?.seo ?? [];
 
 export default function SpotsListRoute({ loaderData }: Route.ComponentProps) {
   const { t } = useTranslation("spots");

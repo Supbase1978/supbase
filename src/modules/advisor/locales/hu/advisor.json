@@ -2,6 +2,10 @@
   "nav": {
     "advisor": "Deszkaválasztó"
   },
+  "seo": {
+    "title": "SUP Deszkaválasztó — melyik deszka való neked? | [APPNÉV]",
+    "description": "Válaszolj pár kérdésre (súly, tapasztalat, víztípus, cél), és személyre szabott SUP-deszka-ajánlást kapsz árakkal és véleményekkel."
+  },
   "wizard": {
     "title": "Deszkaválasztó",
     "lead": "Öt gyors kérdés — és mutatjuk, melyik deszka illik hozzád.",

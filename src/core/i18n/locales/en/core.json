@@ -17,6 +17,24 @@
     "appName": "[APPNAME]",
     "tagline": "Board advisor · Catalog + common ground · Spot map + SUP index · Provider directory"
   },
+  "seo": {
+    "home": {
+      "title": "[APPNAME] — SUP board advisor, spots, community",
+      "description": "Board advisor, catalog with common ground, SUP index for Hungarian waters and a provider directory — all in one place."
+    }
+  },
+  "consent": {
+    "title": "Accept the terms",
+    "banner": "Our terms have been updated. Please review and accept.",
+    "bannerCta": "Review",
+    "prompt": "Our terms have been updated. To continue, please accept the Terms of Service and the Privacy Policy.",
+    "upToDateTitle": "All good",
+    "upToDateBody": "You have already accepted the current terms. Nothing to do.",
+    "termsLink": "Terms of Service",
+    "privacyLink": "Privacy Policy",
+    "accept": "Accept",
+    "error": "Could not save. Please try again."
+  },
   "errors": {
     "notFound": {
       "title": "Page not found",
@@ -53,8 +71,28 @@
       "magicLinkHint": "Instead of a password, we email you a sign-in link.",
       "magicLinkSentTitle": "Check your inbox",
       "magicLinkSentBody": "If an account exists for this address, we have sent a sign-in link.",
+      "forgotPassword": "Forgot your password?",
       "noAccount": "No account yet?",
       "signUpLink": "Sign up"
+    },
+    "oauth": {
+      "continueGoogle": "Continue with Google",
+      "continueApple": "Continue with Apple"
+    },
+    "forgotPassword": {
+      "title": "Forgot password",
+      "subtitle": "Enter your email and we'll send you a password reset link.",
+      "submit": "Send reset link",
+      "sentTitle": "Check your inbox",
+      "sentBody": "If an account exists for this address, we have sent a password reset link.",
+      "backToLogin": "Back to sign in"
+    },
+    "newPassword": {
+      "title": "Set a new password",
+      "subtitle": "Enter your new password.",
+      "passwordLabel": "New password",
+      "submit": "Save password",
+      "success": "Your password has been updated. You can now sign in with your new password."
     },
     "signup": {
       "title": "Sign up",
@@ -63,7 +101,10 @@
       "haveAccount": "Already have an account?",
       "loginLink": "Sign in",
       "confirmationSentTitle": "Confirmation email sent",
-      "confirmationSentBody": "We sent a confirmation link to your email. Until you confirm you can browse, but cannot post reviews or reports."
+      "confirmationSentBody": "We sent a confirmation link to your email. Until you confirm you can browse, but cannot post reviews or reports.",
+      "consentLabel": "I accept the Terms of Service and the Privacy Policy.",
+      "termsLink": "Terms of Service",
+      "privacyLink": "Privacy Policy"
     },
     "logout": {
       "submit": "Sign out"
@@ -78,6 +119,10 @@
       "captchaRequired": "Please verify that you are not a robot.",
       "emailRequired": "Enter your email address.",
       "passwordRequired": "Enter your password.",
+      "passwordTooShort": "The password must be at least 8 characters.",
+      "consentRequired": "To continue you must accept the Terms of Service and the Privacy Policy.",
+      "oauthError": "Could not start social sign-in. Please try again later.",
+      "passwordResetFailed": "Could not save the password. The link may have expired — request a new one.",
       "unexpected": "An unexpected error occurred. Please try again."
     }
   }

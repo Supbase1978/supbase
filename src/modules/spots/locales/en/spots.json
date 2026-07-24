@@ -7,6 +7,16 @@
     "lead": "Explore Hungary's SUP spots — current water conditions and SUP index for every location.",
     "empty": "No spots are available yet."
   },
+  "seo": {
+    "list": {
+      "title": "SUP spots in Hungary — map and SUP index | [APPNAME]",
+      "description": "Interactive SUP spot map: current wind, water temperature and SUP index for every Hungarian location — where it's safe to paddle today."
+    },
+    "detail": {
+      "title": "{{spot}} SUP spot — weather and SUP index | [APPNAME]",
+      "description": "{{spot}}{{regionSuffix}}: current water conditions, SUP index, offshore wind and storm warnings — before you hit the water."
+    }
+  },
   "waterType": {
     "to": "Lake",
     "folyo": "River",

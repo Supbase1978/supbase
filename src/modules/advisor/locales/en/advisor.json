@@ -2,6 +2,10 @@
   "nav": {
     "advisor": "Board advisor"
   },
+  "seo": {
+    "title": "SUP board advisor — which board suits you? | [APPNAME]",
+    "description": "Answer a few questions (weight, experience, water type, goal) and get a personalized SUP board recommendation with prices and reviews."
+  },
   "wizard": {
     "title": "Board advisor",
     "lead": "Five quick questions — and we'll show you which board fits you.",

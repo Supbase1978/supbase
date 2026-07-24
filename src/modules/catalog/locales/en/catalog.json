@@ -2,6 +2,16 @@
   "nav": {
     "boards": "Boards"
   },
+  "seo": {
+    "list": {
+      "title": "SUP board catalog — specs, reviews, prices | [APPNAME]",
+      "description": "Browse SUP boards: dimensions, stability index, common-ground reviews and shop prices in one place."
+    },
+    "detail": {
+      "title": "{{model}} review and specs | [APPNAME]",
+      "description": "{{model}}{{brandSuffix}} — specs, stability index, common-ground reviews and best prices."
+    }
+  },
   "list": {
     "title": "Boards",
     "lead": "Browse SUP boards — specs, common ground and shop prices in one place.",

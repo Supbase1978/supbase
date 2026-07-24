@@ -10,7 +10,10 @@ import { data, Form, Link } from "react-router";
 
 import { getUser } from "@core/auth/session.server";
 import { createSupabaseServerClient } from "@core/auth/supabase.server";
-import { getLocaleFromPath, pickTranslated } from "@core/i18n";
+import { getLocaleFromPath, pickTranslated, serverT } from "@core/i18n";
+import { absoluteUrl, buildPageSeo } from "@core/seo/page-seo";
+import { localBusinessJsonLd } from "@core/seo/jsonld";
+import { JsonLd } from "@core/seo/json-ld";
 import { Button, Card, StatusBadge } from "@core/ui";
 import {
   getProviderBySlug,
@@ -45,7 +48,28 @@ export async function loader({ request, params }: Route.LoaderArgs) {
     getUser(request),
   ]);
 
+  const t = serverT(locale, "providers");
+  const detailPath = `/szolgaltatok/${pickTranslated(provider.slug, locale)}`;
+  const providerDescription = pickTranslated(provider.description, locale) || undefined;
+  const seo = buildPageSeo({
+    request,
+    locale,
+    path: detailPath,
+    title: t("seo.detail.title", { name: provider.name }),
+    description: t("seo.detail.description", { name: provider.name }),
+  });
+
+  const jsonLd = localBusinessJsonLd({
+    name: provider.name,
+    description: providerDescription,
+    url: absoluteUrl(request, detailPath, locale),
+    telephone: provider.contact_phone ?? undefined,
+    email: provider.contact_email ?? undefined,
+  });
+
   return {
+    seo,
+    jsonLd,
     provider: {
       id: provider.id,
       name: provider.name,
@@ -99,20 +123,18 @@ export async function action({ request, params }: Route.ActionArgs) {
   return data<ActionResult>(result, { headers });
 }
 
-export const meta: Route.MetaFunction = ({ data: loaderData }) => {
-  const name = loaderData?.provider.name ?? "Szolgáltató";
-  return [{ title: `[APPNÉV] — ${name}` }];
-};
+export const meta: Route.MetaFunction = ({ data }) => data?.seo ?? [];
 
 export default function ProviderProfileRoute({ loaderData, actionData }: Route.ComponentProps) {
   const { t } = useTranslation("providers");
-  const { provider, linkedSpots, lead } = loaderData;
+  const { provider, linkedSpots, lead, jsonLd } = loaderData;
 
   const leadSubmitted = actionData?.ok === true;
   const leadError = actionData && !actionData.ok ? actionData.errorKey : null;
 
   return (
     <main className="mx-auto flex min-h-svh max-w-3xl flex-col gap-6 p-4 sm:p-6">
+      <JsonLd data={jsonLd} />
       <Link to="/szolgaltatok" className="text-sm font-semibold text-petrol-text hover:underline">
         ← {t("profile.backToList")}
       </Link>

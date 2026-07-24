@@ -2,6 +2,16 @@
   "nav": {
     "providers": "Szolgáltatók"
   },
+  "seo": {
+    "list": {
+      "title": "SUP-szolgáltatók — kölcsönzés, túra, oktatás, szállás | [APPNÉV]",
+      "description": "SUP-kölcsönzők, túraszervezők, oktatók és szállások Magyarország vizein — böngéssz szolgáltatás-fajta szerint és vedd fel a kapcsolatot."
+    },
+    "detail": {
+      "title": "{{name}} — SUP-szolgáltató | [APPNÉV]",
+      "description": "{{name}}: SUP-szolgáltatások, elérhetőség és kapcsolódó spotok. Küldj érdeklődést közvetlenül a szolgáltatónak."
+    }
+  },
   "list": {
     "title": "Szolgáltatók",
     "lead": "SUP-kölcsönzők, túraszervezők, oktatók és szállások Magyarország vizein.",

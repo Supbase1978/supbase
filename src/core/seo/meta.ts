@@ -4,7 +4,7 @@
  */
 import type { LinkDescriptor, MetaDescriptor } from "react-router";
 
-import { defaultLocale, locales, type Locale } from "@core/i18n/config";
+import { activeLocales, defaultLocale, type Locale } from "@core/i18n/config";
 
 export interface BuildMetaInput {
   title: string;
@@ -41,7 +41,8 @@ export function buildMeta({ title, description, canonicalUrl }: BuildMetaInput):
 export function buildHreflangLinks(
   pathForLocale: (locale: Locale) => string,
 ): LinkDescriptor[] {
-  const links: LinkDescriptor[] = locales.map((locale) => ({
+  // CSAK élő locale-ok (activeLocales) — nem hirdetünk crawlernek 404-es URL-t.
+  const links: LinkDescriptor[] = activeLocales.map((locale) => ({
     rel: "alternate",
     hrefLang: locale,
     href: pathForLocale(locale),

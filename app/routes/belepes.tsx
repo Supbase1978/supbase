@@ -18,6 +18,7 @@ import { Button, Card } from "@core/ui";
 
 import { AuthField } from "../auth/AuthField";
 import { AuthNotice } from "../auth/AuthNotice";
+import { OAuthButtons } from "../auth/OAuthButtons";
 import { useAuthT } from "../auth/auth-i18n";
 import type { Route } from "./+types/belepes";
 
@@ -144,7 +145,16 @@ export default function LoginRoute({ loaderData, actionData }: Route.ComponentPr
               {t("auth.login.magicLinkSubmit")}
             </Button>
           </div>
+
+          <Link
+            to="/elfelejtett-jelszo"
+            className="text-center text-sm text-petrol-text hover:underline"
+          >
+            {t("auth.login.forgotPassword")}
+          </Link>
         </Form>
+
+        <OAuthButtons redirectTo={loaderData.redirectTo} />
       </Card>
 
       <p className="text-center text-sm text-text-2">

@@ -12,7 +12,8 @@ import { data } from "react-router";
 
 import { getUser } from "@core/auth/session.server";
 import { createSupabaseServerClient } from "@core/auth/supabase.server";
-import { getLocaleFromPath, pickTranslated } from "@core/i18n";
+import { getLocaleFromPath, pickTranslated, serverT } from "@core/i18n";
+import { buildPageSeo } from "@core/seo/page-seo";
 import { listBoards, listCheapestPriceByBoard } from "@modules/catalog/data/boards.server";
 import { computeReviewAggregate } from "@modules/reviews/aggregate";
 import { listAllPublishedReviews } from "@modules/reviews/data/reviews.server";
@@ -45,7 +46,16 @@ const USES: AdvisorUse[] = ["allround", "tura", "verseny", "joga", "horgasz"];
 const STORAGES: StorageChoice[] = ["any", "inflatable_only"];
 
 export async function loader({ request }: Route.LoaderArgs) {
-  return { locale: getLocaleFromPath(new URL(request.url).pathname) };
+  const locale = getLocaleFromPath(new URL(request.url).pathname);
+  const t = serverT(locale, "advisor");
+  const seo = buildPageSeo({
+    request,
+    locale,
+    path: "/deszkavalaszto",
+    title: t("seo.title"),
+    description: t("seo.description"),
+  });
+  return { locale, seo };
 }
 
 export async function action({ request }: Route.ActionArgs) {
@@ -138,9 +148,7 @@ export async function action({ request }: Route.ActionArgs) {
   return data({ results }, { headers });
 }
 
-export const meta: Route.MetaFunction = () => {
-  return [{ title: "[APPNÉV] — Deszkaválasztó" }];
-};
+export const meta: Route.MetaFunction = ({ data }) => data?.seo ?? [];
 
 export default function AdvisorRoute({ actionData }: Route.ComponentProps) {
   if (actionData?.results) {

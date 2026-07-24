@@ -30,7 +30,7 @@ describe("buildMeta", () => {
 });
 
 describe("buildHreflangLinks", () => {
-  it("emits one alternate link per locale plus x-default pointing at hu", () => {
+  it("csak ÉLŐ locale-hoz (activeLocales = hu) ad alternate-et + x-default", () => {
     const links = buildHreflangLinks((locale) => `https://example.com/${locale}/deszkak/vandor`);
 
     expect(links).toContainEqual({
@@ -38,11 +38,8 @@ describe("buildHreflangLinks", () => {
       hrefLang: "hu",
       href: "https://example.com/hu/deszkak/vandor",
     });
-    expect(links).toContainEqual({
-      rel: "alternate",
-      hrefLang: "en",
-      href: "https://example.com/en/deszkak/vandor",
-    });
+    // en NINCS hirdetve, amíg a /en routing nem élő (activeLocales).
+    expect(links).not.toContainEqual(expect.objectContaining({ hrefLang: "en" }));
 
     const xDefault = links.find((link) => "hrefLang" in link && link.hrefLang === "x-default");
     expect(xDefault).toEqual({

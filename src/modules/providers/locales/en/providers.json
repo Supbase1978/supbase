@@ -2,6 +2,16 @@
   "nav": {
     "providers": "Providers"
   },
+  "seo": {
+    "list": {
+      "title": "SUP providers — rental, tours, lessons, stays | [APPNAME]",
+      "description": "SUP rentals, tour operators, instructors and stays across Hungary's waters — browse by service type and get in touch."
+    },
+    "detail": {
+      "title": "{{name}} — SUP provider | [APPNAME]",
+      "description": "{{name}}: SUP services, contact details and related spots. Send an enquiry directly to the provider."
+    }
+  },
   "list": {
     "title": "Providers",
     "lead": "SUP rentals, tour operators, instructors and stays across Hungary's waters.",
