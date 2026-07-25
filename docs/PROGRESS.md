@@ -649,6 +649,48 @@ oldalra irányítja. Így a közösségi belépő userek is elfogadják a felté
 - **Apple:** Apple Developer-fiók (~99 USD/év), Services ID + kulcs → Providers → Apple.
 - Bekapcsolásig a gombok redirectelnek, de a Supabase provider-hibára fut (a kód kész).
 
+## F1.6-utó — Deszkaválasztó: testmagasság + Közös nevező az eredményen (2026-07-25)
+
+Felhasználói visszajelzésből (kattintgatós körből) jött két hiányosság; mindkettő
+javítva. Kapuk zöldek: typecheck · lint · 432 vitest (+15).
+
+**1. Testmagasság mint bemenet (hiányzott).** A SÚLY a térfogatot adja
+(felhajtóerő), a MAGASSÁG a deszka HOSSZÁT — magasabb evezősnek hosszabb deszka
+fekszik jobban. Bevezetve:
+- `AdvisorInputs.heightCm` + `BoardForAdvisor.lengthCm` (a `boards.length_cm`
+  már megvolt, séma-módosítás NEM kellett).
+- ÚJ, HATODIK rész-pont: `lengthFitScore` — `ideal = clamp(base_length +
+  (magasság − base_height) × cm_per_height, min, max)`, a pont pedig
+  `1 − |hossz − ideal| / tolerancia`. Defaultok: 175 cm → 320 cm, 1,2 cm/cm,
+  290–380 cm korlát, 45 cm tolerancia — **mind az `advisor_weights`-ből
+  hangolható** (6 új `advisor.length_fit.*` kulcs + `advisor.weight.length`=10
+  a seedben).
+- **PUHA szempont, tudatosan:** a hossz SOHA nem zár ki (külön teszt védi) — a
+  kemény szűrés kizárólag biztonsági marad (térfogat, terhelhetőség). Hiányzó
+  magasság vagy deszkahossz → semleges 0,5, nem büntetjük az adathiányt.
+- A súlyok mostantól RELATÍV értékek: a pontszám a tényleges súlyösszeggel
+  normálva megy 0–100-ra, ezért az öt eredeti súlyt nem kellett átskálázni.
+- Wizard: kötelező magasság-mező (120–220 cm) a testsúly mellett, magyarázó
+  súgóval. Az eredmény tetején kiírjuk az ideális hosszt cm-ben ÉS lábban
+  (`cmToFeetInches`, mert a piac lábban nevezi a deszkákat) — enélkül a
+  felhasználó nem látná, hogy a válasza számított (a rész-pont súlya csak 10 %,
+  ezért ritkán kerül a top-2 indoklás közé).
+- Élesben ellenőrizve: 85 kg / kezdő / allround inputtal 165 cm → „kb. 308 cm
+  (10'1")", a top score 72 %; 192 cm → „kb. 340 cm (11'2")", 76 %, és a további
+  ajánlások sorrendje is átrendeződik a hosszabb deszkák felé.
+
+**2. Közös nevező az ajánlás-kártyán (nem jelent meg).** Az algoritmus HASZNÁLTA
+a vélemény-átlagot, de az eredmény-képernyő nem mutatta.
+- A `RatingBar` **átkerült a `@core/ui`-ba**: két modulnak (reviews + advisor)
+  kellett, a modul-szerződés (1.3) szerint a közös igény a core-ba megy —
+  modul→modul import tilos lenne.
+- Az ajánlás-kártyákon (nagy + kompakt) most 10-es mérce + számérték +
+  értékelés-szám látszik, LINKKÉNT a deszka-adatlap Közös nevező blokkjára
+  (`/deszkak/<slug>#kozos-nevezo`; a horgony + `scroll-mt` felvéve az adatlapra).
+  Értékelés hiányában őszinte üres-állapot („még nincs értékelés"), nem üres sáv.
+- Token-szabály betartva: a `RatingBar` NEM a biztonsági Gauge, a `--danger`
+  értékelés-sávon tilos, és a szám MINDIG a sáv mellett (szín + szöveg).
+
 ## F1.9 — Web push + viharjelzés-pipeline (2026-07-25)
 
 Kiosztás: karmester (a `web-push` skill Deno-mintája alapján, az F1.3 `_shared`

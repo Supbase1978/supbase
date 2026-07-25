@@ -1,5 +1,9 @@
 /**
- * Értékelő-sáv a Közös nevező-blokkhoz — 10 szegmenses vízszintes mérce.
+ * Értékelő-sáv (10 szegmenses vízszintes mérce) — vélemény-átlagok megjelenítésére.
+ *
+ * CORE-primitíva: két modul is használja (reviews „Közös nevező"-blokk, advisor
+ * eredmény-kártya), ezért a modul-szerződés (1.3) szerint a közös igény a
+ * core-ba kerül — modul→modul import tilos lenne.
  *
  * FONTOS (2. fejezet, token-szabály): ez NEM a biztonsági `Gauge` (az
  * veszély-szemantikájú, safe/caution/DANGER küszöbökkel). Egy vélemény-átlag
@@ -8,7 +12,7 @@
  * SOHA danger. A számértéket a hívó (`ReviewSummary`) mindig a sáv mellé teszi
  * (szín + szöveg, sosem csak szín).
  */
-import { cx } from "@core/ui";
+import { cx } from "./cx";
 
 const SEGMENTS = 10;
 

@@ -308,12 +308,15 @@ on conflict (provider_id, spot_id) do nothing;
 -- SUP-index (supindex.*) sávjai/szorzói (5.1). Deploy nélkül hangolható.
 -- ---------------------------------------------------------------------------
 insert into public.advisor_weights (key, value) values
-  -- Deszkaválasztó 2. réteg — pontozási súlyok (összeg = 100)
+  -- Deszkaválasztó 2. réteg — pontozási súlyok. RELATÍV értékek: a pontszám a
+  -- tényleges súlyösszeggel normálva megy 0–100-ra, ezért új szempont
+  -- felvételéhez nem kell a többit átskálázni.
   ('advisor.weight.stability',            30),
   ('advisor.weight.reviews',              25),
   ('advisor.weight.value',                20),
   ('advisor.weight.purpose_fit',          15),
   ('advisor.weight.availability',         10),
+  ('advisor.weight.length',               10),
   -- Deszkaválasztó 1. réteg — kemény szűrés konstansai
   ('advisor.volume_multiplier.kezdo',     2.5),
   ('advisor.volume_multiplier.halado',    2.2),
@@ -322,6 +325,15 @@ insert into public.advisor_weights (key, value) values
   ('advisor.passenger.dog_kg',            25),
   ('advisor.max_load.safety_factor',      0.66),
   ('advisor.reviews.min_count',           5),
+  -- Deszkaválasztó — testmagasság → ideális deszkahossz (puha preferencia):
+  -- ideal = clamp(base_length + (magasság − base_height) × cm_per_height,
+  --               min_length, max_length); rész-pont = 1 − |hossz−ideal|/tolerancia.
+  ('advisor.length_fit.base_height_cm',   175),
+  ('advisor.length_fit.base_length_cm',   320),
+  ('advisor.length_fit.cm_per_height_cm', 1.2),
+  ('advisor.length_fit.min_length_cm',    290),
+  ('advisor.length_fit.max_length_cm',    380),
+  ('advisor.length_fit.tolerance_cm',     45),
   -- SUP-index (5.1) — szél-alap sávok (felső határ km/h → pontszám)
   ('supindex.wind.band1_max',             12),
   ('supindex.wind.band2_max',             20),

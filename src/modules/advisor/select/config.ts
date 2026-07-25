@@ -10,13 +10,19 @@
 
 /** Az összes `advisor.*` konfigmező típusosan (5.2). */
 export interface AdvisorConfig {
-  /** 2. réteg — pontozási súlyok (összeg = 100). */
+  /**
+   * 2. réteg — pontozási súlyok. RELATÍV értékek: a pontszám a tényleges
+   * súlyösszeggel normálva megy 0–100-ra, ezért új szempont felvételekor nem
+   * kell a többit átskálázni (a `length` így került be az öt eredeti mellé).
+   */
   weights: {
     stability: number;
     reviews: number;
     value: number;
     purposeFit: number;
     availability: number;
+    /** Hossz-illeszkedés a testmagassághoz. */
+    length: number;
   };
   /** 1. réteg — térfogat-szorzók tapasztalati szintenként. */
   volumeMultiplier: {
@@ -33,6 +39,26 @@ export interface AdvisorConfig {
   maxLoadSafetyFactor: number;
   /** 2. réteg — ennyi értékelés alatt a Közös nevező semleges 0,5. */
   reviewsMinCount: number;
+  /**
+   * 2. réteg — az ideális deszkahossz a testmagasságból:
+   *   ideal = clamp(baseLengthCm + (magasság − baseHeightCm) × cmPerHeightCm,
+   *                 minLengthCm, maxLengthCm)
+   * a rész-pont pedig 1 − |hossz − ideal| / toleranceCm, [0..1]-re vágva.
+   *
+   * A defaultok a bevett SUP-ajánlásokból: ~175 cm testmagassághoz ~320 cm
+   * (10'6") allround deszka, és nagyjából 1,2 cm hossz minden testmagasság-cm-re
+   * (165 cm → ~308 cm / 10'; 190 cm → ~338 cm / 11'). A tolerancia bőkezű
+   * (45 cm), hogy a cél-illeszkedést (túra/verseny eleve hosszabb) ne nyomja el
+   * — ez PUHA preferencia, nem szűrő. Mind hangolható az advisor_weights-ből.
+   */
+  lengthFit: {
+    baseHeightCm: number;
+    baseLengthCm: number;
+    cmPerHeightCm: number;
+    minLengthCm: number;
+    maxLengthCm: number;
+    toleranceCm: number;
+  };
 }
 
 /**
@@ -45,6 +71,7 @@ export const ADVISOR_KEYS = {
   "advisor.weight.value": ["weights", "value"],
   "advisor.weight.purpose_fit": ["weights", "purposeFit"],
   "advisor.weight.availability": ["weights", "availability"],
+  "advisor.weight.length": ["weights", "length"],
   "advisor.volume_multiplier.kezdo": ["volumeMultiplier", "kezdo"],
   "advisor.volume_multiplier.halado": ["volumeMultiplier", "halado"],
   "advisor.volume_multiplier.versenyzo": ["volumeMultiplier", "versenyzo"],
@@ -52,6 +79,12 @@ export const ADVISOR_KEYS = {
   "advisor.passenger.dog_kg": ["passenger", "dogKg"],
   "advisor.max_load.safety_factor": ["maxLoadSafetyFactor"],
   "advisor.reviews.min_count": ["reviewsMinCount"],
+  "advisor.length_fit.base_height_cm": ["lengthFit", "baseHeightCm"],
+  "advisor.length_fit.base_length_cm": ["lengthFit", "baseLengthCm"],
+  "advisor.length_fit.cm_per_height_cm": ["lengthFit", "cmPerHeightCm"],
+  "advisor.length_fit.min_length_cm": ["lengthFit", "minLengthCm"],
+  "advisor.length_fit.max_length_cm": ["lengthFit", "maxLengthCm"],
+  "advisor.length_fit.tolerance_cm": ["lengthFit", "toleranceCm"],
 } as const satisfies Record<string, readonly string[]>;
 
 /**
@@ -65,11 +98,20 @@ export const DEFAULT_ADVISOR_CONFIG: AdvisorConfig = {
     value: 20,
     purposeFit: 15,
     availability: 10,
+    length: 10,
   },
   volumeMultiplier: { kezdo: 2.5, halado: 2.2, versenyzo: 2.0 },
   passenger: { childKg: 15, dogKg: 25 },
   maxLoadSafetyFactor: 0.66,
   reviewsMinCount: 5,
+  lengthFit: {
+    baseHeightCm: 175,
+    baseLengthCm: 320,
+    cmPerHeightCm: 1.2,
+    minLengthCm: 290,
+    maxLengthCm: 380,
+    toleranceCm: 45,
+  },
 };
 
 /** advisor_weights egy sora (key + numeric value). */
@@ -79,7 +121,7 @@ export interface AdvisorWeightRow {
 }
 
 /** A beágyazott (2 elemű path) csoportok neve. */
-type NestedGroup = "weights" | "volumeMultiplier" | "passenger";
+type NestedGroup = "weights" | "volumeMultiplier" | "passenger" | "lengthFit";
 
 /**
  * `advisor_weights` sorokból Deszkaválasztó-konfig. Ismeretlen kulcsokat
@@ -96,6 +138,7 @@ export function parseAdvisorConfig(
     passenger: { ...DEFAULT_ADVISOR_CONFIG.passenger },
     maxLoadSafetyFactor: DEFAULT_ADVISOR_CONFIG.maxLoadSafetyFactor,
     reviewsMinCount: DEFAULT_ADVISOR_CONFIG.reviewsMinCount,
+    lengthFit: { ...DEFAULT_ADVISOR_CONFIG.lengthFit },
   };
 
   if (!rows) return config;

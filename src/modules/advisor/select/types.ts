@@ -43,6 +43,15 @@ export type AdvisorBoardType =
 export interface AdvisorInputs {
   /** Testsúly kg. */
   weightKg: number;
+  /**
+   * Testmagasság cm. A SÚLY a térfogatot határozza meg (felhajtóerő), a
+   * MAGASSÁG a deszka HOSSZÁT: magasabb evezősnek hosszabb deszka fekszik jobban
+   * (nagyobb lépéshossz, magasabb súlypont, jobb nyomtartás). Ez PUHA szempont:
+   * csak a pontozásba (`lengthFitScore`) szól bele, kizárni SOHA nem zár ki —
+   * a kemény szűrés kizárólag biztonsági (térfogat, terhelhetőség).
+   * `null` → nem adta meg: a hossz-illeszkedés semleges (0,5).
+   */
+  heightCm: number | null;
   passenger: Passenger;
   experience: Experience;
   use: AdvisorUse;
@@ -62,6 +71,8 @@ export interface BoardForAdvisor {
   boardType: AdvisorBoardType;
   volumeL: number | null;
   widthCm: number | null;
+  /** Deszka-hossz cm — a testmagassághoz illesztéshez (`lengthFitScore`). */
+  lengthCm: number | null;
   maxLoadKg: number | null;
   inflatable: boolean;
   availabilityHu: boolean;

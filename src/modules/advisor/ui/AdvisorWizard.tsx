@@ -31,6 +31,7 @@ export function AdvisorWizard() {
 
   const [step, setStep] = useState(0);
   const [weight, setWeight] = useState("");
+  const [height, setHeight] = useState("");
   const [passenger, setPassenger] = useState<Passenger>("none");
   const [experience, setExperience] = useState<Experience>("kezdo");
   const [water, setWater] = useState<WaterChoice>("to");
@@ -38,18 +39,29 @@ export function AdvisorWizard() {
   const [budget, setBudget] = useState("");
   const [storage, setStorage] = useState<StorageChoice>("any");
   const [weightError, setWeightError] = useState(false);
+  const [heightError, setHeightError] = useState(false);
 
   const weightValid = () => {
     const n = Number(weight);
     return Number.isFinite(n) && n >= 30 && n <= 200;
   };
 
+  // A magasság KÖTELEZŐ (a deszkahossz-illesztéshez), 120–220 cm.
+  const heightValid = () => {
+    const n = Number(height);
+    return Number.isFinite(n) && n >= 120 && n <= 220;
+  };
+
   const goNext = () => {
-    if (step === 0 && !weightValid()) {
-      setWeightError(true);
-      return;
+    if (step === 0) {
+      const okWeight = weightValid();
+      const okHeight = heightValid();
+      setWeightError(!okWeight);
+      setHeightError(!okHeight);
+      if (!okWeight || !okHeight) return;
     }
     setWeightError(false);
+    setHeightError(false);
     setStep((s) => Math.min(TOTAL_STEPS - 1, s + 1));
   };
 
@@ -59,6 +71,7 @@ export function AdvisorWizard() {
     <Form method="post" className="mx-auto flex min-h-svh max-w-md flex-col gap-6 p-4 sm:p-6">
       {/* Hidden mezők — a teljes válasz-készlet a submithez. */}
       <input type="hidden" name="weightKg" value={weight} />
+      <input type="hidden" name="heightCm" value={height} />
       <input type="hidden" name="passenger" value={passenger} />
       <input type="hidden" name="experience" value={experience} />
       <input type="hidden" name="water" value={water} />
@@ -97,6 +110,27 @@ export function AdvisorWizard() {
             </label>
             {weightError ? (
               <p className="text-sm text-caution-text">{t("wizard.error.invalidWeight")}</p>
+            ) : null}
+
+            {/* Magasság: a SÚLY a térfogatot adja, a MAGASSÁG a deszka hosszát
+                (magasabb evezősnek hosszabb deszka fekszik jobban). */}
+            <Question text={t("wizard.height.q")} />
+            <label className="flex items-center gap-2">
+              <input
+                type="number"
+                inputMode="numeric"
+                min={120}
+                max={220}
+                value={height}
+                onChange={(e) => setHeight(e.target.value)}
+                className="w-32 rounded-[var(--radius-card)] border border-line px-3 py-2 text-lg"
+                aria-label={t("wizard.height.q")}
+              />
+              <span className="text-text-2">{t("wizard.height.unit")}</span>
+            </label>
+            <p className="text-xs text-text-3">{t("wizard.height.hint")}</p>
+            {heightError ? (
+              <p className="text-sm text-caution-text">{t("wizard.error.invalidHeight")}</p>
             ) : null}
 
             <Question text={t("wizard.passenger.q")} />

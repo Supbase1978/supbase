@@ -7,6 +7,8 @@ import {
   passesHardFilter,
   purposeFitScore,
   recommendBoards,
+  idealLengthCm,
+  lengthFitScore,
   reviewsScore,
   scoreBoard,
   stabilityScore,
@@ -22,6 +24,7 @@ function makeBoard(overrides: Partial<BoardForAdvisor> = {}): BoardForAdvisor {
     boardType: "allround",
     volumeL: 280,
     widthCm: 81,
+    lengthCm: 320,
     maxLoadKg: 130,
     inflatable: true,
     availabilityHu: true,
@@ -37,6 +40,7 @@ function makeBoard(overrides: Partial<BoardForAdvisor> = {}): BoardForAdvisor {
 function makeInputs(overrides: Partial<AdvisorInputs> = {}): AdvisorInputs {
   return {
     weightKg: 80,
+    heightCm: 175,
     passenger: "none",
     experience: "kezdo",
     use: "allround",
@@ -205,10 +209,13 @@ describe("scoreBoard — pontszám + indoklás-kulcsok", () => {
 
   it("régebbi modell → reason.availability, aktuális → reason.fresh", () => {
     // Gyenge stabilitás/érték, hogy az elérhetőség domináns tényező legyen.
+    // A hossz szándékosan null: így a hossz-illeszkedés semleges (0,5) ÉS nem
+    // ad indoklást, tehát nem veszi el az elérhetőség helyét a top-2-ből.
     const weak = {
       boardType: "touring" as const,
       volumeL: 200,
       widthCm: 60,
+      lengthCm: null,
       ratingValueAvg: 1,
       reviewCount: 2,
       priceHuf: null,
@@ -217,6 +224,81 @@ describe("scoreBoard — pontszám + indoklás-kulcsok", () => {
     expect(old.reasons.map((r) => r.key)).toContain("reason.availability");
     const fresh = scoreBoard(makeBoard({ ...weak, modelYear: 2024 }), makeInputs({ budgetHuf: null }), CFG);
     expect(fresh.reasons.map((r) => r.key)).toContain("reason.fresh");
+  });
+});
+
+describe("idealLengthCm / lengthFitScore — magasság → deszkahossz", () => {
+  it("a referencia-magasságnál a referencia-hosszt adja (175 cm → 320 cm)", () => {
+    expect(idealLengthCm(175, CFG)).toBe(320);
+  });
+
+  it("magasabb evezősnek hosszabb, alacsonyabbnak rövidebb deszkát javasol", () => {
+    expect(idealLengthCm(190, CFG)).toBeGreaterThan(idealLengthCm(175, CFG));
+    expect(idealLengthCm(160, CFG)).toBeLessThan(idealLengthCm(175, CFG));
+  });
+
+  it("a min/max közé vág (nem ad abszurd ajánlást)", () => {
+    // Alsó korlát a valós emberi tartományban is aktív (120 cm → 254 → 290).
+    expect(idealLengthCm(120, CFG)).toBe(CFG.lengthFit.minLengthCm);
+    // A felső korlát biztonsági szelep: 220 cm-nél még nem aktív (374 < 380).
+    expect(idealLengthCm(220, CFG)).toBe(374);
+    expect(idealLengthCm(400, CFG)).toBe(CFG.lengthFit.maxLengthCm);
+  });
+
+  it("pontos illeszkedésnél 1, a toleranciahatáron 0", () => {
+    const inputs = makeInputs({ heightCm: 175 });
+    expect(lengthFitScore(makeBoard({ lengthCm: 320 }), inputs, CFG)).toBe(1);
+    expect(
+      lengthFitScore(makeBoard({ lengthCm: 320 + CFG.lengthFit.toleranceCm }), inputs, CFG),
+    ).toBe(0);
+  });
+
+  it("ugyanarra a deszkára a magasabb evezős kap jobb pontot, ha hosszabb a deszka", () => {
+    const long = makeBoard({ lengthCm: 350 });
+    const tall = lengthFitScore(long, makeInputs({ heightCm: 195 }), CFG);
+    const short = lengthFitScore(long, makeInputs({ heightCm: 160 }), CFG);
+    expect(tall).toBeGreaterThan(short);
+  });
+
+  it("hiányzó magasság VAGY hiányzó deszkahossz → semleges 0,5 (nem büntet)", () => {
+    expect(lengthFitScore(makeBoard({ lengthCm: 350 }), makeInputs({ heightCm: null }), CFG)).toBe(0.5);
+    expect(lengthFitScore(makeBoard({ lengthCm: null }), makeInputs({ heightCm: 195 }), CFG)).toBe(0.5);
+  });
+
+  it("a hossz SOHA nem zár ki — a kemény szűrés csak biztonsági (5.2)", () => {
+    // Abszurdul rossz hosszú deszka, egyébként megfelelő paraméterekkel.
+    const board = makeBoard({ lengthCm: 500 });
+    expect(passesHardFilter(board, makeInputs({ heightCm: 160 }), CFG)).toBe(true);
+  });
+
+  it("indoklásként megjelenik a hossz, ha magasság ÉS deszkahossz is ismert", () => {
+    // Gyenge stabilitás (kicsi térfogat + keskeny), hogy a hossz a domináns
+    // tényezők közé kerüljön — a top-2 indoklás a súlyozott hozzájárulásból jön.
+    const { reasons } = scoreBoard(
+      makeBoard({
+        lengthCm: 320,
+        volumeL: 200,
+        widthCm: 60,
+        reviewCount: 0,
+        reviewAvg: null,
+        priceHuf: null,
+        modelYear: null,
+      }),
+      makeInputs({ heightCm: 175, budgetHuf: null }),
+      CFG,
+    );
+    const length = reasons.find((r) => r.key === "reason.length");
+    expect(length).toBeDefined();
+    expect(length?.params).toMatchObject({ length: 320, height: 175, ideal: 320 });
+  });
+
+  it("magasság nélkül NINCS hossz-indoklás", () => {
+    const { reasons } = scoreBoard(
+      makeBoard({ lengthCm: 320 }),
+      makeInputs({ heightCm: null }),
+      CFG,
+    );
+    expect(reasons.map((r) => r.key)).not.toContain("reason.length");
   });
 });
 

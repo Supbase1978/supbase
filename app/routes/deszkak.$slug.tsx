@@ -286,15 +286,19 @@ export default function BoardDetailRoute({ loaderData, actionData }: Route.Compo
         ) : null}
       </Card>
 
-      {/* Közös nevező */}
-      <ReviewSummary
-        count={aggregate.count}
-        overall={aggregate.avgOverall}
-        overallTen={overallTen}
-        percentRecommend={aggregate.percentRecommend}
-        verifiedCount={aggregate.verifiedCount}
-        dimensionsTen={dimensionsTen}
-      />
+      {/* Közös nevező — a `kozos-nevezo` horgonyra a Deszkaválasztó
+          eredmény-kártyája is hivatkozik (`/deszkak/<slug>#kozos-nevezo`).
+          `scroll-mt` a fejléc alá görgetéshez. */}
+      <div id="kozos-nevezo" className="scroll-mt-4">
+        <ReviewSummary
+          count={aggregate.count}
+          overall={aggregate.avgOverall}
+          overallTen={overallTen}
+          percentRecommend={aggregate.percentRecommend}
+          verifiedCount={aggregate.verifiedCount}
+          dimensionsTen={dimensionsTen}
+        />
+      </div>
 
       {/* Vélemény-lista */}
       {reviews.length > 0 ? (

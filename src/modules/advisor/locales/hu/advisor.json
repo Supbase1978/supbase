@@ -38,7 +38,13 @@
       "q": "Hogyan tárolnád?"
     },
     "error": {
-      "invalidWeight": "Add meg a testsúlyod 30 és 200 kg között a folytatáshoz."
+      "invalidWeight": "Add meg a testsúlyod 30 és 200 kg között a folytatáshoz.",
+      "invalidHeight": "Add meg a magasságod 120 és 220 cm között."
+    },
+    "height": {
+      "q": "Milyen magas vagy?",
+      "unit": "cm",
+      "hint": "A súly a deszka térfogatát (felhajtóerő), a magasság a hosszát határozza meg — magasabb evezősnek hosszabb deszka fekszik jobban."
     }
   },
   "passenger": {
@@ -63,7 +69,13 @@
     "viewBoard": "Adatlap",
     "restart": "Új keresés",
     "empty": "A megadott feltételekre nem találtunk deszkát — lazíts az árkereten vagy a tároláson.",
-    "share": "Megosztás"
+    "share": "Megosztás",
+    "commonGround": "Közös nevező",
+    "reviewCount_one": "{{count}} értékelés",
+    "reviewCount_other": "{{count}} értékelés",
+    "noReviews": "Erre a deszkára még nincs értékelés.",
+    "ratingAria": "Közös nevező: {{value}} a 10-ből, {{count}} értékelés alapján — a részletekért kattints",
+    "idealLength": "A(z) {{height}} cm magasságodhoz kb. {{ideal}} cm ({{feet}}) hosszú deszka az ideális — ezt is beleszámoltuk a sorrendbe."
   },
   "reason": {
     "volume": "A(z) {{volume}} l térfogat kényelmes ráhagyást ad {{level}} szinten.",
@@ -73,7 +85,8 @@
     "value": "Jó ár-érték: {{price}} Ft a sávodban.",
     "purpose": "{{use}} használatra tervezve.",
     "availability": "Kapható itthon, friss {{year}}-es modell.",
-    "fresh": "Aktuális, {{year}}-es évjárat."
+    "fresh": "Aktuális, {{year}}-es évjárat.",
+    "length": "{{length}} cm hosszú — a te {{height}} cm-edhez kb. {{ideal}} cm az ideális."
   },
   "level": {
     "kezdo": "kezdő",

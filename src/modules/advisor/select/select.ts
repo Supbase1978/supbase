@@ -7,7 +7,8 @@
  *
  * 1. réteg — KEMÉNY SZŰRÉS (kizárás): térfogat-ráhagyás, max_load × biztonsági
  *    faktor ≥ effektív súly, elérhetőség, tárolás, ársáv, cél-mapping.
- * 2. réteg — PONTOZÁS (0–100): öt rész-pont [0..1] normálva, súlyozva.
+ * 2. réteg — PONTOZÁS (0–100): hat rész-pont [0..1] súlyozva, a súlyösszeggel
+ *    normálva (stabilitás, Közös nevező, ár-érték, cél-fit, elérhetőség, hossz).
  *
  * Az indoklás SOHA nem kész magyar mondat: {key, params} (advisor namespace).
  */
@@ -30,6 +31,7 @@ export const REASON_KEYS = {
   stability: "reason.stability",
   maxLoad: "reason.maxLoad",
   reviews: "reason.reviews",
+  length: "reason.length",
   value: "reason.value",
   purpose: "reason.purpose",
   availability: "reason.availability",
@@ -199,6 +201,36 @@ export function stabilityScore(
   return clamp(raw, 0, 1);
 }
 
+/**
+ * A testmagassághoz ideális deszkahossz cm-ben (a konfig lineáris modellje,
+ * min/max közé vágva). Kiemelve, mert az UI is meg tudja mutatni („neked kb.
+ * ilyen hosszú deszka való").
+ */
+export function idealLengthCm(heightCm: number, config: AdvisorConfig): number {
+  const f = config.lengthFit;
+  const raw = f.baseLengthCm + (heightCm - f.baseHeightCm) * f.cmPerHeightCm;
+  return clamp(raw, f.minLengthCm, f.maxLengthCm);
+}
+
+/**
+ * Hossz-illeszkedés [0..1] a testmagassághoz. A SÚLY a térfogatot adja
+ * (felhajtóerő), a MAGASSÁG a hosszt: magasabb evezősnek hosszabb deszka
+ * fekszik jobban. PUHA szempont — hiányzó magasság VAGY hiányzó deszkahossz
+ * esetén semleges 0,5 (nem bünteti az adathiányt), és kizárni sosem zár ki:
+ * a kemény szűrés kizárólag biztonsági (térfogat, terhelhetőség).
+ */
+export function lengthFitScore(
+  board: BoardForAdvisor,
+  inputs: AdvisorInputs,
+  config: AdvisorConfig,
+): number {
+  if (inputs.heightCm === null || board.lengthCm === null) return 0.5;
+  const ideal = idealLengthCm(inputs.heightCm, config);
+  const tolerance = config.lengthFit.toleranceCm;
+  if (tolerance <= 0) return board.lengthCm === ideal ? 1 : 0;
+  return clamp(1 - Math.abs(board.lengthCm - ideal) / tolerance, 0, 1);
+}
+
 /** Közös nevező [0..1]: ≥ min_count értékelésnél avg/5, különben semleges 0,5. */
 export function reviewsScore(board: BoardForAdvisor, config: AdvisorConfig): number {
   if (board.reviewCount >= config.reviewsMinCount && board.reviewAvg !== null) {
@@ -268,7 +300,7 @@ interface Part {
 }
 
 /**
- * 2. réteg — PONTOZÁS. Öt rész-pont [0..1] súlyozva, 0–100-ra normálva. A
+ * 2. réteg — PONTOZÁS. Hat rész-pont [0..1] súlyozva, 0–100-ra normálva. A
  * `reasons` a domináns (legnagyobb súlyozott hozzájárulású) 2 tényezőből + egy
  * kötelező max_load biztonsági megjegyzésből áll (2–3 mondat).
  */
@@ -284,6 +316,7 @@ export function scoreBoard(
     value: valueScore(board, inputs),
     purposeFit: purposeFitScore(board, inputs),
     availability: availabilityScore(board),
+    length: lengthFitScore(board, inputs, config),
   };
 
   const weighted =
@@ -291,8 +324,10 @@ export function scoreBoard(
     s.reviews * w.reviews +
     s.value * w.value +
     s.purposeFit * w.purposeFit +
-    s.availability * w.availability;
-  const totalW = w.stability + w.reviews + w.value + w.purposeFit + w.availability;
+    s.availability * w.availability +
+    s.length * w.length;
+  const totalW =
+    w.stability + w.reviews + w.value + w.purposeFit + w.availability + w.length;
   const score = round1(clamp(totalW > 0 ? (weighted / totalW) * 100 : 0, 0, 100));
 
   const level = LEVEL_KEYS[inputs.experience];
@@ -332,6 +367,23 @@ export function scoreBoard(
     },
     {
       order: 4,
+      contribution: s.length * w.length,
+      // Csak akkor indokolunk hosszal, ha MINDKÉT adat megvan — különben a
+      // rész-pont semleges 0,5, amiről nincs mit mondani.
+      reason:
+        inputs.heightCm !== null && board.lengthCm !== null
+          ? {
+              key: REASON_KEYS.length,
+              params: {
+                length: board.lengthCm,
+                height: inputs.heightCm,
+                ideal: Math.round(idealLengthCm(inputs.heightCm, config)),
+              },
+            }
+          : null,
+    },
+    {
+      order: 5,
       contribution: s.availability * w.availability,
       reason:
         board.modelYear !== null

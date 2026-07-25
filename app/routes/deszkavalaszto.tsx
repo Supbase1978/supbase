@@ -15,10 +15,10 @@ import { createSupabaseServerClient } from "@core/auth/supabase.server";
 import { getLocaleFromPath, pickTranslated, serverT } from "@core/i18n";
 import { buildPageSeo } from "@core/seo/page-seo";
 import { listBoards, listCheapestPriceByBoard } from "@modules/catalog/data/boards.server";
-import { computeReviewAggregate } from "@modules/reviews/aggregate";
+import { computeReviewAggregate, toTen } from "@modules/reviews/aggregate";
 import { listAllPublishedReviews } from "@modules/reviews/data/reviews.server";
 import { loadAdvisorConfig } from "@modules/advisor/select/config.server";
-import { recommendBoards } from "@modules/advisor/select/select";
+import { idealLengthCm, recommendBoards } from "@modules/advisor/select/select";
 import type {
   AdvisorInputs,
   AdvisorUse,
@@ -64,6 +64,11 @@ export async function action({ request }: Route.ActionArgs) {
 
   const formData = await request.formData();
   const weightKg = Number(formData.get("weightKg"));
+  const heightRaw = formData.get("heightCm");
+  const heightNum = typeof heightRaw === "string" ? Number(heightRaw) : NaN;
+  // Ésszerű emberi tartomány; azon kívül/hiányzó → null (semleges hossz-illesztés).
+  const heightCm =
+    Number.isFinite(heightNum) && heightNum >= 120 && heightNum <= 220 ? heightNum : null;
   const budgetRaw = formData.get("budgetHuf");
   const budgetHuf =
     typeof budgetRaw === "string" && budgetRaw.trim() !== "" && Number.isFinite(Number(budgetRaw))
@@ -72,6 +77,7 @@ export async function action({ request }: Route.ActionArgs) {
 
   const inputs: AdvisorInputs = {
     weightKg: Number.isFinite(weightKg) ? weightKg : 0,
+    heightCm,
     passenger: oneOf(formData.get("passenger"), PASSENGERS, "none"),
     experience: oneOf(formData.get("experience"), EXPERIENCES, "kezdo"),
     use: oneOf(formData.get("use"), USES, "allround"),
@@ -102,6 +108,7 @@ export async function action({ request }: Route.ActionArgs) {
       boardType: board.board_type,
       volumeL: board.volume_l,
       widthCm: board.width_cm,
+      lengthCm: board.length_cm,
       maxLoadKg: board.max_load_kg,
       inflatable: board.inflatable,
       availabilityHu: board.availability_hu,
@@ -131,6 +138,9 @@ export async function action({ request }: Route.ActionArgs) {
   const results: AdvisorResultBoard[] = ranked.flatMap((item) => {
     const board = boardById.get(item.boardId);
     if (!board) return [];
+    // Közös nevező az eredmény-kártyára: ugyanaz az aggregátum, amit az
+    // algoritmus is használt, 10-es mércére váltva (a deszka-adatlappal egyező).
+    const agg = computeReviewAggregate(reviewsByBoard.get(board.id) ?? []);
     return [
       {
         boardId: item.boardId,
@@ -141,11 +151,20 @@ export async function action({ request }: Route.ActionArgs) {
         priceHuf: cheapest.get(board.id) ?? null,
         score: item.score,
         reasons: item.reasons,
+        ratingTen: toTen(agg.avgOverall),
+        reviewCount: agg.count,
       },
     ];
   });
 
-  return data({ results }, { headers });
+  // A magasság-illesztés az eredmény fejlécében látszik (különben a felhasználó
+  // nem tudná, hogy a válasza számított — a rész-pont súlya csak 10 %).
+  const heightFit =
+    inputs.heightCm !== null
+      ? { heightCm: inputs.heightCm, idealLengthCm: idealLengthCm(inputs.heightCm, config) }
+      : null;
+
+  return data({ results, heightFit }, { headers });
 }
 
 export const meta: Route.MetaFunction = ({ data }) => data?.seo ?? [];
@@ -154,7 +173,7 @@ export default function AdvisorRoute({ actionData }: Route.ComponentProps) {
   if (actionData?.results) {
     return (
       <main className="mx-auto flex min-h-svh max-w-3xl flex-col gap-6 p-4 sm:p-6">
-        <AdvisorResult results={actionData.results} />
+        <AdvisorResult results={actionData.results} heightFit={actionData.heightFit} />
       </main>
     );
   }

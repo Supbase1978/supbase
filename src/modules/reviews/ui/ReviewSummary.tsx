@@ -10,10 +10,9 @@
  */
 import { useTranslation } from "react-i18next";
 
-import { Card } from "@core/ui";
+import { Card, RatingBar } from "@core/ui";
 
 import { REVIEW_DIMENSIONS, type ReviewDimension } from "../types";
-import { RatingBar } from "./RatingBar";
 
 export interface ReviewSummaryProps {
   count: number;

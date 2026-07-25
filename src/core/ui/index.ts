@@ -16,6 +16,9 @@ export type { StatusBadgeProps, StatusSeverity } from "./StatusBadge";
 export { Waterline } from "./Waterline";
 export type { WaterlineProps, WaterlineState } from "./Waterline";
 
+export { RatingBar } from "./RatingBar";
+export type { RatingBarProps } from "./RatingBar";
+
 export { Gauge, DEFAULT_GAUGE_THRESHOLDS } from "./Gauge";
 export type { GaugeProps, GaugeThresholds } from "./Gauge";
 

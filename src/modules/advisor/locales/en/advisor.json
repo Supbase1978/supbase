@@ -38,7 +38,13 @@
       "q": "How will you store it?"
     },
     "error": {
-      "invalidWeight": "Enter your body weight between 30 and 200 kg to continue."
+      "invalidWeight": "Enter your body weight between 30 and 200 kg to continue.",
+      "invalidHeight": "Enter your height between 120 and 220 cm."
+    },
+    "height": {
+      "q": "How tall are you?",
+      "unit": "cm",
+      "hint": "Weight determines the board's volume (buoyancy), height its length — a taller paddler suits a longer board."
     }
   },
   "passenger": {
@@ -63,7 +69,13 @@
     "viewBoard": "View board",
     "restart": "New search",
     "empty": "We didn't find a board for these criteria — try loosening the budget or storage filter.",
-    "share": "Share"
+    "share": "Share",
+    "commonGround": "Common ground",
+    "reviewCount_one": "{{count}} review",
+    "reviewCount_other": "{{count}} reviews",
+    "noReviews": "No reviews for this board yet.",
+    "ratingAria": "Common ground: {{value}} out of 10 from {{count}} reviews — click for details",
+    "idealLength": "For your {{height}} cm, a board around {{ideal}} cm ({{feet}}) is ideal — this was factored into the ranking."
   },
   "reason": {
     "volume": "The {{volume}} l volume gives comfortable headroom at {{level}} level.",
@@ -73,7 +85,8 @@
     "value": "Good value: {{price}} Ft within your range.",
     "purpose": "Designed for {{use}} use.",
     "availability": "Available at home, fresh {{year}} model.",
-    "fresh": "Current, {{year}} model year."
+    "fresh": "Current, {{year}} model year.",
+    "length": "{{length}} cm long — for your {{height}} cm, about {{ideal}} cm is ideal."
   },
   "level": {
     "kezdo": "beginner",

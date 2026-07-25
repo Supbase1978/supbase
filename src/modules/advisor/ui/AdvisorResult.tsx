@@ -10,9 +10,10 @@
 import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
 
-import { Button, Card, cx } from "@core/ui";
+import { Button, Card, cx, RatingBar } from "@core/ui";
 
 import type { AdvisorReason } from "../select/types";
+import { cmToFeetInches } from "./format";
 
 export interface AdvisorResultBoard {
   boardId: string;
@@ -24,13 +25,23 @@ export interface AdvisorResultBoard {
   /** 0–100. */
   score: number;
   reasons: AdvisorReason[];
+  /** Közös nevező összesített átlaga 0–10 skálán; null → még nincs értékelés. */
+  ratingTen: number | null;
+  /** Publikált vélemények száma. */
+  reviewCount: number;
 }
 
 export interface AdvisorResultProps {
   results: readonly AdvisorResultBoard[];
+  /**
+   * A megadott testmagasság és a hozzá számított ideális deszkahossz (cm).
+   * null → a felhasználó nem adott meg magasságot; ilyenkor a sáv sem jelenik
+   * meg (nem állítunk olyat, amit nem vettünk figyelembe).
+   */
+  heightFit: { heightCm: number; idealLengthCm: number } | null;
 }
 
-export function AdvisorResult({ results }: AdvisorResultProps) {
+export function AdvisorResult({ results, heightFit }: AdvisorResultProps) {
   const { t, i18n } = useTranslation("advisor");
   const nf = new Intl.NumberFormat(i18n.language);
 
@@ -73,6 +84,19 @@ export function AdvisorResult({ results }: AdvisorResultProps) {
         </Link>
       </div>
 
+      {/* Láthatóvá teszi, hogy a magasságot FIGYELEMBE VETTÜK: a hossz-illesztés
+          csak egy 10 %-os rész-pont, ezért ritkán kerül a top-2 indoklás közé —
+          enélkül a felhasználónak úgy tűnne, a válasza nem számított. */}
+      {heightFit ? (
+        <p className="rounded-[var(--radius-card)] bg-mist px-4 py-3 text-sm text-text-2">
+          {t("result.idealLength", {
+            height: heightFit.heightCm,
+            ideal: Math.round(heightFit.idealLengthCm),
+            feet: cmToFeetInches(heightFit.idealLengthCm),
+          })}
+        </p>
+      ) : null}
+
       {/* Legjobb választás — nagy kártya */}
       {top ? (
         <section className="flex flex-col gap-2">
@@ -98,6 +122,12 @@ export function AdvisorResult({ results }: AdvisorResultProps) {
                 <span className="text-lg font-bold text-text">{nf.format(top.priceHuf)} Ft</span>
               ) : null}
             </div>
+            <CommonGround
+              slug={top.slug}
+              ratingTen={top.ratingTen}
+              reviewCount={top.reviewCount}
+              size="lg"
+            />
             <ul className="flex flex-col gap-1.5">
               {top.reasons.map((reason, i) => (
                 <li key={i} className="flex gap-2 text-sm text-text-2">
@@ -147,6 +177,11 @@ export function AdvisorResult({ results }: AdvisorResultProps) {
                       </span>
                     ) : null}
                   </div>
+                  <CommonGround
+                    slug={board.slug}
+                    ratingTen={board.ratingTen}
+                    reviewCount={board.reviewCount}
+                  />
                   <Link
                     to={`/deszkak/${board.slug}`}
                     className="mt-auto text-sm font-semibold text-petrol-text underline"
@@ -160,6 +195,63 @@ export function AdvisorResult({ results }: AdvisorResultProps) {
         </section>
       ) : null}
     </div>
+  );
+}
+
+/**
+ * „Közös nevező" az ajánlás-kártyán: 10-es mérce + számérték + darabszám,
+ * LINKKÉNT a deszka-adatlap Közös nevező blokkjára (#kozos-nevezo).
+ *
+ * A sáv a core `RatingBar` (NEM a biztonsági Gauge — egy vélemény-átlag nem
+ * „veszély", ezért danger itt tilos), és a szám MINDIG a sáv mellett van
+ * (2. fejezet: szín + szöveg, sosem csak szín).
+ */
+function CommonGround({
+  slug,
+  ratingTen,
+  reviewCount,
+  size = "sm",
+}: {
+  slug: string;
+  ratingTen: number | null;
+  reviewCount: number;
+  size?: "sm" | "lg";
+}) {
+  const { t, i18n } = useTranslation("advisor");
+  const nf1 = new Intl.NumberFormat(i18n.language, {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+  });
+
+  if (ratingTen === null || reviewCount === 0) {
+    return <p className="text-xs text-text-3">{t("result.noReviews")}</p>;
+  }
+
+  const label = t("result.ratingAria", {
+    value: nf1.format(ratingTen),
+    count: reviewCount,
+  });
+
+  return (
+    <Link
+      to={`/deszkak/${slug}#kozos-nevezo`}
+      className="flex flex-col gap-1 rounded-[var(--radius-card)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-petrol"
+      aria-label={label}
+    >
+      <span className="flex items-baseline gap-2">
+        <span className="text-xs font-semibold text-petrol-text underline">
+          {t("result.commonGround")}
+        </span>
+        <span className={cx("font-bold text-ink-deep", size === "lg" ? "text-base" : "text-sm")}>
+          {nf1.format(ratingTen)}
+          <span className="text-text-3">/10</span>
+        </span>
+        <span className="text-xs text-text-3">
+          {t("result.reviewCount", { count: reviewCount })}
+        </span>
+      </span>
+      <RatingBar value={ratingTen} size={size} ariaLabel={label} />
+    </Link>
   );
 }
 
