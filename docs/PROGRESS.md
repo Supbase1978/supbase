@@ -16,7 +16,7 @@
 | F1.6 Advisor | ✅ kész (2026-07-21) | algo-engineer (kétrétegű algoritmus) + ui-builder/karmester (wizard + eredmény + route + session-log); wizard end-to-end élesben verifikálva. Admin-moderáció böngészőben VERIFIKÁLVA (2026-07-24, lásd F1.6-szakasz) — az admin-ág teljesen zöld |
 | F1.7 Providers | ✅ kész (2026-07-24) | directory-lista + profil + lead-form + saját-listing (claim/regisztráció) + admin-hitelesítő panel; mind az 5 flow böngészőben élesben verifikálva. Részletek lent |
 | F1.8 SEO-réteg | ✅ mag kész (2026-07-24) | loader-alapú meta+hreflang, JSON-LD, sitemap+robots, consent (user_consents migráció + regisztrációs checkbox + re-consent), ÁSZF+adatvédelmi. HÁTRA: OG-kép-generálás + persona-landingek (F1.8b) + a consent-migráció éles push. Részletek lent |
-| F1.9 Push + viharjelzés | ✅ kész, élesítve (2026-07-25) | teljes web push-pipeline (VAPID + RFC 8291 natív Web Cryptóval, npm nélkül), storm-alert push-ág, feliratkozó-UI a spot-adatlapon, m4 `observed_at`. 5 migráció kitolva, secretek beállítva, függvény deployolva és élesben hívva. HÁTRA: böngésző-verifikáció (engedélykérés — nem automatizálható). Részletek lent |
+| F1.9 Push + viharjelzés | ✅ kész (2026-07-25) | teljes web push-pipeline (VAPID + RFC 8291 natív Web Cryptóval, npm nélkül), storm-alert push-ág, feliratkozó-UI, m4 `observed_at`. Élesítve (5 migráció + secretek + deploy) és **böngészőben végponttól végpontig verifikálva: a viharjelzés-push megérkezett**. Részletek lent |
 | F1.10 Záró audit + élesítés | ⬜ | |
 
 ## ITINER a következő sessionnek (2026-07-21-i állapot)
@@ -744,11 +744,25 @@ hibás levezetésnél a böngésző némán eldobná az üzenetet.
   **Általános tanulság minden jövőbeli RPC-re:** a public sémában létrehozott
   függvény alapból anon-hívható — explicit revoke kell.
 
-**HÁTRA (böngészőben, felhasználói lépés):**
-- Bejelentkezés → spot-adatlap → „Értesíts viharjelzésről" → engedély megadása
-  → sor a `push_subscriptions`-ben (`endpoint` + `alert_spot_ids`); majd egy
-  szintváltás (éles vagy kikényszerített) → megérkezik-e a push.
-  **Playwrighttal NEM tesztelhető:** headless Chromiumnak nincs push-szolgáltatása.
+**BÖNGÉSZŐ-VERIFIKÁCIÓ KÉSZ (2026-07-25) — a push ÉLESBEN MEGÉRKEZETT.**
+Chrome + lokális dev-szerver (a `localhost` biztonságos kontextus, nem kellett
+hozzá deploy). Menet:
+1. Belépés → `/spotok/balatonfoldvar` → „Értesíts viharjelzésről" → engedély.
+   `push_subscriptions` sor létrejött (10:12:39 UTC, FCM-endpoint,
+   `alert_spot_ids` = Balatonföldvár).
+2. Kikényszerített szintváltás: a spot legutóbbi mérésének másolata
+   `storm_level=1`, `source='teszt-viharfok'` sorként (nem hamis szél-adat).
+3. A **cron** (5 perc, ápr–okt) 10:15:03-kor észlelte az 1→0 váltást: 6 Balaton-
+   spotra bm-okf snapshot (szint 0) + push kiküldve → **az értesítés megérkezett**.
+4. Teszt-sor törölve (`source='teszt-viharfok'` — ellenőrizve, 0 maradék).
+
+Ezzel a 9. fejezet push-pipeline-ja végponttól végpontig igazolt: feliratkozás →
+RLS-es tárolás → cron-detektálás → célzás → VAPID+RFC 8291 titkosítás → FCM →
+service worker → rendszer-értesítés.
+
+**Nem automatizálható (tudatos korlát):** Playwrighttal nem tesztelhető — headless
+Chromiumnak nincs push-szolgáltatása. Regresszióhoz a fenti 4 lépéses kézi menet
+a runbook (a `docs/PROGRESS.md` ezen szakasza).
 
 **Megjegyzés a nyelvhez:** a push-szöveg magyarul, a `_shared/push-notify.ts`-ben
 épül (az Edge Function nem éri el az i18next namespace-eket, és F1-ben csak a
