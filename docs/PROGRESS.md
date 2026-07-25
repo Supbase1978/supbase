@@ -17,7 +17,7 @@
 | F1.7 Providers | ✅ kész (2026-07-24) | directory-lista + profil + lead-form + saját-listing (claim/regisztráció) + admin-hitelesítő panel; mind az 5 flow böngészőben élesben verifikálva. Részletek lent |
 | F1.8 SEO-réteg | ✅ mag kész (2026-07-24) | loader-alapú meta+hreflang, JSON-LD, sitemap+robots, consent (user_consents migráció + regisztrációs checkbox + re-consent), ÁSZF+adatvédelmi. HÁTRA: OG-kép-generálás + persona-landingek (F1.8b) + a consent-migráció éles push. Részletek lent |
 | F1.9 Push + viharjelzés | ✅ kész (2026-07-25) | teljes web push-pipeline (VAPID + RFC 8291 natív Web Cryptóval, npm nélkül), storm-alert push-ág, feliratkozó-UI, m4 `observed_at`. Élesítve (5 migráció + secretek + deploy) és **böngészőben végponttól végpontig verifikálva: a viharjelzés-push megérkezett**. Részletek lent |
-| F1.10 Záró audit + élesítés | 🔄 folyamatban | e2e + a11y kapu KÉSZ (54 Playwright-teszt, CI-ba kötve). HÁTRA: Semgrep+Snyk, Netlify SSR-adapter + `[deploy]`-gated build, nyitott kis tételek |
+| F1.10 Záró audit + élesítés | 🔄 folyamatban | e2e + a11y kapu KÉSZ (54 Playwright-teszt) · Semgrep SAST-kapu KÉSZ (tiszta, CI-ban `--error`) · findingok: `docs/SECURITY_FINDINGS.md`. HÁTRA: Snyk-bekötés (fiók kell), Netlify SSR-adapter + `[deploy]`-gated build, nyitott kis tételek |
 
 ## ITINER a következő sessionnek (2026-07-21-i állapot)
 
@@ -648,6 +648,36 @@ oldalra irányítja. Így a közösségi belépő userek is elfogadják a felté
   callback (`https://<project>.supabase.co/auth/v1/callback`). Ingyenes.
 - **Apple:** Apple Developer-fiók (~99 USD/év), Services ID + kulcs → Providers → Apple.
 - Bekapcsolásig a gombok redirectelnek, de a Supabase provider-hibára fut (a kód kész).
+
+## F1.10/2 — Biztonsági audit: Semgrep-kapu + finding-triage (2026-07-25)
+
+Új dokumentum: **`docs/SECURITY_FINDINGS.md`** — a findingok élő nyilvántartása
+(javítva / elfogadott kockázat / nyitott, mindegyik INDOKLÁSSAL). Az
+`AUDIT_CHECKLIST.md` 3. pontja innentől ide mutat.
+
+**Semgrep SAST-kapu élesítve** (`p/typescript`, `p/react`, `p/secrets`,
+`p/owasp-top-ten`, `p/sql-injection`) — CI-ban minden PR-en, `--error`-ral
+(találat = piros CI). A scan a teljes kódbázison (app + core + modulok +
+Edge Functionök + SQL) **jelenleg TISZTA**.
+
+**Findingok (részletek a SECURITY_FINDINGS.md-ben):**
+- **F1.10-01 — react-router CSRF (high, GHSA-qwww-vcr4-c8h2): ELFOGADOTT
+  KOCKÁZAT.** A sérülékenység KIZÁRÓLAG RSC-módban él; a projekt framework-módú
+  SSR-t használ, RSC nincs bekötve (grep-pel ellenőrizve). Javítás csak a 8.3.0
+  FŐVERZIÓBAN van (a 7.x ágon nincs patch), ezért F2-re ütemezve. **Kiváltó ok az
+  azonnali frissítésre:** ha RSC-módot vezetünk be, még a bevezetés ELŐTT.
+- **F1.10-02 — `dangerouslySetInnerHTML` a JSON-LD-ben: FALSE POSITIVE.** A
+  `<script>`-ből csak `<`-gal lehet kilépni, amit a `jsonLdScript` mind
+  escape-el; regressziós teszt védi. `nosemgrep` + indoklás a kódban. Ez a
+  projekt EGYETLEN innerHTML-pontja.
+- **F1.10-03 — mozgó GitHub Actions tagek: JAVÍTVA.** Minden `uses:` teljes
+  commit-SHA-ra pinnelve (a `trivy-action`/`kics-github-action` kompromittálása
+  pont mozgó tagen keresztül történt). Frissítéskor a SHA-t is cserélni kell —
+  F2-ben Dependabotra bízandó.
+- **F1.10-04 — Snyk NINCS bekötve: NYITOTT.** A CLI/MCP fiók-hitelesítést kér,
+  ami felhasználói döntés; addig az `npm audit --omit=dev` a helyettesítő (ez
+  fedte fel az F1.10-01-et is). Teendő: Snyk-fiók + `SNYK_TOKEN` secret + heti
+  ütemezett workflow.
 
 ## F1.10/1 — Playwright e2e + axe a11y kapu (2026-07-25)
 

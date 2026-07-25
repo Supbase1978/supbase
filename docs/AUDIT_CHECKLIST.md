@@ -16,6 +16,8 @@
 - [ ] `verified_owner` / `status` user-oldali írás ellen védett
 
 ## 3. Biztonság
+> A findingok élő nyilvántartása: [`SECURITY_FINDINGS.md`](./SECURITY_FINDINGS.md)
+> (minden tétel: javítva / elfogadott kockázat / nyitott — INDOKLÁSSAL).
 - [ ] security-auditor riport: nincs nyitott HIGH/CRITICAL (Semgrep + Snyk)
 - [ ] Nincs kliensre szivárgó secret / service key
 - [ ] Edge Functionök auth-védettek (verify_jwt vagy explicit indoklás)

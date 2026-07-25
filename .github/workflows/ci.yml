@@ -1,5 +1,10 @@
 # SUP Platform CI — minőségkapuk (FEJLESZTESI_DOKUMENTACIO 10. fejezet)
 # KAPU-SZABÁLY: piros CI-val nincs merge — a subagentek sem kerülhetik meg.
+#
+# A `uses:` hivatkozások TELJES COMMIT-SHA-ra pinnelve (a komment mutatja a
+# verziót): a mozgó tag/branch némán átirányítható, és pont így történt a
+# trivy-action és a kics-github-action kompromittálása. Frissítéskor a SHA-t is
+# cserélni kell — érdemes Dependabotra bízni (F2).
 name: CI
 
 on:
@@ -11,8 +16,8 @@ jobs:
   gates:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 22
           cache: npm
@@ -29,8 +34,8 @@ jobs:
   rls-tests:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: supabase/setup-cli@v1
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: supabase/setup-cli@ab058987d8d6c725971f6cf9d0b5c98467e30bd1 # v1.7.1
         with:
           version: 2.100.1
       - name: Lokális Postgres (migrációk + seed)
@@ -46,12 +51,12 @@ jobs:
   e2e:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 22
           cache: npm
-      - uses: supabase/setup-cli@v1
+      - uses: supabase/setup-cli@ab058987d8d6c725971f6cf9d0b5c98467e30bd1 # v1.7.1
         with:
           version: 2.100.1
 
@@ -72,8 +77,33 @@ jobs:
 
       - name: Riport feltöltése (bukásnál is)
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: playwright-report
           path: playwright-report/
           retention-days: 7
+
+  # F1.10: Semgrep SAST — minden PR-en (10. fejezet „Biztonság" kapu).
+  #
+  # Publikus szabálycsomagok, token/fiók NÉLKÜL. A `--error` miatt bármelyik
+  # találat PIROS CI-t ad. Egyedi kivételt CSAK a kódban, `nosemgrep`
+  # kommenttel + INDOKLÁSSAL szabad tenni (lásd src/core/seo/json-ld.tsx).
+  semgrep:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: "3.12"
+      - run: pip install semgrep==1.142.0
+      - name: SAST-kapu (Semgrep)
+        run: |
+          semgrep scan --error --metrics=off \
+            --config=p/typescript --config=p/react \
+            --config=p/secrets --config=p/owasp-top-ten \
+            --config=p/sql-injection \
+            --exclude=node_modules --exclude=build --exclude=.react-router
+
+  # Snyk (függőség-audit) HETI + release előtt — külön workflow, mert SNYK_TOKEN
+  # repository secretet igényel. Amíg nincs beállítva, az `npm audit` a
+  # helyettesítő (a gates jobban futtatható). Lásd docs/AUDIT_CHECKLIST.md.

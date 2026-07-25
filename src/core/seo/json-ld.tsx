@@ -11,9 +11,17 @@ export interface JsonLdProps {
 }
 
 export function JsonLd({ data }: JsonLdProps) {
-  // A tartalom a jsonLdScript-en át escape-elt — ez a JSON-LD beszúrás bevett,
-  // biztonságos mintája (nem HTML, hanem `<`-mentesített JSON).
+  // BIZTONSÁGI TRIAGE (Semgrep react-dangerouslysetinnerhtml, F1.10 audit):
+  // ez a találat itt FALSE POSITIVE, és a projekt egyetlen innerHTML-pontja.
+  // Indoklás: a `<script>` elemen belül a HTML-parser kizárólag a `<`
+  // karakterrel léptethető ki (`</script`, `<!--`) — a `jsonLdScript` pedig
+  // MINDEN `<`-et `<`-re cserél, ami JSON-ban ekvivalens szöveg, HTML-ben
+  // viszont ártalmatlan. Így felhasználói tartalom (vélemény-szöveg,
+  // szolgáltató-név) sem tud script-taget zárni. Regressziót a
+  // `jsonld.test.ts` „</script><script>alert(1)" esete véd.
+  // A DOMPurify itt nem alkalmazható: nem HTML-t, hanem JSON-t szúrunk be.
   return (
+    // nosemgrep: typescript.react.security.audit.react-dangerouslysetinnerhtml.react-dangerouslysetinnerhtml
     <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdScript(data) }} />
   );
 }
