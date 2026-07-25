@@ -24,7 +24,10 @@ export function AppNav() {
       {/* Mobilon a nav-elemek nem férnek ki (a modulok száma nő) — a SÁV maga
           görgethető vízszintesen, hogy ne az OLDAL csússzon el. A brand
           `shrink-0`, hogy görgetés közben se torzuljon. */}
-      <nav className="mx-auto flex max-w-5xl items-center gap-1 overflow-x-auto px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <nav
+        aria-label={t("nav.primaryLabel")}
+        className="mx-auto flex max-w-5xl items-center gap-1 overflow-x-auto px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      >
         <Link
           to={localizePath("/", locale)}
           className="flex min-h-11 shrink-0 items-center pr-3 font-semibold text-ink-deep"

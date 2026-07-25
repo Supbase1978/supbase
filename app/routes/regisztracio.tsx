@@ -86,6 +86,11 @@ export async function action({ request }: Route.ActionArgs) {
   return data({ ok: true as const, confirmationSent: true }, { headers });
 }
 
+export const meta: Route.MetaFunction = () => [
+  { title: "[APPNÉV] — Regisztráció" },
+  { name: "robots", content: "noindex" },
+];
+
 export default function SignupRoute({ loaderData, actionData }: Route.ComponentProps) {
   const t = useAuthT();
   const confirmationSent = actionData?.ok === true;

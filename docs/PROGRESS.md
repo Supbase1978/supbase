@@ -17,7 +17,7 @@
 | F1.7 Providers | ✅ kész (2026-07-24) | directory-lista + profil + lead-form + saját-listing (claim/regisztráció) + admin-hitelesítő panel; mind az 5 flow böngészőben élesben verifikálva. Részletek lent |
 | F1.8 SEO-réteg | ✅ mag kész (2026-07-24) | loader-alapú meta+hreflang, JSON-LD, sitemap+robots, consent (user_consents migráció + regisztrációs checkbox + re-consent), ÁSZF+adatvédelmi. HÁTRA: OG-kép-generálás + persona-landingek (F1.8b) + a consent-migráció éles push. Részletek lent |
 | F1.9 Push + viharjelzés | ✅ kész (2026-07-25) | teljes web push-pipeline (VAPID + RFC 8291 natív Web Cryptóval, npm nélkül), storm-alert push-ág, feliratkozó-UI, m4 `observed_at`. Élesítve (5 migráció + secretek + deploy) és **böngészőben végponttól végpontig verifikálva: a viharjelzés-push megérkezett**. Részletek lent |
-| F1.10 Záró audit + élesítés | ⬜ | |
+| F1.10 Záró audit + élesítés | 🔄 folyamatban | e2e + a11y kapu KÉSZ (54 Playwright-teszt, CI-ba kötve). HÁTRA: Semgrep+Snyk, Netlify SSR-adapter + `[deploy]`-gated build, nyitott kis tételek |
 
 ## ITINER a következő sessionnek (2026-07-21-i állapot)
 
@@ -648,6 +648,57 @@ oldalra irányítja. Így a közösségi belépő userek is elfogadják a felté
   callback (`https://<project>.supabase.co/auth/v1/callback`). Ingyenes.
 - **Apple:** Apple Developer-fiók (~99 USD/év), Services ID + kulcs → Providers → Apple.
 - Bekapcsolásig a gombok redirectelnek, de a Supabase provider-hibára fut (a kód kész).
+
+## F1.10/1 — Playwright e2e + axe a11y kapu (2026-07-25)
+
+A 10. fejezet két hiányzó kapuja élesítve. Kapuk zöldek: typecheck · lint ·
+433 vitest · **54 Playwright-teszt** (chromium + Pixel 7 mobil).
+
+**Felállás:**
+- `playwright.config.ts`: két projekt (desktop chromium + **mobil**, mert a
+  projekt mobil-first és a layout-regressziók csak ott jönnek elő).
+  `E2E_BASE_URL`-lel külső szerverre irányítható; enélkül maga indít
+  `npm run dev`-et.
+- **CI-ban LOKÁLIS Supabase-stack ellen fut** (`supabase db start`, ugyanaz,
+  amit az `rls-tests` használ): a seed determinisztikus, és a tesztek NEM írnak
+  az éles projektbe. A kulcsokat a `supabase status` adja — repository secret
+  nem kell. Bukásnál a Playwright-riport artifactként feltöltődik.
+- Az assertek VISELKEDÉST rögzítenek, nem darabszámokat: a lokális (távoli DB,
+  dev-artefaktumokkal) és a CI-beli (friss seed) adat eltér, de mindkettőben
+  igaznak kell lennie.
+
+**Lefedve:** `e2e/public-paths.spec.ts` (nav a modulokból, deszka/spot/szolgáltató
+lista→adatlap, 404 ismeretlen slugra, jogi oldalak, robots+sitemap [nincs `/en/`],
+jogosultsági kapuk kijelentkezve, `/api/push` → 401 JSON) · `e2e/advisor.spec.ts`
+(wizard→eredmény→adatlap, a testsúly+magasság kötelezősége, **a magasság hatása
+az ajánlásra**, Közös nevező a kártyán) · `e2e/a11y.spec.ts` (axe WCAG 2.1 AA a
+10 kulcsképernyőn).
+
+**Az új kapu AZONNAL fogott 3 valódi hibát (mind javítva):**
+1. **`/belepes` és `/regisztracio` cím (`<title>`) NÉLKÜL renderelt** — axe
+   „document-title", serious. Képernyőolvasóval megnevezhetetlen lap, és a
+   böngésző-előzményben is névtelen. Az F1.8 loader-alapú meta a fő route-okra
+   került be, az auth-oldalak kimaradtak → `meta` export (noindexszel, mert
+   SEO-értékük nincs).
+2. **A Deszkaválasztó wizardnak nem volt `h1`-e** — a címsor-hierarchia h2-vel
+   indult (axe „page-has-heading-one"). Kapott látható h1-et.
+3. **Két `<nav>` landmark megkülönböztető név nélkül** (fejléc + lábléc) —
+   `aria-label` mindkettőre (`nav.primaryLabel` / `nav.footerLabel`, hu+en).
+
+**Regressziós védelem a korábbi hibákra:** külön teszt őrzi, hogy az oldal
+SEHOL nem csúszik el vízszintesen (ez volt a mobil nav-hiba), és hogy a
+sitemap nem hirdet `/en/` URL-t (F1.8-döntés).
+
+**Tanulság a teszt-írásból:** a `runWizard` helper eleinte „bármilyen h1"-re
+várt; amint a wizard maga is kapott h1-et (3. javítás), a helper azonnal
+késznek hitte a lapot, és a teszt még a wizardon vizsgálódott. Azóta az
+EREDMÉNY-lap konkrét címére vár — általános várakozás helyett mindig a
+célállapotra jellemző horgonyt kell figyelni.
+
+**Ami SZÁNDÉKOSAN nincs az automata csomagban:** az auth-os ÍRÁSI folyamatok
+(vélemény, flag, moderáció, provider-claim, push-feliratkozás) — éles adatot
+írnának, és böngésző-engedélyt/teszt-fiókot igényelnek. Ezeket a PROGRESS
+kézi runbookjai fedik (F1.5/F1.6/F1.7/F1.9 szakaszok).
 
 ## F1.6-utó — Deszkaválasztó: testmagasság + Közös nevező az eredményen (2026-07-25)
 

@@ -91,6 +91,11 @@ export async function action({ request }: Route.ActionArgs) {
   throw redirect(redirectTo, { headers });
 }
 
+export const meta: Route.MetaFunction = () => [
+  { title: "[APPNÉV] — Belépés" },
+  { name: "robots", content: "noindex" },
+];
+
 export default function LoginRoute({ loaderData, actionData }: Route.ComponentProps) {
   const t = useAuthT();
   const magicLinkSent = actionData?.ok === true && "magicLinkSent" in actionData;

@@ -10,7 +10,9 @@
     "stale": "Elavult adat — 30 percnél régebbi"
   },
   "nav": {
-    "home": "Kezdőlap"
+    "home": "Kezdőlap",
+    "primaryLabel": "Főnavigáció",
+    "footerLabel": "Jogi információk"
   },
   "home": {
     "phase": "SUP Platform — F1 (MVP) fejlesztés alatt",

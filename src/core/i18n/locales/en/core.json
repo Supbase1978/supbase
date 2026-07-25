@@ -10,7 +10,9 @@
     "stale": "Outdated data — older than 30 minutes"
   },
   "nav": {
-    "home": "Home"
+    "home": "Home",
+    "primaryLabel": "Main navigation",
+    "footerLabel": "Legal information"
   },
   "home": {
     "phase": "SUP Platform — F1 (MVP) under development",

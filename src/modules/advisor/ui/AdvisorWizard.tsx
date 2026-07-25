@@ -80,6 +80,14 @@ export function AdvisorWizard() {
       <input type="hidden" name="storage" value={storage} />
 
       <header className="flex flex-col gap-2">
+        {/* A lapnak KELL h1: enélkül a képernyőolvasó nem tudja megnevezni,
+            és a címsor-hierarchia h2-vel kezdődne (axe: page-has-heading-one). */}
+        <h1
+          className="text-2xl font-semibold text-ink-deep"
+          style={{ fontFamily: "var(--font-display)" }}
+        >
+          {t("wizard.title")}
+        </h1>
         <div className="h-1.5 overflow-hidden rounded-full bg-line">
           <div
             className="h-full rounded-full bg-petrol transition-[width]"

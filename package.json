@@ -11,7 +11,10 @@
     "lint": "eslint .",
     "test": "vitest run --passWithNoTests",
     "sb": "bash scripts/sb.sh",
-    "prepare": "git config core.hooksPath .githooks || true"
+    "prepare": "git config core.hooksPath .githooks || true",
+    "e2e": "playwright test",
+    "e2e:ui": "playwright test --ui",
+    "e2e:report": "playwright show-report"
   },
   "dependencies": {
     "@react-router/node": "^7.6.0",
@@ -27,6 +30,8 @@
     "react-router": "^7.6.0"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.12.1",
+    "@playwright/test": "^1.62.0",
     "@react-router/dev": "^7.6.0",
     "@tailwindcss/vite": "^4.1.0",
     "@testing-library/react": "^16.3.2",

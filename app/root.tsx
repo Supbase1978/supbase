@@ -87,7 +87,10 @@ function SiteFooter() {
   const { t } = useTranslation("core");
   return (
     <footer className="mt-8 border-t border-line px-4 py-6 text-center text-sm text-text-3">
-      <nav className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
+      <nav
+        aria-label={t("nav.footerLabel")}
+        className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1"
+      >
         <Link to="/aszf" className="hover:text-petrol-text hover:underline">
           {t("consent.termsLink")}
         </Link>
