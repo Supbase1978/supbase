@@ -35,6 +35,18 @@
     "accept": "Elfogadom",
     "error": "A mentés nem sikerült. Kérjük, próbáld újra."
   },
+  "push": {
+    "enable": "Értesíts viharjelzésről",
+    "disable": "Értesítés kikapcsolása",
+    "hint": "Push-üzenetet küldünk, ha erre a spotra viharjelzés lép életbe vagy feloldják.",
+    "enabledHint": "Értesítést kapsz, ha itt változik a viharjelzés fokozata.",
+    "denied": "Az értesítések le vannak tiltva ennél az oldalnál. A böngésző beállításaiban engedélyezheted.",
+    "loginLink": "Lépj be",
+    "loginHint": "a viharjelzés-értesítés bekapcsolásához.",
+    "notConfigured": "Az értesítések ezen a környezeten még nincsenek beállítva.",
+    "loginRequired": "A feliratkozáshoz be kell jelentkezned.",
+    "saveFailed": "A feliratkozás mentése nem sikerült. Kérjük, próbáld újra."
+  },
   "errors": {
     "notFound": {
       "title": "Az oldal nem található",

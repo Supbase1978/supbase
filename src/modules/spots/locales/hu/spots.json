@@ -61,6 +61,7 @@
     "supIndex": "SUP-index",
     "region": "Régió",
     "stormRegion": "Viharjelzési körzet",
+    "stormAlerts": "Viharjelzés-értesítés",
     "noSnapshot": "Ehhez a spothoz még nincs mérés.",
     "wind": "Szél",
     "gust": "Lökés",

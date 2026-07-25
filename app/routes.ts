@@ -26,6 +26,8 @@ export default [
   route("uj-jelszo", "routes/uj-jelszo.tsx"),
   // Retroaktív re-consent felület (F1.8) — a root-banner innen kér elfogadást.
   route("beleegyezes", "routes/beleegyezes.tsx"),
+  // Push-feliratkozás API (F1.9) — resource route, a WebPushProvider hívja.
+  route("api/push", "routes/api.push.ts"),
   // SEO resource route-ok (F1.8) — nincs komponens, a loader XML/text választ ad.
   route("sitemap.xml", "routes/sitemap-xml.ts"),
   route("robots.txt", "routes/robots-txt.ts"),

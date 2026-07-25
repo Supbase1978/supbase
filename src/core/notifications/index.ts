@@ -16,6 +16,8 @@ export type {
 } from "./types";
 export { stormTopic } from "./types";
 export { WebPushProvider } from "./web-push";
+export { PushToggle } from "./PushToggle";
+export type { PushToggleProps } from "./PushToggle";
 
 export function getNotificationProvider(): NotificationProvider {
   const platform = getPlatform();

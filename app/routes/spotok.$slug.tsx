@@ -19,6 +19,7 @@ import { getUser, requireUser } from "@core/auth/session.server";
 import { createSupabaseServerClient } from "@core/auth/supabase.server";
 import { isEmailConfirmed } from "@core/auth/email-confirmed";
 import { getLocaleFromPath, pickTranslated, serverT } from "@core/i18n";
+import { PushToggle } from "@core/notifications/PushToggle";
 import { absoluteUrl, buildPageSeo } from "@core/seo/page-seo";
 import { placeJsonLd } from "@core/seo/jsonld";
 import { JsonLd } from "@core/seo/json-ld";
@@ -411,6 +412,21 @@ export default function SpotDetailRoute({ loaderData, actionData }: Route.Compon
             </p>
           ) : null}
         </div>
+      ) : null}
+
+      {/* Viharjelzés-értesítés (F1.9). CSAK ott ajánljuk fel, ahol van
+          viharjelzési körzet — máshonnan nincs mit riasztani (Fertő: nincs
+          HungaroMet-forrás, F1-korlát). A DB-írás a /api/push route-on megy. */}
+      {spot.stormWarningRegion ? (
+        <section
+          aria-label={t("detail.stormAlerts")}
+          className="flex flex-col gap-2 rounded-[var(--radius-card)] border border-line p-4"
+        >
+          <h2 className="text-lg font-semibold text-ink-deep">
+            {t("detail.stormAlerts")}
+          </h2>
+          <PushToggle spotId={spot.id} isAuthenticated={reportForm.isLoggedIn} />
+        </section>
       ) : null}
 
       <Card>

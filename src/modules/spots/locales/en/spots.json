@@ -61,6 +61,7 @@
     "supIndex": "SUP index",
     "region": "Region",
     "stormRegion": "Storm warning region",
+    "stormAlerts": "Storm warning alerts",
     "noSnapshot": "There is no reading for this spot yet.",
     "wind": "Wind",
     "gust": "Gust",

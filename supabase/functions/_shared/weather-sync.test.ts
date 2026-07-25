@@ -53,6 +53,19 @@ describe("buildSnapshotRow", () => {
     expect(row.sup_index).toBe(3.9); // I. fok plafon
     expect(row.source).toBe("open-meteo");
     expect(row.fetched_at).toBe("2026-07-18T12:34:56.000Z");
+    // m4: a forrás saját időbélyege a lekérés-idő MELLETT tárolódik.
+    expect(row.observed_at).toBe("2026-07-18T12:00");
+  });
+
+  it("observed_at null marad, ha a forrás nem ad időbélyeget (m4)", () => {
+    const row = buildSnapshotRow(
+      spot("s3"),
+      draft({ observed_at: null }),
+      DEFAULT_SUPINDEX_CONFIG,
+      NOW().toISOString(),
+    );
+    expect(row.observed_at).toBeNull();
+    expect(row.fetched_at).toBe("2026-07-18T12:34:56.000Z");
   });
 
   it("szél-adat híján sup_index null, de a sort így is építi", () => {

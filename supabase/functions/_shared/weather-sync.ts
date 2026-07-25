@@ -94,6 +94,8 @@ export function buildSnapshotRow(
     sup_index: supIndex,
     source: draft.source,
     fetched_at: fetchedAt,
+    // m4: a forrás saját időbélyege a lekérés-idő MELLETT (nem helyette).
+    observed_at: draft.observed_at,
   };
 }
 

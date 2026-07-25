@@ -37,8 +37,17 @@ az érintett `storm_warning_region` spotjainak LEGUTÓBBI snapshotja alapján
 szintváltás-detektálás → szintváltásnál új `weather_snapshots` sor
 (`source='bm-okf'`, a SUP-index a storm-override-dal újraszámolva). A
 `fetched_at` MINDIG a scrape pillanata (2. fejezet: cache-elt viharjelzés soha
-nem aktuális). A push-küldés maga **F1.9** — most csak a szintváltás naplózása és
-egy `notifyStormChange()` TODO-hook marad (lásd `_shared/storm-alert.ts`).
+nem aktuális).
+
+**Push (F1.9, 9./2–4.):** szintváltásnál a `notifyStormChange()` (lásd
+`_shared/storm-alert.ts`) lekéri az érintett spotokra feliratkozókat
+(`push_subscriptions.alert_spot_ids && <spot-idk>`), feliratkozásonként a SAJÁT
+spotjaira szabott üzenetet épít (`_shared/push-notify.ts`), és natív Web
+Cryptóval, npm-függőség nélkül küld (`_shared/web-push.ts`: VAPID JWT ES256 +
+RFC 8291 aes128gcm). A 410/404-es (visszavont engedélyű) feliratkozásokat
+törli. **Fail-safe:** VAPID-kulcs nélkül a push-ág kimarad, a pipeline többi
+része változatlanul fut; a snapshot-írás hibája nem némítja el a push-t (és
+fordítva sem).
 
 ## Viharjelzés-forrás (élőben verifikálva, 2026-07-19)
 
@@ -79,6 +88,22 @@ npm run sb -- functions deploy storm-alert
 # SUPABASE_SERVICE_ROLE_KEY). A viharjelzés-forrás felülírása (opcionális):
 npm run sb -- secrets set STORM_SOURCES='{"Balaton":"https://www.met.hu/idojaras/tavaink/balaton/viharjelzes/main.php"}'
 ```
+
+### VAPID-kulcsok (push, F1.9)
+
+```bash
+node scripts/generate-vapid.mjs        # → .vapid.json (gitignore-olt, 0600)
+
+# A privát kulcs CSAK ide kerül (Edge Function secret), a repóba SOHA:
+npm run sb -- secrets set VAPID_PUBLIC_KEY=<public> VAPID_PRIVATE_KEY=<private> \
+  VAPID_SUBJECT=mailto:info@sup-platform.hu
+
+# A PUBLIKUS kulcs a webes .env-be is kell (a böngésző ezzel iratkozik fel):
+#   VITE_VAPID_PUBLIC_KEY=<public>
+```
+
+> A `storm-alert` VAPID-kulcs nélkül is fut — csak push nem megy ki
+> (`console.warn` + `pushSent: 0` a válaszban).
 
 > A `weather_snapshots`-ba csak a **service_role** írhat (nincs write-policy, 3.2)
 > — az Edge Function ezzel a kulccsal ír, ami megkerüli az RLS-t.
@@ -148,7 +173,8 @@ select cron.schedule(
 - A tényleges `functions deploy` és a cron **bekötése** (ez a runbook, nem CI).
 - A `pg_cron`/`pg_net` extension engedélyezése, ha a B) utat választod.
 - A szezon-kapcsolás (`storm-alert` ki/be, vagy a `4-10` hónapmező elfogadása).
-- **F1.9**: a `notifyStormChange()` push-küldés bekötése (9./2–4. — a
-  `push_subscriptions` join + Web Push VAPID), plusz a HydroInfo vízállás-forrás
-  (5.1/6, folyó-korrekció) — külön feladat.
+- **F1.9-utó**: a VAPID-secretek beállítása + a `storm-alert` ÚJRA-deployolása
+  (a push-ág kódja már benne van), és a `20260717090600_core_push_webpush.sql`
+  migráció kitolása. A HydroInfo vízállás-forrás (5.1/6, folyó-korrekció)
+  továbbra is külön feladat.
 - Tenger-spot vízhő (`includeMarine=true`) — F1-ben minden belvíz-spot `false`.

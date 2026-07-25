@@ -16,6 +16,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     "Disallow: /admin/",
     "Disallow: /kijelentkezes",
     "Disallow: /auth/",
+    "Disallow: /api/",
     "Disallow: /szolgaltatok/uj",
     "",
     `Sitemap: ${origin}/sitemap.xml`,

@@ -7,6 +7,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
+import type { PushSubscriptionRow, PushTarget } from "./push-notify.ts";
 import { DEFAULT_SUPINDEX_CONFIG } from "./sup-index.ts";
 import {
   buildStormSnapshotRow,
@@ -14,6 +15,7 @@ import {
   type RegionSpotState,
   type RegionState,
   type StormAlertDeps,
+  type StormPushDeps,
 } from "./storm-alert.ts";
 import type { WeatherSnapshotRow } from "./types.ts";
 
@@ -24,6 +26,8 @@ function fixture(name: string): string {
 function spotState(over: Partial<RegionSpotState> = {}): RegionSpotState {
   return {
     spotId: "spot",
+    name: "Teszt spot",
+    path: "/spotok/teszt-spot",
     shore_bearing_deg: null,
     water_type: "to",
     wind_kmh: 10,
@@ -221,5 +225,162 @@ describe("runStormAlert — körzetenkénti források", () => {
     expect(summary.errors).toEqual([
       { region: "Velencei-tó", message: "insert failed" },
     ]);
+  });
+
+  // ── F1.9: push-ág (9./2–4.) ──────────────────────────────────────────────
+
+  function pushDeps(
+    subscriptions: PushSubscriptionRow[],
+    over: Partial<StormPushDeps> = {},
+  ) {
+    const sentTargets: PushTarget[] = [];
+    const deleted: string[] = [];
+    const deps: StormPushDeps = {
+      source: "met.hu / BM OKF",
+      getSubscriptionsForSpots: (spotIds) =>
+        Promise.resolve(
+          subscriptions.filter((s) =>
+            (s.alert_spot_ids ?? []).some((id) => spotIds.includes(id)),
+          ),
+        ),
+      send: (target) => {
+        sentTargets.push(target);
+        return Promise.resolve({ stale: false });
+      },
+      deleteSubscriptions: (ids) => {
+        deleted.push(...ids);
+        return Promise.resolve();
+      },
+      ...over,
+    };
+    return { deps, sentTargets, deleted };
+  }
+
+  function webPushRow(id: string, spotIds: string[]): PushSubscriptionRow {
+    return {
+      id,
+      platform: "webpush",
+      token: { endpoint: `https://push.example/${id}`, keys: { p256dh: "p", auth: "a" } },
+      alert_spot_ids: spotIds,
+    };
+  }
+
+  it("szintváltásnál push megy az érintett spotok feliratkozóinak", async () => {
+    const { deps, sentTargets } = pushDeps([
+      webPushRow("bal", ["bal-1"]),
+      webPushRow("vel", ["vel-1"]),
+      webPushRow("mas", ["tis-1"]), // nem érintett körzet
+    ]);
+
+    const summary = await runStormAlert({
+      config: DEFAULT_SUPINDEX_CONFIG,
+      now: NOW,
+      ...sourcesFromFixtures({
+        Balaton: fixture("methu.balaton.level1.html"),
+        "Velencei-tó": fixture("methu.velencei-to.level2.html"),
+        "Tisza-tó": fixture("methu.tisza-to.html"),
+      }),
+      getRegionStates: () => Promise.resolve(regionStates()),
+      insertSnapshot: () => Promise.resolve(),
+      push: deps,
+    });
+
+    expect(summary.pushSent).toBe(2);
+    expect(summary.pushStale).toBe(0);
+    expect(sentTargets.map((t) => t.subscriptionId).sort()).toEqual(["bal", "vel"]);
+    expect(sentTargets.find((t) => t.subscriptionId === "vel")?.payload.title).toContain(
+      "II. fokú viharjelzés",
+    );
+    expect(sentTargets.find((t) => t.subscriptionId === "bal")?.payload.title).toContain(
+      "I. fokú viharjelzés",
+    );
+  });
+
+  it("push nélküli deps-szel a pipeline változatlanul lefut", async () => {
+    const summary = await runStormAlert({
+      config: DEFAULT_SUPINDEX_CONFIG,
+      now: NOW,
+      ...sourcesFromFixtures({ Balaton: fixture("methu.balaton.level1.html") }),
+      getRegionStates: () => Promise.resolve(regionStates()),
+      insertSnapshot: () => Promise.resolve(),
+    });
+    expect(summary.snapshotsWritten).toBe(2);
+    expect(summary.pushSent).toBe(0);
+  });
+
+  it("a snapshot-írás hibája NEM némítja el a push-riasztást", async () => {
+    const { deps, sentTargets } = pushDeps([webPushRow("bal", ["bal-1"])]);
+    const summary = await runStormAlert({
+      config: DEFAULT_SUPINDEX_CONFIG,
+      now: NOW,
+      ...sourcesFromFixtures({ Balaton: fixture("methu.balaton.level1.html") }),
+      getRegionStates: () => Promise.resolve(regionStates()),
+      insertSnapshot: () => Promise.reject(new Error("insert failed")),
+      push: deps,
+    });
+    expect(summary.snapshotsWritten).toBe(0);
+    expect(summary.errors).toEqual([{ region: "Balaton", message: "insert failed" }]);
+    expect(sentTargets).toHaveLength(1);
+    expect(summary.pushSent).toBe(1);
+  });
+
+  it("a push-ág hibája nem viszi el a snapshot-írást (fordítva sem)", async () => {
+    const { deps } = pushDeps([webPushRow("bal", ["bal-1"])], {
+      getSubscriptionsForSpots: () => Promise.reject(new Error("db down")),
+    });
+    const summary = await runStormAlert({
+      config: DEFAULT_SUPINDEX_CONFIG,
+      now: NOW,
+      ...sourcesFromFixtures({ Balaton: fixture("methu.balaton.level1.html") }),
+      getRegionStates: () => Promise.resolve(regionStates()),
+      insertSnapshot: () => Promise.resolve(),
+      push: deps,
+    });
+    expect(summary.snapshotsWritten).toBe(2);
+    expect(summary.pushSent).toBe(0);
+    expect(summary.errors).toEqual([{ region: "Balaton", message: "push: db down" }]);
+  });
+
+  it("a 410-es (visszavont) feliratkozást törli, a többit kiküldi", async () => {
+    const { deps, deleted } = pushDeps(
+      [webPushRow("elo", ["bal-1"]), webPushRow("halott", ["bal-2"])],
+      {
+        send: (target) =>
+          Promise.resolve({ stale: target.subscriptionId === "halott" }),
+      },
+    );
+    const summary = await runStormAlert({
+      config: DEFAULT_SUPINDEX_CONFIG,
+      now: NOW,
+      ...sourcesFromFixtures({ Balaton: fixture("methu.balaton.level1.html") }),
+      getRegionStates: () => Promise.resolve(regionStates()),
+      insertSnapshot: () => Promise.resolve(),
+      push: deps,
+    });
+    expect(summary.pushSent).toBe(1);
+    expect(summary.pushStale).toBe(1);
+    expect(deleted).toEqual(["halott"]);
+  });
+
+  it("egy feliratkozó küldési hibája nem viszi a többit", async () => {
+    const { deps } = pushDeps(
+      [webPushRow("jo", ["bal-1"]), webPushRow("rossz", ["bal-2"])],
+      {
+        send: (target) =>
+          target.subscriptionId === "rossz"
+            ? Promise.reject(new Error("Push HTTP 500"))
+            : Promise.resolve({ stale: false }),
+      },
+    );
+    const summary = await runStormAlert({
+      config: DEFAULT_SUPINDEX_CONFIG,
+      now: NOW,
+      ...sourcesFromFixtures({ Balaton: fixture("methu.balaton.level1.html") }),
+      getRegionStates: () => Promise.resolve(regionStates()),
+      insertSnapshot: () => Promise.resolve(),
+      push: deps,
+    });
+    expect(summary.pushSent).toBe(1);
+    expect(summary.errors).toEqual([]); // egyedi küldés-hiba csak naplózódik
   });
 });

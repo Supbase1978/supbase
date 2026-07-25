@@ -16,7 +16,7 @@
 | F1.6 Advisor | ✅ kész (2026-07-21) | algo-engineer (kétrétegű algoritmus) + ui-builder/karmester (wizard + eredmény + route + session-log); wizard end-to-end élesben verifikálva. Admin-moderáció böngészőben VERIFIKÁLVA (2026-07-24, lásd F1.6-szakasz) — az admin-ág teljesen zöld |
 | F1.7 Providers | ✅ kész (2026-07-24) | directory-lista + profil + lead-form + saját-listing (claim/regisztráció) + admin-hitelesítő panel; mind az 5 flow böngészőben élesben verifikálva. Részletek lent |
 | F1.8 SEO-réteg | ✅ mag kész (2026-07-24) | loader-alapú meta+hreflang, JSON-LD, sitemap+robots, consent (user_consents migráció + regisztrációs checkbox + re-consent), ÁSZF+adatvédelmi. HÁTRA: OG-kép-generálás + persona-landingek (F1.8b) + a consent-migráció éles push. Részletek lent |
-| F1.9 Push + viharjelzés | ⬜ | |
+| F1.9 Push + viharjelzés | ✅ kód kész (2026-07-25) | teljes web push-pipeline (VAPID + RFC 8291 natív Web Cryptóval, npm nélkül), storm-alert push-ág, feliratkozó-UI a spot-adatlapon, m4 `observed_at`. HÁTRA: éles élesítés (2 migráció push + VAPID-secretek + storm-alert re-deploy) és böngésző-verifikáció. Részletek lent |
 | F1.10 Záró audit + élesítés | ⬜ | |
 
 ## ITINER a következő sessionnek (2026-07-21-i állapot)
@@ -51,11 +51,10 @@
    route-okban (home/deszkak/spotok/deszkavalaszto) — F1.8 köti loader-alapú,
    locale-helyes `buildMeta`-ra.
 
-3. **F1.9 — Web push + viharjelzés-pipeline end-to-end [algo-engineer, auth-
-   security]:** `notifyStormChange()` (a storm-alert Edge Function már fut, cron
-   aktív), `push_subscriptions` join → küldés, II. fok teljes-képernyős push;
-   HydroInfo vízállás-forrás; Fertő-forrás kérdése. Itt jön be az m4 follow-up
-   (Open-Meteo `observed_at`) is.
+3. ~~F1.9 — Web push + viharjelzés-pipeline~~ ✅ **KÓD KÉSZ (2026-07-25).** Lásd
+   az F1.9-szakaszt lent. HÁTRA: az élesítés (felhasználói jóváhagyással) és a
+   böngésző-verifikáció; a HydroInfo vízállás-forrás + Fertő-forrás kérdése
+   külön tételként F1.10-re csúszott.
 
 4. **F1.10 — Záró audit + e2e + security + Netlify élesítés [karmester + test-
    runner + security-auditor + reviewer]:** Playwright e2e-csomag, axe-a11y,
@@ -80,7 +79,12 @@ alany a moderációhoz. Ezután az F1.5/F1.6 admin-ága is teljesen zöld.
 
 **Nyitott kis tételek (nem blokkolók):**
 - m3: `supindex.stale_minutes` holt seed-kulcs — bekötni vagy kivenni (db-engineer).
-- m4 (F1.9): Open-Meteo `observed_at` tárolása a `fetched_at` mellett.
+- ~~m4: Open-Meteo `observed_at`~~ ✅ **KÉSZ (2026-07-25, F1.9):** migráció
+  (`20260717091700`) + `WeatherSnapshotRow.observed_at` + weather-sync írja. A
+  stale-számítás TOVÁBBRA IS a `fetched_at`-ból megy — az átállás tudatos
+  UI-döntés, F1.10 audit.
+- **F1.9-utó (HydroInfo):** folyó-spotokhoz vízállás-forrás (5.1/6 korrekció) —
+  még nincs bekötve; a Fertő viharjelzés-forrás kérdése is nyitott.
 - **F1.4-utó (geom-forma):** a PostGIS `geom` a projekt PostgREST-jén
   GeoJSON-OBJEKTUMKÉNT jön (`{type:"Point",coordinates:[lng,lat]}`), nem EWKB
   hexként — a `data/wkb.ts` `pointFromGeom`-ja mindkettőt kezeli. Ha később
@@ -644,3 +648,84 @@ oldalra irányítja. Így a közösségi belépő userek is elfogadják a felté
   callback (`https://<project>.supabase.co/auth/v1/callback`). Ingyenes.
 - **Apple:** Apple Developer-fiók (~99 USD/év), Services ID + kulcs → Providers → Apple.
 - Bekapcsolásig a gombok redirectelnek, de a Supabase provider-hibára fut (a kód kész).
+
+## F1.9 — Web push + viharjelzés-pipeline (2026-07-25)
+
+Kiosztás: karmester (a `web-push` skill Deno-mintája alapján, az F1.3 `_shared`
+tiszta-logika + vékony-héj mintát követve). Kapuk zöldek: typecheck · lint ·
+417 vitest (+58 új: web-push crypto, push-notify célzás, storm-alert push-ág,
+push.server, m4). SSR/curl-verifikáció a dev-szerveren.
+
+**Elkészült — küldő oldal (Edge Function):**
+- `_shared/web-push.ts`: VAPID JWT (ES256) + RFC 8291 payload-titkosítás
+  (aes128gcm) **natív `crypto.subtle`-lel, npm-függőség NÉLKÜL** (az
+  `npm:web-push` Deno edge alatt megbízhatatlan). Node/Vitest-semleges, a
+  hálózat injektált `fetch`-en jön. A 404/410 nem hiba, hanem `stale: true`.
+- `_shared/push-notify.ts`: TISZTA célzás + üzenet-építés. Feliratkozásonként
+  EGY üzenet, a saját spotjaira szabva; **explicit opt-in** (spot nélküli
+  feliratkozás nem kap semmit). Üzenetek a 9./3. szerint: II. fok = „Tilos a
+  vízen tartózkodni — azonnali partraszállás!" (critical), I. fok = fokozott
+  óvatosság, visszaállás = „Újra evezhető"; MINDEGYIKBEN forrás + időbélyeg
+  (9./4.). Azonos `tag` → az új riasztás felülírja a régit (nem torlódnak
+  elavult üzenetek).
+- `_shared/storm-alert.ts`: `notifyStormChange()` + `push` opcionális dep.
+  **Fail-safe:** VAPID nélkül a push-ág kimarad; a snapshot-írás hibája NEM
+  némítja el a push-t (és fordítva sem); egy feliratkozó hibája nem viszi a
+  többit; a 410/404-es feliratkozásokat kitakarítja. Summary: `pushSent`,
+  `pushStale`.
+- `storm-alert/index.ts`: a push-deps bekötése (`overlaps("alert_spot_ids")`
+  célzó lekérdezés, `sendWebPush`, törlés), spot `name`+`slug` a select-be.
+
+**Elkészült — feliratkozó oldal (web):**
+- ÚJ migráció `20260717090600_core_push_webpush.sql` (additív, az F1.2-táblát és
+  RLS-t nem bolygatja): `endpoint` GENERÁLT oszlop a jsonb tokenből + UNIQUE
+  index (egy böngésző-endpoint = egy sor, nincs duplikált riasztás), GIN index
+  az `alert_spot_ids`-re, `updated_at`, és `upsert_push_subscription()`
+  **SECURITY DEFINER** RPC. A definer-jogkör oka: **eszköz-átvétel** — ha ugyanaz
+  az endpoint másik fiókkal jelentkezik be, a régi sort törölni kell, amit RLS
+  alatt a hívó nem tehetne meg. A `user_id` MINDIG `auth.uid()`, sosem paraméter.
+  pgTAP: `42_push_webpush_test.sql` (9 eset: generált oszlop, nincs duplikálás,
+  hibás token, eszköz-átvétel, anon tiltás, idegen sor nem törölhető).
+- `public/sw.js`: service worker — CSAK push + notificationclick.
+  **Szándékosan nincs fetch-handler/offline cache:** cache-elt viharjelzés soha
+  nem jelenhet meg aktuálisként (2. fejezet 5.). `requireInteraction` a kritikus
+  riasztásokra. `public/icons/` értesítés-ikon + badge (petrol, hullám-motívum).
+- `@core/notifications/web-push.ts`: valódi `WebPushProvider` (engedélykérés,
+  igény szerinti SW-regisztráció, PushManager). **DB-t SOHA nem ír közvetlenül** —
+  a `/api/push` resource route ír, a kérés cookie-s SSR-sessionjével, RLS alatt.
+- `@core/notifications/push.server.ts`: topic-validálás (`storm:<uuid>`, a
+  kliens-bemenet nem megbízható), spot-lista összefésülés (feliratkozás nem
+  veszít el korábbi spotot), leiratkozásnál az utolsó spotnál a SOR IS törlődik
+  (adatminimum).
+- `app/routes/api.push.ts`: GET (eszköz feliratkozásai) + POST
+  (subscribe/unsubscribe). Bejelentkezés nélkül **401 JSON, nem redirect**.
+  A robots.txt tiltja a `/api/`-t.
+- `@core/notifications/PushToggle.tsx` + `core` i18n `push.*` (hu+en), bekötve a
+  spot-adatlapra — **csak ott, ahol van `storm_warning_region`** (a Fertőnek
+  nincs HungaroMet-forrása, F1-korlát: nincs mit riasztani).
+- `scripts/generate-vapid.mjs`: npm-mentes VAPID-generátor (Node Web Crypto); a
+  privát kulcsot a gitignore-olt `.vapid.json`-ba írja, NEM a terminálra.
+
+**Verifikáció (curl + SSR, dev-szerver):** `/sw.js` 200, ikon 200, `/api/push`
+GET anonim → `{subscriptions:[]}`, POST anonim → 401 `push.loginRequired`,
+robots.txt tiltja az `/api/`-t, a spot-adatlapon renderel a „Viharjelzés-
+értesítés" szekció. Az RFC 8291 helyessége roundtrip-teszttel igazolt (a teszt a
+FOGADÓ oldalról fejti vissza a titkosított üzenetet) — ez a kritikus rész, mert
+hibás levezetésnél a böngésző némán eldobná az üzenetet.
+
+**HÁTRA (élesítés, felhasználói jóváhagyással):**
+1. `node scripts/generate-vapid.mjs` — **MEGVOLT**, a kulcspár a `.vapid.json`-ban,
+   a publikus kulcs a `.env`-ben (`VITE_VAPID_PUBLIC_KEY`).
+2. `npm run sb -- secrets set VAPID_PUBLIC_KEY=… VAPID_PRIVATE_KEY=… VAPID_SUBJECT=…`
+3. `npm run sb -- db push` — 3 kitolatlan migráció: `090500` (consent, F1.8),
+   `090600` (push webpush), `091700` (observed_at). A `091600` (catalog-watch) is
+   várakozik.
+4. `npm run sb -- functions deploy storm-alert` (a push-ág kódja már benne van).
+5. Böngésző-verifikáció: bejelentkezés → spot-adatlap → „Értesíts viharjelzésről"
+   → engedély → sor a `push_subscriptions`-ben; majd a storm-alert manuális
+   hívása szintváltással (vagy éles szintváltás megvárása) → megérkezik-e a push.
+   **Playwrighttal NEM tesztelhető:** headless Chromiumnak nincs push-szolgáltatása.
+
+**Megjegyzés a nyelvhez:** a push-szöveg magyarul, a `_shared/push-notify.ts`-ben
+épül (az Edge Function nem éri el az i18next namespace-eket, és F1-ben csak a
+`hu` locale él). Több nyelvnél a feliratkozás locale-ját is tárolni kell (F2).

@@ -35,6 +35,18 @@
     "accept": "Accept",
     "error": "Could not save. Please try again."
   },
+  "push": {
+    "enable": "Alert me about storm warnings",
+    "disable": "Turn off alerts",
+    "hint": "We send a push message when a storm warning is issued or lifted for this spot.",
+    "enabledHint": "You will be notified when the storm warning level changes here.",
+    "denied": "Notifications are blocked for this site. You can allow them in your browser settings.",
+    "loginLink": "Sign in",
+    "loginHint": "to turn on storm warning alerts.",
+    "notConfigured": "Notifications are not configured in this environment yet.",
+    "loginRequired": "You need to sign in to subscribe.",
+    "saveFailed": "Could not save your subscription. Please try again."
+  },
   "errors": {
     "notFound": {
       "title": "Page not found",

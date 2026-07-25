@@ -49,4 +49,10 @@ export interface WeatherSnapshotRow {
   source: string;
   /** ISO-időbélyeg: a snapshot rögzítési ideje (scrape/fetch pillanata). */
   fetched_at: string;
+  /**
+   * Az adat FORRÁS-időpontja (Open-Meteo `current.time`) — m4. Eltérhet a
+   * `fetched_at`-tól (modell-futás késése). A viharjelzés-sorokban null: ott
+   * a scrape pillanata az egyetlen értelmes időbélyeg.
+   */
+  observed_at?: string | null;
 }

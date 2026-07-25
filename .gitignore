@@ -17,3 +17,6 @@ _design-source/
 
 # Gépfüggő MCP-konfig (github-official felülírás GH_TOKEN-nel) — nem publikus
 .mcp.json
+
+# VAPID kulcspár (F1.9 web push) — a PRIVÁT kulcs TITOK, sosem kerül a repóba
+.vapid.json

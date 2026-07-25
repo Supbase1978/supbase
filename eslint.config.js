@@ -84,4 +84,18 @@ export default tseslint.config(
       globals: { Deno: "readonly" },
     },
   },
+  {
+    // Service worker (F1.9): nyers JS, ServiceWorkerGlobalScope-ban fut.
+    files: ["public/sw.js"],
+    languageOptions: {
+      globals: { self: "readonly" },
+    },
+  },
+  {
+    // Node-scriptek (nem a bundle része).
+    files: ["scripts/**/*.mjs"],
+    languageOptions: {
+      globals: { Buffer: "readonly", console: "readonly", process: "readonly" },
+    },
+  },
 );
