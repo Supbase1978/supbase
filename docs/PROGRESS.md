@@ -16,7 +16,7 @@
 | F1.6 Advisor | ✅ kész (2026-07-21) | algo-engineer (kétrétegű algoritmus) + ui-builder/karmester (wizard + eredmény + route + session-log); wizard end-to-end élesben verifikálva. Admin-moderáció böngészőben VERIFIKÁLVA (2026-07-24, lásd F1.6-szakasz) — az admin-ág teljesen zöld |
 | F1.7 Providers | ✅ kész (2026-07-24) | directory-lista + profil + lead-form + saját-listing (claim/regisztráció) + admin-hitelesítő panel; mind az 5 flow böngészőben élesben verifikálva. Részletek lent |
 | F1.8 SEO-réteg | ✅ mag kész (2026-07-24) | loader-alapú meta+hreflang, JSON-LD, sitemap+robots, consent (user_consents migráció + regisztrációs checkbox + re-consent), ÁSZF+adatvédelmi. HÁTRA: OG-kép-generálás + persona-landingek (F1.8b) + a consent-migráció éles push. Részletek lent |
-| F1.9 Push + viharjelzés | ✅ kód kész (2026-07-25) | teljes web push-pipeline (VAPID + RFC 8291 natív Web Cryptóval, npm nélkül), storm-alert push-ág, feliratkozó-UI a spot-adatlapon, m4 `observed_at`. HÁTRA: éles élesítés (2 migráció push + VAPID-secretek + storm-alert re-deploy) és böngésző-verifikáció. Részletek lent |
+| F1.9 Push + viharjelzés | ✅ kész, élesítve (2026-07-25) | teljes web push-pipeline (VAPID + RFC 8291 natív Web Cryptóval, npm nélkül), storm-alert push-ág, feliratkozó-UI a spot-adatlapon, m4 `observed_at`. 5 migráció kitolva, secretek beállítva, függvény deployolva és élesben hívva. HÁTRA: böngésző-verifikáció (engedélykérés — nem automatizálható). Részletek lent |
 | F1.10 Záró audit + élesítés | ⬜ | |
 
 ## ITINER a következő sessionnek (2026-07-21-i állapot)
@@ -713,18 +713,42 @@ robots.txt tiltja az `/api/`-t, a spot-adatlapon renderel a „Viharjelzés-
 FOGADÓ oldalról fejti vissza a titkosított üzenetet) — ez a kritikus rész, mert
 hibás levezetésnél a böngésző némán eldobná az üzenetet.
 
-**HÁTRA (élesítés, felhasználói jóváhagyással):**
-1. `node scripts/generate-vapid.mjs` — **MEGVOLT**, a kulcspár a `.vapid.json`-ban,
-   a publikus kulcs a `.env`-ben (`VITE_VAPID_PUBLIC_KEY`).
-2. `npm run sb -- secrets set VAPID_PUBLIC_KEY=… VAPID_PRIVATE_KEY=… VAPID_SUBJECT=…`
-3. `npm run sb -- db push` — 3 kitolatlan migráció: `090500` (consent, F1.8),
-   `090600` (push webpush), `091700` (observed_at). A `091600` (catalog-watch) is
-   várakozik.
-4. `npm run sb -- functions deploy storm-alert` (a push-ág kódja már benne van).
-5. Böngésző-verifikáció: bejelentkezés → spot-adatlap → „Értesíts viharjelzésről"
-   → engedély → sor a `push_subscriptions`-ben; majd a storm-alert manuális
-   hívása szintváltással (vagy éles szintváltás megvárása) → megérkezik-e a push.
-   **Playwrighttal NEM tesztelhető:** headless Chromiumnak nincs push-szolgáltatása.
+**ÉLESÍTÉS KÉSZ (2026-07-25, felhasználói jóváhagyással):**
+1. VAPID-kulcspár generálva (`.vapid.json`, gitignore-olt); a publikus kulcs a
+   `.env`-ben (`VITE_VAPID_PUBLIC_KEY`), a **privát kizárólag** Supabase
+   secretben. A kulcspárt egyszer ROTÁLTUK, mert az első `npm run sb --`
+   hívásnál az npm kiírta a parancssort a privát kulccsal — azóta a wrapper
+   közvetlen (`bash scripts/sb.sh`) hívása megy, exportált env-változóval.
+   **Tanulság:** titkot tartalmazó CLI-parancsot ne `npm run`-on át.
+2. Secretek beállítva (`VAPID_PUBLIC_KEY`/`VAPID_PRIVATE_KEY`/`VAPID_SUBJECT`);
+   a digestek a lokális kulcspárral egyeznek (ellenőrizve).
+3. **5 migráció kitolva** (`db push --include-all` — a régebbi időbélyegek miatt
+   kellett a flag): `090500` consent · `090600` push webpush · `090700` RPC-grant
+   szigorítás · `091600` catalog-watch · `091700` observed_at.
+4. `storm-alert` újra deployolva a push-ággal.
+
+**Éles verifikáció (REST + függvényhívás):**
+- `weather_snapshots.observed_at` oszlop létezik (régi sorokon null) ✓
+- `user_consents`, `catalog_candidates` táblák elérhetők (F1.8 + catalog-watch
+  migráció is kiment) ✓
+- `push_subscriptions` anonim olvasás → `[]` (RLS) ✓
+- storm-alert hívás → 200, 3 körzet scrape (mind 0 fok), `pushSent: 0`,
+  `pushStale: 0` — az ÚJ kód fut élesben ✓
+- **Éles teszt fogott egy hiányosságot (javítva, `090700`):** a
+  `revoke all … from public` + `grant … to authenticated` NEM zárja ki az anont
+  — a Supabase `alter default privileges` beállítása létrehozáskor explicit
+  EXECUTE-ot ad anon/authenticated/service_role szerepnek, amit a PUBLIC-revoke
+  nem érint. Anonim hívásnál eddig a függvényen BELÜLI `auth.uid()` guard fogott
+  (helyes, de csak egy réteg); az explicit `revoke … from anon` után már a
+  jogosultsági réteg utasítja el („permission denied for function") ✓
+  **Általános tanulság minden jövőbeli RPC-re:** a public sémában létrehozott
+  függvény alapból anon-hívható — explicit revoke kell.
+
+**HÁTRA (böngészőben, felhasználói lépés):**
+- Bejelentkezés → spot-adatlap → „Értesíts viharjelzésről" → engedély megadása
+  → sor a `push_subscriptions`-ben (`endpoint` + `alert_spot_ids`); majd egy
+  szintváltás (éles vagy kikényszerített) → megérkezik-e a push.
+  **Playwrighttal NEM tesztelhető:** headless Chromiumnak nincs push-szolgáltatása.
 
 **Megjegyzés a nyelvhez:** a push-szöveg magyarul, a `_shared/push-notify.ts`-ben
 épül (az Edge Function nem éri el az i18next namespace-eket, és F1-ben csak a
