@@ -19,14 +19,16 @@ import { computeReviewAggregate, toTen } from "@modules/reviews/aggregate";
 import { listAllPublishedReviews } from "@modules/reviews/data/reviews.server";
 import { loadAdvisorConfig } from "@modules/advisor/select/config.server";
 import { idealLengthCm, recommendBoards } from "@modules/advisor/select/select";
-import type {
-  AdvisorInputs,
-  AdvisorUse,
-  BoardForAdvisor,
-  Experience,
-  Passenger,
-  StorageChoice,
-  WaterChoice,
+import {
+  ADVISOR_REVIEW_DIMENSIONS,
+  type AdvisorDimensionScores,
+  type AdvisorInputs,
+  type AdvisorUse,
+  type BoardForAdvisor,
+  type Experience,
+  type Passenger,
+  type StorageChoice,
+  type WaterChoice,
 } from "@modules/advisor/select/types";
 import { AdvisorResult, type AdvisorResultBoard } from "@modules/advisor/ui/AdvisorResult";
 import { AdvisorWizard } from "@modules/advisor/ui/AdvisorWizard";
@@ -153,6 +155,12 @@ export async function action({ request }: Route.ActionArgs) {
         reasons: item.reasons,
         ratingTen: toTen(agg.avgOverall),
         reviewCount: agg.count,
+        // Teljes bontás a kártyára: a felhasználó összehasonlíthasson anélkül,
+        // hogy minden jelöltre át kellene kattintania.
+        dimensionsTen: Object.fromEntries(
+          ADVISOR_REVIEW_DIMENSIONS.map((dim) => [dim, toTen(agg.perDimension[dim])]),
+        ) as AdvisorDimensionScores,
+        percentRecommend: agg.percentRecommend,
       },
     ];
   });

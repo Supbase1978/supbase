@@ -85,6 +85,25 @@ export interface BoardForAdvisor {
   ratingValueAvg: number | null;
 }
 
+/**
+ * A vélemény rész-szempontjai — SZÁNDÉKOSAN itt újradeklarálva, NEM a
+ * reviews-modulból importálva (modul→modul tilos, 1.3), ugyanaz a minta, mint
+ * az `AdvisorBoardType`-nál. Az igazság forrása a `reviews` modul
+ * `REVIEW_DIMENSIONS` listája; a kettőnek egyeznie kell. A feliratok az
+ * `advisor` namespace `dim.*` kulcsaiból jönnek (a reviews-é nem használható).
+ */
+export type AdvisorReviewDimension = "stability" | "glide" | "build" | "value";
+
+export const ADVISOR_REVIEW_DIMENSIONS: readonly AdvisorReviewDimension[] = [
+  "stability",
+  "glide",
+  "build",
+  "value",
+];
+
+/** Rész-szempont → 0–10 érték (null: az adott szempontra nincs adat). */
+export type AdvisorDimensionScores = Record<AdvisorReviewDimension, number | null>;
+
 /** Indoklás-template: i18n-kulcs (advisor namespace) + interpolációs paraméterek. */
 export interface AdvisorReason {
   /** pl. "reason.volume" — az `advisor` namespace-ben feloldva. */

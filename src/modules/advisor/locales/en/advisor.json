@@ -74,8 +74,11 @@
     "reviewCount_one": "{{count}} review",
     "reviewCount_other": "{{count}} reviews",
     "noReviews": "No reviews for this board yet.",
-    "ratingAria": "Common ground: {{value}} out of 10 from {{count}} reviews — click for details",
-    "idealLength": "For your {{height}} cm, a board around {{ideal}} cm ({{feet}}) is ideal — this was factored into the ranking."
+    "ratingAria": "Common ground: {{value}} out of 10 from {{count}} reviews",
+    "idealLength": "For your {{height}} cm, a board around {{ideal}} cm ({{feet}}) is ideal — this was factored into the ranking.",
+    "percentRecommend": "{{percent}}% would recommend",
+    "allReviews": "Reviews",
+    "noDimensionData": "no data"
   },
   "reason": {
     "volume": "The {{volume}} l volume gives comfortable headroom at {{level}} level.",
@@ -99,5 +102,11 @@
     "verseny": "Racing",
     "joga": "Yoga",
     "horgasz": "Fishing"
+  },
+  "dim": {
+    "stability": "Stability",
+    "glide": "Glide",
+    "build": "Build",
+    "value": "Value"
   }
 }

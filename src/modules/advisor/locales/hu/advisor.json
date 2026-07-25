@@ -74,8 +74,11 @@
     "reviewCount_one": "{{count}} értékelés",
     "reviewCount_other": "{{count}} értékelés",
     "noReviews": "Erre a deszkára még nincs értékelés.",
-    "ratingAria": "Közös nevező: {{value}} a 10-ből, {{count}} értékelés alapján — a részletekért kattints",
-    "idealLength": "A(z) {{height}} cm magasságodhoz kb. {{ideal}} cm ({{feet}}) hosszú deszka az ideális — ezt is beleszámoltuk a sorrendbe."
+    "ratingAria": "Közös nevező: {{value}} a 10-ből, {{count}} értékelés alapján",
+    "idealLength": "A(z) {{height}} cm magasságodhoz kb. {{ideal}} cm ({{feet}}) hosszú deszka az ideális — ezt is beleszámoltuk a sorrendbe.",
+    "percentRecommend": "{{percent}}% ajánlaná",
+    "allReviews": "Vélemények",
+    "noDimensionData": "nincs adat"
   },
   "reason": {
     "volume": "A(z) {{volume}} l térfogat kényelmes ráhagyást ad {{level}} szinten.",
@@ -99,5 +102,11 @@
     "verseny": "Verseny",
     "joga": "Jóga",
     "horgasz": "Horgász"
+  },
+  "dim": {
+    "stability": "Stabilitás",
+    "glide": "Siklás",
+    "build": "Minőség",
+    "value": "Ár-érték"
   }
 }

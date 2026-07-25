@@ -12,7 +12,11 @@ import { useTranslation } from "react-i18next";
 
 import { Button, Card, cx, RatingBar } from "@core/ui";
 
-import type { AdvisorReason } from "../select/types";
+import {
+  ADVISOR_REVIEW_DIMENSIONS,
+  type AdvisorDimensionScores,
+  type AdvisorReason,
+} from "../select/types";
 import { cmToFeetInches } from "./format";
 
 export interface AdvisorResultBoard {
@@ -29,6 +33,10 @@ export interface AdvisorResultBoard {
   ratingTen: number | null;
   /** Publikált vélemények száma. */
   reviewCount: number;
+  /** Rész-szempontok 0–10 skálán (null → az adott szempontra nincs adat). */
+  dimensionsTen: AdvisorDimensionScores;
+  /** Hány százalék ajánlaná (0–100). */
+  percentRecommend: number;
 }
 
 export interface AdvisorResultProps {
@@ -126,6 +134,8 @@ export function AdvisorResult({ results, heightFit }: AdvisorResultProps) {
               slug={top.slug}
               ratingTen={top.ratingTen}
               reviewCount={top.reviewCount}
+              dimensionsTen={top.dimensionsTen}
+              percentRecommend={top.percentRecommend}
               size="lg"
             />
             <ul className="flex flex-col gap-1.5">
@@ -181,6 +191,8 @@ export function AdvisorResult({ results, heightFit }: AdvisorResultProps) {
                     slug={board.slug}
                     ratingTen={board.ratingTen}
                     reviewCount={board.reviewCount}
+                    dimensionsTen={board.dimensionsTen}
+                    percentRecommend={board.percentRecommend}
                   />
                   <Link
                     to={`/deszkak/${board.slug}`}
@@ -199,22 +211,32 @@ export function AdvisorResult({ results, heightFit }: AdvisorResultProps) {
 }
 
 /**
- * „Közös nevező" az ajánlás-kártyán: 10-es mérce + számérték + darabszám,
- * LINKKÉNT a deszka-adatlap Közös nevező blokkjára (#kozos-nevezo).
+ * „Közös nevező" az ajánlás-kártyán — a TELJES bontással: összesített mérce,
+ * a négy rész-szempont, és a „hányan ajánlanák" arány. Szándékosan itt, a
+ * választás helyén látszik: a felhasználónak ne kelljen minden jelöltre
+ * átkattintania ahhoz, hogy össze tudja hasonlítani őket.
  *
- * A sáv a core `RatingBar` (NEM a biztonsági Gauge — egy vélemény-átlag nem
- * „veszély", ezért danger itt tilos), és a szám MINDIG a sáv mellett van
- * (2. fejezet: szín + szöveg, sosem csak szín).
+ * A sávok a core `RatingBar`-ból jönnek (NEM a biztonsági Gauge — egy
+ * vélemény-átlag nem „veszély", ezért a `--danger` itt tilos), és a szám MINDIG
+ * a sáv mellett van (2. fejezet: szín + szöveg, sosem csak szín).
+ *
+ * MODUL-SZERZŐDÉS: a dimenzió-listát és a feliratokat az advisor SAJÁT
+ * namespace-e adja (lásd ADVISOR_REVIEW_DIMENSIONS a types.ts-ben) — a
+ * reviews-modulból importálni tilos lenne (1.3).
  */
 function CommonGround({
   slug,
   ratingTen,
   reviewCount,
+  dimensionsTen,
+  percentRecommend,
   size = "sm",
 }: {
   slug: string;
   ratingTen: number | null;
   reviewCount: number;
+  dimensionsTen: AdvisorDimensionScores;
+  percentRecommend: number;
   size?: "sm" | "lg";
 }) {
   const { t, i18n } = useTranslation("advisor");
@@ -227,31 +249,71 @@ function CommonGround({
     return <p className="text-xs text-text-3">{t("result.noReviews")}</p>;
   }
 
-  const label = t("result.ratingAria", {
+  const overallLabel = t("result.ratingAria", {
     value: nf1.format(ratingTen),
     count: reviewCount,
   });
 
   return (
-    <Link
-      to={`/deszkak/${slug}#kozos-nevezo`}
-      className="flex flex-col gap-1 rounded-[var(--radius-card)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-petrol"
-      aria-label={label}
+    <section
+      aria-label={overallLabel}
+      className="flex flex-col gap-2 rounded-[var(--radius-card)] bg-mist p-3"
     >
-      <span className="flex items-baseline gap-2">
-        <span className="text-xs font-semibold text-petrol-text underline">
-          {t("result.commonGround")}
+      <div className="flex flex-col gap-1">
+        <span className="flex items-baseline gap-2">
+          <span className="text-xs font-bold tracking-wide text-text-3 uppercase">
+            {t("result.commonGround")}
+          </span>
+          <span
+            className={cx("font-bold text-ink-deep", size === "lg" ? "text-lg" : "text-base")}
+          >
+            {nf1.format(ratingTen)}
+            <span className="text-text-3">/10</span>
+          </span>
+          <span className="text-xs text-text-3">
+            {t("result.reviewCount", { count: reviewCount })}
+          </span>
         </span>
-        <span className={cx("font-bold text-ink-deep", size === "lg" ? "text-base" : "text-sm")}>
-          {nf1.format(ratingTen)}
-          <span className="text-text-3">/10</span>
+        <RatingBar value={ratingTen} size="lg" ariaLabel={overallLabel} />
+      </div>
+
+      <dl className="flex flex-col gap-1">
+        {ADVISOR_REVIEW_DIMENSIONS.map((dim) => {
+          const value = dimensionsTen[dim];
+          const dimLabel = t(`dim.${dim}`);
+          return (
+            <div key={dim} className="grid grid-cols-[4.25rem_1fr_2rem] items-center gap-2">
+              <dt className="truncate text-[11px] text-text-2">{dimLabel}</dt>
+              <dd className="contents">
+                <RatingBar
+                  value={value}
+                  ariaLabel={
+                    value === null
+                      ? `${dimLabel}: ${t("result.noDimensionData")}`
+                      : `${dimLabel}: ${nf1.format(value)}/10`
+                  }
+                />
+                <span className="text-right text-[11px] font-semibold text-ink-deep tabular-nums">
+                  {value === null ? "–" : nf1.format(value)}
+                </span>
+              </dd>
+            </div>
+          );
+        })}
+      </dl>
+
+      <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+        <span className="text-xs text-text-2">
+          {t("result.percentRecommend", { percent: percentRecommend })}
         </span>
-        <span className="text-xs text-text-3">
-          {t("result.reviewCount", { count: reviewCount })}
-        </span>
-      </span>
-      <RatingBar value={ratingTen} size={size} ariaLabel={label} />
-    </Link>
+        <Link
+          to={`/deszkak/${slug}#kozos-nevezo`}
+          className="text-xs font-semibold text-petrol-text underline"
+        >
+          {t("result.allReviews")}
+        </Link>
+      </div>
+    </section>
   );
 }
 

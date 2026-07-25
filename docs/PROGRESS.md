@@ -690,6 +690,24 @@ a vélemény-átlagot, de az eredmény-képernyő nem mutatta.
   Értékelés hiányában őszinte üres-állapot („még nincs értékelés"), nem üres sáv.
 - Token-szabály betartva: a `RatingBar` NEM a biztonsági Gauge, a `--danger`
   értékelés-sávon tilos, és a szám MINDIG a sáv mellett (szín + szöveg).
+- **Bővítés (ugyanaznap, felhasználói kérésre): TELJES bontás a kártyán.** Nem
+  csak az összesített szám, hanem a négy rész-szempont (stabilitás, siklás,
+  minőség, ár-érték) mércéi + a „hányan ajánlanák" arány is ott van az
+  ajánlásoknál — a választáshoz össze kell tudni hasonlítani a jelölteket
+  anélkül, hogy mindegyikre át kellene kattintani. A `#kozos-nevezo` link
+  megmaradt („Vélemények"), de már nem az EGÉSZ blokk link (a hosszú
+  link-tartalom rossz a11y), és az aria-felirat sem ígér kattintást.
+- A dimenzió-listát az advisor SAJÁT másolatban tartja
+  (`ADVISOR_REVIEW_DIMENSIONS`), mert a reviews-ból importálni tilos —
+  a másolat elcsúszását **őrszem-teszt** védi a route-rétegben
+  (`app/routes/deszkavalaszto.dimensions.test.ts`), ahol mindkét modulhoz
+  szabad nyúlni. Ha a reviews új szempontot vezet be, a teszt elhasal.
+
+**Mellékesen javítva (a mobil-verifikáció fogta):** a fejléc-navigáció 375 px-en
+kilógott, és az EGÉSZ OLDAL vízszintesen görgethető lett (minden route-on).
+Mostantól maga a nav-sáv görgethető (`overflow-x-auto`, elrejtett scrollbar,
+`shrink-0` + `whitespace-nowrap` az elemeken) — a dokumentum nem csúszik el
+(ellenőrizve: scrollWidth == clientWidth 375 px-en).
 
 ## F1.9 — Web push + viharjelzés-pipeline (2026-07-25)
 
