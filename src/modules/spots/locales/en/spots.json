@@ -50,7 +50,8 @@
     "layerSpots": "Spots",
     "layerProtected": "Protected areas",
     "openDetail": "Details",
-    "focusMap": "The spot's location on the map"
+    "focusMap": "The spot's location on the map",
+    "loading": "Loading map…"
   },
   "detail": {
     "season": "Season",

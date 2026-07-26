@@ -50,7 +50,8 @@
     "layerSpots": "Spotok",
     "layerProtected": "Védett területek",
     "openDetail": "Adatlap",
-    "focusMap": "A spot helye a térképen"
+    "focusMap": "A spot helye a térképen",
+    "loading": "Térkép betöltése…"
   },
   "detail": {
     "season": "Szezon",

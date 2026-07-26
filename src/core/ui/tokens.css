@@ -32,3 +32,31 @@
   --radius-card: 16px; --radius-cta: 14px;
   --tap-min: 44px; --cta-height: 52px;
 }
+
+/* ===========================================================================
+ * Animációk — a BIZTONSÁGI blokk (fent) érintetlen marad.
+ *
+ * `wave-drift`: a betöltés-jelző hullám-mozgása (`LoadingWave`). A path egy
+ * teljes hullámperiódussal szélesebb a viewBoxnál, és pontosan ennyit
+ * csúszik — így a ciklus varrat nélkül ismétlődik.
+ *
+ * MOZGÁSCSÖKKENTÉS: aki a rendszerében kéri a csökkentett mozgást
+ * (vesztibuláris panasz, figyelemzavar), annál az animáció LEÁLL. A
+ * betöltés tényét ilyenkor a felirat hordozza — információ nem vész el.
+ * =========================================================================== */
+@keyframes wave-drift {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-80px); }
+}
+
+.wave-drift {
+  animation-name: wave-drift;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wave-drift {
+    animation: none;
+  }
+}

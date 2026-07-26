@@ -18,7 +18,7 @@ import { useTranslation } from "react-i18next";
 
 import "maplibre-gl/dist/maplibre-gl.css";
 
-import { cx } from "@core/ui";
+import { cx, LoadingWave } from "@core/ui";
 
 import type { SpotStatus } from "../types";
 
@@ -362,6 +362,10 @@ export function SpotMap({
   > | null>(null);
   const [showSpots, setShowSpots] = useState(true);
   const [showProtected, setShowProtected] = useState(true);
+  // A csempék KÜLSŐ CDN-ről jönnek, ez érezhető késés lehet. A jelzőt a
+  // MapLibre `load` eseménye oldja fel — nem a példány létrejötte, mert akkor
+  // a vászon még üres, és a felhasználó hibának hinné az üres felületet.
+  const [tilesLoaded, setTilesLoaded] = useState(false);
 
   // Csak a kliensen "mountoljuk" a térképet — SSR alatt ez az effekt nem fut
   // le, tehát a render placeholdert ad (lásd a komponens végi feltételt).
@@ -391,6 +395,9 @@ export function SpotMap({
         instance.remove();
         return;
       }
+      instance.once("load", () => {
+        if (!cancelled) setTilesLoaded(true);
+      });
       setMap(instance);
     })();
 
@@ -398,6 +405,7 @@ export function SpotMap({
       cancelled = true;
       instance?.remove();
       setMap(null);
+      setTilesLoaded(false);
     };
     // A center/zoom csak a KEZDŐ nézetet adja — a térképet nem inicializáljuk
     // újra minden prop-változáskor (elveszne a felhasználó pan/zoom állapota).
@@ -442,11 +450,11 @@ export function SpotMap({
           // Nincs `h-full`: a magasságot MINDIG a hívó `className`-je adja
           // (explicit érték), különben tartalom-magasságú szülőben 0-ra
           // oldódna — a `min-h` csak alsó korlát (lásd az adatlap mini-térképét).
-          "flex min-h-[220px] w-full items-center justify-center rounded-[var(--radius-card)] bg-mist text-sm text-text-3",
+          "flex min-h-[220px] w-full items-center justify-center rounded-[var(--radius-card)] bg-mist",
           className,
         )}
       >
-        {t("map.title")}
+        <LoadingWave label={t("map.loading")} />
       </div>
     );
   }
@@ -459,6 +467,11 @@ export function SpotMap({
       )}
     >
       <div ref={containerRef} className="h-full w-full" />
+      {!tilesLoaded ? (
+        <div className="absolute inset-0 z-20 flex items-center justify-center bg-mist">
+          <LoadingWave label={t("map.loading")} />
+        </div>
+      ) : null}
       {interactive ? (
         <div className="absolute right-3 top-3 z-10 flex flex-col gap-2">
           <LayerToggle

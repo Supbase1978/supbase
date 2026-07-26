@@ -16,6 +16,9 @@ export type { StatusBadgeProps, StatusSeverity } from "./StatusBadge";
 export { Waterline } from "./Waterline";
 export type { WaterlineProps, WaterlineState } from "./Waterline";
 
+export { LoadingWave } from "./LoadingWave";
+export type { LoadingWaveProps } from "./LoadingWave";
+
 export { RatingBar } from "./RatingBar";
 export type { RatingBarProps } from "./RatingBar";
 
