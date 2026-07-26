@@ -28,6 +28,18 @@
   # A package.json `engines` >=22-t ír elő; a Netlify defaultja ettől eltérhet.
   NODE_VERSION = "22"
 
+# Elő-éles jelszó-kapu (Edge Function, `netlify/edge-functions/basic-auth.ts`).
+# A Netlify a `netlify/edge-functions/` könyvtárat automatikusan felismeri; a
+# `path` a fájl `config` exportjából jön (`/*` = az EGÉSZ oldal).
+#
+# FAIL-CLOSED: `SITE_PASSWORD` nélkül az oldal 503-at ad, NEM válik publikussá.
+# Élesítéskor NEM a jelszót töröljük, hanem `SITE_PUBLIC=true`-t állítunk —
+# hogy a nyilvánossá tétel tudatos, egyértelmű lépés legyen.
+#
+#   SITE_PASSWORD   kötelező (a kapu jelszava)
+#   SITE_USERNAME   opcionális (default: "sup")
+#   SITE_PUBLIC     "true" → a kapu teljesen kikapcsol (élesítés)
+
 [dev]
   command = "npm run dev"
 
@@ -42,6 +54,11 @@
 #                                  igazodik (hiányában a kérés origin-ja)
 #   VITE_VAPID_PUBLIC_KEY          web push feliratkozáshoz (a kulcspár PUBLIKUS fele)
 #   VITE_TURNSTILE_SITE_KEY        captcha (üresen a védelem dev-módban kikapcsol)
+#
+# A jelszó-kapuhoz (NEM VITE_ prefix, mert szerver-oldali):
+#   SITE_PASSWORD                  az elő-éles kapu jelszava (kötelező)
+#   SITE_USERNAME                  felhasználónév (opcionális, default "sup")
+#   SITE_PUBLIC                    "true" → kapu ki (éles nyilvánossá tételkor)
 #
 # TITOK IDE NEM KERÜLHET: a Supabase secret/service_role kulcs és a VAPID PRIVÁT
 # kulcs kizárólag a Supabase Edge Function secrets-ben él.

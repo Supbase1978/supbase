@@ -125,6 +125,11 @@ reset role;
 select set_config('request.jwt.claims','', true);
 select is((select status from public.orders where id='40000003-0000-0000-0000-000000000000'), 'pending',
   'orders: user NEM léptetheti a status-t update-tel (column-védelem)');
+-- F1.2-reviewer follow-up (lezárva F1.10): a fenti update az `amount_huf`-ot is
+-- 1-re próbálta állítani. A pénzügyi mező védelmét KÜLÖN kell állítani: ha csak
+-- a status-t néznénk, egy amount_huf-szivárgás észrevétlen maradna.
+select is((select amount_huf from public.orders where id='40000003-0000-0000-0000-000000000000'), null::int,
+  'orders: user NEM írhatja át az amount_huf-ot update-tel (pénzügyi column-védelem)');
 
 -- Admin VISZONT beállíthatja a status=paid-et és a provider_ref-et.
 set local role authenticated;

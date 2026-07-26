@@ -71,10 +71,17 @@ export function pickLatestPerSpot(
 }
 
 /**
- * TODO(follow-up): naiv megoldás — legfeljebb 200 legfrissebb sort kérünk le
- * és JS-ben szűrünk spotonkénti legfrissebbre. Ha a spot-szám/snapshot-
- * gyakoriság nő, cseréljük egy `DISTINCT ON (spot_id) ... ORDER BY spot_id,
- * fetched_at DESC` nézetre vagy RPC-re (db-engineer terület).
+ * Spotonként a legfrissebb mérés, a `latest_weather_snapshots` NÉZETBŐL
+ * (migráció 20260717091800).
+ *
+ * Korábban a legutóbbi 200 sort kértük le és JS-ben redukáltuk. Az a megoldás
+ * a spot-szám növekedésével CSENDBEN romlott volna el: 200 sor egyszer csak
+ * nem fedné mindegyik spot legfrissebb mérését, és egyes spotok „nincs adat"-
+ * ként jelennének meg — biztonsági felületen elfogadhatatlan hibamód. A nézet
+ * spotonként PONTOSAN egy sort ad, tetszőleges spot-számnál.
+ *
+ * A `pickLatestPerSpot` megmarad: a nézet sorai már egyediek spotonként, de a
+ * Map-pé alakítás ugyanaz, és a függvény tesztelt.
  */
 export async function listLatestSnapshots(
   supabase: SupabaseClient,
@@ -84,11 +91,9 @@ export async function listLatestSnapshots(
     return new Map();
   }
   const { data, error } = await supabase
-    .from("weather_snapshots")
+    .from("latest_weather_snapshots")
     .select("*")
-    .in("spot_id", spotIds as string[])
-    .order("fetched_at", { ascending: false })
-    .limit(200);
+    .in("spot_id", spotIds as string[]);
   if (error || !data) {
     return new Map();
   }

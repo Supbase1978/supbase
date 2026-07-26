@@ -12,7 +12,8 @@
     "node_modules",
     "build",
     "_design-source",
-    "supabase/functions/*/index.ts"
+    "supabase/functions/*/index.ts",
+    "netlify/edge-functions/**"
   ],
   "compilerOptions": {
     "lib": ["DOM", "DOM.Iterable", "ES2022"],

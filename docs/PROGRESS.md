@@ -17,7 +17,7 @@
 | F1.7 Providers | ✅ kész (2026-07-24) | directory-lista + profil + lead-form + saját-listing (claim/regisztráció) + admin-hitelesítő panel; mind az 5 flow böngészőben élesben verifikálva. Részletek lent |
 | F1.8 SEO-réteg | ✅ mag kész (2026-07-24) | loader-alapú meta+hreflang, JSON-LD, sitemap+robots, consent (user_consents migráció + regisztrációs checkbox + re-consent), ÁSZF+adatvédelmi. HÁTRA: OG-kép-generálás + persona-landingek (F1.8b) + a consent-migráció éles push. Részletek lent |
 | F1.9 Push + viharjelzés | ✅ kész (2026-07-25) | teljes web push-pipeline (VAPID + RFC 8291 natív Web Cryptóval, npm nélkül), storm-alert push-ág, feliratkozó-UI, m4 `observed_at`. Élesítve (5 migráció + secretek + deploy) és **böngészőben végponttól végpontig verifikálva: a viharjelzés-push megérkezett**. Részletek lent |
-| F1.10 Záró audit + élesítés | 🔄 folyamatban | e2e + a11y kapu KÉSZ (60 Playwright-teszt) · Semgrep SAST-kapu KÉSZ · Snyk lefutott (0 prod-finding) · **Netlify SSR-adapter bekötve, füsttesztelve**. HÁTRA: első éles deploy (`[deploy]` commit + Netlify env-ek), nyitott kis tételek |
+| F1.10 Záró audit + élesítés | 🔄 folyamatban | e2e + a11y kapu · Semgrep · Snyk · Netlify SSR-adapter + **elő-éles jelszó-kapu** · nyitott kis tételek lezárva (m3, latest-view, providers-seed, amount_huf, runbook). HÁTRA: **cégadatok** (felhasználó), első éles deploy |
 
 ## ITINER a következő sessionnek (2026-07-21-i állapot)
 
@@ -703,6 +703,57 @@ mindig a legolcsóbbat jutalmazza, pedig a források szerint a nagyon olcsó sze
 gyenge merevsége a STABILITÁST rontja) · kezdő→felfújható preferencia (most
 nulla hatású, 20/20 felfújható) · biztonsági kiegészítők blokk (leash,
 mentőmellény — termék-bővítés).
+
+## F1.10/4 — Nyitott kis tételek + Netlify jelszó-kapu (2026-07-26)
+
+Kapuk zöldek: typecheck · lint · 444 vitest. Új dokumentum: **`docs/RUNBOOK.md`**
+(éles műveletek lépésről lépésre).
+
+**Netlify-helyzet TISZTÁZVA (felhasználói aggály).** A `supperz.netlify.app`
+oldalon **semmi nem szivárgott ki**: minden útvonal (`/`, `/spotok`, `/deszkak`,
+`/admin/velemenyek`, `/assets/`, `/robots.txt`, `/sw.js`, `/index.html`) **404**.
+Az utolsó publikált verzió (júl. 19.) az SSR-adapter ELŐTTI, és SSR-módban a
+React Router nem generál `index.html`-t → a `build/client` csak assetet
+tartalmazott, kiszolgálható oldalt nem.
+A **`[deploy]`-kapu is működik:** a júl. 19. utáni deployok mind `Canceled`
+státuszúak, **build-idő nélkül** (a publikáltaknál látszik a „Deployed in Xs",
+a canceledeknél nem) — tehát build-percet nem fogyasztanak.
+**Döntés: a repót NEM kötöttük le** — a kapu megoldja a költséget, a lekötés
+viszont elvenné a deploy previewt és a `[deploy]`-os élesítést. Ha kell még egy
+réteg, a Deploy Previews kikapcsolása olcsóbb.
+
+**ÚJ: elő-éles jelszó-kapu** (`netlify/edge-functions/basic-auth.ts`) — HTTP
+Basic auth az EGÉSZ oldalra, mert a Netlify beépített jelszó-védelme fizetős.
+**FAIL-CLOSED:** `SITE_PASSWORD` nélkül 503, nem publikus oldal — az elfelejtett
+beállítás feltűnő hiba, nem csendes szivárgás. Élesítéskor NEM a jelszót
+töröljük (az 503-at adna), hanem `SITE_PUBLIC=true`-t állítunk, hogy a
+nyilvánossá tétel tudatos lépés legyen. Deno-runtime → tsc/ESLint kizárás a
+Supabase-functionök mintájára. **Automata teszt nem fedi** (csak a Netlify
+edge-én fut) — az első deploy után kézi ellenőrzés a runbook szerint.
+
+**Nyitott kis tételek lezárva:**
+- **m3 (`supindex.stale_minutes`) — KIVÉVE, nem bekötve.** Az adatkor-küszöb
+  (30 perc) **biztonsági invariáns** (2. fejezet 5.), nem hangolható paraméter:
+  ha DB-ből állítható lenne, egy elgépelt érték csendben kikapcsolhatná az
+  „Elavult adat" jelzést. Kód-konstans marad, a holt seed-kulcs törölve (a
+  jelenléte azt a téves benyomást keltette, hogy SQL-ből állítható).
+- **`listLatestSnapshots` — NÉZETRE cserélve** (migráció `20260717091800`,
+  élesben kitolva és verifikálva: 15 spot → 15 sor, spotonként pontosan egy).
+  A régi „utolsó 200 sor + JS-reduce" a spot-szám növekedésével CSENDBEN romlott
+  volna el (egyes spotok „nincs adat"-ként jelentek volna meg). A nézet
+  `security_invoker = on` → a hívó jogaival olvas, az alaptábla RLS-e érvényes.
+- **providers seed↔trigger — JAVÍTVA.** A seed a `protect_provider_columns`
+  triggert a beszúrás idejére kikapcsolja, majd VISSZAKAPCSOLJA (a pgTAP-minta
+  szerint), és két szolgáltatót `verified=true`-ra állít. Így a „premium elöl"
+  rendezés és a „Hitelesített" jelvény éles adaton is látszik.
+- **F1.2-reviewer follow-upok:** `amount_huf` update-revert külön assert a
+  pgTAP-ban (eddig csak a `status`-t néztük — egy pénzügyi mező szivárgása
+  észrevétlen maradt volna); `anonymize_user` runbook-jegyzet a
+  `docs/RUNBOOK.md`-ben (service_role-only, mit csinál, mit NEM szabad).
+
+**MEGMARADT nyitott tétel:** cégadatok a jogi oldalakon (`@core/legal/entity.ts`
+`[KITÖLTENDŐ: …]`) — a felhasználó adja meg. MapLibre null-warning: külső
+stílus-kifejezésből jön, nem a mi kódunkból; nem blokkoló, F2-re hagyva.
 
 ## F1.10/3 — Netlify SSR-adapter bekötése (2026-07-26)
 

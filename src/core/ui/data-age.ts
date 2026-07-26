@@ -8,6 +8,15 @@
  */
 
 /** Ennyi percnél régebbi adat számít elavultnak. */
+/**
+ * BIZTONSÁGI INVARIÁNS (2. fejezet 5. szabály), NEM tunable konfig.
+ *
+ * Az F1.3-reviewer m3-as findingja szerint a seedben volt egy holt
+ * `supindex.stale_minutes` kulcs. Az F1.10-ben azt KIVETTÜK, nem bekötöttük:
+ * ha az adatkor-küszöb adatbázisból állítható lenne, egy elgépelt érték
+ * csendben kikapcsolhatná az „Elavult adat" jelzést — épp azt a védelmet,
+ * ami miatt a szabály létezik (cache-elt viharjelzés SOHA nem aktuális).
+ */
 export const STALE_THRESHOLD_MINUTES = 30;
 
 /**

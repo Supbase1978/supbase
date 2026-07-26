@@ -85,6 +85,14 @@ export default tseslint.config(
     },
   },
   {
+    // Netlify Edge Function (F1.10 jelszó-kapu): Deno-runtime, mint a Supabase
+    // functionök. A repo tsc-je kizárja (tsconfig), az ESLint viszont látja.
+    files: ["netlify/edge-functions/**/*.ts"],
+    languageOptions: {
+      globals: { Deno: "readonly" },
+    },
+  },
+  {
     // Service worker (F1.9): nyers JS, ServiceWorkerGlobalScope-ban fut.
     files: ["public/sw.js"],
     languageOptions: {

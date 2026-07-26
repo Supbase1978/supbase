@@ -260,6 +260,14 @@ on conflict (id) do nothing;
 -- SZOLGÁLTATÓK (5) — B2B directory. owner_user_id null (nem claim-elt), a
 -- `verified` a column-védelmi trigger miatt insertkor false (csak admin állítja).
 -- ---------------------------------------------------------------------------
+-- A `protect_provider_columns` trigger a tier/verified mezőket admin-jog nélkül
+-- biztonságos defaultra kényszeríti. A seed közvetlen SQL-inserttel fut, ahol
+-- nincs `auth.uid()` → `is_admin()` hamis, tehát a trigger a DEMO-adat szándékát
+-- is felülírná (minden szolgáltató free/unverified lenne). Ezért a seed idejére
+-- kikapcsoljuk, majd VISSZAKAPCSOLJUK — a védelem az alkalmazás felől
+-- változatlanul él (ezt pgTAP-teszt is őrzi).
+alter table public.providers disable trigger protect_provider_columns_trg;
+
 insert into public.providers (id, name, slug, type, description, contact_email, tier) values
   ('e0000001-0000-0000-0000-000000000000','SUP Balaton Kölcsönző',
    '{"hu":"sup-balaton-kolcsonzo","en":"sup-balaton-rental"}',
@@ -291,6 +299,14 @@ insert into public.providers (id, name, slug, type, description, contact_email, 
    '{"hu":"Folyóvízi technika és túrák a Dunán, haladóknak.","en":"River technique and tours on the Danube, for advanced paddlers."}',
    'iskola@dunasup.hu','premium')
 on conflict (id) do nothing;
+
+-- Demo-állapot: egy hitelesített + kiemelt szolgáltató, hogy a lista
+-- „premium elöl" rendezése és a „Hitelesített" jelvény éles adaton is látszódjon.
+update public.providers set verified = true
+  where id in ('e0000001-0000-0000-0000-000000000000',
+               'e0000002-0000-0000-0000-000000000000');
+
+alter table public.providers enable trigger protect_provider_columns_trg;
 
 insert into public.provider_spots (provider_id, spot_id) values
   ('e0000001-0000-0000-0000-000000000000','d0000001-0000-0000-0000-000000000000'),
@@ -383,8 +399,13 @@ insert into public.advisor_weights (key, value) values
   -- tartózkodni", 9. fej.). Az F1.3 algo-engineer validálja a SUP-index számításban.
   ('supindex.storm.level1_cap',           3.9),
   ('supindex.storm.level2_cap',           0),
-  -- kimeneti állapot-küszöbök + adatkor
+  -- kimeneti állapot-küszöbök
   ('supindex.threshold.excellent',        7),
-  ('supindex.threshold.caution',          4),
-  ('supindex.stale_minutes',              30)
+  ('supindex.threshold.caution',          4)
+  -- MEGJEGYZÉS (F1.3-reviewer m3, lezárva F1.10-ben): a korábbi
+  -- `supindex.stale_minutes` kulcs KIKERÜLT. Az adatkor-küszöb (30 perc)
+  -- BIZTONSÁGI INVARIÁNS (2. fejezet 5. szabály), nem hangolható paraméter:
+  -- kód-konstansként él (`@core/ui/data-age` STALE_THRESHOLD_MINUTES), hogy
+  -- adatbázisból NE lehessen kikapcsolni. A seedben hagyva holt kulcs volt,
+  -- ami azt a téves benyomást keltette, hogy SQL-ből állítható.
 on conflict (key) do nothing;
