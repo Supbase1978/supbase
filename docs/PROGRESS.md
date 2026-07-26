@@ -17,7 +17,7 @@
 | F1.7 Providers | ✅ kész (2026-07-24) | directory-lista + profil + lead-form + saját-listing (claim/regisztráció) + admin-hitelesítő panel; mind az 5 flow böngészőben élesben verifikálva. Részletek lent |
 | F1.8 SEO-réteg | ✅ mag kész (2026-07-24) | loader-alapú meta+hreflang, JSON-LD, sitemap+robots, consent (user_consents migráció + regisztrációs checkbox + re-consent), ÁSZF+adatvédelmi. HÁTRA: OG-kép-generálás + persona-landingek (F1.8b) + a consent-migráció éles push. Részletek lent |
 | F1.9 Push + viharjelzés | ✅ kész (2026-07-25) | teljes web push-pipeline (VAPID + RFC 8291 natív Web Cryptóval, npm nélkül), storm-alert push-ág, feliratkozó-UI, m4 `observed_at`. Élesítve (5 migráció + secretek + deploy) és **böngészőben végponttól végpontig verifikálva: a viharjelzés-push megérkezett**. Részletek lent |
-| F1.10 Záró audit + élesítés | 🔄 folyamatban | e2e + a11y · Semgrep · Snyk · Netlify SSR-adapter · **ELSŐ ÉLES DEPLOY MEGVAN** (supperz.netlify.app, jelszó-kapu mögött, 401 minden útvonalon) · nyitott kis tételek lezárva. HÁTRA: hitelesített út kézi ellenőrzése, **cégadatok** (felhasználó), Turnstile éles kulcs |
+| F1.10 Záró audit + élesítés | ✅ audit lefutott (2026-07-26) | **`docs/AUDIT_F1.md`**: 24/26 tétel zöld. Két mérés-jellegű hiány (vizuális regresszió, LCP-budget) — egyik sem blokkoló, indoklás a riportban. HÁTRA az F1 lezárásához: **cégadatok** (felhasználó) + **Turnstile éles kulcs** a publikussá tétel előtt |
 
 ## ITINER a következő sessionnek (2026-07-21-i állapot)
 
@@ -703,6 +703,40 @@ mindig a legolcsóbbat jutalmazza, pedig a források szerint a nagyon olcsó sze
 gyenge merevsége a STABILITÁST rontja) · kezdő→felfújható preferencia (most
 nulla hatású, 20/20 felfújható) · biztonsági kiegészítők blokk (leash,
 mentőmellény — termék-bővítés).
+
+## F1.10/6 — FÁZIS-ZÁRÓ AUDIT (2026-07-26)
+
+Teljes riport: **`docs/AUDIT_F1.md`**. Minden pont MÉRÉSSEL zárult
+(parancs-kimenettel), nem szemrevételezéssel. **24/26 tétel zöld.**
+
+**Zöld szakaszok:** modul-szerződés (4/4) · RLS-lefedettség (4/4) · biztonság
+(3/3) · design+a11y (5/5) · dokumentáció (2/2).
+
+**Kiemelt bizonyítékok:**
+- **19 tábla, 19-en RLS** — 0 fedetlen. 10 pgTAP-fájl, 189 assert.
+- **Az e-mail-gate KÉT rétegű:** 2 app-route + 7 DB-policy az
+  `is_email_confirmed()` helperre — az app-réteg megkerülése sem nyit utat.
+- **A biztonsági tokenek bizonyíthatóan érintetlenek:** a `tokens.css`-nek a
+  projekt kezdete óta 2 commitja van, MINDKETTŐ 0 TÖRLÉSSEL — egyetlen sor sem
+  módosult benne.
+- **Semgrep tiszta, Snyk 0 produkciós finding**, nyitott HIGH/CRITICAL nincs.
+- **468 unit + 60 e2e (benne axe WCAG 2.1 AA)** — mind zöld.
+
+**KÉT HIÁNY (egyik sem blokkoló, mindkettő mérés-jellegű kapu):**
+1. **Vizuális regresszió (screenshot-egyezés) NINCS.** A token-kritikus
+   komponensek viselkedését unit- és a11y-teszt fedi, de a vizuális elcsúszást
+   nem. **Ez a session két ilyet is felszínre hozott** (mobil nav-túlcsordulás,
+   fejléc↔tartalom eltérés) — mindkettőt FELHASZNÁLÓI észrevétel, nem teszt.
+   Azóta mindkettőre van regressziós teszt, de a hibaosztály nyitva marad.
+   Kockázat: közepes.
+2. **LCP-mérés (Lighthouse-budget) NINCS.** Az oldal jelszó-kapu mögött van,
+   valós forgalom nélkül — a mérés a publikussá tétel előtt értelmes. Ismert
+   terhelő tétel a MapLibre + a külső csempe-CDN. Kockázat: alacsony-közepes.
+
+**Audit közbeni önkorrekció:** a hreflang-ellenőrzésem először 0-t mutatott, és
+majdnem hibaként jelentettem — a saját `grep`-em volt kis-nagybetű-érzékeny.
+A linkek ott vannak (`hrefLang` alakban), és a HTML attribútumnevek
+kis-nagybetű-érzéketlenek, tehát a crawlerek helyesen olvassák.
 
 ## F1.10/5 — ELSŐ ÉLES DEPLOY (2026-07-26)
 
