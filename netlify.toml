@@ -27,6 +27,11 @@
 [build.environment]
   # A package.json `engines` >=22-t ír elő; a Netlify defaultja ettől eltérhet.
   NODE_VERSION = "22"
+  # A Netlify titok-szkennelése MEGBUKTATJA a buildet, ha egy env-változó értéke
+  # megjelenik a kimenetben. A `VITE_` értékek DEFINÍCIÓ SZERINT bekerülnek a
+  # kliens-bundle-be (ezért is publikusak), így a szkenner hamis riasztást adna.
+  # Ezeket tételesen kivesszük — a listát bővíteni kell, ha új VITE_ változó jön.
+  SECRETS_SCAN_OMIT_KEYS = "VITE_SUPABASE_URL,VITE_SUPABASE_PUBLISHABLE_KEY,VITE_PUBLIC_SITE_URL,VITE_VAPID_PUBLIC_KEY,VITE_TURNSTILE_SITE_KEY"
 
 # Elő-éles jelszó-kapu (Edge Function, `netlify/edge-functions/basic-auth.ts`).
 # A Netlify a `netlify/edge-functions/` könyvtárat automatikusan felismeri; a
