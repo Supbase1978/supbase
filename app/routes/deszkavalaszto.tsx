@@ -192,7 +192,7 @@ export const meta: Route.MetaFunction = ({ data }) => data?.seo ?? [];
 export default function AdvisorRoute({ actionData }: Route.ComponentProps) {
   if (actionData?.results) {
     return (
-      <main className="mx-auto flex min-h-svh max-w-3xl flex-col gap-6 p-4 sm:p-6">
+      <main className="mx-auto flex min-h-svh max-w-5xl flex-col gap-6 p-4 sm:p-6">
         <AdvisorResult
           results={actionData.results}
           sizing={actionData.sizing}

@@ -26,7 +26,7 @@ export default function Home() {
   const { t } = useTranslation("core");
 
   return (
-    <main className="mx-auto flex min-h-svh max-w-3xl flex-col justify-center gap-4 p-8">
+    <main className="mx-auto flex min-h-svh max-w-5xl flex-col justify-center gap-4 p-8">
       <p className="text-sm text-text-3">{t("home.phase")}</p>
       <h1
         className="text-4xl font-semibold text-ink-deep"

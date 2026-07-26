@@ -11,7 +11,13 @@ export interface LegalPageProps {
 
 export function LegalPage({ document }: LegalPageProps) {
   return (
-    <main className="mx-auto flex min-h-svh max-w-3xl flex-col gap-6 p-4 sm:p-6">
+    // A KÜLSŐ konténer a kanonikus lap-szélességen marad (a bal széle így
+    // igazodik a menühöz), a hosszú jogi szöveg viszont szűkebb sormértéken fut:
+    // 1024 px széles folyószöveget kényelmetlen olvasni. A `max-w-3xl` itt
+    // SZÁNDÉKOSAN literál — a Tailwind csak a forrásban szó szerint szereplő
+    // osztályt generálja, dinamikus (template-literálos) nevet nem.
+    <main className="mx-auto flex min-h-svh w-full max-w-5xl flex-col gap-6 p-4 sm:p-6">
+      <div className="flex max-w-3xl flex-col gap-6">
       <header className="flex flex-col gap-1">
         <h1
           className="text-3xl font-semibold text-ink-deep"
@@ -36,6 +42,7 @@ export function LegalPage({ document }: LegalPageProps) {
           ))}
         </section>
       ))}
+      </div>
     </main>
   );
 }

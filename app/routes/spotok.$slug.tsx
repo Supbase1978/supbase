@@ -270,7 +270,7 @@ export default function SpotDetailRoute({ loaderData, actionData }: Route.Compon
   const statusLabel = evaluation ? t(`status.${evaluation.status}`) : null;
 
   return (
-    <main className="mx-auto flex min-h-svh max-w-3xl flex-col gap-6 p-4 sm:p-6">
+    <main className="mx-auto flex min-h-svh max-w-5xl flex-col gap-6 p-4 sm:p-6">
       {jsonLd ? <JsonLd data={jsonLd} /> : null}
       {/* II. fokú viharjelzés: teljes képernyős, NEM eldugható riasztás a
           tartalom FÖLÉ (2. fejezet 4. pont; F1.3-reviewer m5). */}

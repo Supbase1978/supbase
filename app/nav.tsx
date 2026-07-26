@@ -28,6 +28,10 @@ export function AppNav() {
           `shrink-0`, hogy görgetés közben se torzuljon. */}
       <nav
         aria-label={t("nav.primaryLabel")}
+        // A `max-w-5xl` SZÁNDÉKOSAN literál (Tailwind csak a forrásban szó
+        // szerint szereplő osztályt generálja). Hogy a fejléc és a lapok ne
+        // csúszhassanak szét, az egyezést teszt őrzi:
+        // app/routes/layout-width.test.ts + @core/ui/layout.
         className="mx-auto flex max-w-5xl items-center gap-1 overflow-x-auto px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         <Link

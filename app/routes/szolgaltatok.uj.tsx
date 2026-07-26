@@ -64,7 +64,7 @@ export default function NewProviderRoute({ actionData }: Route.ComponentProps) {
   const errorKey = actionData && !actionData.ok ? actionData.errorKey : null;
 
   return (
-    <main className="mx-auto flex min-h-svh max-w-2xl flex-col gap-6 p-4 sm:p-6">
+    <main className="mx-auto flex min-h-svh max-w-5xl flex-col gap-6 p-4 sm:p-6">
       <header className="flex flex-col gap-1">
         <h1
           className="text-3xl font-semibold text-ink-deep"

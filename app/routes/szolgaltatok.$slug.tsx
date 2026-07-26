@@ -133,7 +133,7 @@ export default function ProviderProfileRoute({ loaderData, actionData }: Route.C
   const leadError = actionData && !actionData.ok ? actionData.errorKey : null;
 
   return (
-    <main className="mx-auto flex min-h-svh max-w-3xl flex-col gap-6 p-4 sm:p-6">
+    <main className="mx-auto flex min-h-svh max-w-5xl flex-col gap-6 p-4 sm:p-6">
       <JsonLd data={jsonLd} />
       <Link to="/szolgaltatok" className="text-sm font-semibold text-petrol-text hover:underline">
         ← {t("profile.backToList")}

@@ -244,7 +244,7 @@ export default function BoardDetailRoute({ loaderData, actionData }: Route.Compo
   const canFlag = reviewForm.isLoggedIn && reviewForm.isEmailConfirmed;
 
   return (
-    <main className="mx-auto flex min-h-svh max-w-3xl flex-col gap-6 p-4 sm:p-6">
+    <main className="mx-auto flex min-h-svh max-w-5xl flex-col gap-6 p-4 sm:p-6">
       <JsonLd data={jsonLd} />
       <header className="flex flex-col gap-2">
         <BoardHero modelName={board.modelName} imageUrl={board.imageUrl} />

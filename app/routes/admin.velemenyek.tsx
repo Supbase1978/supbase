@@ -92,7 +92,7 @@ export default function AdminReviewsRoute({ loaderData }: Route.ComponentProps) 
   const { pending, flagged } = loaderData;
 
   return (
-    <main className="mx-auto flex min-h-svh max-w-3xl flex-col gap-6 p-4 sm:p-6">
+    <main className="mx-auto flex min-h-svh max-w-5xl flex-col gap-6 p-4 sm:p-6">
       <h1
         className="text-3xl font-semibold text-ink-deep"
         style={{ fontFamily: "var(--font-display)" }}
