@@ -13,8 +13,15 @@
 /** A wizard 3 tapasztalati szintje (a volume-szorzó kulcsaival egyező). */
 export type Experience = "kezdo" | "halado" | "versenyzo";
 
-/** Utas a deszkán (effektív súlyt növeli). */
-export type Passenger = "none" | "child" | "dog";
+/**
+ * Utas a deszkán (az effektív súlyt növeli).
+ *
+ * Az `adult` (felnőtt társ) esetén a KETTŐJÜK ÖSSZSÚLYA a mérvadó — a
+ * konfigban szereplő kg BECSLÉS, ugyanúgy, mint a gyereknél/kutyánál. Ha a
+ * társ ennél lényegesen nehezebb/könnyebb, érdemes a saját testsúlyhoz
+ * hozzáadva megadni.
+ */
+export type Passenger = "none" | "child" | "dog" | "adult";
 
 /** A tervezett vízi közeg. */
 export type WaterChoice = "to" | "folyo" | "vedett";

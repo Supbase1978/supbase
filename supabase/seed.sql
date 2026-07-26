@@ -339,6 +339,8 @@ insert into public.advisor_weights (key, value) values
   ('advisor.volume_multiplier.versenyzo', 2.0),
   ('advisor.passenger.child_kg',          15),
   ('advisor.passenger.dog_kg',            25),
+  -- Felnőtt társ (ketten egy deszkán): az ÖSSZSÚLY a mérvadó, ez becslés.
+  ('advisor.passenger.adult_kg',          70),
   ('advisor.max_load.safety_factor',      0.66),
   -- Efölött az extra széles (fishing) deszkák is engedélyezettek allround célra
   -- (nagy stabilitás, sok liter) — enélkül a nehéz evezős 0 találatot kap.

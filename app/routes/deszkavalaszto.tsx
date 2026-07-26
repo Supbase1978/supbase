@@ -48,7 +48,7 @@ function oneOf<T extends string>(value: FormDataEntryValue | null, allowed: read
 }
 
 const EXPERIENCES: Experience[] = ["kezdo", "halado", "versenyzo"];
-const PASSENGERS: Passenger[] = ["none", "child", "dog"];
+const PASSENGERS: Passenger[] = ["none", "child", "dog", "adult"];
 const WATERS: WaterChoice[] = ["to", "folyo", "vedett"];
 const USES: AdvisorUse[] = ["allround", "tura", "verseny", "joga", "horgasz"];
 const STORAGES: StorageChoice[] = ["any", "inflatable_only"];

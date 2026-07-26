@@ -20,7 +20,9 @@ export function AppNav() {
   const locale = getLocaleFromPath(useLocation().pathname);
 
   return (
-    <header className="border-b border-line bg-surface">
+    // RÖGZÍTETT fejléc: menüváltáshoz ne kelljen visszagörgetni a lap tetejére.
+    // A `bg-surface` átlátszatlan marad, hogy a görgetett tartalom ne üssön át.
+    <header className="sticky top-0 z-50 border-b border-line bg-surface">
       {/* Mobilon a nav-elemek nem férnek ki (a modulok száma nő) — a SÁV maga
           görgethető vízszintesen, hogy ne az OLDAL csússzon el. A brand
           `shrink-0`, hogy görgetés közben se torzuljon. */}

@@ -20,7 +20,7 @@ import type {
 } from "../select/types";
 
 const TOTAL_STEPS = 5;
-const PASSENGERS: Passenger[] = ["none", "child", "dog"];
+const PASSENGERS: Passenger[] = ["none", "child", "dog", "adult"];
 const EXPERIENCES: Experience[] = ["kezdo", "halado", "versenyzo"];
 const WATERS: WaterChoice[] = ["to", "folyo", "vedett"];
 const USES: AdvisorUse[] = ["allround", "tura", "verseny", "joga", "horgasz"];
@@ -68,7 +68,7 @@ export function AdvisorWizard() {
   const isLast = step === TOTAL_STEPS - 1;
 
   return (
-    <Form method="post" className="mx-auto flex min-h-svh max-w-md flex-col gap-6 p-4 sm:p-6">
+    <Form method="post" className="mx-auto flex min-h-svh max-w-md flex-col gap-6 p-4 sm:min-h-0 sm:p-6">
       {/* Hidden mezők — a teljes válasz-készlet a submithez. */}
       <input type="hidden" name="weightKg" value={weight} />
       <input type="hidden" name="heightCm" value={height} />
@@ -148,6 +148,11 @@ export function AdvisorWizard() {
               onSelect={setPassenger}
               label={(o) => t(`passenger.${o}`)}
             />
+            {/* Felnőtt társnál az összsúly a mérvadó — a becslést kimondjuk,
+                hogy a felhasználó korrigálni tudjon. */}
+            {passenger === "adult" ? (
+              <p className="text-xs text-text-3">{t("wizard.passenger.hint")}</p>
+            ) : null}
           </>
         ) : null}
 
@@ -224,7 +229,9 @@ export function AdvisorWizard() {
         ) : null}
       </div>
 
-      <div className="mt-auto flex gap-3">
+      {/* Mobilon a gomb a lap aljára kerül (hüvelykujj-elérés), desktopon
+          viszont sima térköz — enélkül óriási üres sáv keletkezne. */}
+      <div className="mt-auto flex gap-3 sm:mt-4">
         {step > 0 ? (
           <Button
             type="button"

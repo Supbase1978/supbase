@@ -18,7 +18,8 @@
       "unit": "kg"
     },
     "passenger": {
-      "q": "Will you take a passenger along?"
+      "q": "Will you take a passenger along?",
+      "hint": "With an adult companion your COMBINED weight matters — we estimate about 70 kg. If your companion is much heavier, add the difference to your own weight."
     },
     "experience": {
       "q": "How experienced are you?"
@@ -50,7 +51,8 @@
   "passenger": {
     "none": "Alone",
     "child": "Child",
-    "dog": "Dog"
+    "dog": "Dog",
+    "adult": "Adult companion"
   },
   "water": {
     "to": "Large lake",

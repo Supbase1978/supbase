@@ -34,6 +34,8 @@ export interface AdvisorConfig {
   passenger: {
     childKg: number;
     dogKg: number;
+    /** Felnőtt társ becsült testsúlya (ketten egy deszkán). */
+    adultKg: number;
   };
   /** 1. réteg — max_load × ez ≥ effektív súly. */
   maxLoadSafetyFactor: number;
@@ -136,6 +138,7 @@ export const ADVISOR_KEYS = {
   "advisor.volume_multiplier.versenyzo": ["volumeMultiplier", "versenyzo"],
   "advisor.passenger.child_kg": ["passenger", "childKg"],
   "advisor.passenger.dog_kg": ["passenger", "dogKg"],
+  "advisor.passenger.adult_kg": ["passenger", "adultKg"],
   "advisor.max_load.safety_factor": ["maxLoadSafetyFactor"],
   "advisor.heavy_rider_kg": ["heavyRiderKg"],
   "advisor.reviews.min_count": ["reviewsMinCount"],
@@ -176,7 +179,7 @@ export const DEFAULT_ADVISOR_CONFIG: AdvisorConfig = {
     length: 10,
   },
   volumeMultiplier: { kezdo: 2.5, halado: 2.2, versenyzo: 2.0 },
-  passenger: { childKg: 15, dogKg: 25 },
+  passenger: { childKg: 15, dogKg: 25, adultKg: 70 },
   maxLoadSafetyFactor: 0.66,
   heavyRiderKg: 90,
   reviewsMinCount: 5,

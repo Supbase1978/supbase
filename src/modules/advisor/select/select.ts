@@ -91,13 +91,13 @@ export function effectiveWeight(
   inputs: AdvisorInputs,
   config: AdvisorConfig = DEFAULT_ADVISOR_CONFIG,
 ): number {
-  const add =
-    inputs.passenger === "child"
-      ? config.passenger.childKg
-      : inputs.passenger === "dog"
-        ? config.passenger.dogKg
-        : 0;
-  return inputs.weightKg + add;
+  const extraKg: Record<AdvisorInputs["passenger"], number> = {
+    none: 0,
+    child: config.passenger.childKg,
+    dog: config.passenger.dogKg,
+    adult: config.passenger.adultKg,
+  };
+  return inputs.weightKg + extraKg[inputs.passenger];
 }
 
 /**

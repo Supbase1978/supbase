@@ -424,3 +424,24 @@ describe("recommendBoards — rangsor", () => {
     expect(recommendBoards([], makeInputs(), CFG)).toEqual([]);
   });
 });
+
+describe("passenger: felnőtt társ (F1.6-utó/3)", () => {
+  it("a felnőtt társ a legnagyobb súly-többletet adja (összsúly a mérvadó)", () => {
+    const alone = effectiveWeight(makeInputs({ passenger: "none" }), CFG);
+    const child = effectiveWeight(makeInputs({ passenger: "child" }), CFG);
+    const dog = effectiveWeight(makeInputs({ passenger: "dog" }), CFG);
+    const adult = effectiveWeight(makeInputs({ passenger: "adult" }), CFG);
+
+    expect(child - alone).toBe(CFG.passenger.childKg);
+    expect(dog - alone).toBe(CFG.passenger.dogKg);
+    expect(adult - alone).toBe(CFG.passenger.adultKg);
+    expect(adult).toBeGreaterThan(dog);
+  });
+
+  it("felnőtt társsal a terhelhetőség-szűrő szigorúbb lesz", () => {
+    // 80 kg + 70 kg társ = 150 kg effektív → 130 kg-os deszka kiesik.
+    const board = makeBoard({ maxLoadKg: 130 });
+    expect(passesHardFilter(board, makeInputs({ passenger: "none" }), CFG)).toBe(true);
+    expect(passesHardFilter(board, makeInputs({ passenger: "adult" }), CFG)).toBe(false);
+  });
+});

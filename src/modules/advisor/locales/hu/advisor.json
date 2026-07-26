@@ -18,7 +18,8 @@
       "unit": "kg"
     },
     "passenger": {
-      "q": "Viszel magaddal utast?"
+      "q": "Viszel magaddal utast?",
+      "hint": "Felnőtt társnál kettőtök ÖSSZSÚLYA a mérvadó — kb. 70 kg-mal számolunk. Ha a társad ennél lényegesen nehezebb, add hozzá a saját testsúlyodhoz."
     },
     "experience": {
       "q": "Mennyire vagy gyakorlott?"
@@ -50,7 +51,8 @@
   "passenger": {
     "none": "Egyedül",
     "child": "Gyerek",
-    "dog": "Kutya"
+    "dog": "Kutya",
+    "adult": "Felnőtt társ"
   },
   "water": {
     "to": "Nagy tó",
