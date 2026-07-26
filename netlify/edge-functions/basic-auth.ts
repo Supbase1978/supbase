@@ -26,7 +26,14 @@ interface NetlifyContext {
   next: () => Promise<Response>;
 }
 
-const REALM = 'Basic realm="SUP Platform — elő-éles", charset="UTF-8"';
+/**
+ * CSAK ASCII! A HTTP-fejléc értéke nem tartalmazhat nem-ASCII karaktert — a
+ * Deno `Headers` kivételt dob rá, ami az edge functiont 500-ra viszi MINDEN
+ * kérésnél. (Az első éles deploy pontosan ezen bukott el: a realm-ben ékezet
+ * és gondolatjel volt.) A `charset` paraméter a FELHASZNÁLÓNÉV/JELSZÓ
+ * kódolására vonatkozik, nem a realm szövegére.
+ */
+const REALM = 'Basic realm="SUP Platform (pre-live)", charset="UTF-8"';
 
 /** Időzítés-független összehasonlítás (a rövidebb bemenet se szivárogtasson). */
 function safeEqual(a: string, b: string): boolean {
@@ -50,10 +57,7 @@ function unauthorized(): Response {
   });
 }
 
-export default async function basicAuth(
-  request: Request,
-  context: NetlifyContext,
-): Promise<Response> {
+async function handle(request: Request, context: NetlifyContext): Promise<Response> {
   // Tudatos élesítés: ekkor a kapu teljesen kikapcsol.
   if (Deno.env.get("SITE_PUBLIC") === "true") {
     return await context.next();
@@ -92,6 +96,23 @@ export default async function basicAuth(
   }
 
   return await context.next();
+}
+
+/**
+ * Védőháló: bármilyen VÁRATLAN kivétel esetén is ZÁRVA maradunk (401), nem
+ * pedig nyitva. Kezeletlen hiba mellett a Netlify 500-at ad — az sem enged be,
+ * de a 401 beszédesebb, és a jelszó-ablak is előjön belőle.
+ */
+export default async function basicAuth(
+  request: Request,
+  context: NetlifyContext,
+): Promise<Response> {
+  try {
+    return await handle(request, context);
+  } catch (error) {
+    console.error("basic-auth: váratlan hiba", error);
+    return unauthorized();
+  }
 }
 
 export const config = { path: "/*" };
