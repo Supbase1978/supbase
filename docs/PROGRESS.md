@@ -704,6 +704,42 @@ gyenge merevsége a STABILITÁST rontja) · kezdő→felfújható preferencia (m
 nulla hatású, 20/20 felfújható) · biztonsági kiegészítők blokk (leash,
 mentőmellény — termék-bővítés).
 
+## F1.10/7 — Megosztható eredmény + működő Megosztás gomb (2026-07-26)
+
+Két, egymással összefüggő hiba a Deszkaválasztó eredményén. Kapuk zöldek:
+typecheck · lint · 479 vitest · 64 e2e · 7 vizuális.
+
+**1. Az eredménynek nem volt saját címe.** Az ajánlás KIZÁRÓLAG a POST-válasz
+törzsében élt, aminek három látható következménye volt:
+- újratöltésnél a böngésző űrlap-újraküldést kért,
+- a vissza-gomb után az eredmény elveszett,
+- nem lehetett könyvjelzőzni és megosztani.
+
+**Javítás: POST→redirect→GET.** Az `action` mostantól VALIDÁL és átirányít
+(`/deszkavalaszto?suly=85&magassag=180&…`), a számítás a `loader`-ben történik
+a query-paraméterekből. Új tiszta modul: `select/url.ts` (kódolás oda-vissza,
+10 unit-teszttel).
+
+**Ahol a hibás bemenet számít:** az URL nem megbízható. A testsúly az egyetlen
+kötelező adat — hiánya/érvénytelensége esetén a WIZARD jelenik meg, nem üres
+eredmény vagy hibaoldal. A felsorolás-mezők (szint, cél, víz, utas) ismeretlen
+értéknél a józan alapértékre esnek, mert egy megosztott linkből könnyen
+kimaradhat vagy elromolhat egy paraméter.
+
+**A session-log az ACTION-ben maradt, nem került a loaderbe** — szándékosan:
+egy megosztott linket sokan megnyithatnak, és minden megnyitás új sort írna,
+ami torzítaná az elemzést.
+
+**2. A „Megosztás" gomb NEM CSINÁLT SEMMIT** (nem volt `onClick`) — és nem is
+lett volna mit megosztania. Az 1. pont után van mit: új `ShareButton` a natív
+`navigator.share`-rel, vágólap-tartalékkal és visszajelzéssel. Ha egyik sem
+elérhető (régi böngésző), a gomb EL SEM JELENIK — jobb, mint egy gomb, ami
+kattintásra nem tesz semmit (pontosan ez volt a hiba).
+
+**Verifikálva:** POST → 302 a paraméteres URL-re; a kapott URL friss
+munkamenetben, közvetlenül megnyitva is renderel eredményt; paraméter nélkül a
+wizard jön; hibás paraméterek nem törik el az oldalt. Két új e2e-teszt fedi.
+
 ## F1.10/6 — FÁZIS-ZÁRÓ AUDIT (2026-07-26)
 
 Teljes riport: **`docs/AUDIT_F1.md`**. Minden pont MÉRÉSSEL zárult

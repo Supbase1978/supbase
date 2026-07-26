@@ -80,6 +80,36 @@ test.describe("Deszkaválasztó", () => {
     await expect(page.getByText(/BIZTONSÁGI korlát/)).toBeVisible();
   });
 
+  test("az eredménynek SAJÁT URL-je van — megosztható és újratölthető", async ({ page }) => {
+    await runWizard(page, "85", "186");
+
+    // POST→redirect→GET: a wizard beküldése után az URL már az eredményé.
+    await expect(page).toHaveURL(/\/deszkavalaszto\?.*suly=85/);
+    const resultUrl = page.url();
+
+    // Újratöltés: NEM kér űrlap-újraküldést, és ugyanazt adja.
+    await page.reload();
+    await expect(page.getByRole("heading", { name: "A te deszkáid" })).toBeVisible();
+
+    // „Megosztás": friss munkamenetben, közvetlenül megnyitva is működik.
+    const fresh = await page.context().newPage();
+    await fresh.goto(resultUrl);
+    await expect(fresh.getByRole("heading", { name: "A te deszkáid" })).toBeVisible();
+    await expect(fresh.getByText(/%\s*neked/).first()).toBeVisible();
+    await fresh.close();
+  });
+
+  test("hibás/hiányos URL-paraméterek NEM törik el az oldalt", async ({ page }) => {
+    // Egy megosztott linkből kimaradhat vagy elromolhat egy paraméter.
+    await page.goto("/deszkavalaszto?suly=abc&szint=profi");
+    // Testsúly nélkül a wizard jön — nem hibaoldal, nem üres eredmény.
+    await expect(page.getByRole("heading", { name: "Mennyi a testsúlyod?" })).toBeVisible();
+
+    await page.goto("/deszkavalaszto?suly=85&szint=profi&cel=repules");
+    // Az ismeretlen értékek alapértékre esnek: az eredmény renderel.
+    await expect(page.getByRole("heading", { name: "A te deszkáid" })).toBeVisible();
+  });
+
   test("a Közös nevező a kártyán látszik — nem kell átkattintani", async ({ page }) => {
     await runWizard(page, "85", "186");
 

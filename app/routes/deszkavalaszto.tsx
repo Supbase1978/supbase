@@ -1,14 +1,21 @@
 /**
  * /deszkavalaszto — Deszkaválasztó (Advisor, F1.6). A catalog + reviews + advisor
- * modul összekötése KIZÁRÓLAG itt, a route-rétegben (1.3 modul-szerződés). A
- * wizard kliens-oldali; a submit az `action`-be megy, ami:
+ * modul összekötése KIZÁRÓLAG itt, a route-rétegben (1.3 modul-szerződés).
+ *
+ * POST→REDIRECT→GET (F1.10-utó): a wizard beküldése az `action`-be megy, ami
+ * VALIDÁL és átirányít az eredmény-URL-re; a számítás a `loader`-ben történik a
+ * query-paraméterekből. Korábban az eredmény kizárólag a POST-válasz törzsében
+ * élt, aminek három látható következménye volt: újratöltésnél a böngésző
+ * űrlap-újraküldést kért, a vissza-gomb után az eredmény elveszett, és nem
+ * lehetett megosztani (a „Megosztás" gombnak nem is volt mit).
+ *
+ * A loader lépései:
  *   1) betölti a boardok + legolcsóbb ár + publikált vélemény-aggregátumokat,
  *   2) `BoardForAdvisor`-rá képezi (a modulok nem importálják egymást),
  *   3) `recommendBoards`-szal rangsorol,
- *   4) logol egy advisor_sessiont (anonim is), best-effort,
- *   5) visszaadja a rangsort display-mezőkkel.
+ *   4) display-mezőkkel adja vissza a rangsort.
  */
-import { data } from "react-router";
+import { redirect } from "react-router";
 
 import { getUser } from "@core/auth/session.server";
 import { createSupabaseServerClient } from "@core/auth/supabase.server";
@@ -26,6 +33,11 @@ import {
   targetWidthCm,
 } from "@modules/advisor/select/select";
 import {
+  HEIGHT_RANGE,
+  inputsFromSearchParams,
+  searchParamsFromInputs,
+} from "@modules/advisor/select/url";
+import {
   ADVISOR_REVIEW_DIMENSIONS,
   type AdvisorDimensionScores,
   type AdvisorInputs,
@@ -41,7 +53,11 @@ import { AdvisorWizard } from "@modules/advisor/ui/AdvisorWizard";
 
 import type { Route } from "./+types/deszkavalaszto";
 
-function oneOf<T extends string>(value: FormDataEntryValue | null, allowed: readonly T[], fallback: T): T {
+function oneOf<T extends string>(
+  value: FormDataEntryValue | null,
+  allowed: readonly T[],
+  fallback: T,
+): T {
   return typeof value === "string" && (allowed as readonly string[]).includes(value)
     ? (value as T)
     : fallback;
@@ -54,7 +70,8 @@ const USES: AdvisorUse[] = ["allround", "tura", "verseny", "joga", "horgasz"];
 const STORAGES: StorageChoice[] = ["any", "inflatable_only"];
 
 export async function loader({ request }: Route.LoaderArgs) {
-  const locale = getLocaleFromPath(new URL(request.url).pathname);
+  const url = new URL(request.url);
+  const locale = getLocaleFromPath(url.pathname);
   const t = serverT(locale, "advisor");
   const seo = buildPageSeo({
     request,
@@ -63,42 +80,19 @@ export async function loader({ request }: Route.LoaderArgs) {
     title: t("seo.title"),
     description: t("seo.description"),
   });
-  return { locale, seo };
-}
 
-export async function action({ request }: Route.ActionArgs) {
-  const locale = getLocaleFromPath(new URL(request.url).pathname);
-  const { supabase, headers } = createSupabaseServerClient(request);
+  // A válaszok az URL-BEN vannak. Ha nincsenek (vagy hiányzik a testsúly), a
+  // wizard jelenik meg — nem egy üres eredmény-lap.
+  const inputs = inputsFromSearchParams(url.searchParams);
+  if (!inputs) {
+    return { seo, results: null, sizing: null, noMatchReason: null };
+  }
 
-  const formData = await request.formData();
-  const weightKg = Number(formData.get("weightKg"));
-  const heightRaw = formData.get("heightCm");
-  const heightNum = typeof heightRaw === "string" ? Number(heightRaw) : NaN;
-  // Ésszerű emberi tartomány; azon kívül/hiányzó → null (semleges hossz-illesztés).
-  const heightCm =
-    Number.isFinite(heightNum) && heightNum >= 120 && heightNum <= 220 ? heightNum : null;
-  const budgetRaw = formData.get("budgetHuf");
-  const budgetHuf =
-    typeof budgetRaw === "string" && budgetRaw.trim() !== "" && Number.isFinite(Number(budgetRaw))
-      ? Number(budgetRaw)
-      : null;
-
-  const inputs: AdvisorInputs = {
-    weightKg: Number.isFinite(weightKg) ? weightKg : 0,
-    heightCm,
-    passenger: oneOf(formData.get("passenger"), PASSENGERS, "none"),
-    experience: oneOf(formData.get("experience"), EXPERIENCES, "kezdo"),
-    use: oneOf(formData.get("use"), USES, "allround"),
-    water: oneOf(formData.get("water"), WATERS, "to"),
-    budgetHuf,
-    storage: oneOf(formData.get("storage"), STORAGES, "any"),
-  };
-
-  const [boards, cheapest, publishedReviews, user] = await Promise.all([
+  const { supabase } = createSupabaseServerClient(request);
+  const [boards, cheapest, publishedReviews] = await Promise.all([
     listBoards(supabase),
     listCheapestPriceByBoard(supabase),
     listAllPublishedReviews(supabase),
-    getUser(request),
   ]);
 
   // Vélemények boardonként → Közös nevező-aggregátum.
@@ -132,17 +126,6 @@ export async function action({ request }: Route.ActionArgs) {
   const config = await loadAdvisorConfig(supabase);
   const ranked = recommendBoards(boardsForAdvisor, inputs, config, 5);
 
-  // Session-logolás (anonim is) — best-effort: a hibát elnyeljük, az eredmény megy.
-  try {
-    await supabase.from("advisor_sessions").insert({
-      user_id: user?.id ?? null,
-      inputs,
-      results: ranked,
-    });
-  } catch {
-    // ignoráljuk — a logolás nem blokkolhatja az ajánlást
-  }
-
   const boardById = new Map(boards.map((b) => [b.id, b]));
   const results: AdvisorResultBoard[] = ranked.flatMap((item) => {
     const board = boardById.get(item.boardId);
@@ -172,8 +155,8 @@ export async function action({ request }: Route.ActionArgs) {
     ];
   });
 
-  // A magasság-illesztés az eredmény fejlécében látszik (különben a felhasználó
-  // nem tudná, hogy a válasza számított — a rész-pont súlya csak 10 %).
+  // A méret-illesztés az eredmény fejlécében látszik (különben a felhasználó
+  // nem tudná, hogy a testadatai számítottak — a rész-pontok súlya kicsi).
   const sizing = {
     idealLengthCm: Math.round(idealLengthCm(inputs, config)),
     targetVolumeL: Math.round(targetVolumeL(inputs, config)),
@@ -184,19 +167,68 @@ export async function action({ request }: Route.ActionArgs) {
   const noMatchReason =
     results.length === 0 ? explainNoMatch(boardsForAdvisor, inputs, config) : null;
 
-  return data({ results, sizing, noMatchReason }, { headers });
+  return { seo, results, sizing, noMatchReason };
+}
+
+/**
+ * A wizard beküldése: VALIDÁL és átirányít az eredmény-URL-re. A számítás a
+ * loaderben történik, így az eredménynek saját, megosztható címe lesz.
+ *
+ * A session-logolás ITT marad, NEM a loaderben: egy megosztott linket sokan
+ * megnyithatnak, és minden megnyitás új sort írna — az elemzés torzulna.
+ */
+export async function action({ request }: Route.ActionArgs) {
+  const formData = await request.formData();
+  const weightKg = Number(formData.get("weightKg"));
+  const heightRaw = formData.get("heightCm");
+  const heightNum = typeof heightRaw === "string" ? Number(heightRaw) : NaN;
+  const heightCm =
+    Number.isFinite(heightNum) && heightNum >= HEIGHT_RANGE.min && heightNum <= HEIGHT_RANGE.max
+      ? heightNum
+      : null;
+  const budgetRaw = formData.get("budgetHuf");
+  const budgetHuf =
+    typeof budgetRaw === "string" && budgetRaw.trim() !== "" && Number.isFinite(Number(budgetRaw))
+      ? Number(budgetRaw)
+      : null;
+
+  const inputs: AdvisorInputs = {
+    weightKg: Number.isFinite(weightKg) ? weightKg : 0,
+    heightCm,
+    passenger: oneOf(formData.get("passenger"), PASSENGERS, "none"),
+    experience: oneOf(formData.get("experience"), EXPERIENCES, "kezdo"),
+    use: oneOf(formData.get("use"), USES, "allround"),
+    water: oneOf(formData.get("water"), WATERS, "to"),
+    budgetHuf,
+    storage: oneOf(formData.get("storage"), STORAGES, "any"),
+  };
+
+  // Best-effort session-log: a hibát elnyeljük, az ajánlás nem múlhat rajta.
+  try {
+    const { supabase } = createSupabaseServerClient(request);
+    const user = await getUser(request);
+    await supabase.from("advisor_sessions").insert({
+      user_id: user?.id ?? null,
+      inputs,
+      results: [],
+    });
+  } catch {
+    // ignoráljuk — a logolás nem blokkolhatja az ajánlást
+  }
+
+  throw redirect(`/deszkavalaszto?${searchParamsFromInputs(inputs).toString()}`);
 }
 
 export const meta: Route.MetaFunction = ({ data }) => data?.seo ?? [];
 
-export default function AdvisorRoute({ actionData }: Route.ComponentProps) {
-  if (actionData?.results) {
+export default function AdvisorRoute({ loaderData }: Route.ComponentProps) {
+  if (loaderData.results) {
     return (
       <main className="mx-auto flex min-h-svh max-w-5xl flex-col gap-6 p-4 sm:p-6">
         <AdvisorResult
-          results={actionData.results}
-          sizing={actionData.sizing}
-          noMatchReason={actionData.noMatchReason}
+          results={loaderData.results}
+          sizing={loaderData.sizing}
+          noMatchReason={loaderData.noMatchReason}
         />
       </main>
     );

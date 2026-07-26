@@ -10,7 +10,7 @@
 import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
 
-import { Button, Card, cx, RatingBar } from "@core/ui";
+import { Card, cx, RatingBar } from "@core/ui";
 
 import {
   ADVISOR_REVIEW_DIMENSIONS,
@@ -19,6 +19,7 @@ import {
   type NoMatchReason,
 } from "../select/types";
 import { cmToFeetInches } from "./format";
+import { ShareButton } from "./ShareButton";
 
 export interface AdvisorResultBoard {
   boardId: string;
@@ -172,9 +173,7 @@ export function AdvisorResult({ results, sizing, noMatchReason }: AdvisorResultP
               >
                 {t("result.viewBoard")}
               </Link>
-              <Button type="button" variant="ghost">
-                {t("result.share")}
-              </Button>
+              <ShareButton title={`${top.modelName} — ${t("result.title")}`} />
             </div>
           </Card>
         </section>

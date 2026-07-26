@@ -89,7 +89,8 @@
       "maxLoad": "The load you entered (body weight + passenger) exceeds the capacity of the boards in range. This is a SAFETY limit, not one to relax — look for a high-capacity, extra-wide board, or drop the passenger.",
       "volume": "The boards in range have too little volume for the weight you entered — you need a larger, higher-volume board.",
       "budget": "No suitable board under your budget — try raising it."
-    }
+    },
+    "shareCopied": "Link copied ✓"
   },
   "reason": {
     "volume": "The {{volume}} l volume gives comfortable headroom at {{level}} level.",
