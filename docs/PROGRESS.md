@@ -17,7 +17,7 @@
 | F1.7 Providers | ✅ kész (2026-07-24) | directory-lista + profil + lead-form + saját-listing (claim/regisztráció) + admin-hitelesítő panel; mind az 5 flow böngészőben élesben verifikálva. Részletek lent |
 | F1.8 SEO-réteg | ✅ mag kész (2026-07-24) | loader-alapú meta+hreflang, JSON-LD, sitemap+robots, consent (user_consents migráció + regisztrációs checkbox + re-consent), ÁSZF+adatvédelmi. HÁTRA: OG-kép-generálás + persona-landingek (F1.8b) + a consent-migráció éles push. Részletek lent |
 | F1.9 Push + viharjelzés | ✅ kész (2026-07-25) | teljes web push-pipeline (VAPID + RFC 8291 natív Web Cryptóval, npm nélkül), storm-alert push-ág, feliratkozó-UI, m4 `observed_at`. Élesítve (5 migráció + secretek + deploy) és **böngészőben végponttól végpontig verifikálva: a viharjelzés-push megérkezett**. Részletek lent |
-| F1.10 Záró audit + élesítés | 🔄 folyamatban | e2e + a11y kapu KÉSZ (54 Playwright-teszt) · Semgrep SAST-kapu KÉSZ (tiszta, CI-ban `--error`) · findingok: `docs/SECURITY_FINDINGS.md`. HÁTRA: Snyk-bekötés (fiók kell), Netlify SSR-adapter + `[deploy]`-gated build, nyitott kis tételek |
+| F1.10 Záró audit + élesítés | 🔄 folyamatban | e2e + a11y kapu KÉSZ (60 Playwright-teszt) · Semgrep SAST-kapu KÉSZ · Snyk lefutott (0 prod-finding) · **Netlify SSR-adapter bekötve, füsttesztelve**. HÁTRA: első éles deploy (`[deploy]` commit + Netlify env-ek), nyitott kis tételek |
 
 ## ITINER a következő sessionnek (2026-07-21-i állapot)
 
@@ -703,6 +703,52 @@ mindig a legolcsóbbat jutalmazza, pedig a források szerint a nagyon olcsó sze
 gyenge merevsége a STABILITÁST rontja) · kezdő→felfújható preferencia (most
 nulla hatású, 20/20 felfújható) · biztonsági kiegészítők blokk (leash,
 mentőmellény — termék-bővítés).
+
+## F1.10/3 — Netlify SSR-adapter bekötése (2026-07-26)
+
+Az F1.0 óta halasztott adapter (`@netlify/vite-plugin-react-router` 4.0.0)
+bekötve a `vite.config.ts`-be. Kapuk zöldek: typecheck · lint · 444 vitest ·
+60 Playwright · Semgrep tiszta.
+
+**Build-kimenet:** `build/client/` (statikus assetek, ez a `publish`) +
+`.netlify/v1/functions/react-router-server.mjs` (az SSR-t kiszolgáló Netlify
+Function). A függvényt a Netlify automatikusan felismeri.
+
+**Node-runtime, nem Edge — tudatosan:** az Edge (Deno) változat külön
+verifikációt igényelne, mert az SSR-loaderek a Supabase Node-kliensét használják.
+
+**A natív (Capacitor) build érintetlen:** az adapter csak akkor aktív, ha
+`BUILD_TARGET !== "native"` — SPA-módban nincs SSR, tehát adapter sem kell.
+
+**Füstteszt (nem csak „lefordult"):** a generált függvényt Node-ból meghívtuk
+egy valódi `Request`-tel → **200, `text/html`, `<html lang="hu">`, renderelt
+navigáció**. Az SSR tehát ténylegesen kiszolgál, nem csak legenerálódik.
+
+**BREAKING a fejlesztői flow-ban: a `npm run start` MEGSZŰNT.** Az adapterrel a
+szerver-build serverless handler, nem önálló Node-szerver — a `react-router-serve`
+nem tudja futtatni (ezt a build utáni próba mutatta ki). A `@react-router/serve`
+függőség is kikerült (így nem marad használatlan produkciós csomag).
+Fejlesztés: `npm run dev`; a produkciós futtató a Netlify Function.
+
+**`[deploy]`-kapu megmarad:** a `netlify.toml` `ignore` parancsa minden push
+buildjét kihagyja, kivéve ha a legutolsó commit üzenete tartalmazza a
+`[deploy]` jelölőt. Új: `NODE_VERSION = "22"` (a `engines` >=22-t ír elő).
+
+**E2E-stabilizálás (valós hibából):** a Vite az ELSŐ oldalbetöltéskor
+optimalizálja a függőségeket és újratölti a lapot — a `webServer` health-check
+ezt nem várja meg, így a párhuzamos tesztek egy épp újrainduló szerverbe
+futottak (lokálisan 9 db `page.goto` timeout, hibátlan kód mellett). Megoldás:
+`e2e/global-setup.ts` sorosan bemelegíti a nehéz route-okat, és CI-ban a
+teszt-timeout 60 s. Enélkül ez véletlenszerű piros CI lett volna.
+
+**HÁTRA az első éles deployhoz (felhasználói lépések):**
+1. Netlify site létrehozása / repo bekötése.
+2. Környezeti változók a Netlify UI-ban — a `netlify.toml` alján tételesen
+   felsorolva (`VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`,
+   `VITE_PUBLIC_SITE_URL`, `VITE_VAPID_PUBLIC_KEY`, `VITE_TURNSTILE_SITE_KEY`).
+   **A `VITE_` értékek BUILD-IDŐBEN épülnek be** → utólagos beállítás után
+   újra kell buildelni.
+3. Egy commit `[deploy]` jelölővel (vagy „Trigger deploy" a UI-ból).
 
 ## F1.10/2 — Biztonsági audit: Semgrep-kapu + finding-triage (2026-07-25)
 

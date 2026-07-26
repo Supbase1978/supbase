@@ -217,9 +217,20 @@ Az üres állapotnak nem volt `h1`-e — a lapnak így nem volt címsora (a11y).
 
 ## 5. Nyitva maradt
 
-- **2.5 ár-padló:** a `valueScore` továbbra is a legolcsóbbat jutalmazza,
-  miközben a források szerint a nagyon olcsó szett gyenge merevsége a
-  **stabilitást** rontja. Küszöb-érték (HUF) kell hozzá — terméki döntés.
+- **2.5 ár-padló — a megközelítés PONTOSÍTVA (felhasználói visszajelzés,
+  2026-07-26):** a nagyon olcsó deszka nem egyszerűen „rossz", hanem
+  **más felhasználásra jó**. Sokan strandolásra, alkalmi játékra veszik, és
+  arra meg is felel. Tehát NEM ár-büntetés kell (az félrevezetően minősítene),
+  hanem **rendeltetés-jelzés**: az olcsó sávba eső deszkánál a kártyán
+  őszinte megjegyzés („alkalmi, strandolós használatra jó; rendszeres
+  evezéshez merevebb konstrukció ajánlott"), a pontszám érintése nélkül.
+
+  **Küszöb konkrét HUF-érték NÉLKÜL:** a felhasználónak nincs kézzelfogható
+  száma, és egy kitalált érték hamis pontosságot sugallna. Adatvezérelt
+  alternatíva: a küszöb a katalógus saját ár-eloszlásából jöjjön (pl. az adott
+  `board_type` alsó ötöde), így magától követi a piacot, és nem avul el.
+  Megvalósítás előtt érdemes megvárni, hogy a katalógus a mostani 20 deszkánál
+  bővebb legyen — ekkora mintán az eloszlás-alapú küszöb még zajos.
 - **2.7 kezdő → felfújható preferencia:** most nulla hatású (a katalógus 20/20
   felfújható), de a kínálat bővülésével élessé válik.
 - **2.8 biztonsági kiegészítők** (leash víz-típushoz, mentőmellény, pumpa,

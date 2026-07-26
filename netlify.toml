@@ -1,16 +1,48 @@
 # Netlify — SSR hosting (FEJLESZTESI_DOKUMENTACIO 1.1).
-# Az SSR-adapter (@netlify/vite-plugin-react-router) bekötése és az élesítés
-# az F1.10 lépés része; addig ez a fájl a build-parancsot rögzíti.
+#
+# Az SSR-adaptert (`@netlify/vite-plugin-react-router`) a vite.config.ts köti be
+# (F1.10). A build kimenete:
+#   build/client/                → statikus assetek (ez a `publish` könyvtár)
+#   .netlify/v1/functions/*.mjs  → az SSR-t kiszolgáló Netlify Function
+# A függvényt a Netlify automatikusan felismeri, külön [functions] blokk nem kell.
+#
+# A Node-runtime tudatos választás: az Edge (Deno) változat külön verifikációt
+# igényelne, mert az SSR-loaderek a Supabase Node-kliensét használják.
+#
+# FIGYELEM: a `npm run start` (react-router-serve) MEGSZŰNT — az adapterrel a
+# szerver-build serverless handler, nem önálló Node-szerver. Fejlesztéshez
+# `npm run dev`; a produkciós futtató a Netlify Function.
+
 [build]
   command = "npm run build:web"
   publish = "build/client"
-  # AUTO-DEPLOY KIKAPCSOLVA F1.10-ig: minden push buildjét kihagyjuk, KIVÉVE ha
-  # a legutolsó commit üzenete tartalmazza a `[deploy]` jelölőt. Az `ignore`
+  # AUTO-DEPLOY KIKAPCSOLVA: minden push buildjét kihagyjuk, KIVÉVE ha a
+  # legutolsó commit üzenete tartalmazza a `[deploy]` jelölőt. Az `ignore`
   # parancs exit 0 = build kihagyása, exit 1 = build fut; a `!` negálja a
   # grepet, így jelölő NÉLKÜL kihagy. Szándékos deployhoz: `[deploy]` a commit-
   # üzenetbe (vagy a Netlify UI-ból „Trigger deploy"). Lokál-fejlesztésnél így
   # nem fogy a build-perc minden pushra.
   ignore = "! git log -1 --pretty=%B | grep -qF '[deploy]'"
 
+[build.environment]
+  # A package.json `engines` >=22-t ír elő; a Netlify defaultja ettől eltérhet.
+  NODE_VERSION = "22"
+
 [dev]
   command = "npm run dev"
+
+# ---------------------------------------------------------------------------
+# KÖTELEZŐ környezeti változók a Netlify UI-ban (Site settings → Environment).
+# A `VITE_` prefixűek BUILD-IDŐBEN épülnek a bundle-be, tehát a build ELŐTT kell
+# létezniük — utólagos beállítás után ÚJRA kell buildelni.
+#
+#   VITE_SUPABASE_URL              Supabase projekt-URL (publikus)
+#   VITE_SUPABASE_PUBLISHABLE_KEY  sb_publishable_… (publikus, RLS mögött érvényesül)
+#   VITE_PUBLIC_SITE_URL           az éles origin — a canonical/OG/sitemap ehhez
+#                                  igazodik (hiányában a kérés origin-ja)
+#   VITE_VAPID_PUBLIC_KEY          web push feliratkozáshoz (a kulcspár PUBLIKUS fele)
+#   VITE_TURNSTILE_SITE_KEY        captcha (üresen a védelem dev-módban kikapcsol)
+#
+# TITOK IDE NEM KERÜLHET: a Supabase secret/service_role kulcs és a VAPID PRIVÁT
+# kulcs kizárólag a Supabase Edge Function secrets-ben él.
+# ---------------------------------------------------------------------------

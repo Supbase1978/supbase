@@ -20,9 +20,13 @@ const baseURL = process.env.E2E_BASE_URL ?? "http://localhost:5173";
 
 export default defineConfig({
   testDir: "./e2e",
+  // A dev-szerver bemelegítése a tesztek előtt (Vite dep-optimalizálás) —
+  // enélkül a párhuzamos tesztek egy épp újrainduló szerverbe futnának.
+  globalSetup: "./e2e/global-setup.ts",
   // A hálózat (Supabase, térkép-csempe) lassú lehet — de a lassulás elfedné a
-  // valódi regressziót, ezért a küszöb szoros marad.
-  timeout: 30_000,
+  // valódi regressziót, ezért a küszöb szoros marad. CI-ban valamivel bővebb:
+  // ott hidegen indul a szerver, és a futók is lassabbak.
+  timeout: process.env.CI ? 60_000 : 30_000,
   expect: { timeout: 7_000 },
   fullyParallel: true,
   forbidOnly: Boolean(process.env.CI),
