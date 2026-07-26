@@ -649,6 +649,61 @@ oldalra irányítja. Így a közösségi belépő userek is elfogadják a felté
 - **Apple:** Apple Developer-fiók (~99 USD/év), Services ID + kulcs → Providers → Apple.
 - Bekapcsolásig a gombok redirectelnek, de a Supabase provider-hibára fut (a kód kész).
 
+## F1.6-utó/2 — Deszkaválasztó: szakmai kalibráció három forrásból (2026-07-26)
+
+A felhasználó saját kutatása (`Kezdők_tanácsok/sup-kezdo.md`) + két magyar
+piaci útmutató (supzone.hu, supshop.hu) alapján összevetettük az algoritmust a
+szakirodalommal. Teljes elemzés: **`docs/ADVISOR_DOMAIN_REVIEW.md`**.
+Kapuk zöldek: typecheck · lint · 444 vitest · 60 Playwright.
+
+**A vizsgálat MÉRÉSSEL készült** (referencia-esetek végigfuttatva az éles
+action-ön), nem szemrevételezéssel — ez fogta meg az alábbi blokkolót.
+
+**BLOKKOLÓ VOLT: 96 kg fölött a kezdő NULLA ajánlást kapott.** Ok: a
+`max_load × 0,66` szűrő 96 kg-hoz ≥145 kg terhelhetőséget kér, és az egyetlen
+ilyen deszka `fishing` típusú, amit az allround cél-mapping kizárt. Az üres
+állapot ráadásul félrevezetett („lazíts az árkereten", holott a felhasználó
+nem is állított be árkeretet). **Javítva:**
+- `heavyRiderKg` (90) fölött a `fishing` típus is engedélyezett allround/túra
+  célra — a források „extra széles allround/fishing, nagy stabilitás, sok
+  liter" kategóriaként kezelik;
+- `explainNoMatch()` a DOMINÁNS kizárási okot adja vissza, és a terhelhetőségnél
+  kimondja, hogy ez **biztonsági korlát, nem érdemes lazítani** rajta.
+- Mérve: 100 kg → most Drift 10'10" (52 %); 110 kg → nincs találat, de a
+  VALÓDI okkal.
+
+**RENDSZERSZINTŰ JAVÍTÁS: sáv-alapú pontozás a monoton helyett.** A régi logika
+szerint „minél nagyobb térfogat és minél szélesebb deszka, annál jobb" — a
+szakirodalom viszont OPTIMUMOT ad meg (a túl nagy térfogat lassabb és
+szelesebb, a túl széles deszka nagyobb terpeszt kíván). Új `bandScore`
+primitíva, erre épül a térfogat-, szélesség-, vastagság- és hossz-illeszkedés.
+A `stabilityScore` ezek súlyozott átlaga (45/40/15), és a **tapasztalati szint
+nem a képletben, hanem a CÉLOKBAN** jelenik meg (a háromágú switch megszűnt).
+
+**Kalibráció** (mind `advisor_weights`-ből hangolható): 65 kg → 290 L / 81 cm /
+320 cm · 85 kg → 330 L / 83,4 cm / 336 cm · 100 kg → 360 L / 85,2 cm / 348 cm.
+Egybevág mindhárom forrás méret-tábláival.
+
+**A hossz bázisa a SÚLY lett** (a magasság csak korrigál, 1,2 → 0,5
+együtthatóval): a két bemenet erősen korrelál, kétszer nem szabad beszámítani.
+Korábban egy nehéz, alacsony evezős túl rövid deszkát kapott (100 kg/170 cm →
+314 cm); most 346 cm. Teszt védi.
+
+**Vastagság bekötve** (cél 14 cm ±3): a 12–15 cm-es sáv a jó, a 20 cm-esek
+pontot veszítenek (magasabb súlypont). Az adat eddig kihasználatlan volt.
+
+**Eredmény-fejléc:** mind a három cél-méret látszik (hossz cm + láb, szélesség,
+térfogat) — a felhasználó lássa, mire méreteztünk.
+
+**Mellékesen javítva:** az üres állapotnak nem volt `h1`-e (a lapnak nem volt
+címsora — a11y).
+
+**NYITVA maradt (felhasználói döntésre vár):** ár-padló (a `valueScore` még
+mindig a legolcsóbbat jutalmazza, pedig a források szerint a nagyon olcsó szett
+gyenge merevsége a STABILITÁST rontja) · kezdő→felfújható preferencia (most
+nulla hatású, 20/20 felfújható) · biztonsági kiegészítők blokk (leash,
+mentőmellény — termék-bővítés).
+
 ## F1.10/2 — Biztonsági audit: Semgrep-kapu + finding-triage (2026-07-25)
 
 Új dokumentum: **`docs/SECURITY_FINDINGS.md`** — a findingok élő nyilvántartása

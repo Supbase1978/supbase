@@ -324,16 +324,42 @@ insert into public.advisor_weights (key, value) values
   ('advisor.passenger.child_kg',          15),
   ('advisor.passenger.dog_kg',            25),
   ('advisor.max_load.safety_factor',      0.66),
+  -- Efölött az extra széles (fishing) deszkák is engedélyezettek allround célra
+  -- (nagy stabilitás, sok liter) — enélkül a nehéz evezős 0 találatot kap.
+  ('advisor.heavy_rider_kg',              90),
   ('advisor.reviews.min_count',           5),
-  -- Deszkaválasztó — testmagasság → ideális deszkahossz (puha preferencia):
-  -- ideal = clamp(base_length + (magasság − base_height) × cm_per_height,
-  --               min_length, max_length); rész-pont = 1 − |hossz−ideal|/tolerancia.
-  ('advisor.length_fit.base_height_cm',   175),
+  -- Deszkaválasztó 2. réteg — MÉRET-ILLESZTÉS (SÁV-alapú, nem „minél több").
+  -- A stabilitás-pont belső megoszlása:
+  ('advisor.stability_part.volume',       45),
+  ('advisor.stability_part.width',        40),
+  ('advisor.stability_part.thickness',    15),
+  -- Cél-térfogat: (base + (súly − base_weight) × l_per_kg) × szint-szorzó.
+  -- Kalibráció a kezdő-útmutató méret-táblájából: 65 kg ~290 L, 85 kg ~330 L,
+  -- 100 kg ~360 L. A túl NAGY térfogat is ront (lassabb, szelesebb deszka).
+  ('advisor.volume_fit.base_weight_kg',   65),
+  ('advisor.volume_fit.base_volume_l',    290),
+  ('advisor.volume_fit.l_per_kg',         2.0),
+  ('advisor.volume_fit.tolerance_l',      50),
+  -- Cél-szélesség: kezdőnek 32" (81 cm) az optimum (három forrás egyezik);
+  -- 30" alatt bizonytalan, 34" fölött stabilabb, de lassabb és nagyobb terpesz.
+  ('advisor.width_fit.base_weight_kg',    65),
+  ('advisor.width_fit.base_width_cm',     81),
+  ('advisor.width_fit.cm_per_kg',         0.12),
+  ('advisor.width_fit.tolerance_cm',      6),
+  -- Cél-vastagság: felfújhatónál 5–6" (12–15 cm).
+  ('advisor.thickness_fit.target_cm',     14),
+  ('advisor.thickness_fit.tolerance_cm',  3),
+  -- Ideális hossz: a SÚLY adja a bázist (a méret-táblák ehhez kötik), a
+  -- MAGASSÁG csak korrigál. Korábban csak a magasság számított, amitől egy
+  -- nehéz, alacsony evezős túl rövid deszkát kapott.
+  ('advisor.length_fit.base_weight_kg',   65),
   ('advisor.length_fit.base_length_cm',   320),
-  ('advisor.length_fit.cm_per_height_cm', 1.2),
+  ('advisor.length_fit.cm_per_weight_kg', 0.8),
+  ('advisor.length_fit.base_height_cm',   175),
+  ('advisor.length_fit.cm_per_height_cm', 0.5),
   ('advisor.length_fit.min_length_cm',    290),
   ('advisor.length_fit.max_length_cm',    380),
-  ('advisor.length_fit.tolerance_cm',     45),
+  ('advisor.length_fit.tolerance_cm',     40),
   -- SUP-index (5.1) — szél-alap sávok (felső határ km/h → pontszám)
   ('supindex.wind.band1_max',             12),
   ('supindex.wind.band2_max',             20),

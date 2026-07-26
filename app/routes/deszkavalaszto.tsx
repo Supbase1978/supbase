@@ -18,7 +18,13 @@ import { listBoards, listCheapestPriceByBoard } from "@modules/catalog/data/boar
 import { computeReviewAggregate, toTen } from "@modules/reviews/aggregate";
 import { listAllPublishedReviews } from "@modules/reviews/data/reviews.server";
 import { loadAdvisorConfig } from "@modules/advisor/select/config.server";
-import { idealLengthCm, recommendBoards } from "@modules/advisor/select/select";
+import {
+  explainNoMatch,
+  idealLengthCm,
+  recommendBoards,
+  targetVolumeL,
+  targetWidthCm,
+} from "@modules/advisor/select/select";
 import {
   ADVISOR_REVIEW_DIMENSIONS,
   type AdvisorDimensionScores,
@@ -111,6 +117,7 @@ export async function action({ request }: Route.ActionArgs) {
       volumeL: board.volume_l,
       widthCm: board.width_cm,
       lengthCm: board.length_cm,
+      thicknessCm: board.thickness_cm,
       maxLoadKg: board.max_load_kg,
       inflatable: board.inflatable,
       availabilityHu: board.availability_hu,
@@ -167,12 +174,17 @@ export async function action({ request }: Route.ActionArgs) {
 
   // A magasság-illesztés az eredmény fejlécében látszik (különben a felhasználó
   // nem tudná, hogy a válasza számított — a rész-pont súlya csak 10 %).
-  const heightFit =
-    inputs.heightCm !== null
-      ? { heightCm: inputs.heightCm, idealLengthCm: idealLengthCm(inputs.heightCm, config) }
-      : null;
+  const sizing = {
+    idealLengthCm: Math.round(idealLengthCm(inputs, config)),
+    targetVolumeL: Math.round(targetVolumeL(inputs, config)),
+    targetWidthCm: Math.round(targetWidthCm(inputs, config) * 10) / 10,
+  };
 
-  return data({ results, heightFit }, { headers });
+  // Üres találatnál a VALÓDI kizárási okot adjuk vissza (ne vak tipp legyen).
+  const noMatchReason =
+    results.length === 0 ? explainNoMatch(boardsForAdvisor, inputs, config) : null;
+
+  return data({ results, sizing, noMatchReason }, { headers });
 }
 
 export const meta: Route.MetaFunction = ({ data }) => data?.seo ?? [];
@@ -181,7 +193,11 @@ export default function AdvisorRoute({ actionData }: Route.ComponentProps) {
   if (actionData?.results) {
     return (
       <main className="mx-auto flex min-h-svh max-w-3xl flex-col gap-6 p-4 sm:p-6">
-        <AdvisorResult results={actionData.results} heightFit={actionData.heightFit} />
+        <AdvisorResult
+          results={actionData.results}
+          sizing={actionData.sizing}
+          noMatchReason={actionData.noMatchReason}
+        />
       </main>
     );
   }

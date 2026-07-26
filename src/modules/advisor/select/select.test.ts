@@ -7,10 +7,16 @@ import {
   passesHardFilter,
   purposeFitScore,
   recommendBoards,
+  explainNoMatch,
   idealLengthCm,
   lengthFitScore,
   reviewsScore,
   scoreBoard,
+  targetVolumeL,
+  targetWidthCm,
+  thicknessFitScore,
+  volumeFitScore,
+  widthFitScore,
   stabilityScore,
   valueScore,
 } from "./select";
@@ -25,6 +31,7 @@ function makeBoard(overrides: Partial<BoardForAdvisor> = {}): BoardForAdvisor {
     volumeL: 280,
     widthCm: 81,
     lengthCm: 320,
+    thicknessCm: 14,
     maxLoadKg: 130,
     inflatable: true,
     availabilityHu: true,
@@ -121,21 +128,83 @@ describe("allowedBoardTypes", () => {
   });
 });
 
-describe("stabilityScore — 2. réteg (tapasztalat-függő)", () => {
-  it("kezdő magasabb pontot ad széles, nagy-ráhagyású deszkára, mint versenyző", () => {
-    const wide = makeBoard({ widthCm: 90, volumeL: 350 });
-    const kezdo = stabilityScore(wide, makeInputs({ experience: "kezdo" }), CFG);
-    const versenyzo = stabilityScore(wide, makeInputs({ experience: "versenyzo" }), CFG);
-    expect(kezdo).toBeGreaterThan(versenyzo);
-    expect(kezdo).toBeGreaterThan(0.7);
-    expect(versenyzo).toBeLessThan(0.3);
+describe("stabilityScore — sáv-alapú illeszkedés, nem monoton", () => {
+  it("a cél-térfogaton és cél-szélességen áll a maximum", () => {
+    const inputs = makeInputs({ weightKg: 85, experience: "kezdo" });
+    // Pontosan a célon (kerekítés nélkül) — a kerekítés önmagában is ronthat.
+    const perfect = makeBoard({
+      volumeL: targetVolumeL(inputs, CFG),
+      widthCm: targetWidthCm(inputs, CFG),
+      thicknessCm: CFG.thicknessFit.targetCm,
+    });
+    expect(stabilityScore(perfect, inputs, CFG)).toBeCloseTo(1, 5);
   });
 
-  it("keskeny, kis-ráhagyású deszkán fordul a reláció", () => {
-    const narrow = makeBoard({ widthCm: 66, volumeL: 165 });
-    const kezdo = stabilityScore(narrow, makeInputs({ experience: "kezdo" }), CFG);
-    const versenyzo = stabilityScore(narrow, makeInputs({ experience: "versenyzo" }), CFG);
-    expect(versenyzo).toBeGreaterThan(kezdo);
+  it("a TÚL NAGY térfogat is ront (ez a lényegi váltás a régi logikához képest)", () => {
+    const inputs = makeInputs({ weightKg: 85, experience: "kezdo" });
+    const target = targetVolumeL(inputs, CFG);
+    const onTarget = volumeFitScore(makeBoard({ volumeL: Math.round(target) }), inputs, CFG);
+    const oversized = volumeFitScore(
+      makeBoard({ volumeL: Math.round(target) + 60 }),
+      inputs,
+      CFG,
+    );
+    expect(oversized).toBeLessThan(onTarget);
+  });
+
+  it("a TÚL SZÉLES deszka is ront (32\" az optimum, nem a legszélesebb)", () => {
+    const inputs = makeInputs({ weightKg: 85, experience: "kezdo" });
+    const onTarget = widthFitScore(makeBoard({ widthCm: 83 }), inputs, CFG);
+    const tooWide = widthFitScore(makeBoard({ widthCm: 90 }), inputs, CFG);
+    const tooNarrow = widthFitScore(makeBoard({ widthCm: 70 }), inputs, CFG);
+    expect(onTarget).toBeGreaterThan(tooWide);
+    expect(onTarget).toBeGreaterThan(tooNarrow);
+  });
+
+  it("nehezebb evezősnek nagyobb térfogat és szélesebb deszka a cél", () => {
+    const light = makeInputs({ weightKg: 65 });
+    const heavy = makeInputs({ weightKg: 100 });
+    expect(targetVolumeL(heavy, CFG)).toBeGreaterThan(targetVolumeL(light, CFG));
+    expect(targetWidthCm(heavy, CFG)).toBeGreaterThan(targetWidthCm(light, CFG));
+  });
+
+  it("versenyzőnek kevesebb liter és keskenyebb deszka a cél, mint kezdőnek", () => {
+    const beginner = makeInputs({ weightKg: 85, experience: "kezdo" });
+    const racer = makeInputs({ weightKg: 85, experience: "versenyzo" });
+    expect(targetVolumeL(racer, CFG)).toBeLessThan(targetVolumeL(beginner, CFG));
+    expect(targetWidthCm(racer, CFG)).toBeLessThan(targetWidthCm(beginner, CFG));
+  });
+
+  it("a kezdő cél-méretek a szakirodalmi sávban vannak (65/85/100 kg)", () => {
+    // Forrás: Kezdők_tanácsok/sup-kezdo.md méret-táblája + supzone/supshop.
+    const cases = [
+      { weightKg: 65, volume: [270, 310], width: [79, 83] },
+      { weightKg: 85, volume: [300, 345], width: [81, 86] },
+      { weightKg: 100, volume: [335, 385], width: [83, 88] },
+    ] as const;
+    for (const c of cases) {
+      const inputs = makeInputs({ weightKg: c.weightKg, experience: "kezdo" });
+      const v = targetVolumeL(inputs, CFG);
+      const w = targetWidthCm(inputs, CFG);
+      expect(v, `${c.weightKg} kg térfogat`).toBeGreaterThanOrEqual(c.volume[0]);
+      expect(v, `${c.weightKg} kg térfogat`).toBeLessThanOrEqual(c.volume[1]);
+      expect(w, `${c.weightKg} kg szélesség`).toBeGreaterThanOrEqual(c.width[0]);
+      expect(w, `${c.weightKg} kg szélesség`).toBeLessThanOrEqual(c.width[1]);
+    }
+  });
+
+  it("a vastagság a 12–15 cm-es sávban a legjobb, a 20 cm-es ront", () => {
+    expect(thicknessFitScore(makeBoard({ thicknessCm: 14 }), CFG)).toBe(1);
+    expect(thicknessFitScore(makeBoard({ thicknessCm: 20 }), CFG)).toBeLessThan(
+      thicknessFitScore(makeBoard({ thicknessCm: 15 }), CFG),
+    );
+  });
+
+  it("hiányzó méret-adat semleges 0,5 (nem büntet)", () => {
+    const inputs = makeInputs();
+    expect(volumeFitScore(makeBoard({ volumeL: null }), inputs, CFG)).toBe(0.5);
+    expect(widthFitScore(makeBoard({ widthCm: null }), inputs, CFG)).toBe(0.5);
+    expect(thicknessFitScore(makeBoard({ thicknessCm: null }), CFG)).toBe(0.5);
   });
 });
 
@@ -227,78 +296,93 @@ describe("scoreBoard — pontszám + indoklás-kulcsok", () => {
   });
 });
 
-describe("idealLengthCm / lengthFitScore — magasság → deszkahossz", () => {
-  it("a referencia-magasságnál a referencia-hosszt adja (175 cm → 320 cm)", () => {
-    expect(idealLengthCm(175, CFG)).toBe(320);
+describe("idealLengthCm / lengthFitScore — súly-bázis + magasság-korrekció", () => {
+  it("a referencia-súlynál és -magasságnál a referencia-hosszt adja", () => {
+    expect(idealLengthCm(makeInputs({ weightKg: 65, heightCm: 175 }), CFG)).toBe(320);
   });
 
-  it("magasabb evezősnek hosszabb, alacsonyabbnak rövidebb deszkát javasol", () => {
-    expect(idealLengthCm(190, CFG)).toBeGreaterThan(idealLengthCm(175, CFG));
-    expect(idealLengthCm(160, CFG)).toBeLessThan(idealLengthCm(175, CFG));
+  it("NEHEZEBB evezősnek hosszabb deszka az ideális (ez volt a hiányzó szempont)", () => {
+    const light = idealLengthCm(makeInputs({ weightKg: 65, heightCm: 175 }), CFG);
+    const heavy = idealLengthCm(makeInputs({ weightKg: 100, heightCm: 175 }), CFG);
+    expect(heavy).toBeGreaterThan(light);
+  });
+
+  it("magasabb evezősnek is hosszabb, de a súly a fő hajtóerő", () => {
+    const short = idealLengthCm(makeInputs({ weightKg: 85, heightCm: 165 }), CFG);
+    const tall = idealLengthCm(makeInputs({ weightKg: 85, heightCm: 195 }), CFG);
+    expect(tall).toBeGreaterThan(short);
+    // 30 cm magasság-különbség kevesebbet mozdít, mint 35 kg súly-különbség.
+    const heavier = idealLengthCm(makeInputs({ weightKg: 120, heightCm: 165 }), CFG);
+    expect(heavier - short).toBeGreaterThan(tall - short);
+  });
+
+  it("egy NEHÉZ, ALACSONY evezős sem kap túl rövid deszkát (a régi hiba)", () => {
+    // Korábban csak a magasság számított: 100 kg / 170 cm → 314 cm.
+    const ideal = idealLengthCm(makeInputs({ weightKg: 100, heightCm: 170 }), CFG);
+    expect(ideal).toBeGreaterThanOrEqual(335); // az útmutató 11–12' sávja
+  });
+
+  it("magasság nélkül is számol (csak a súly-bázisból)", () => {
+    const withoutHeight = idealLengthCm(makeInputs({ weightKg: 85, heightCm: null }), CFG);
+    expect(withoutHeight).toBeGreaterThan(0);
+    expect(withoutHeight).toBe(idealLengthCm(makeInputs({ weightKg: 85, heightCm: 175 }), CFG));
   });
 
   it("a min/max közé vág (nem ad abszurd ajánlást)", () => {
-    // Alsó korlát a valós emberi tartományban is aktív (120 cm → 254 → 290).
-    expect(idealLengthCm(120, CFG)).toBe(CFG.lengthFit.minLengthCm);
-    // A felső korlát biztonsági szelep: 220 cm-nél még nem aktív (374 < 380).
-    expect(idealLengthCm(220, CFG)).toBe(374);
-    expect(idealLengthCm(400, CFG)).toBe(CFG.lengthFit.maxLengthCm);
+    expect(idealLengthCm(makeInputs({ weightKg: 30, heightCm: 120 }), CFG)).toBe(
+      CFG.lengthFit.minLengthCm,
+    );
+    expect(idealLengthCm(makeInputs({ weightKg: 200, heightCm: 220 }), CFG)).toBe(
+      CFG.lengthFit.maxLengthCm,
+    );
   });
 
   it("pontos illeszkedésnél 1, a toleranciahatáron 0", () => {
-    const inputs = makeInputs({ heightCm: 175 });
+    const inputs = makeInputs({ weightKg: 65, heightCm: 175 });
     expect(lengthFitScore(makeBoard({ lengthCm: 320 }), inputs, CFG)).toBe(1);
     expect(
       lengthFitScore(makeBoard({ lengthCm: 320 + CFG.lengthFit.toleranceCm }), inputs, CFG),
     ).toBe(0);
   });
 
-  it("ugyanarra a deszkára a magasabb evezős kap jobb pontot, ha hosszabb a deszka", () => {
-    const long = makeBoard({ lengthCm: 350 });
-    const tall = lengthFitScore(long, makeInputs({ heightCm: 195 }), CFG);
-    const short = lengthFitScore(long, makeInputs({ heightCm: 160 }), CFG);
-    expect(tall).toBeGreaterThan(short);
-  });
-
-  it("hiányzó magasság VAGY hiányzó deszkahossz → semleges 0,5 (nem büntet)", () => {
-    expect(lengthFitScore(makeBoard({ lengthCm: 350 }), makeInputs({ heightCm: null }), CFG)).toBe(0.5);
-    expect(lengthFitScore(makeBoard({ lengthCm: null }), makeInputs({ heightCm: 195 }), CFG)).toBe(0.5);
-  });
-
   it("a hossz SOHA nem zár ki — a kemény szűrés csak biztonsági (5.2)", () => {
-    // Abszurdul rossz hosszú deszka, egyébként megfelelő paraméterekkel.
     const board = makeBoard({ lengthCm: 500 });
     expect(passesHardFilter(board, makeInputs({ heightCm: 160 }), CFG)).toBe(true);
   });
 
-  it("indoklásként megjelenik a hossz, ha magasság ÉS deszkahossz is ismert", () => {
-    // Gyenge stabilitás (kicsi térfogat + keskeny), hogy a hossz a domináns
-    // tényezők közé kerüljön — a top-2 indoklás a súlyozott hozzájárulásból jön.
-    const { reasons } = scoreBoard(
-      makeBoard({
-        lengthCm: 320,
-        volumeL: 200,
-        widthCm: 60,
-        reviewCount: 0,
-        reviewAvg: null,
-        priceHuf: null,
-        modelYear: null,
-      }),
-      makeInputs({ heightCm: 175, budgetHuf: null }),
-      CFG,
-    );
-    const length = reasons.find((r) => r.key === "reason.length");
-    expect(length).toBeDefined();
-    expect(length?.params).toMatchObject({ length: 320, height: 175, ideal: 320 });
+  it("hiányzó deszkahossz → semleges 0,5, és nincs hossz-indoklás", () => {
+    const inputs = makeInputs();
+    expect(lengthFitScore(makeBoard({ lengthCm: null }), inputs, CFG)).toBe(0.5);
+    const { reasons } = scoreBoard(makeBoard({ lengthCm: null }), inputs, CFG);
+    expect(reasons.map((r) => r.key)).not.toContain("reason.length");
+  });
+});
+
+describe("explainNoMatch — miért nincs találat", () => {
+  it("terhelhetőség-korlátnál azt jelöli meg (biztonsági ok)", () => {
+    const boards = [makeBoard({ maxLoadKg: 100 })];
+    expect(explainNoMatch(boards, makeInputs({ weightKg: 95 }), CFG)).toBe("maxLoad");
   });
 
-  it("magasság nélkül NINCS hossz-indoklás", () => {
-    const { reasons } = scoreBoard(
-      makeBoard({ lengthCm: 320 }),
-      makeInputs({ heightCm: null }),
-      CFG,
+  it("árkeretnél a budgetet — de CSAK ha tényleg az a szűk keresztmetszet", () => {
+    const boards = [makeBoard({ priceHuf: 900000 })];
+    expect(explainNoMatch(boards, makeInputs({ budgetHuf: 100000 }), CFG)).toBe("budget");
+  });
+
+  it("a csak-felfújható megkötésnél a tárolást", () => {
+    const boards = [makeBoard({ inflatable: false })];
+    expect(explainNoMatch(boards, makeInputs({ storage: "inflatable_only" }), CFG)).toBe(
+      "storage",
     );
-    expect(reasons.map((r) => r.key)).not.toContain("reason.length");
+  });
+
+  it("HU-elérhetőség hiányát is megnevezi", () => {
+    const boards = [makeBoard({ availabilityHu: false })];
+    expect(explainNoMatch(boards, makeInputs(), CFG)).toBe("availability");
+  });
+
+  it("üres katalógusnál nem tippel a felhasználó beállításaira", () => {
+    expect(explainNoMatch([], makeInputs(), CFG)).toBe("noBoards");
   });
 });
 

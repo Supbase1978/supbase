@@ -16,6 +16,7 @@ import type { AdvisorConfig } from "./config";
 import { DEFAULT_ADVISOR_CONFIG } from "./config";
 import type {
   AdvisorBoardType,
+  NoMatchReason,
   AdvisorInputs,
   AdvisorReason,
   AdvisorResultItem,
@@ -100,16 +101,28 @@ export function effectiveWeight(
 }
 
 /**
- * A `use`-hoz (és vízhez) engedélyezett board_type-ok. Folyón a `river` és az
- * `allround` is engedélyezett (a víz a cél-fit pontozásban is számít).
+ * A `use`-hoz (és vízhez, súlyhoz) engedélyezett board_type-ok.
+ *
+ * - Folyón a `river` és az `allround` is engedélyezett (a víz a cél-fit
+ *   pontozásban is számít).
+ * - NEHÉZ EVEZŐSNÉL (effektív súly ≥ `heavyRiderKg`) a `fishing` típus is
+ *   bejön: az útmutatók ezeket „extra széles allround/fishing" kategóriaként
+ *   kezelik (nagy stabilitás, sok liter). Enélkül a nehezebb felhasználó NULLA
+ *   találatot kapott, mert a normál allround deszkák terhelhetősége kevés.
  */
-export function allowedBoardTypes(inputs: AdvisorInputs): AdvisorBoardType[] {
-  const base = USE_BOARD_TYPES[inputs.use];
+export function allowedBoardTypes(
+  inputs: AdvisorInputs,
+  config: AdvisorConfig = DEFAULT_ADVISOR_CONFIG,
+): AdvisorBoardType[] {
+  const types = new Set<AdvisorBoardType>(USE_BOARD_TYPES[inputs.use]);
   if (inputs.water === "folyo") {
-    const extra: AdvisorBoardType[] = ["river", "allround"];
-    return Array.from(new Set<AdvisorBoardType>([...base, ...extra]));
+    types.add("river");
+    types.add("allround");
   }
-  return base;
+  if (effectiveWeight(inputs, config) >= config.heavyRiderKg) {
+    types.add("fishing");
+  }
+  return [...types];
 }
 
 /**
@@ -143,92 +156,164 @@ export function passesHardFilter(
   ) {
     return false;
   }
-  // (f) cél-mapping (víz-kiterjesztéssel)
-  if (!allowedBoardTypes(inputs).includes(board.boardType)) return false;
+  // (f) cél-mapping (víz- és nehéz-evezős kiterjesztéssel)
+  if (!allowedBoardTypes(inputs, config).includes(board.boardType)) return false;
 
   return true;
 }
 
 /**
- * Normalizált térfogat-ráhagyás [0..1]: (ráhagyás-arány − 1) / 1, vágva.
- * ráhagyás-arány = volume / (súly × szorzó[szint]) — szűrés után ≥ 1.
- * arány 1 → 0 (épp elég), arány ≥ 2 → 1 (bőséges).
+ * Miért nem maradt egyetlen deszka sem? A DOMINÁNS kizárási ok kulcsa.
+ *
+ * Enélkül az üres állapot csak találgatni tud („lazíts az árkereten"), ami
+ * félrevezető, ha a felhasználó nem is állított be árkeretet. A szűrőket a
+ * kizárás SÚLYOSSÁGA szerinti sorrendben nézzük: a terhelhetőség biztonsági
+ * korlát (nem tanácsoljuk a lazítását), a budget/tárolás viszont a felhasználó
+ * saját, oldható megkötése.
  */
-function volumeHeadroom(
-  board: BoardForAdvisor,
+export function explainNoMatch(
+  boards: readonly BoardForAdvisor[],
   inputs: AdvisorInputs,
-  config: AdvisorConfig,
-): number {
-  if (board.volumeL === null) return 0;
-  const need = inputs.weightKg * config.volumeMultiplier[inputs.experience];
-  if (need <= 0) return 1;
-  const ratio = board.volumeL / need;
-  return clamp(ratio - 1, 0, 1);
-}
+  config: AdvisorConfig = DEFAULT_ADVISOR_CONFIG,
+): NoMatchReason {
+  if (boards.length === 0) return "noBoards";
 
-/** Normalizált szélesség [0..1]: 60 cm → 0, 90 cm → 1; null → 0,5 semleges. */
-function widthNorm(board: BoardForAdvisor): number {
-  if (board.widthCm === null) return 0.5;
-  return clamp((board.widthCm - 60) / 30, 0, 1);
+  const allowed = allowedBoardTypes(inputs, config);
+  const byType = boards.filter((b) => allowed.includes(b.boardType));
+  if (byType.length === 0) return "type";
+
+  const available = byType.filter((b) => b.availabilityHu);
+  if (available.length === 0) return "availability";
+
+  const byStorage =
+    inputs.storage === "inflatable_only" ? available.filter((b) => b.inflatable) : available;
+  if (byStorage.length === 0) return "storage";
+
+  const effective = effectiveWeight(inputs, config);
+  const byLoad = byStorage.filter(
+    (b) => b.maxLoadKg !== null && b.maxLoadKg * config.maxLoadSafetyFactor >= effective,
+  );
+  if (byLoad.length === 0) return "maxLoad";
+
+  const byVolume = byLoad.filter(
+    (b) =>
+      b.volumeL !== null &&
+      b.volumeL >= inputs.weightKg * config.volumeMultiplier[inputs.experience],
+  );
+  if (byVolume.length === 0) return "volume";
+
+  return "budget";
 }
 
 /**
- * Stabilitás-illeszkedés [0..1] — a tapasztalati szint függvénye:
- *   kezdő:     több ráhagyás + szélesebb → magasabb  (0,5·headroom + 0,5·width)
- *   versenyző: kevesebb ráhagyás + keskenyebb → magasabb  (0,5·(1−h) + 0,5·(1−w))
- *   haladó:    mérsékelt a jó — a 0,5 körüli értékek jutalmazva
- *              (1 − |h−0,5| − |w−0,5|), vágva [0..1].
+ * Sáv-pontozó: mennyire van `value` a `target` közelében, `tolerance`-ra
+ * normálva. 1 = pontosan a célon, 0 = a toleranciahatáron vagy azon túl.
+ *
+ * EZ A LÉNYEGI VÁLTÁS a korábbi monoton („minél több, annál jobb") logikához
+ * képest: a szakirodalom OPTIMUMOT ad meg, nem szélsőértéket. A túl nagy
+ * térfogat lassabb és szelesebb deszkát jelent, a túl széles deszka pedig
+ * nagyobb terpeszt kíván és lassabb — mindkettő ROSSZ, nem jó.
  */
-export function stabilityScore(
-  board: BoardForAdvisor,
-  inputs: AdvisorInputs,
-  config: AdvisorConfig,
-): number {
-  const h = volumeHeadroom(board, inputs, config);
-  const w = widthNorm(board);
-  let raw: number;
-  switch (inputs.experience) {
-    case "kezdo":
-      raw = 0.5 * h + 0.5 * w;
-      break;
-    case "versenyzo":
-      raw = 0.5 * (1 - h) + 0.5 * (1 - w);
-      break;
-    default:
-      raw = 1 - Math.abs(h - 0.5) - Math.abs(w - 0.5);
-      break;
-  }
-  return clamp(raw, 0, 1);
+export function bandScore(value: number, target: number, tolerance: number): number {
+  if (tolerance <= 0) return value === target ? 1 : 0;
+  return clamp(1 - Math.abs(value - target) / tolerance, 0, 1);
+}
+
+/** A testsúlyhoz (és szinthez) ideális térfogat literben. */
+export function targetVolumeL(inputs: AdvisorInputs, config: AdvisorConfig): number {
+  const f = config.volumeFit;
+  const base = f.baseVolumeL + (inputs.weightKg - f.baseWeightKg) * f.lPerKg;
+  return Math.max(0, base * f.levelFactor[inputs.experience]);
+}
+
+/** A testsúlyhoz (és szinthez) ideális szélesség cm-ben. */
+export function targetWidthCm(inputs: AdvisorInputs, config: AdvisorConfig): number {
+  const f = config.widthFit;
+  return (
+    f.baseWidthCm +
+    (inputs.weightKg - f.baseWeightKg) * f.cmPerKg +
+    f.levelOffsetCm[inputs.experience]
+  );
 }
 
 /**
- * A testmagassághoz ideális deszkahossz cm-ben (a konfig lineáris modellje,
- * min/max közé vágva). Kiemelve, mert az UI is meg tudja mutatni („neked kb.
- * ilyen hosszú deszka való").
+ * A testsúlyhoz (bázis) és testmagassághoz (korrekció) ideális deszkahossz.
+ *
+ * A SÚLY a fő hajtóerő — a méret-táblák ehhez kötik a hosszt is —, a MAGASSÁG
+ * csak módosít (magasabb evezősnek hosszabb deszka fekszik jobban). Korábban
+ * csak a magasság számított, amitől egy nehéz, alacsony evezős túl rövid
+ * deszkát kapott ideálisként.
  */
-export function idealLengthCm(heightCm: number, config: AdvisorConfig): number {
+export function idealLengthCm(inputs: AdvisorInputs, config: AdvisorConfig): number {
   const f = config.lengthFit;
-  const raw = f.baseLengthCm + (heightCm - f.baseHeightCm) * f.cmPerHeightCm;
-  return clamp(raw, f.minLengthCm, f.maxLengthCm);
+  const fromWeight = f.baseLengthCm + (inputs.weightKg - f.baseWeightKg) * f.cmPerWeightKg;
+  const heightAdjust =
+    inputs.heightCm === null ? 0 : (inputs.heightCm - f.baseHeightCm) * f.cmPerHeightCm;
+  return clamp(fromWeight + heightAdjust, f.minLengthCm, f.maxLengthCm);
+}
+
+/** Térfogat-illeszkedés [0..1] a cél-sávhoz. Hiányzó adat → semleges 0,5. */
+export function volumeFitScore(
+  board: BoardForAdvisor,
+  inputs: AdvisorInputs,
+  config: AdvisorConfig,
+): number {
+  if (board.volumeL === null) return 0.5;
+  return bandScore(board.volumeL, targetVolumeL(inputs, config), config.volumeFit.toleranceL);
+}
+
+/** Szélesség-illeszkedés [0..1] a cél-sávhoz. Hiányzó adat → semleges 0,5. */
+export function widthFitScore(
+  board: BoardForAdvisor,
+  inputs: AdvisorInputs,
+  config: AdvisorConfig,
+): number {
+  if (board.widthCm === null) return 0.5;
+  return bandScore(board.widthCm, targetWidthCm(inputs, config), config.widthFit.toleranceCm);
+}
+
+/** Vastagság-illeszkedés [0..1]. Hiányzó adat → semleges 0,5. */
+export function thicknessFitScore(board: BoardForAdvisor, config: AdvisorConfig): number {
+  if (board.thicknessCm === null) return 0.5;
+  return bandScore(
+    board.thicknessCm,
+    config.thicknessFit.targetCm,
+    config.thicknessFit.toleranceCm,
+  );
 }
 
 /**
- * Hossz-illeszkedés [0..1] a testmagassághoz. A SÚLY a térfogatot adja
- * (felhajtóerő), a MAGASSÁG a hosszt: magasabb evezősnek hosszabb deszka
- * fekszik jobban. PUHA szempont — hiányzó magasság VAGY hiányzó deszkahossz
- * esetén semleges 0,5 (nem bünteti az adathiányt), és kizárni sosem zár ki:
- * a kemény szűrés kizárólag biztonsági (térfogat, terhelhetőség).
+ * Hossz-illeszkedés [0..1]. PUHA szempont: hiányzó deszkahossz esetén semleges
+ * 0,5, és kizárni SOHA nem zár ki — a kemény szűrés kizárólag biztonsági.
  */
 export function lengthFitScore(
   board: BoardForAdvisor,
   inputs: AdvisorInputs,
   config: AdvisorConfig,
 ): number {
-  if (inputs.heightCm === null || board.lengthCm === null) return 0.5;
-  const ideal = idealLengthCm(inputs.heightCm, config);
-  const tolerance = config.lengthFit.toleranceCm;
-  if (tolerance <= 0) return board.lengthCm === ideal ? 1 : 0;
-  return clamp(1 - Math.abs(board.lengthCm - ideal) / tolerance, 0, 1);
+  if (board.lengthCm === null) return 0.5;
+  return bandScore(board.lengthCm, idealLengthCm(inputs, config), config.lengthFit.toleranceCm);
+}
+
+/**
+ * Stabilitás-illeszkedés [0..1] = a térfogat-, szélesség- és vastagság-sávok
+ * súlyozott átlaga. A TAPASZTALATI SZINT nem a képletben, hanem a CÉLOKBAN
+ * jelenik meg (kezdőnek több liter és szélesebb deszka a cél, versenyzőnek
+ * kevesebb és keskenyebb) — így egyetlen, átlátható szabály marad.
+ */
+export function stabilityScore(
+  board: BoardForAdvisor,
+  inputs: AdvisorInputs,
+  config: AdvisorConfig,
+): number {
+  const p = config.stabilityParts;
+  const total = p.volume + p.width + p.thickness;
+  if (total <= 0) return 0.5;
+  const weighted =
+    volumeFitScore(board, inputs, config) * p.volume +
+    widthFitScore(board, inputs, config) * p.width +
+    thicknessFitScore(board, config) * p.thickness;
+  return clamp(weighted / total, 0, 1);
 }
 
 /** Közös nevező [0..1]: ≥ min_count értékelésnél avg/5, különben semleges 0,5. */
@@ -368,16 +453,15 @@ export function scoreBoard(
     {
       order: 4,
       contribution: s.length * w.length,
-      // Csak akkor indokolunk hosszal, ha MINDKÉT adat megvan — különben a
-      // rész-pont semleges 0,5, amiről nincs mit mondani.
+      // Csak akkor indokolunk hosszal, ha ismert a deszka hossza — az ideális
+      // hossz a súlyból mindig számítható (a magasság csak korrekció).
       reason:
-        inputs.heightCm !== null && board.lengthCm !== null
+        board.lengthCm !== null
           ? {
               key: REASON_KEYS.length,
               params: {
                 length: board.lengthCm,
-                height: inputs.heightCm,
-                ideal: Math.round(idealLengthCm(inputs.heightCm, config)),
+                ideal: Math.round(idealLengthCm(inputs, config)),
               },
             }
           : null,

@@ -75,10 +75,19 @@
     "reviewCount_other": "{{count}} reviews",
     "noReviews": "No reviews for this board yet.",
     "ratingAria": "Common ground: {{value}} out of 10 from {{count}} reviews",
-    "idealLength": "For your {{height}} cm, a board around {{ideal}} cm ({{feet}}) is ideal — this was factored into the ranking.",
     "percentRecommend": "{{percent}}% would recommend",
     "allReviews": "Reviews",
-    "noDimensionData": "no data"
+    "noDimensionData": "no data",
+    "sizing": "For your profile a board around {{length}} cm ({{feet}}) long, {{width}} cm wide and ~{{volume}} litres is ideal — we ranked by these.",
+    "noMatch": {
+      "noBoards": "There are no boards in the catalog right now.",
+      "type": "No board type in the range matches the chosen use. Try another use.",
+      "availability": "Boards matching your criteria are not currently available in Hungary.",
+      "storage": "Nothing matched with the “inflatable only” constraint — allow rigid boards as well.",
+      "maxLoad": "The load you entered (body weight + passenger) exceeds the capacity of the boards in range. This is a SAFETY limit, not one to relax — look for a high-capacity, extra-wide board, or drop the passenger.",
+      "volume": "The boards in range have too little volume for the weight you entered — you need a larger, higher-volume board.",
+      "budget": "No suitable board under your budget — try raising it."
+    }
   },
   "reason": {
     "volume": "The {{volume}} l volume gives comfortable headroom at {{level}} level.",
@@ -89,7 +98,7 @@
     "purpose": "Designed for {{use}} use.",
     "availability": "Available at home, fresh {{year}} model.",
     "fresh": "Current, {{year}} model year.",
-    "length": "{{length}} cm long — for your {{height}} cm, about {{ideal}} cm is ideal."
+    "length": "{{length}} cm long — for your profile about {{ideal}} cm is ideal."
   },
   "level": {
     "kezdo": "beginner",

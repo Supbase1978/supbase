@@ -73,6 +73,8 @@ export interface BoardForAdvisor {
   widthCm: number | null;
   /** Deszka-hossz cm — a testmagassághoz illesztéshez (`lengthFitScore`). */
   lengthCm: number | null;
+  /** Vastagság cm — a kezdő 12–15 cm-es sávhoz illesztéshez. */
+  thicknessCm: number | null;
   maxLoadKg: number | null;
   inflatable: boolean;
   availabilityHu: boolean;
@@ -110,6 +112,21 @@ export interface AdvisorReason {
   key: string;
   params: Record<string, string | number>;
 }
+
+/**
+ * Miért nem maradt egyetlen ajánlás sem — a DOMINÁNS kizárási ok. Az üres
+ * állapot ezt nevezi meg, hogy a felhasználó a VALÓDI korláton tudjon lazítani.
+ * A `maxLoad` biztonsági korlát: ott nem lazítást tanácsolunk, hanem más
+ * deszka-kategóriát.
+ */
+export type NoMatchReason =
+  | "noBoards"
+  | "type"
+  | "availability"
+  | "storage"
+  | "maxLoad"
+  | "volume"
+  | "budget";
 
 /** Egy rangsorolt ajánlás (advisor_sessions.results egy eleme). */
 export interface AdvisorResultItem {

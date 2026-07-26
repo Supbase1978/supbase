@@ -43,15 +43,41 @@ test.describe("Deszkaválasztó", () => {
     await expect(page.getByText(/magasságod 120 és 220|Add meg a magasságod/)).toBeVisible();
   });
 
+  const idealCm = (text: string | null) => Number(/kb\.\s*(\d+)\s*cm/.exec(text ?? "")?.[1]);
+  const sizingText = (page: Page) => page.getByText(/deszka az ideális/).textContent();
+
   test("a magasság HAT az ajánlásra: magasabbnak hosszabb deszka az ideális", async ({ page }) => {
     await runWizard(page, "85", "165");
-    const shortText = await page.getByText(/hosszú deszka az ideális/).textContent();
+    const shortText = await sizingText(page);
 
     await runWizard(page, "85", "192");
-    const tallText = await page.getByText(/hosszú deszka az ideális/).textContent();
+    const tallText = await sizingText(page);
 
-    const idealCm = (text: string | null) => Number(/kb\.\s*(\d+)\s*cm/.exec(text ?? "")?.[1]);
     expect(idealCm(tallText)).toBeGreaterThan(idealCm(shortText));
+  });
+
+  test("a SÚLY erősebben hat, mint a magasság (a méret-táblák ehhez kötik)", async ({ page }) => {
+    await runWizard(page, "65", "175");
+    const light = idealCm(await sizingText(page));
+
+    await runWizard(page, "100", "175");
+    const heavy = idealCm(await sizingText(page));
+
+    expect(heavy).toBeGreaterThan(light);
+  });
+
+  test("a NEHÉZ evezős is kap ajánlást (a 96 kg-os holtpont javítása)", async ({ page }) => {
+    // Korábban 96 kg fölött NULLA találat jött, félrevezető üres-üzenettel.
+    await runWizard(page, "100", "185");
+    await expect(page.getByText(/%\s*neked/).first()).toBeVisible();
+  });
+
+  test("ha tényleg nincs találat, a VALÓDI okot nevezi meg", async ({ page }) => {
+    // 140 kg: a katalógus terhelhetősége kevés — ez biztonsági korlát, és NEM
+    // az árkeretre/tárolásra kell fogni (ez volt a régi üres-üzenet hibája).
+    await runWizard(page, "140", "185");
+    await expect(page.getByText(/terhelhetősége kevés/)).toBeVisible();
+    await expect(page.getByText(/BIZTONSÁGI korlát/)).toBeVisible();
   });
 
   test("a Közös nevező a kártyán látszik — nem kell átkattintani", async ({ page }) => {

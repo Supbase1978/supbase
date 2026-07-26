@@ -16,6 +16,7 @@ import {
   ADVISOR_REVIEW_DIMENSIONS,
   type AdvisorDimensionScores,
   type AdvisorReason,
+  type NoMatchReason,
 } from "../select/types";
 import { cmToFeetInches } from "./format";
 
@@ -39,17 +40,21 @@ export interface AdvisorResultBoard {
   percentRecommend: number;
 }
 
-export interface AdvisorResultProps {
-  results: readonly AdvisorResultBoard[];
-  /**
-   * A megadott testmagasság és a hozzá számított ideális deszkahossz (cm).
-   * null → a felhasználó nem adott meg magasságot; ilyenkor a sáv sem jelenik
-   * meg (nem állítunk olyat, amit nem vettünk figyelembe).
-   */
-  heightFit: { heightCm: number; idealLengthCm: number } | null;
+/** A felhasználó adataiból számított cél-méretek (a fejléc-sáv mutatja). */
+export interface AdvisorSizing {
+  idealLengthCm: number;
+  targetVolumeL: number;
+  targetWidthCm: number;
 }
 
-export function AdvisorResult({ results, heightFit }: AdvisorResultProps) {
+export interface AdvisorResultProps {
+  results: readonly AdvisorResultBoard[];
+  sizing: AdvisorSizing;
+  /** Üres találatnál a domináns kizárási ok — a szöveg ezt nevezi meg. */
+  noMatchReason: NoMatchReason | null;
+}
+
+export function AdvisorResult({ results, sizing, noMatchReason }: AdvisorResultProps) {
   const { t, i18n } = useTranslation("advisor");
   const nf = new Intl.NumberFormat(i18n.language);
 
@@ -64,7 +69,20 @@ export function AdvisorResult({ results, heightFit }: AdvisorResultProps) {
   if (results.length === 0) {
     return (
       <div className="flex flex-col gap-4">
+        {/* Az üres állapotnak IS kell h1: enélkül a lapnak nincs címsora
+            (a11y), és a felhasználó sem tudja, hol jár. */}
+        <h1
+          className="text-3xl font-semibold text-ink-deep"
+          style={{ fontFamily: "var(--font-display)" }}
+        >
+          {t("result.title")}
+        </h1>
         <p className="text-text-2">{t("result.empty")}</p>
+        {/* A VALÓDI kizárási ok — enélkül vak tippet adnánk („lazíts az
+            árkereten"), akkor is, ha a felhasználó nem is állított be árkeretet. */}
+        <p className="rounded-[var(--radius-card)] bg-caution-bg px-4 py-3 text-sm text-caution-text">
+          {t(`result.noMatch.${noMatchReason ?? "budget"}`)}
+        </p>
         <Link
           to="/deszkavalaszto"
           className="inline-flex min-h-[var(--cta-height)] w-fit items-center justify-center rounded-[var(--radius-cta)] bg-amber px-6 font-bold text-text"
@@ -92,18 +110,17 @@ export function AdvisorResult({ results, heightFit }: AdvisorResultProps) {
         </Link>
       </div>
 
-      {/* Láthatóvá teszi, hogy a magasságot FIGYELEMBE VETTÜK: a hossz-illesztés
-          csak egy 10 %-os rész-pont, ezért ritkán kerül a top-2 indoklás közé —
-          enélkül a felhasználónak úgy tűnne, a válasza nem számított. */}
-      {heightFit ? (
-        <p className="rounded-[var(--radius-card)] bg-mist px-4 py-3 text-sm text-text-2">
-          {t("result.idealLength", {
-            height: heightFit.heightCm,
-            ideal: Math.round(heightFit.idealLengthCm),
-            feet: cmToFeetInches(heightFit.idealLengthCm),
-          })}
-        </p>
-      ) : null}
+      {/* Láthatóvá teszi, MIRE méreteztünk: a méret-illesztés több kis
+          rész-pontra oszlik, ezért ritkán kerül a top-2 indoklás közé — enélkül
+          a felhasználónak úgy tűnne, a testadatai nem számítottak. */}
+      <p className="rounded-[var(--radius-card)] bg-mist px-4 py-3 text-sm text-text-2">
+        {t("result.sizing", {
+          length: sizing.idealLengthCm,
+          feet: cmToFeetInches(sizing.idealLengthCm),
+          volume: sizing.targetVolumeL,
+          width: sizing.targetWidthCm,
+        })}
+      </p>
 
       {/* Legjobb választás — nagy kártya */}
       {top ? (

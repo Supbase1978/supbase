@@ -75,10 +75,19 @@
     "reviewCount_other": "{{count}} értékelés",
     "noReviews": "Erre a deszkára még nincs értékelés.",
     "ratingAria": "Közös nevező: {{value}} a 10-ből, {{count}} értékelés alapján",
-    "idealLength": "A(z) {{height}} cm magasságodhoz kb. {{ideal}} cm ({{feet}}) hosszú deszka az ideális — ezt is beleszámoltuk a sorrendbe.",
     "percentRecommend": "{{percent}}% ajánlaná",
     "allReviews": "Vélemények",
-    "noDimensionData": "nincs adat"
+    "noDimensionData": "nincs adat",
+    "sizing": "A te adataidhoz kb. {{length}} cm ({{feet}}) hosszú, {{width}} cm széles, ~{{volume}} literes deszka az ideális — ezek szerint rangsoroltunk.",
+    "noMatch": {
+      "noBoards": "Jelenleg egyetlen deszka sincs a katalógusban.",
+      "type": "A választott célra nincs megfelelő deszka-típus a kínálatban. Próbáld másik céllal.",
+      "availability": "A feltételeidnek megfelelő deszkák jelenleg nem elérhetők Magyarországon.",
+      "storage": "A „csak felfújható” megkötéssel nem maradt találat — engedd meg a merev deszkát is.",
+      "maxLoad": "A megadott terheléshez (testsúly + utas) a kínálatban lévő deszkák terhelhetősége kevés. Ez BIZTONSÁGI korlát, nem érdemes lazítani rajta — keress nagy terhelhetőségű, extra széles deszkát, vagy vedd ki az utast.",
+      "volume": "A megadott testsúlyhoz a kínálatban lévő deszkák térfogata kevés — nagyobb, több literes deszka kell.",
+      "budget": "Az árkereted alatt nem maradt megfelelő deszka — emeld meg a keretet."
+    }
   },
   "reason": {
     "volume": "A(z) {{volume}} l térfogat kényelmes ráhagyást ad {{level}} szinten.",
@@ -89,7 +98,7 @@
     "purpose": "{{use}} használatra tervezve.",
     "availability": "Kapható itthon, friss {{year}}-es modell.",
     "fresh": "Aktuális, {{year}}-es évjárat.",
-    "length": "{{length}} cm hosszú — a te {{height}} cm-edhez kb. {{ideal}} cm az ideális."
+    "length": "{{length}} cm hosszú — a te adataidhoz kb. {{ideal}} cm az ideális."
   },
   "level": {
     "kezdo": "kezdő",
