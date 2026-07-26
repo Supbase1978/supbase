@@ -11,9 +11,11 @@
     "test": "vitest run --passWithNoTests",
     "sb": "bash scripts/sb.sh",
     "prepare": "git config core.hooksPath .githooks || true",
-    "e2e": "playwright test",
+    "e2e": "playwright test --project=chromium --project=mobile",
     "e2e:ui": "playwright test --ui",
-    "e2e:report": "playwright show-report"
+    "e2e:report": "playwright show-report",
+    "e2e:visual": "playwright test --project=visual",
+    "e2e:visual:update": "playwright test --project=visual --update-snapshots"
   },
   "dependencies": {
     "@react-router/node": "^7.6.0",

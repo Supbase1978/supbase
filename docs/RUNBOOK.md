@@ -92,6 +92,36 @@ Netlify env-változók a kapuhoz:
 utólag állítod be őket, ÚJRA kell buildelni (a puszta újradeploy nem elég).
 A `SITE_*` változók viszont futásidőben olvasódnak, azokhoz nem kell újrabuild.
 
+## Vizuális regresszió (release előtt)
+
+A token-kritikus komponensekről (vízfelszín-vonal, vízmérce, riasztás,
+státusz-jelvény, értékelő-sáv, gombok, betöltés-jelző) referencia-képek
+készülnek, és eltérésnél a teszt elbukik.
+
+```bash
+npm run dev                    # kell hozzá futó dev-szerver
+npm run e2e:visual             # összevetés a referenciákkal
+npm run e2e:visual:update      # SZÁNDÉKOS designváltozás után: referenciák frissítése
+```
+
+**Miért külön projekt, és miért nem fut a CI-ban:** a Playwright a
+referencia-képeket platformonként tárolja (`-darwin` / `-linux`), mert a
+betűrenderelés eltér. A jelenlegi referenciák macOS-en készültek. Linuxos
+CI-hoz egyszer le kell generálni a cél-platformon
+(`npx playwright test --project=visual --update-snapshots` a CI-futón), és
+commitolni. A 10. fejezet a vizuális kaput amúgy is „release előtt"-re teszi,
+nem minden PR-re.
+
+**A harness** (`/dev/vizualis`) FIX propokkal renderel, és **produkcióban 404**
+— élő adatról (óránként változó SUP-index, aszinkron térkép-csempék) készült
+kép óránként eltérne, és a teszt hamis riasztásokat adna.
+
+**Küszöb:** `threshold: 0.05`, `maxDiffPixelRatio: 0.002`. A Playwright gyári
+`0.2`-es küszöbe MÉRÉSSEL bizonyítottan elnyelte, amikor az „Óvatosan"-jelvény
+háttere a `safe` tokenre váltott (két világos pasztell érzékelt különbsége a
+küszöb alatt maradt). Ha valaha lazítani kell rajta, előbb ellenőrizd, hogy
+egy szándékos token-csere még mindig megbuktatja-e a tesztet.
+
 ## Web push — kézi verifikáció
 
 A push végponttól végpontig NEM automatizálható (headless Chromiumnak nincs

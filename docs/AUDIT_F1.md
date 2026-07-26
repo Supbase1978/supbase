@@ -10,7 +10,7 @@ A `docs/AUDIT_CHECKLIST.md` tételes végigfuttatása. Minden pont MÉRÉSSEL z�
 | 1. Modul-szerződés | ✅ 4/4 |
 | 2. RLS-lefedettség | ✅ 4/4 |
 | 3. Biztonság | ✅ 3/3 |
-| 4. Tesztkapuk | ⚠️ 4/5 — vizuális regresszió NINCS |
+| 4. Tesztkapuk | ✅ 5/5 — vizuális regresszió PÓTOLVA (2026-07-26) |
 | 5. Design + a11y | ✅ 5/5 |
 | 6. Teljesítmény + SEO | ⚠️ 2/3 — LCP-mérés NINCS |
 | 7. Dokumentáció | ✅ 2/2 |
@@ -63,16 +63,16 @@ mérés-jellegű kapu, nem funkció. Részletek a 4.5 és 6.1 pontnál.
   táblázatosan fedve (SUP-index sávhatárok, Deszkaválasztó méret-sávok,
   RFC 8291 push-titkosítás roundtrippel).
 - **Playwright e2e ZÖLD — 60 teszt** (desktop + mobil), benne az axe a11y.
-- **❌ Vizuális regresszió: NINCS.** A checklista screenshot-egyezést kér a
-  token-kritikus komponensekre (waterline / vízmérce / riasztás).
-  **Miért nem blokkoló:** ezek viselkedését unit- és a11y-teszt fedi (a
-  `Waterline` állapotonként ELTÉRŐ geometriát rajzol, a `StatusBadge` mindig
-  ikon+szöveg, a `--danger` tiltás tesztelt). A screenshot-egyezés a
-  vizuális ELCSÚSZÁST fogná meg, amit most kézi ellenőrzés fed.
-  **Kockázat:** közepes — a mai session két elcsúszás-hibát is felszínre
-  hozott (mobil nav-túlcsordulás, fejléc↔tartalom eltérés), mindkettőt
-  felhasználói észrevétel, nem teszt. Az elsőre azóta van e2e-teszt, a
-  másodikra `layout-width.test.ts`.
+- **✅ Vizuális regresszió: PÓTOLVA (2026-07-26).** 7 referencia-kép a
+  token-kritikus komponensekről (`e2e/visual.spec.ts` + a `/dev/vizualis`
+  dev-only harness). Futtatás: `npm run e2e:visual`.
+  **A küszöb MÉRÉSSEL lett beállítva:** a Playwright gyári `threshold: 0.2`
+  elnyelte, amikor az „Óvatosan"-jelvény háttere a `safe` tokenre váltott —
+  a teszt átment egy VALÓDI token-hibán. `0.05` / `maxDiffPixelRatio 0.002`
+  mellett ugyanez 2786 eltérő pixellel elbukik, ismételt futtatásnál viszont
+  nincs hamis riasztás.
+  **CI-ban NEM fut** (platformfüggő referenciák — a spec is „release előtt"-re
+  teszi); a runbook leírja, hogyan kell linuxos referenciákat generálni.
 
 ## 5. Design + a11y — ✅
 
@@ -123,5 +123,6 @@ mérés-jellegű kapu, nem funkció. Részletek a 4.5 és 6.1 pontnál.
 1. **Cégadatok** a jogi oldalakon (`@core/legal/entity.ts`) — felhasználói adat.
 2. **Turnstile éles kulcs** — a publikussá tétel ELŐTT kötelező, különben a
    regisztráció szabadon spamelhető.
-3. A fenti két audit-hiány (vizuális regresszió, LCP-budget) — javasolt F2-re,
-   vagy a publikussá tétel előtti körre.
+3. **LCP-budget (Lighthouse)** — az egyetlen megmaradt audit-hiány; javasolt a
+   publikussá tétel előtti körre (a jelszó-kapu mögött a mérésnek nincs valós
+   tétje).
