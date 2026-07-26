@@ -17,7 +17,7 @@
 | F1.7 Providers | ✅ kész (2026-07-24) | directory-lista + profil + lead-form + saját-listing (claim/regisztráció) + admin-hitelesítő panel; mind az 5 flow böngészőben élesben verifikálva. Részletek lent |
 | F1.8 SEO-réteg | ✅ mag kész (2026-07-24) | loader-alapú meta+hreflang, JSON-LD, sitemap+robots, consent (user_consents migráció + regisztrációs checkbox + re-consent), ÁSZF+adatvédelmi. HÁTRA: OG-kép-generálás + persona-landingek (F1.8b) + a consent-migráció éles push. Részletek lent |
 | F1.9 Push + viharjelzés | ✅ kész (2026-07-25) | teljes web push-pipeline (VAPID + RFC 8291 natív Web Cryptóval, npm nélkül), storm-alert push-ág, feliratkozó-UI, m4 `observed_at`. Élesítve (5 migráció + secretek + deploy) és **böngészőben végponttól végpontig verifikálva: a viharjelzés-push megérkezett**. Részletek lent |
-| F1.10 Záró audit + élesítés | 🔄 folyamatban | e2e + a11y kapu · Semgrep · Snyk · Netlify SSR-adapter + **elő-éles jelszó-kapu** · nyitott kis tételek lezárva (m3, latest-view, providers-seed, amount_huf, runbook). HÁTRA: **cégadatok** (felhasználó), első éles deploy |
+| F1.10 Záró audit + élesítés | 🔄 folyamatban | e2e + a11y · Semgrep · Snyk · Netlify SSR-adapter · **ELSŐ ÉLES DEPLOY MEGVAN** (supperz.netlify.app, jelszó-kapu mögött, 401 minden útvonalon) · nyitott kis tételek lezárva. HÁTRA: hitelesített út kézi ellenőrzése, **cégadatok** (felhasználó), Turnstile éles kulcs |
 
 ## ITINER a következő sessionnek (2026-07-21-i állapot)
 
@@ -703,6 +703,40 @@ mindig a legolcsóbbat jutalmazza, pedig a források szerint a nagyon olcsó sze
 gyenge merevsége a STABILITÁST rontja) · kezdő→felfújható preferencia (most
 nulla hatású, 20/20 felfújható) · biztonsági kiegészítők blokk (leash,
 mentőmellény — termék-bővítés).
+
+## F1.10/5 — ELSŐ ÉLES DEPLOY (2026-07-26)
+
+A `supperz.netlify.app` él, **jelszó-kapu mögött**. 11 commit + a `[deploy]`
+jelölős commit kitolva; a build lefutott.
+
+**Az első deploy ELHASALT — tanulságos módon.** Minden kérés `500`-at adott
+(`uncaught exception during edge function invocation`). Ok: a
+`WWW-Authenticate` fejléc realm-jébe **ékezetes karakter és gondolatjel**
+került (`"SUP Platform — elő-éles"`), a HTTP-fejléc értéke viszont csak ASCII
+lehet — a Deno `Headers` kivételt dob rá MINDEN kérésnél, még mielőtt a 401
+elkészülne.
+
+**Amit ez egyben bizonyított:** a kapu tényleg MINDENT lefed (a `/robots.txt`
+is 500-at adott, nem tartalmat), és a biztonsági posztúra végig tartott — az
+500 sem engedett be senkit. Kellemetlen hiba, de nem nyitotta ki az oldalt.
+
+**Javítás (2. deploy):** ASCII-only realm + védőháló `try/catch`, ami
+BÁRMILYEN váratlan kivételnél is ZÁRVA marad (401), nem 500-zal. Így ha később
+elszáll valami az edge functionben, az oldal továbbra is védett, és a
+böngésző jelszó-ablaka is előjön.
+
+**Verifikálva (jelszó nélkül):** `/`, `/spotok`, `/deszkak`, `/robots.txt`,
+`/sitemap.xml`, `/admin/velemenyek` → **mind 401**, helyes
+`www-authenticate` fejléccel és `x-robots-tag: noindex, nofollow`-val.
+
+**Tanulság a jövőre:** ez a hibaosztály lokálisan NEM fogható — a kód csak a
+Netlify Deno-futtatókörnyezetében fut, ahol a `Headers` szigorúbb, mint
+Node-ban. Ezért marad kötelező az első deploy utáni kézi ellenőrzés
+(`docs/RUNBOOK.md`).
+
+**HÁTRA (felhasználói lépés):** a HITELESÍTETT út ellenőrzése — helyes
+jelszóval betöltenek-e az SSR-oldalak, és él-e a Supabase-kapcsolat
+(a `VITE_` értékek build-időben épültek be).
 
 ## F1.10/4 — Nyitott kis tételek + Netlify jelszó-kapu (2026-07-26)
 
