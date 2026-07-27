@@ -105,5 +105,21 @@
     "callRescue": "Call water rescue",
     "source": "Source",
     "updated": "Updated"
+  },
+  "water": {
+    "title": "Water level",
+    "level": "River level at the assigned gauge (source: vizugy.hu / OVF).",
+    "station": "Gauge: {{station}}",
+    "observed": "Measured: {{time}}",
+    "trend": {
+      "rising": "rising",
+      "falling": "falling",
+      "stable": "steady"
+    },
+    "alert": {
+      "1": "Flood alert level I",
+      "2": "Flood alert level II",
+      "3": "Flood alert level III"
+    }
   }
 }

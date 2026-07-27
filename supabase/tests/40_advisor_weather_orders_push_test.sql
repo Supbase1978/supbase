@@ -87,6 +87,33 @@ select set_config('request.jwt.claims','{"sub":"44444444-4444-4444-4444-44444444
 select throws_ok($$ insert into public.weather_snapshots (spot_id, source) values ('d0000001-0000-0000-0000-000000000000','hack') $$, '42501', NULL,
   'weather: még admin sem írhat (csak service_role, nincs policy)');
 
+-- ---------------------------------------------------------------------------
+-- Vízállás-mezők (5.1/6, F1.11). A készültségi fok és a tendencia ÉRTÉK-
+-- KÉSZLETE kényszerrel védett: egy elgépelt 'rise' vagy egy 4. fok csendben
+-- kikapcsolná a fokozat-alapú index-levágást a UI-ban.
+-- ---------------------------------------------------------------------------
+reset role;
+select set_config('request.jwt.claims','', true);
+select lives_ok($$ insert into public.weather_snapshots
+    (spot_id, source, water_level_cm, water_level_at, water_trend, river_alert_level)
+  values ('d0000001-0000-0000-0000-000000000000','vizugy', 712, now(), 'rising', 2) $$,
+  'weather: érvényes vízállás-sor beszúrható (service_role)');
+select throws_ok($$ insert into public.weather_snapshots (spot_id, source, water_trend)
+  values ('d0000001-0000-0000-0000-000000000000','vizugy','rise') $$, '23514', NULL,
+  'weather: ismeretlen tendencia-érték elutasítva');
+select throws_ok($$ insert into public.weather_snapshots (spot_id, source, river_alert_level)
+  values ('d0000001-0000-0000-0000-000000000000','vizugy', 4) $$, '23514', NULL,
+  'weather: 3-nál magasabb készültségi fok elutasítva');
+select lives_ok($$ insert into public.weather_snapshots (spot_id, source, river_alert_level)
+  values ('d0000001-0000-0000-0000-000000000000','vizugy', null) $$,
+  'weather: a NULL fok megengedett — az adathiány nem ugyanaz, mint a 0. fok');
+
+-- A spot→mérce hozzárendelés a seedből jön (3 folyó-spot).
+select cmp_ok((select count(*)::int from public.spots where vizugy_tsz is not null), '>=', 3,
+  'spots: a folyó-spotokhoz van vízmérce rendelve');
+select is((select vizugy_tsz from public.spots where slug->>'hu' = 'gyor-mosoni-duna'), 18,
+  'spots: Győr a MOSONI-DUNA mércéjét kapta (nem a közelebbi rábait)');
+
 -- ===========================================================================
 -- orders — csak saját sor (+admin)
 -- ===========================================================================

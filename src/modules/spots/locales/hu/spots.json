@@ -105,5 +105,21 @@
     "callRescue": "Vízimentők hívása",
     "source": "Forrás",
     "updated": "Frissítve"
+  },
+  "water": {
+    "title": "Vízállás",
+    "level": "A folyó vízállása a hozzárendelt vízmércén (forrás: vizugy.hu / OVF).",
+    "station": "Mérce: {{station}}",
+    "observed": "Mérve: {{time}}",
+    "trend": {
+      "rising": "emelkedik",
+      "falling": "apad",
+      "stable": "változatlan"
+    },
+    "alert": {
+      "1": "I. fokú árvízi készültség",
+      "2": "II. fokú árvízi készültség",
+      "3": "III. fokú árvízi készültség"
+    }
   }
 }

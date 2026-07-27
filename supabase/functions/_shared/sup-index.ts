@@ -8,7 +8,7 @@
  * jön (parseSupIndexConfig); a kódban hardcode-olt súly TILOS — a
  * DEFAULT_SUPINDEX_CONFIG kizárólag a táblaolvasó fallback-je (== seed.sql).
  */
-import type { SupIndexInput, SupIndexStatus, StormLevel } from "./types.ts";
+import type { RiverAlertLevel, SupIndexInput, SupIndexStatus, StormLevel } from "./types.ts";
 
 /** Az összes `supindex.*` konfigmező típusosan. */
 export interface SupIndexConfig {
@@ -28,7 +28,7 @@ export interface SupIndexConfig {
   coldwater: { tempC: number; penalty: number };
   storm: { level1Cap: number; level2Cap: number };
   threshold: { excellent: number; caution: number };
-  river: { penalty: number };
+  river: { penalty: number; alert1Cap: number; alert2Cap: number; alert3Cap: number };
 }
 
 /** A supindex.* kulcsok → konfigmező leképezése (egy helyen, parse + doksi). */
@@ -54,6 +54,9 @@ export const SUPINDEX_KEYS = {
   "supindex.threshold.excellent": ["threshold", "excellent"],
   "supindex.threshold.caution": ["threshold", "caution"],
   "supindex.river.penalty": ["river", "penalty"],
+  "supindex.river.alert1_cap": ["river", "alert1Cap"],
+  "supindex.river.alert2_cap": ["river", "alert2Cap"],
+  "supindex.river.alert3_cap": ["river", "alert3Cap"],
 } as const satisfies Record<string, readonly [keyof SupIndexConfig, string]>;
 
 /** Fallback-defaultok (== supabase/seed.sql). Csak hiányzó kulcs / nincs DB esetén. */
@@ -74,7 +77,7 @@ export const DEFAULT_SUPINDEX_CONFIG: SupIndexConfig = {
   coldwater: { tempC: 14, penalty: 1.5 },
   storm: { level1Cap: 3.9, level2Cap: 0 },
   threshold: { excellent: 7, caution: 4 },
-  river: { penalty: 1 },
+  river: { penalty: 1, alert1Cap: 3.9, alert2Cap: 2, alert3Cap: 0 },
 };
 
 /** advisor_weights egy sora (key + numeric value). */
@@ -160,6 +163,8 @@ export interface SupIndexFlags {
   offshoreWind: boolean;
   neoprene: boolean;
   stormLevel: StormLevel;
+  /** Árvízvédelmi készültségi fok (0/1/2/3) — 3 = „Tilos" (5.1/6). */
+  riverAlert: RiverAlertLevel;
 }
 
 export interface SupIndexResult {
@@ -181,10 +186,13 @@ export function computeSupIndex(
   const neoprene =
     input.water_temp_c !== null && input.water_temp_c < config.coldwater.tempC;
 
+  const riverAlert: RiverAlertLevel = input.river_alert_level ?? 0;
+
   const flags: SupIndexFlags = {
     offshoreWind,
     neoprene,
     stormLevel: input.storm_level,
+    riverAlert,
   };
 
   let score = windBaseScore(input.wind_kmh, config.wind);
@@ -208,6 +216,18 @@ export function computeSupIndex(
     score = config.storm.level2Cap;
   } else if (input.storm_level === 1) {
     score = Math.min(score, config.storm.level1Cap);
+  }
+
+  // 1b) ÁRVÍZI OVERRIDE (5.1/6) — a viharjelzéssel AZONOS mechanizmus, csak
+  //     más forrásból: a küszöb hivatalos (vizugy KF1/KF2/KF3), a plafon
+  //     konfigból jön. A SZIGORÚBB győz: ha vihar ÉS árvíz is van, a kettő
+  //     közül az alacsonyabb plafon marad érvényben (`Math.min`).
+  if (riverAlert === 3) {
+    score = Math.min(score, config.river.alert3Cap);
+  } else if (riverAlert === 2) {
+    score = Math.min(score, config.river.alert2Cap);
+  } else if (riverAlert === 1) {
+    score = Math.min(score, config.river.alert1Cap);
   }
 
   const index = round1(clamp(score, 0, 10));

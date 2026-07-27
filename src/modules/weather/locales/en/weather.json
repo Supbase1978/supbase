@@ -23,6 +23,11 @@
     "strongWind": "Strong wind ({{wind}} km/h) — conditions are dangerous.",
     "cold": "Cold water ({{temp}} °C) — wetsuit recommended, higher risk of hypothermia.",
     "moderateWind": "Moderate wind ({{wind}} km/h) — paddle with caution.",
-    "good": "Pleasant conditions ({{wind}} km/h wind) — excellent for paddling."
+    "good": "Pleasant conditions ({{wind}} km/h wind) — excellent for paddling.",
+    "river": {
+      "level3": "Flood alert level III on the river — being on the water is forbidden, get ashore immediately.",
+      "level2": "Flood alert level II — with the rising river's current and debris the index is capped at {{index}}.",
+      "level1": "Flood alert level I — rising water level and stronger current; the index is capped at {{index}}."
+    }
   }
 }

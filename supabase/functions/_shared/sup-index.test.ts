@@ -43,6 +43,31 @@ describe("computeSupIndex — storm-override", () => {
   });
 });
 
+describe("computeSupIndex — árvízi készültség (5.1/6)", () => {
+  const river: SupIndexInput = { ...base, wind_kmh: 5, water_type: "folyo" };
+
+  it("a fokozatok plafonjai megegyeznek a webes referenciával (3,9 / 2 / 0)", () => {
+    expect(computeSupIndex({ ...river, river_alert_level: 1 }).index).toBe(3.9);
+    expect(computeSupIndex({ ...river, river_alert_level: 2 }).index).toBe(2);
+    expect(computeSupIndex({ ...river, river_alert_level: 3 }).index).toBe(0);
+  });
+
+  it("készültség NÉLKÜL csak az alap-folyóbüntetés érvényes (10 → 9)", () => {
+    expect(computeSupIndex(river).index).toBe(9);
+    expect(computeSupIndex({ ...river, river_alert_level: 0 }).flags.riverAlert).toBe(0);
+  });
+
+  it("vihar és árvíz együtt: a SZIGORÚBB plafon marad", () => {
+    expect(computeSupIndex({ ...river, storm_level: 1, river_alert_level: 2 }).index).toBe(2);
+    expect(computeSupIndex({ ...river, storm_level: 2, river_alert_level: 1 }).index).toBe(0);
+  });
+
+  it("a plafon konfigból hangolható (deploy nélkül, advisor_weights-ből)", () => {
+    const cfg = parseSupIndexConfig([{ key: "supindex.river.alert1_cap", value: 6 }]);
+    expect(computeSupIndex({ ...river, river_alert_level: 1 }, cfg).index).toBe(6);
+  });
+});
+
 describe("computeSupIndex — büntetések", () => {
   it("lökés-büntetés csak szigorúan >15 delta felett (küszöb: 15 nem büntet)", () => {
     expect(computeSupIndex({ ...base, wind_kmh: 10, gust_kmh: 25 }).index).toBe(10);

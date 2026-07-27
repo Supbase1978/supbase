@@ -18,6 +18,10 @@ function snapshot(overrides: Partial<WeatherSnapshotRow>): WeatherSnapshotRow {
     storm_level: 0,
     sup_index: 8,
     source: "open-meteo",
+    water_level_cm: null,
+    water_level_at: null,
+    water_trend: null,
+    river_alert_level: null,
     ...overrides,
   };
 }

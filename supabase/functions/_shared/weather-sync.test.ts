@@ -22,6 +22,7 @@ function spot(id: string, over: Partial<SyncSpot> = {}): SyncSpot {
     water_type: "to",
     includeMarine: false,
     lastStormLevel: 0,
+    vizugyTsz: null,
     ...over,
   };
 }
@@ -134,5 +135,72 @@ describe("runWeatherSync — hibatűrés", () => {
     expect(summary.ok).toBe(2);
     expect(summary.failed).toBe(1);
     expect(summary.errors[0]?.spotId).toBe("b");
+  });
+});
+
+describe("folyó-spotok vízállás-korrekciója (5.1/6)", () => {
+  const GAUGE = new Map([
+    [
+      2275,
+      {
+        levelCm: 712,
+        observedAt: "2026-07-27T13:00:00Z",
+        alertLevel: 2 as const,
+        trend: "rising" as const,
+      },
+    ],
+  ]);
+
+  it("a mérce adatai a sorba KERÜLNEK, és a készültségi fok levágja az indexet", () => {
+    const row = buildSnapshotRow(
+      spot("szeged", { water_type: "folyo", vizugyTsz: 2275 }),
+      draft({ wind_kmh: 5, gust_kmh: 5, wind_dir_deg: 0 }),
+      DEFAULT_SUPINDEX_CONFIG,
+      "2026-07-27T13:05:00.000Z",
+      GAUGE.get(2275),
+    );
+    expect(row).toMatchObject({
+      water_level_cm: 712,
+      water_level_at: "2026-07-27T13:00:00Z",
+      water_trend: "rising",
+      river_alert_level: 2,
+    });
+    // II. fokú készültség → 2,0 plafon, a nyugodt szél ellenére.
+    expect(row.sup_index).toBe(2);
+  });
+
+  it("mérce NÉLKÜLI folyó-spot: a régi viselkedés marad (alap-büntetés, üres vízmezők)", () => {
+    const row = buildSnapshotRow(
+      spot("gemenc", { water_type: "folyo", vizugyTsz: null }),
+      draft({ wind_kmh: 5, gust_kmh: 5, wind_dir_deg: 0 }),
+      DEFAULT_SUPINDEX_CONFIG,
+      "2026-07-27T13:05:00.000Z",
+    );
+    expect(row.sup_index).toBe(9);
+    expect(row).toMatchObject({ water_level_cm: null, river_alert_level: null });
+  });
+
+  it("a batch a törzsszám alapján párosítja a mércét a spothoz", async () => {
+    const inserted: WeatherSnapshotRow[] = [];
+    await runWeatherSync(
+      [
+        spot("szeged", { water_type: "folyo", vizugyTsz: 2275 }),
+        // Idegen törzsszám: NEM kaphatja meg a szegedi mérce adatát.
+        spot("gyor", { water_type: "folyo", vizugyTsz: 18 }),
+        spot("balaton"),
+      ],
+      {
+        config: DEFAULT_SUPINDEX_CONFIG,
+        now: NOW,
+        fetchSnapshot: () => Promise.resolve(draft({ wind_kmh: 5, gust_kmh: 5, wind_dir_deg: 0 })),
+        insertSnapshot: (row) => {
+          inserted.push(row);
+          return Promise.resolve();
+        },
+        riverGauges: GAUGE,
+      },
+    );
+    expect(inserted.map((r) => r.river_alert_level)).toEqual([2, null, null]);
+    expect(inserted.map((r) => r.sup_index)).toEqual([2, 9, 10]);
   });
 });

@@ -60,8 +60,17 @@ export interface SupIndexConfig {
     caution: number;
   };
   river: {
-    /** Folyó-korrekció büntetés (seedben nincs → fallback). */
+    /** Folyó-alapkorrekció: az áramlás miatti általános büntetés (5.1/6). */
     penalty: number;
+    /**
+     * Árvízvédelmi készültségi fokok index-PLAFONJAI. A küszöb-vízállás
+     * HIVATALOS (vizugy KF1/KF2/KF3), a plafon viszont a mi biztonsági
+     * döntésünk — ezért konfigból hangolható, deploy nélkül.
+     */
+    alert1Cap: number;
+    alert2Cap: number;
+    /** III. fok → 0 („Tilos"), a viharjelzés II. fokának mintájára. */
+    alert3Cap: number;
   };
 }
 
@@ -88,6 +97,9 @@ export const SUPINDEX_KEYS = {
   "supindex.threshold.excellent": ["threshold", "excellent"],
   "supindex.threshold.caution": ["threshold", "caution"],
   "supindex.river.penalty": ["river", "penalty"],
+  "supindex.river.alert1_cap": ["river", "alert1Cap"],
+  "supindex.river.alert2_cap": ["river", "alert2Cap"],
+  "supindex.river.alert3_cap": ["river", "alert3Cap"],
 } as const satisfies Record<string, readonly [keyof SupIndexConfig, string]>;
 
 /**
@@ -112,7 +124,7 @@ export const DEFAULT_SUPINDEX_CONFIG: SupIndexConfig = {
   coldwater: { tempC: 14, penalty: 1.5 },
   storm: { level1Cap: 3.9, level2Cap: 0 },
   threshold: { excellent: 7, caution: 4 },
-  river: { penalty: 1 },
+  river: { penalty: 1, alert1Cap: 3.9, alert2Cap: 2, alert3Cap: 0 },
 };
 
 /** advisor_weights egy sora (key + numeric value). */

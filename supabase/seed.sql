@@ -411,3 +411,12 @@ insert into public.advisor_weights (key, value) values
   -- adatbázisból NE lehessen kikapcsolni. A seedben hagyva holt kulcs volt,
   -- ami azt a téves benyomást keltette, hogy SQL-ből állítható.
 on conflict (key) do nothing;
+
+-- ---------------------------------------------------------------------------
+-- Folyó-spotok vízmércéi (5.1/6, F1.11). A migráció (20260717091900) ugyanezt
+-- beállítja, de a seed a migrációk UTÁN fut és felülírná a spot-sorokat —
+-- ezért itt is szerepel. Párosítás: koordináta-közelség ÉS folyó-egyezés.
+-- ---------------------------------------------------------------------------
+update public.spots set vizugy_tsz = 2275 where slug->>'hu' = 'szeged-tisza';        -- Szeged, Tisza
+update public.spots set vizugy_tsz =   18 where slug->>'hu' = 'gyor-mosoni-duna';    -- Bácsa, Mosoni-Duna (a közelebbi „Győr" mérce a RÁBÁN van)
+update public.spots set vizugy_tsz = 1026 where slug->>'hu' = 'romai-part';          -- Budapest, Duna (Óbudán nincsenek készültségi szintek)

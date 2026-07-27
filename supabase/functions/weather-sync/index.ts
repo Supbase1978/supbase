@@ -21,8 +21,14 @@ import {
 } from "../_shared/sup-index.ts";
 import {
   runWeatherSync,
+  type RiverGaugeState,
   type SyncSpot,
 } from "../_shared/weather-sync.ts";
+import {
+  createVizugyClient,
+  pickRiverAlertLevel,
+  toGaugeSample,
+} from "../_shared/vizugy.ts";
 import type { StormLevel, WaterType, WeatherSnapshotRow } from "../_shared/types.ts";
 
 interface SpotRow {
@@ -30,6 +36,46 @@ interface SpotRow {
   water_type: WaterType;
   shore_bearing_deg: number | null;
   geom: { type: string; coordinates: [number, number] } | null;
+  vizugy_tsz: number | null;
+}
+
+/**
+ * Vízmérce-állapotok lekérése EGY körben, a batch előtt.
+ *
+ * FAIL-SAFE: ha a vizugy szolgáltatás elérhetetlen, ÜRES térképet adunk vissza,
+ * és a batch fut tovább — a folyó-spotok ilyenkor a régi (alap-büntetéses)
+ * indexet kapják. A vízállás hiánya NEM buktathatja az egész időjárás-
+ * szinkront, mert akkor MINDEN spot adat nélkül maradna.
+ */
+async function loadRiverGauges(
+  tszList: readonly number[],
+): Promise<Map<number, RiverGaugeState>> {
+  const gauges = new Map<number, RiverGaugeState>();
+  if (tszList.length === 0) return gauges;
+
+  try {
+    const client = createVizugyClient(fetch);
+    // A készültségi küszöbök a mérce-törzsadatban élnek, és ott is változhatnak
+    // — ezért MINDEN futáskor frissen olvassuk, nem másoljuk az adatbázisunkba.
+    const stations = await client.fetchStations();
+    const byTsz = new Map(stations.map((station) => [station.tsz, station]));
+    const series = await client.fetchLevels(tszList);
+
+    for (const tsz of tszList) {
+      const sample = toGaugeSample(tsz, series.get(tsz) ?? []);
+      const station = byTsz.get(tsz);
+      if (!sample || !station) continue;
+      gauges.set(tsz, {
+        levelCm: sample.levelCm,
+        observedAt: sample.observedAt,
+        trend: sample.trend,
+        alertLevel: pickRiverAlertLevel(sample.levelCm, station.alertLevels),
+      });
+    }
+  } catch (error) {
+    console.error("[weather-sync] vizugy hiba (a batch folytatódik):", error);
+  }
+  return gauges;
 }
 
 function stormLevelOf(value: unknown): StormLevel {
@@ -60,7 +106,7 @@ Deno.serve(async () => {
   // 2) Spotok (PostGIS geom → GeoJSON a PostgREST-től: coordinates [lon, lat]).
   const { data: spotRows, error: spotErr } = await supabase
     .from("spots")
-    .select("id, water_type, shore_bearing_deg, geom");
+    .select("id, water_type, shore_bearing_deg, geom, vizugy_tsz");
   if (spotErr) {
     return new Response(JSON.stringify({ error: spotErr.message }), {
       status: 500,
@@ -91,12 +137,19 @@ Deno.serve(async () => {
       water_type: raw.water_type,
       includeMarine: false, // belvíz: nincs marine vízhő (F1); tenger-spot később.
       lastStormLevel: stormLevelOf(last?.storm_level),
+      vizugyTsz: typeof raw.vizugy_tsz === "number" ? raw.vizugy_tsz : null,
     });
   }
+
+  // 2b) Vízmércék (folyó-spotok) — egyetlen körben, a batch előtt.
+  const riverGauges = await loadRiverGauges([
+    ...new Set(spots.map((spot) => spot.vizugyTsz).filter((tsz): tsz is number => tsz !== null)),
+  ]);
 
   // 3) Batch a tiszta orchestrátorral (hibatűrő, injektált I/O-val).
   const summary = await runWeatherSync(spots, {
     config,
+    riverGauges,
     fetchSnapshot: (spot: SyncSpot): Promise<WeatherSnapshotDraft> =>
       fetchOpenMeteoSnapshot(spot.lat, spot.lon, {
         includeMarine: spot.includeMarine,
@@ -107,7 +160,7 @@ Deno.serve(async () => {
     },
   });
 
-  return new Response(JSON.stringify(summary), {
+  return new Response(JSON.stringify({ ...summary, riverGauges: riverGauges.size }), {
     status: 200,
     headers: { "content-type": "application/json" },
   });

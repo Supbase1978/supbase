@@ -13,7 +13,7 @@
 import type { SupIndexConfig } from "./sup-index.ts";
 import { computeSupIndex } from "./sup-index.ts";
 import type { WeatherSnapshotDraft } from "./open-meteo.ts";
-import type { StormLevel, WaterType, WeatherSnapshotRow } from "./types.ts";
+import type { RiverAlertLevel, StormLevel, WaterType, WeatherSnapshotRow } from "./types.ts";
 
 /** Egy szinkronizálandó spot (a spots táblából + legutóbbi ismert viharfok). */
 export interface SyncSpot {
@@ -26,6 +26,20 @@ export interface SyncSpot {
   includeMarine: boolean;
   /** A spot legutóbbi ismert viharfoka (utolsó snapshot storm_level-je). */
   lastStormLevel: StormLevel;
+  /**
+   * A spothoz rendelt vízmérce törzsszáma (`spots.vizugy_tsz`) — csak
+   * folyó-spotoknál van kitöltve. null → nincs vízállás-korrekció.
+   */
+  vizugyTsz: number | null;
+}
+
+/** Egy mérce aktuális állapota (a vizugy-adapterből, spotokra leképezve). */
+export interface RiverGaugeState {
+  levelCm: number;
+  /** A MÉRÉS ideje — nem a lekérésé (a mércék óránként jelentenek). */
+  observedAt: string;
+  alertLevel: RiverAlertLevel;
+  trend: "rising" | "falling" | "stable";
 }
 
 export interface WeatherSyncDeps {
@@ -37,6 +51,12 @@ export interface WeatherSyncDeps {
   config: SupIndexConfig;
   /** Injektálható "most" a determinisztikus fetched_at-hoz (default: new Date()). */
   now?: () => Date;
+  /**
+   * Vízmérce-állapotok törzsszám szerint (a batch ELŐTT egyetlen kéréssel
+   * lekérve — spotonkénti hívás fölösleges terhelés lenne a szolgáltatásnak).
+   * Hiánya nem hiba: a folyó-korrekció ilyenkor az alap-büntetés marad.
+   */
+  riverGauges?: ReadonlyMap<number, RiverGaugeState>;
 }
 
 export interface SpotSyncError {
@@ -65,6 +85,7 @@ export function buildSnapshotRow(
   draft: WeatherSnapshotDraft,
   config: SupIndexConfig,
   fetchedAt: string,
+  gauge?: RiverGaugeState,
 ): WeatherSnapshotRow {
   let supIndex: number | null = null;
   if (draft.wind_kmh !== null && draft.wind_dir_deg !== null) {
@@ -77,6 +98,7 @@ export function buildSnapshotRow(
         storm_level: spot.lastStormLevel,
         shore_bearing_deg: spot.shore_bearing_deg,
         water_type: spot.water_type,
+        river_alert_level: gauge?.alertLevel,
       },
       config,
     );
@@ -96,6 +118,13 @@ export function buildSnapshotRow(
     fetched_at: fetchedAt,
     // m4: a forrás saját időbélyege a lekérés-idő MELLETT (nem helyette).
     observed_at: draft.observed_at,
+    // 5.1/6 — vízállás a folyó-spotokon. A mérce SAJÁT időbélyegét is
+    // tároljuk: az óránként jelentő mércénél a "mikori az adat" nem
+    // következtethető ki a snapshot fetched_at-jából.
+    water_level_cm: gauge?.levelCm ?? null,
+    water_level_at: gauge?.observedAt ?? null,
+    water_trend: gauge?.trend ?? null,
+    river_alert_level: gauge?.alertLevel ?? null,
   };
 }
 
@@ -115,7 +144,9 @@ export async function runWeatherSync(
   for (const spot of spots) {
     try {
       const draft = await deps.fetchSnapshot(spot);
-      const row = buildSnapshotRow(spot, draft, deps.config, now().toISOString());
+      const gauge =
+        spot.vizugyTsz !== null ? deps.riverGauges?.get(spot.vizugyTsz) : undefined;
+      const row = buildSnapshotRow(spot, draft, deps.config, now().toISOString(), gauge);
       await deps.insertSnapshot(row);
       ok += 1;
     } catch (err) {

@@ -43,7 +43,19 @@ export interface SupIndexInput {
    */
   shore_bearing_deg: number | null;
   water_type: WaterType;
+  /**
+   * Árvízvédelmi készültségi fok a spot mércéjén (5.1/6): 0 = nincs · 1/2/3 =
+   * I./II./III. fok. A HIVATALOS küszöbökből (vizugy KF1/KF2/KF3) származik,
+   * nem általunk kitalált cm-sávokból.
+   *
+   * Hiánya (`undefined`) NEM jelent nyugalmat, csak adathiányt: ilyenkor a
+   * folyóra a konfigurált alap-büntetés érvényes, ahogy eddig is.
+   */
+  river_alert_level?: RiverAlertLevel;
 }
+
+/** Árvízvédelmi készültségi fok: 0 = nincs · 1/2/3 = I./II./III. fok. */
+export type RiverAlertLevel = 0 | 1 | 2 | 3;
 
 /** Indoklás-template: i18n-kulcs (weather namespace) + interpolációs paraméterek. */
 export interface SupIndexReason {
@@ -60,6 +72,12 @@ export interface SupIndexFlags {
   neoprene: boolean;
   /** A viharfok, amely az override-ot okozta (0/1/2). */
   stormLevel: StormLevel;
+  /**
+   * Árvízvédelmi készültségi fok (0/1/2/3). A III. fok a viharjelzés II.
+   * fokához hasonlóan „Tilos" állapotot jelent — a leképezés a route-rétegben
+   * történik, mert a status-enum önmagában nem hordozza (m5-minta).
+   */
+  riverAlert: RiverAlertLevel;
 }
 
 /** Az 5.1 algoritmus kimenete. */

@@ -18,6 +18,7 @@ import {
   type SupIndexConfig,
 } from "./config";
 import type {
+  RiverAlertLevel,
   SupIndexFlags,
   SupIndexInput,
   SupIndexReason,
@@ -32,6 +33,9 @@ export const REASON_KEYS = {
   offshore: "reason.offshore",
   strongWind: "reason.strongWind",
   cold: "reason.cold",
+  river3: "reason.river.level3",
+  river2: "reason.river.level2",
+  river1: "reason.river.level1",
   moderateWind: "reason.moderateWind",
   good: "reason.good",
 } as const;
@@ -83,10 +87,16 @@ function pickReason(
   flags: SupIndexFlags,
   input: SupIndexInput,
 ): SupIndexReason {
+  // A SÚLYOSSÁG sorrendjében, nem a számítás sorrendjében: az alacsonyabb
+  // plafon a súlyosabb ok. Ezért előzi meg a folyó II. foka a viharjelzés
+  // I. fokát (2,0 vs 3,9 plafon).
   if (flags.stormLevel === 2) return { key: REASON_KEYS.storm2, params: {} };
+  if (flags.riverAlert === 3) return { key: REASON_KEYS.river3, params: {} };
+  if (flags.riverAlert === 2) return { key: REASON_KEYS.river2, params: { index } };
   if (flags.stormLevel === 1) {
     return { key: REASON_KEYS.storm1, params: { index } };
   }
+  if (flags.riverAlert === 1) return { key: REASON_KEYS.river1, params: { index } };
   if (flags.offshoreWind) {
     return { key: REASON_KEYS.offshore, params: { wind: input.wind_kmh } };
   }
@@ -114,10 +124,13 @@ export function computeSupIndex(
   const neoprene =
     input.water_temp_c !== null && input.water_temp_c < config.coldwater.tempC;
 
+  const riverAlert: RiverAlertLevel = input.river_alert_level ?? 0;
+
   const flags: SupIndexFlags = {
     offshoreWind,
     neoprene,
     stormLevel: input.storm_level,
+    riverAlert,
   };
 
   // 2) szél-alapsáv
@@ -151,6 +164,18 @@ export function computeSupIndex(
     score = config.storm.level2Cap;
   } else if (input.storm_level === 1) {
     score = Math.min(score, config.storm.level1Cap);
+  }
+
+  // 1b) ÁRVÍZI OVERRIDE (5.1/6) — a viharjelzéssel AZONOS mechanizmus, csak
+  //     más forrásból: a küszöb hivatalos (vizugy KF1/KF2/KF3), a plafon
+  //     konfigból jön. A SZIGORÚBB győz: ha vihar ÉS árvíz is van, a kettő
+  //     közül az alacsonyabb plafon marad érvényben (`Math.min`).
+  if (riverAlert === 3) {
+    score = Math.min(score, config.river.alert3Cap);
+  } else if (riverAlert === 2) {
+    score = Math.min(score, config.river.alert2Cap);
+  } else if (riverAlert === 1) {
+    score = Math.min(score, config.river.alert1Cap);
   }
 
   const index = round1(clamp(score, 0, 10));

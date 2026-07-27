@@ -18,6 +18,9 @@ export type StormLevel = 0 | 1 | 2;
 /** A spots.water_type CHECK-kényszerével egyező vízteszt-típusok (3.1). */
 export type WaterType = "to" | "folyo" | "holtag" | "csatorna";
 
+/** Árvízvédelmi készültségi fok: 0 = nincs · 1/2/3 = I./II./III. fok (5.1/6). */
+export type RiverAlertLevel = 0 | 1 | 2 | 3;
+
 /** Kimeneti állapot-enum (a magyar felirat + szín az UI-ban áll össze). */
 export type SupIndexStatus = "safe" | "caution" | "danger";
 
@@ -33,6 +36,11 @@ export interface SupIndexInput {
   /** A part tájolása (offshore-szélhez); null → nincs offshore-számítás. */
   shore_bearing_deg: number | null;
   water_type: WaterType;
+  /**
+   * Árvízvédelmi készültségi fok a spot mércéjén (vizugy KF1/KF2/KF3).
+   * Hiánya adathiány, nem nyugalom: ilyenkor csak az alap-folyóbüntetés él.
+   */
+  river_alert_level?: RiverAlertLevel;
 }
 
 /** Egy weather_snapshots-sorba írandó rekord (3.1 részhalmaz). */
@@ -55,4 +63,12 @@ export interface WeatherSnapshotRow {
    * a scrape pillanata az egyetlen értelmes időbélyeg.
    */
   observed_at?: string | null;
+  /** Vízállás cm-ben a spot mércéjén (5.1/6). Csak folyó-spotoknál. */
+  water_level_cm?: number | null;
+  /** A vízállás-MÉRÉS ideje (a mércék óránként jelentenek). */
+  water_level_at?: string | null;
+  /** Vízállás-tendencia az elmúlt órákban. */
+  water_trend?: "rising" | "falling" | "stable" | null;
+  /** Árvízvédelmi készültségi fok a hivatalos küszöbökből (0–3). */
+  river_alert_level?: RiverAlertLevel | null;
 }

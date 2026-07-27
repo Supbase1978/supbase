@@ -63,6 +63,8 @@ export interface SpotRow {
   geom: unknown;
   shore_bearing_deg: number | null;
   storm_warning_region: string | null;
+  /** A spothoz rendelt vizugy-vízmérce törzsszáma (folyó-spotok). */
+  vizugy_tsz: number | null;
   protected_area: {
     name?: Record<string, string>;
     rules?: Record<string, string>;
@@ -97,4 +99,20 @@ export interface WeatherSnapshotRow {
   storm_level: StormLevel;
   sup_index: number | null;
   source: string;
+  /** Vízállás cm a spot mércéjén (folyó-spotok, 5.1/6). */
+  water_level_cm: number | null;
+  /** A vízállás-MÉRÉS ideje — a mércék óránként jelentenek. */
+  water_level_at: string | null;
+  water_trend: WaterTrend | null;
+  /**
+   * Árvízvédelmi készültségi fok (0–3) a mérce HIVATALOS küszöbeiből.
+   * `null` = NINCS ADAT, ami nem ugyanaz, mint a 0 (= nincs készültség).
+   */
+  river_alert_level: RiverAlertLevel | null;
 }
+
+/** Vízállás-tendencia. */
+export type WaterTrend = "rising" | "falling" | "stable";
+
+/** Árvízvédelmi készültségi fok: 0 = nincs · 1/2/3 = I./II./III. fok. */
+export type RiverAlertLevel = 0 | 1 | 2 | 3;

@@ -350,14 +350,17 @@ bemenet: wind_kmh, gust_kmh, wind_dir_deg, water_temp_c, storm_level,
    (|wind_dir − shore_bearing| ∈ besodró szektor) ÉS wind > 15 → index ×0,5
    és kötelező "Besodró szél" felirat — ez a Balaton-déli-part-i mentőhelyzet-minta
 5) hidegvíz-büntetés: water_temp < 14 °C → −1,5 (és neoprén-figyelmeztetés)
-6) folyó: vízállás-/áramlás-korrekció (HydroInfo adat, F1-ben egyszerű sávok)
+6) folyó: alap-korrekció (−1) + ÁRVÍZI OVERRIDE a hivatalos készültségi
+   szintekből: I. fok → index max. 3,9 · II. fok → max. 2,0 · III. fok → 0
+   ("Tilos", mint a II. fokú viharjelzés). Vihar ÉS árvíz együtt: a szigorúbb
+   plafon marad. Adat nélkül csak az alap-korrekció él (F1.11)
 kimenet: index + állapot (Kiváló ≥7 · Óvatosan 4–6,9 · Veszélyes <4 · Elavult ha
          fetched_at > 30 perc) + egy mondatos indoklás-template
 ```
 
 A súlyok/sávok az `advisor_weights` mintájára konfig-táblából jönnek (kulcs-prefix: `supindex.*`) — hangolás deploy nélkül.
 
-**Adatforrások:** Open-Meteo API (szél, hő, előrejelzés — ingyenes) · BM OKF viharjelzés (Edge Function scraper, 5 perces cron a szezonban) · HydroInfo vízállás (meglévő Python-scraper logika portolása Edge Functionbe vagy ütemezett GitHub Actionbe). Minden snapshot forrás-megjelöléssel tárolódik.
+**Adatforrások:** Open-Meteo API (szél, hő, előrejelzés — ingyenes) · BM OKF viharjelzés (Edge Function scraper, 5 perces cron a szezonban) · **vizugy.hu (OVF) REST API** a folyó-spotok vízállásához — F1.11-ben ez váltotta ki a tervezett HydroInfo-scrapinget: ugyanazt az OVF-adatot adja JSON-ban, ÉS mércénként megadja a HIVATALOS árvízvédelmi készültségi küszöböket (KF1/KF2/KF3), így a folyó-korrekció hatósági értékre épül, nem kitalált cm-sávokra. Minden snapshot forrás-megjelöléssel tárolódik.
 
 ### 5.2 Deszkaválasztó — kétrétegű
 

@@ -704,6 +704,66 @@ gyenge merevsége a STABILITÁST rontja) · kezdő→felfújható preferencia (m
 nulla hatású, 20/20 felfújható) · biztonsági kiegészítők blokk (leash,
 mentőmellény — termék-bővítés).
 
+## F1.11 — Folyó-spotok vízállása: a SUP-index utolsó adóssága (2026-07-27)
+
+Az 5.1/6 pont eddig FIX −1 büntetést adott minden folyó-spotra, függetlenül
+attól, hogy a folyó nyugodt nyári vízálláson van-e vagy árad. Kapuk zöldek:
+typecheck · lint · **520 vitest** (+9 komponens, +16 adapter, +9 index/batch).
+**ÉLESÍTVE NINCS** — a migráció és a függvény-deploy jóváhagyásra vár.
+
+**A FORRÁS-DÖNTÉS a lényeg.** A spec HydroInfo-scrapinget írt elő (a felhasználó
+DunApp-projektjéből portolva). A DunApp kódját megnézve kiderült, hogy ott a
+JELENLEGI adat már nem scrape-ből jön, hanem a **vizugy.hu (OVF) REST API-ból**
+— és ez az API mércénként megadja a **HIVATALOS árvízvédelmi készültségi
+küszöböket** (KF1/KF2/KF3 = I./II./III. fok). Ez döntötte el az egész
+tervezést: nem kellett cm-sávokat kitalálnunk, a küszöb hatósági érték.
+(Ugyanez a „ne gyárts hamis pontosságot" elv, ami az advisor ár-padlóját is
+nyitva tartja.)
+
+**Az algoritmus a MEGLÉVŐ vihar-override mintájára épül** (nem új mechanizmus):
+I. fok → index-plafon 3,9 · II. fok → 2,0 · III. fok → 0 („Tilos"). Vihar ÉS
+árvíz együtt: a SZIGORÚBB plafon marad (`Math.min`). A plafonok
+`advisor_weights`-ből hangolhatók, deploy nélkül. A III. fok ugyanúgy „Tilos"
+státuszt kap a UI-ban, mint a II. fokú viharjelzés — az m5-minta kiterjesztve.
+
+**FAIL-SAFE minden ponton:** ha a vizugy elérhetetlen, a batch fut tovább (a
+vízállás hiánya nem buktathatja az EGÉSZ időjárás-szinkront) · ha a mércének
+nincs hivatalos küszöbe, nem találunk ki fokozatot (`null` ≠ 0. fok) · ha nincs
+vízállás-adat, marad a régi alap-büntetés, változatlan viselkedéssel.
+
+**A mérce-párosítás nem távolság-kérdés — ezt mérés fogta meg.** Győrnél a
+LEGKÖZELEBBI mérce (0,3 km) a **Rábán** van, nem a Mosoni-Dunán: a folyónak is
+egyeznie kell. A Római-partnál pedig a közelebbi Óbuda-mércének **nincsenek
+készültségi szintjei**, ezért a 8,7 km-re lévő budapesti mérce a helyes forrás.
+Végleges hozzárendelés: Szeged/Tisza → 2275 · Győr/Mosoni-Duna → 18 (Bácsa) ·
+Római-part/Duna → 1026 (Budapest).
+
+**Élő verifikáció (2026-07-27, valódi API):** auth → 1193 állomás → idősor →
+minta+tendencia → fokozat. Mindhárom mércénk 0. fokon (Szeged 61 cm, Bácsa
+207 cm, Budapest 36 cm), a küszöbök 650/750/850, 450/550/600, 620/700/800.
+A fixture-ök ebből a válaszból készültek — kézzel gyártott mintán a magyar
+mezőnevek (`Tsz`, `MdrNev`, `KF1`) eltérése észrevétlen maradt volna.
+
+**Adatkor — külön küszöb, indoklással:** a mércék ÓRÁNKÉNT jelentenek, ezért a
+30 perces általános stale-szabály itt minden adatot elavultnak jelölne, és
+kiüresítené a jelzést. A vízállás a saját, 150 perces küszöbét kapta (két
+kimaradt jelentést tűr), és a MÉRÉS saját időbélyegét mutatjuk, nem a
+lekérésünkét. A 30 perces szabály a szél/viharjelzés adatokon ÉRINTETLEN.
+
+**Amit szándékosan NEM használunk:** a vízhozam (m³/s) és a vízhő (°C) hézagos
+— az általunk használt mércék közül a hozam csak kettőn, a vízhő egyetlenen
+jön óránként. Egy csak néhány spoton működő jelzés rosszabb a semminél, mert
+a hiányát a felhasználó nyugalomnak olvasná. Ha később sűrűbb lesz, bekötjük.
+
+**Fájlok:** `_shared/vizugy.ts` (+teszt, valódi fixture-ökkel) · SUP-index
+mindkét másolatában az árvízi ág (bit-azonos, külön tesztekkel) ·
+`weather-sync` batch + Deno-héj · migráció `20260717091900` (spots.vizugy_tsz,
+4 snapshot-oszlop értékkészlet-kényszerrel, nézet-bővítés, seed) · pgTAP-
+kiegészítés · `spots/ui/WaterLevel.tsx` + i18n (hu/en).
+
+**HÁTRA:** éles `db push` + `weather-sync` újradeploy (jóváhagyással), majd
+böngésző-verifikáció a három folyó-spot adatlapján.
+
 ## F1.10/10 — A termék neve: „Suptime" (2026-07-27)
 
 A felhasználó eldöntötte a nevet (a domaint másnap regisztrálja), így az F1 óta

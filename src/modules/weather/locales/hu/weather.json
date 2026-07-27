@@ -23,6 +23,11 @@
     "strongWind": "Erős szél ({{wind}} km/h) — a körülmények veszélyesek.",
     "cold": "Hideg víz ({{temp}} °C) — neoprén ajánlott, a kihűlés kockázata nő.",
     "moderateWind": "Mérsékelt szél ({{wind}} km/h) — óvatosan evezhető.",
-    "good": "Kellemes körülmények ({{wind}} km/h szél) — kiváló evezéshez."
+    "good": "Kellemes körülmények ({{wind}} km/h szél) — kiváló evezéshez.",
+    "river": {
+      "level3": "III. fokú árvízi készültség a folyón — tilos a vízen tartózkodni, azonnali partraszállás.",
+      "level2": "II. fokú árvízi készültség — az áradó folyó sodrása és uszadéka miatt az index legfeljebb {{index}}.",
+      "level1": "I. fokú árvízi készültség — emelkedő vízállás, erősebb sodrás; az index legfeljebb {{index}}."
+    }
   }
 }

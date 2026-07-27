@@ -83,10 +83,15 @@ function evaluateSpotSnapshot(
     storm_level: snapshot.storm_level,
     shore_bearing_deg: spot.shore_bearing_deg,
     water_type: spot.water_type,
+    river_alert_level: snapshot.river_alert_level ?? undefined,
   };
 
   const reading = evaluateSnapshot({ input, fetchedAt: snapshot.fetched_at, config });
-  const status: SpotStatus = snapshot.storm_level === 2 ? "forbidden" : reading.result.status;
+  // m5-minta kiterjesztve (5.1/6): a III. fokú ÁRVÍZI készültség ugyanúgy
+  // „Tilos", mint a II. fokú viharjelzés — mindkettő hatósági szintű tiltás,
+  // és a status-enum (safe/caution/danger) egyiket sem hordozza magában.
+  const forbidden = snapshot.storm_level === 2 || reading.result.flags.riverAlert === 3;
+  const status: SpotStatus = forbidden ? "forbidden" : reading.result.status;
 
   return {
     index: reading.result.index,

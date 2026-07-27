@@ -46,6 +46,7 @@ describe("computeSupIndex — határeset-tábla (default konfig)", () => {
     offshoreWind?: boolean;
     neoprene?: boolean;
     stormLevel?: 0 | 1 | 2;
+    riverAlert?: 0 | 1 | 2 | 3;
     reasonKey: string;
   }
 
@@ -179,6 +180,70 @@ describe("computeSupIndex — határeset-tábla (default konfig)", () => {
       reasonKey: REASON_KEYS.good,
     },
 
+    // --- 6b) ÁRVÍZI KÉSZÜLTSÉG (5.1/6, hivatalos KF1/KF2/KF3 küszöbökből) ---
+    {
+      name: "I. fokú árvízi készültség → plafon 3,9 (nyugodt szél ellenére danger)",
+      input: base({ wind_kmh: 5, gust_kmh: 5, water_type: "folyo", river_alert_level: 1 }),
+      index: 3.9,
+      status: "danger",
+      riverAlert: 1,
+      reasonKey: REASON_KEYS.river1,
+    },
+    {
+      name: "II. fokú árvízi készültség → plafon 2,0",
+      input: base({ wind_kmh: 5, gust_kmh: 5, water_type: "folyo", river_alert_level: 2 }),
+      index: 2,
+      status: "danger",
+      riverAlert: 2,
+      reasonKey: REASON_KEYS.river2,
+    },
+    {
+      name: "III. fokú árvízi készültség → 0 (Tilos), mint a viharjelzés II. foka",
+      input: base({ wind_kmh: 5, gust_kmh: 5, water_type: "folyo", river_alert_level: 3 }),
+      index: 0,
+      status: "danger",
+      riverAlert: 3,
+      reasonKey: REASON_KEYS.river3,
+    },
+    {
+      name: "0. fok = nincs készültség → csak az alap-folyóbüntetés (a régi viselkedés)",
+      input: base({ wind_kmh: 5, gust_kmh: 5, water_type: "folyo", river_alert_level: 0 }),
+      index: 9,
+      status: "safe",
+      riverAlert: 0,
+      reasonKey: REASON_KEYS.good,
+    },
+    {
+      name: "vihar I. + árvíz II. → a SZIGORÚBB plafon marad (2,0, nem 3,9)",
+      input: base({
+        wind_kmh: 5,
+        gust_kmh: 5,
+        water_type: "folyo",
+        storm_level: 1,
+        river_alert_level: 2,
+      }),
+      index: 2,
+      status: "danger",
+      stormLevel: 1,
+      riverAlert: 2,
+      reasonKey: REASON_KEYS.river2,
+    },
+    {
+      name: "vihar II. + árvíz I. → 0 marad (a viharfok szigorúbb)",
+      input: base({
+        wind_kmh: 5,
+        gust_kmh: 5,
+        water_type: "folyo",
+        storm_level: 2,
+        river_alert_level: 1,
+      }),
+      index: 0,
+      status: "danger",
+      stormLevel: 2,
+      riverAlert: 1,
+      reasonKey: REASON_KEYS.storm2,
+    },
+
     // --- 7) STÁTUSZ-HATÁROK (pont 7,0 és pont 4,0) ---
     {
       name: "index pontosan 7,0 → safe (folyó, szél 20: 8 − 1)",
@@ -209,6 +274,7 @@ describe("computeSupIndex — határeset-tábla (default konfig)", () => {
       expect(result.flags.neoprene).toBe(c.neoprene);
     }
     expect(result.flags.stormLevel).toBe(c.stormLevel ?? 0);
+    expect(result.flags.riverAlert).toBe(c.riverAlert ?? 0);
   });
 });
 

@@ -26,6 +26,7 @@ import { JsonLd } from "@core/seo/json-ld";
 import { Button, Card, DataAge, Gauge, minutesSince, StatusBadge } from "@core/ui";
 import { SpotMap } from "@modules/spots/ui/SpotMap";
 import { StormAlertScreen } from "@modules/spots/ui/StormAlertScreen";
+import { WATER_STALE_MINUTES, WaterLevel } from "@modules/spots/ui/WaterLevel";
 import {
   getLatestSnapshot,
   getSpotBySlug,
@@ -76,10 +77,15 @@ function evaluateSpotSnapshot(
     storm_level: snapshot.storm_level,
     shore_bearing_deg: spot.shore_bearing_deg,
     water_type: spot.water_type,
+    river_alert_level: snapshot.river_alert_level ?? undefined,
   };
 
   const reading = evaluateSnapshot({ input, fetchedAt: snapshot.fetched_at, config });
-  const status: SpotStatus = snapshot.storm_level === 2 ? "forbidden" : reading.result.status;
+  // m5-minta kiterjesztve (5.1/6): a III. fokú ÁRVÍZI készültség ugyanúgy
+  // „Tilos", mint a II. fokú viharjelzés — mindkettő hatósági szintű tiltás,
+  // és a status-enum (safe/caution/danger) egyiket sem hordozza magában.
+  const forbidden = snapshot.storm_level === 2 || reading.result.flags.riverAlert === 3;
+  const status: SpotStatus = forbidden ? "forbidden" : reading.result.status;
 
   return {
     index: reading.result.index,
@@ -175,6 +181,10 @@ export async function loader({ request, params }: Route.LoaderArgs) {
           waveCm: snapshotRow.wave_cm,
           stormLevel: snapshotRow.storm_level,
           source: snapshotRow.source,
+          waterLevelCm: snapshotRow.water_level_cm,
+          waterLevelAt: snapshotRow.water_level_at,
+          waterTrend: snapshotRow.water_trend,
+          riverAlertLevel: snapshotRow.river_alert_level,
         }
       : null,
     evaluation,
@@ -398,6 +408,43 @@ export default function SpotDetailRoute({ loaderData, actionData }: Route.Compon
           </dl>
         ) : null}
       </Card>
+
+      {snapshot?.waterLevelCm !== null && snapshot?.waterLevelCm !== undefined ? (
+        <WaterLevel
+          levelCm={snapshot.waterLevelCm}
+          trend={snapshot.waterTrend}
+          alertLevel={snapshot.riverAlertLevel}
+          observedAt={snapshot.waterLevelAt}
+          labels={{
+            title: t("water.title"),
+            level: t("water.level"),
+            trend: {
+              rising: t("water.trend.rising"),
+              falling: t("water.trend.falling"),
+              stable: t("water.trend.stable"),
+            },
+            alert: {
+              1: t("water.alert.1"),
+              2: t("water.alert.2"),
+              3: t("water.alert.3"),
+            },
+            observed: t("water.observed", {
+              time: snapshot.waterLevelAt
+                ? new Intl.DateTimeFormat(i18n.language, {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  }).format(new Date(snapshot.waterLevelAt))
+                : "—",
+            }),
+            // A vízmércék óránként jelentenek: a 30 perces általános
+            // stale-küszöb itt MINDEN adatot elavultnak jelölne (lásd
+            // WaterLevel fejléce).
+            stale:
+              snapshot.waterLevelAt !== null &&
+              minutesSince(snapshot.waterLevelAt) >= WATER_STALE_MINUTES,
+          }}
+        />
+      ) : null}
 
       {spot.protectedAreaName ? (
         // Természetvédelmi blokk — kiemelt, de NEM danger-jellegű sáv (sand).
