@@ -704,6 +704,32 @@ gyenge merevsége a STABILITÁST rontja) · kezdő→felfújható preferencia (m
 nulla hatású, 20/20 felfújható) · biztonsági kiegészítők blokk (leash,
 mentőmellény — termék-bővítés).
 
+## F1.10/8 — OG megosztás-kártya (2026-07-27)
+
+**A hiány:** a megosztott linkeknek EGYÁLTALÁN nem volt képük — `og:image` sehol
+nem szerepelt. Az F1.1-es `og-image.ts` STUB nem létező útvonalakat adott vissza
+(`/og/board/<slug>.png`), és sehol nem volt bekötve.
+
+**Elkészült:**
+- Márkázott, 1200×630-as alapértelmezett kártya (`public/og/default.png`), a
+  design tokenjeiből (petrol gradiens, hullám-motívum, amber jelvény).
+  **Generálás:** a meglévő Playwright-tel, HTML→PNG — így NEM kellett új
+  futásidejű függőség.
+- `resolveOgImage()`: relatív útvonalat abszolúttá tesz (a crawlerek a
+  relatívat nem oldják fel), a már abszolút külső képet érintetlenül hagyja,
+  hiányzó képnél az alapértelmezettre esik.
+- `buildMeta` kiegészítve: `og:image` + `width`/`height`/`alt` +
+  `twitter:card=summary_large_image` (kép nélkül a Twitter/X kis kártyát rajzol).
+- A deszka-adatlapok a SAJÁT termékképüket használják. **Jelenleg mind az
+  alapértelmezettre esik vissza — helyesen: a katalógusban egyetlen deszkának
+  sincs `image_url`-je.** Ez adathiány, nem kódhiba.
+
+**SZÁNDÉKOSAN NEM készült futásidejű, dinamikus kártya** (pl. „X100 11'0" —
+76% neked"). Az F1.8-terv ezt említette, de a satori + resvg-wasm páros ~8 MB
+függőséget tenne a serverless csomagba, és MINDEN crawler-kérésnél lefuttatná
+az ajánló-algoritmust. Ez az arány most nem indokolt; a döntés újranyitható, ha
+a megosztás valós forgalmat hoz. (A `og-image.ts` fejléce is rögzíti az okot.)
+
 ## F1.10/7 — Megosztható eredmény + működő Megosztás gomb (2026-07-26)
 
 Két, egymással összefüggő hiba a Deszkaválasztó eredményén. Kapuk zöldek:

@@ -87,6 +87,9 @@ export async function loader({ request, params }: Route.LoaderArgs) {
     path: detailPath,
     title: t("seo.detail.title", { model: board.model_name }),
     description: t("seo.detail.description", { model: board.model_name, brandSuffix }),
+    // A deszka saját terméképe beszédesebb megosztás-kártya, mint az általános
+    // márka-kártya; hiányában a `resolveOgImage` az alapértelmezettre esik.
+    imagePath: board.image_url,
   });
 
   const jsonLd = productJsonLd({

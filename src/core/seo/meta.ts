@@ -6,15 +6,27 @@ import type { LinkDescriptor, MetaDescriptor } from "react-router";
 
 import { activeLocales, defaultLocale, type Locale } from "@core/i18n/config";
 
+import { OG_IMAGE_SIZE } from "./og-image";
+
 export interface BuildMetaInput {
   title: string;
   description: string;
   /** Ha megadott, `<link rel="canonical">` is bekerül a meta-tömbbe. */
   canonicalUrl?: string;
+  /**
+   * ABSZOLÚT OG-kép-URL. A közösségi crawlerek a relatív útvonalat nem oldják
+   * fel, ezért a hívó abszolutizálja (`resolveOgImage`).
+   */
+  imageUrl?: string;
 }
 
 /** RR7 `meta` exporthoz illeszkedő meta-descriptor tömb (title, description, OG, canonical). */
-export function buildMeta({ title, description, canonicalUrl }: BuildMetaInput): MetaDescriptor[] {
+export function buildMeta({
+  title,
+  description,
+  canonicalUrl,
+  imageUrl,
+}: BuildMetaInput): MetaDescriptor[] {
   const meta: MetaDescriptor[] = [
     { title },
     { name: "description", content: description },
@@ -22,6 +34,17 @@ export function buildMeta({ title, description, canonicalUrl }: BuildMetaInput):
     { property: "og:description", content: description },
     { property: "og:type", content: "website" },
   ];
+
+  if (imageUrl) {
+    meta.push({ property: "og:image", content: imageUrl });
+    meta.push({ property: "og:image:width", content: String(OG_IMAGE_SIZE.width) });
+    meta.push({ property: "og:image:height", content: String(OG_IMAGE_SIZE.height) });
+    // A kép önmagában nem hordoz információt a képernyőolvasónak — az `alt` a
+    // lap címét ismétli, ami a megosztás kontextusában a leghasznosabb.
+    meta.push({ property: "og:image:alt", content: title });
+    // Kép nélkül a Twitter/X kis kártyát rajzol; képpel a nagy változat a jó.
+    meta.push({ name: "twitter:card", content: "summary_large_image" });
+  }
 
   if (canonicalUrl) {
     meta.push({ property: "og:url", content: canonicalUrl });

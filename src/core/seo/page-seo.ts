@@ -14,6 +14,7 @@ import type { MetaDescriptor } from "react-router";
 import { localizePath, type Locale } from "@core/i18n";
 
 import { buildHreflangLinks, buildMeta } from "./meta";
+import { resolveOgImage } from "./og-image";
 
 type EnvRecord = Record<string, string | undefined>;
 
@@ -43,6 +44,12 @@ export interface PageSeoInput {
   path: string;
   title: string;
   description: string;
+  /**
+   * Oldal-specifikus megosztás-kép (relatív VAGY abszolút). Hiányában a
+   * márkázott alapértelmezett kártya megy — így egyetlen oldal sem marad kép
+   * nélkül a megosztásokban.
+   */
+  imagePath?: string | null;
 }
 
 /**
@@ -55,11 +62,17 @@ export function buildPageSeo({
   path,
   title,
   description,
+  imagePath,
 }: PageSeoInput): MetaDescriptor[] {
   const origin = siteOrigin(request);
   const canonicalUrl = `${origin}${localizePath(path, locale)}`;
 
-  const descriptors = buildMeta({ title, description, canonicalUrl });
+  const descriptors = buildMeta({
+    title,
+    description,
+    canonicalUrl,
+    imageUrl: resolveOgImage(origin, imagePath),
+  });
 
   for (const link of buildHreflangLinks((loc) => `${origin}${localizePath(path, loc)}`)) {
     descriptors.push({ tagName: "link", ...link });
