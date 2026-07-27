@@ -15,12 +15,14 @@
  *   3) `recommendBoards`-szal rangsorol,
  *   4) display-mezőkkel adja vissza a rangsort.
  */
+import { useTranslation } from "react-i18next";
 import { redirect } from "react-router";
 
 import { getUser } from "@core/auth/session.server";
 import { createSupabaseServerClient } from "@core/auth/supabase.server";
 import { getLocaleFromPath, pickTranslated, serverT } from "@core/i18n";
 import { buildPageSeo } from "@core/seo/page-seo";
+import { SafetyNote } from "@core/ui";
 import { listBoards, listCheapestPriceByBoard } from "@modules/catalog/data/boards.server";
 import { computeReviewAggregate, toTen } from "@modules/reviews/aggregate";
 import { listAllPublishedReviews } from "@modules/reviews/data/reviews.server";
@@ -85,7 +87,7 @@ export async function loader({ request }: Route.LoaderArgs) {
   // wizard jelenik meg — nem egy üres eredmény-lap.
   const inputs = inputsFromSearchParams(url.searchParams);
   if (!inputs) {
-    return { seo, results: null, sizing: null, noMatchReason: null };
+    return { seo, results: null, sizing: null, noMatchReason: null, water: null };
   }
 
   const { supabase } = createSupabaseServerClient(request);
@@ -167,7 +169,8 @@ export async function loader({ request }: Route.LoaderArgs) {
   const noMatchReason =
     results.length === 0 ? explainNoMatch(boardsForAdvisor, inputs, config) : null;
 
-  return { seo, results, sizing, noMatchReason };
+  // A víz-választás a megjelenítéshez is kell (folyón más póráz kell).
+  return { seo, results, sizing, noMatchReason, water: inputs.water };
 }
 
 /**
@@ -222,6 +225,8 @@ export async function action({ request }: Route.ActionArgs) {
 export const meta: Route.MetaFunction = ({ data }) => data?.seo ?? [];
 
 export default function AdvisorRoute({ loaderData }: Route.ComponentProps) {
+  const { t: tCore } = useTranslation("core");
+
   if (loaderData.results) {
     return (
       <main className="mx-auto flex min-h-svh max-w-5xl flex-col gap-6 p-4 sm:p-6">
@@ -230,6 +235,15 @@ export default function AdvisorRoute({ loaderData }: Route.ComponentProps) {
           sizing={loaderData.sizing}
           noMatchReason={loaderData.noMatchReason}
         />
+        {/* Aki folyóra választ deszkát, a PÓRÁZ-típusról is tudjon: sodró
+            vízen a bokapóráz beakadhat. A szöveg a core namespace-ben él,
+            mert a spot-adatlap is ezt mutatja (modul-szerződés). */}
+        {loaderData.water === "folyo" ? (
+          <SafetyNote title={tCore("safety.riverLeash.title")}>
+            <p>{tCore("safety.riverLeash.body")}</p>
+            <p className="mt-2">{tCore("safety.riverLeash.pfd")}</p>
+          </SafetyNote>
+        ) : null}
       </main>
     );
   }

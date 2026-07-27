@@ -61,6 +61,18 @@ test.describe("Publikus felület", () => {
     await expect(page.getByRole("heading", { level: 1 }).first()).toBeVisible();
   });
 
+  test("folyó-spoton megjelenik a póráz-figyelmeztetés, tavon NEM", async ({ page }) => {
+    // Biztonsági üzenet: sodró vízen a bokapóráz víz alatti akadályba akadhat.
+    // A seedelt Szeged (Tisza) folyó-spot, a Balatonföldvár tó — a szabály
+    // KIZÁRÓLAG a folyóra vonatkozik, és a téves megjelenés is hiba lenne
+    // (a tavi evezőnek pont hogy rajta kell hagynia a bokapórázt).
+    await page.goto("/spotok/szeged-tisza");
+    await expect(page.getByRole("region", { name: /póráz/i })).toBeVisible();
+
+    await page.goto("/spotok/balatonfoldvar");
+    await expect(page.getByRole("region", { name: /póráz/i })).toHaveCount(0);
+  });
+
   test("szolgáltatók: lista → profil, lead-űrlappal", async ({ page }) => {
     await page.goto("/szolgaltatok");
     const links = page.locator('a[href^="/szolgaltatok/"]:not([href$="/uj"])');

@@ -23,7 +23,7 @@ import { PushToggle } from "@core/notifications/PushToggle";
 import { absoluteUrl, buildPageSeo } from "@core/seo/page-seo";
 import { placeJsonLd } from "@core/seo/jsonld";
 import { JsonLd } from "@core/seo/json-ld";
-import { Button, Card, DataAge, Gauge, minutesSince, StatusBadge } from "@core/ui";
+import { Button, Card, DataAge, Gauge, minutesSince, SafetyNote, StatusBadge } from "@core/ui";
 import { SpotMap } from "@modules/spots/ui/SpotMap";
 import { StormAlertScreen } from "@modules/spots/ui/StormAlertScreen";
 import { WATER_STALE_MINUTES, WaterLevel } from "@modules/spots/ui/WaterLevel";
@@ -269,6 +269,9 @@ const STATUS_SEVERITY: Record<SpotStatus, "safe" | "caution" | "danger"> = {
 
 export default function SpotDetailRoute({ loaderData, actionData }: Route.ComponentProps) {
   const { t, i18n } = useTranslation("spots");
+  // A póráz-szabály KÖZÖS igény (spots + advisor), ezért a core namespace-ben
+  // él — a modul-szerződés szerint a közös tartalom a core-ba kerül.
+  const { t: tCore } = useTranslation("core");
   const { spot, snapshot, evaluation, gaugeThresholds, reports, reportForm, jsonLd } = loaderData;
 
   const formattedIndex = evaluation
@@ -449,6 +452,15 @@ export default function SpotDetailRoute({ loaderData, actionData }: Route.Compon
               minutesSince(snapshot.waterLevelAt) >= WATER_STALE_MINUTES,
           }}
         />
+      ) : null}
+
+      {/* Folyó-specifikus, ÁLLANDÓ érvényű biztonsági szabály — nem állapot-
+          jelzés, ezért semleges (sand) kiemelés, nem a biztonsági színek. */}
+      {spot.waterType === "folyo" ? (
+        <SafetyNote title={tCore("safety.riverLeash.title")}>
+          <p>{tCore("safety.riverLeash.body")}</p>
+          <p className="mt-2">{tCore("safety.riverLeash.pfd")}</p>
+        </SafetyNote>
       ) : null}
 
       {spot.protectedAreaName ? (

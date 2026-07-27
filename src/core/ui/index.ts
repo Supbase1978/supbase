@@ -25,6 +25,9 @@ export type { RatingBarProps } from "./RatingBar";
 export { Gauge, DEFAULT_GAUGE_THRESHOLDS } from "./Gauge";
 export type { GaugeProps, GaugeThresholds } from "./Gauge";
 
+export { SafetyNote } from "./SafetyNote";
+export type { SafetyNoteProps } from "./SafetyNote";
+
 export { DataAge } from "./DataAge";
 export type { DataAgeProps } from "./DataAge";
 

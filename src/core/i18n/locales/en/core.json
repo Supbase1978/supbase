@@ -139,5 +139,12 @@
       "passwordResetFailed": "Could not save the password. The link may have expired — request a new one.",
       "unexpected": "An unexpected error occurred. Please try again."
     }
+  },
+  "safety": {
+    "riverLeash": {
+      "title": "Moving water needs a different leash",
+      "body": "On flat water an ankle leash is the right choice — the board is your flotation device and the wind cannot take it away. In moving water, however, an ankle leash can snag on a submerged obstacle (tree trunk, branch, bridge pier) and the current can hold you under. On rivers use a quick-release waist leash that you can release in one move, even under load.",
+      "pfd": "A buoyancy aid or life jacket is especially warranted on moving water — reaching the bank in a current is far harder than on a lake."
+    }
   }
 }

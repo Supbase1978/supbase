@@ -139,5 +139,12 @@
       "passwordResetFailed": "A jelszó mentése nem sikerült. A link lejárhatott — kérj újat.",
       "unexpected": "Váratlan hiba történt. Kérjük, próbáld újra."
     }
+  },
+  "safety": {
+    "riverLeash": {
+      "title": "Folyóvízen más póráz kell",
+      "body": "Álló vízen a bokára kötött póráz a helyes választás — a deszka a mentőeszközöd, és a szél nem viszi el. Sodró vízen viszont a bokapóráz beakadhat víz alatti akadályba (fatörzs, ág, hídpillér), és a sodrás a víz alá szoríthat. Folyón ezért gyorskioldós derékpóráz (quick-release) használandó, amit feszülés alatt, egy mozdulattal le tudsz oldani.",
+      "pfd": "Mentőmellény vagy úszást segítő mellény folyóvízen külön is indokolt — a sodrásban a partot elérni sokkal nehezebb, mint állóvízen."
+    }
   }
 }

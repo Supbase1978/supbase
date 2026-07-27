@@ -704,6 +704,40 @@ gyenge merevsége a STABILITÁST rontja) · kezdő→felfújható preferencia (m
 nulla hatású, 20/20 felfújható) · biztonsági kiegészítők blokk (leash,
 mentőmellény — termék-bővítés).
 
+## F1.11b — Póráz-figyelmeztetés folyóvízre (2026-07-27)
+
+Az F1.11 folytatása: ha már tudjuk, hogy a spot folyó, a legfontosabb
+folyó-specifikus SUP-szabályt is ki kell mondani. Kapuk zöldek: typecheck ·
+lint · **527 vitest** · **66 e2e**.
+
+**A szabály:** álló vízen a bokapóráz a helyes választás (a deszka a
+mentőeszköz), sodró vízen viszont beakadhat víz alatti akadályba, és a sodrás
+a víz alá szoríthat — folyón gyorskioldós DERÉKpóráz kell. A felhasználó saját
+forrása (`Kezdők_tanácsok/sup-kezdo.md`) ezt óvatosan fogalmazza meg („folyóra
+gyakran más megoldás biztonságosabb"); a szövegünk kimondja a konkrét okot is,
+mert a „miért" nélkül a tanács nem meggyőző.
+
+**Hol jelenik meg:** a folyó-spotok adatlapján ÉS a Deszkaválasztó eredményén,
+ha a felhasználó folyót választott. Tavon egyik helyen SEM — ez nem részletkérdés:
+a tavi evezősnek pont hogy RAJTA kell hagynia a bokapórázt, egy oda nem illő
+figyelmeztetés tehát rossz irányba terelne. E2E-teszt mindkét irányt őrzi.
+
+**Modul-szerződés:** két modulnak (spots + advisor) kellett ugyanaz a tartalom,
+ezért a szöveg a CORE i18n-namespace-ben él, a megjelenítés pedig az új
+`@core/ui/SafetyNote` komponensben — ugyanaz a minta, mint a `RatingBar`-nál.
+
+**Token-döntés:** a SafetyNote SZÁNDÉKOSAN nem használ biztonsági színt. A
+`--safe/--caution/--danger` család a MÉRT, éppen fennálló állapoté (2. fejezet
+3.); egy mindig érvényes szabály ezekben a színekben felhígítaná a
+státusz-szemantikát — a felhasználó megszokná a riasztás-színt ott, ahol nincs
+friss veszély. Ezért a természetvédelmi blokk semleges `sand` mintáját követi.
+Teszt őrzi, hogy ne szivárogjon be `bg-safe/caution/danger`.
+
+**Nyitva marad (termékdöntés):** a teljes kiegészítő-blokk (mentőmellény, pumpa,
+szárazzsák, konkrét termékajánlással) — a domain-review 2.8. Most a
+biztonságkritikus magot (póráz + mentőmellény-mondat) építettük meg, terméklista
+nélkül.
+
 ## F1.11 — Folyó-spotok vízállása: a SUP-index utolsó adóssága (2026-07-27)
 
 Az 5.1/6 pont eddig FIX −1 büntetést adott minden folyó-spotra, függetlenül
