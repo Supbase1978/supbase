@@ -9,11 +9,11 @@
   },
   "seo": {
     "list": {
-      "title": "SUP spots in Hungary — map and SUP index | [APPNAME]",
+      "title": "SUP spots in Hungary — map and SUP index | Suptime",
       "description": "Interactive SUP spot map: current wind, water temperature and SUP index for every Hungarian location — where it's safe to paddle today."
     },
     "detail": {
-      "title": "{{spot}} SUP spot — weather and SUP index | [APPNAME]",
+      "title": "{{spot}} SUP spot — weather and SUP index | Suptime",
       "description": "{{spot}}{{regionSuffix}}: current water conditions, SUP index, offshore wind and storm warnings — before you hit the water."
     }
   },

@@ -15,13 +15,13 @@
     "footerLabel": "Legal information"
   },
   "home": {
-    "phase": "SUP Platform — F1 (MVP) under development",
-    "appName": "[APPNAME]",
+    "phase": "Suptime — F1 (MVP) under development",
+    "appName": "Suptime",
     "tagline": "Board advisor · Catalog + common ground · Spot map + SUP index · Provider directory"
   },
   "seo": {
     "home": {
-      "title": "[APPNAME] — SUP board advisor, spots, community",
+      "title": "Suptime — SUP board advisor, spots, community",
       "description": "Board advisor, catalog with common ground, SUP index for Hungarian waters and a provider directory — all in one place."
     }
   },

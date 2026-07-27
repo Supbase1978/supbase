@@ -6,6 +6,7 @@
 import { useTranslation } from "react-i18next";
 import { data, Form } from "react-router";
 
+import { APP_NAME } from "@core/brand";
 import { requireRole } from "@core/auth/session.server";
 import { createSupabaseServerClient } from "@core/auth/supabase.server";
 import { Button, Card, StatusBadge } from "@core/ui";
@@ -84,7 +85,7 @@ export async function action({ request }: Route.ActionArgs) {
 }
 
 export const meta: Route.MetaFunction = () => {
-  return [{ title: "[APPNÉV] — Vélemény-moderáció" }];
+  return [{ title: `${APP_NAME} — Vélemény-moderáció` }];
 };
 
 export default function AdminReviewsRoute({ loaderData }: Route.ComponentProps) {

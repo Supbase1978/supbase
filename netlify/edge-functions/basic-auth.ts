@@ -33,7 +33,7 @@ interface NetlifyContext {
  * és gondolatjel volt.) A `charset` paraméter a FELHASZNÁLÓNÉV/JELSZÓ
  * kódolására vonatkozik, nem a realm szövegére.
  */
-const REALM = 'Basic realm="SUP Platform (pre-live)", charset="UTF-8"';
+const REALM = 'Basic realm="Suptime (pre-live)", charset="UTF-8"';
 
 /** Időzítés-független összehasonlítás (a rövidebb bemenet se szivárogtasson). */
 function safeEqual(a: string, b: string): boolean {

@@ -2,7 +2,12 @@
 
 > **Ez a dokumentum a Claude Code elsődleges kontextusa.** A projekt gyökerében lévő `CLAUDE.md` erre hivatkozik. Minden architekturális és designdöntés itt van rögzítve; eltérés csak indoklással, a dokumentum frissítésével együtt megengedett.
 >
-> Verzió: 1.0 · 2026-07-16 · Munkanév: SUP Platform ([APPNÉV] placeholder a UI-ban)
+> Verzió: 1.0 · 2026-07-16 · Munkanév: SUP Platform
+>
+> **A termék neve 2026-07-27 óta: „Suptime"** (a korábbi `[APPNÉV]` placeholder
+> feloldva). A UI-ban a márkanév forrása: `src/core/brand.ts` (`APP_NAME`) +
+> az i18n-fájlok lefordított címei. A repó és a dokumentáció munkaneve marad
+> „SUP Platform" — az csak belső megnevezés, nem jelenik meg a felületen.
 
 ---
 

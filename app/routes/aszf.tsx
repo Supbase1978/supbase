@@ -2,6 +2,7 @@
  * /aszf — Általános Szerződési Feltételek (F1.8). Statikus, kétnyelvű jogi oldal
  * (a tartalom az `@core/legal`-ból, locale-helyesen). SEO: loader-alapú meta.
  */
+import { APP_NAME } from "@core/brand";
 import { getLocaleFromPath } from "@core/i18n";
 import { buildPageSeo } from "@core/seo/page-seo";
 import { termsDocument } from "@core/legal/content";
@@ -16,7 +17,7 @@ export async function loader({ request }: Route.LoaderArgs) {
     request,
     locale,
     path: "/aszf",
-    title: `${doc.title} | [APPNÉV]`,
+    title: `${doc.title} | ${APP_NAME}`,
     description: doc.disclaimer,
   });
   return { locale, seo };

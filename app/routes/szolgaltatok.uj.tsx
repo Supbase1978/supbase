@@ -8,6 +8,7 @@
 import { useTranslation } from "react-i18next";
 import { data, Form, redirect } from "react-router";
 
+import { APP_NAME } from "@core/brand";
 import { requireUser } from "@core/auth/session.server";
 import { createSupabaseServerClient } from "@core/auth/supabase.server";
 import { Button, Card } from "@core/ui";
@@ -56,7 +57,7 @@ export async function action({ request }: Route.ActionArgs) {
 }
 
 export const meta: Route.MetaFunction = () => {
-  return [{ title: "[APPNÉV] — Regisztráld a szolgáltatásod" }];
+  return [{ title: `${APP_NAME} — Regisztráld a szolgáltatásod` }];
 };
 
 export default function NewProviderRoute({ actionData }: Route.ComponentProps) {

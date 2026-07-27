@@ -1,0 +1,123 @@
+<!doctype html>
+<!--
+  A megosztás-kártya (1200×630) FORRÁSA — ebből készül a `public/og/default.png`.
+
+  MIÉRT VAN COMMITOLVA: az első változatot (F1.10/8) csak PNG-ként tettük be, a
+  generáló HTML eldobódott — így a kártya nem volt újragenerálható. A névváltás
+  (Suptime) pontosan ezt kérte számon: a képre RÁ VOLT ÍRVA a placeholder.
+
+  Újragenerálás:  node scripts/generate-og.mjs
+
+  A színek a `src/core/ui/tokens.css` brand-blokkjából valók (a BIZTONSÁGI
+  tokenek itt nem szerepelnek — ez marketing-felület, nem státusz-jelzés).
+-->
+<html lang="hu">
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      /* A rendszer-betűkészletre építünk: a kártya offline, a Playwright
+         chromiumában generálódik, ezért nem tölthetünk webfontot. */
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+
+      body {
+        width: 1200px;
+        height: 630px;
+        position: relative;
+        overflow: hidden;
+        background: linear-gradient(135deg, #0E3B43 0%, #14606B 55%, #1B7A85 100%);
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+        color: #FFFFFF;
+      }
+
+      /* Hullám-motívum — ugyanaz a formanyelv, mint a betöltés-jelzőé. */
+      .waves { position: absolute; inset: auto 0 0 0; height: 220px; opacity: 0.16; }
+      .waves + .waves { opacity: 0.1; bottom: -40px; }
+
+      .frame {
+        position: relative;
+        height: 100%;
+        padding: 72px 80px;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .top { display: flex; align-items: center; justify-content: space-between; }
+
+      .brand {
+        font-size: 40px;
+        font-weight: 700;
+        letter-spacing: -0.5px;
+      }
+
+      /* Amber jelvény — a CTA-szabály szerint MINDIG sötét felirattal. */
+      .badge {
+        background: #E8A33C;
+        color: #14282C;
+        font-size: 24px;
+        font-weight: 600;
+        padding: 16px 32px;
+        border-radius: 999px;
+      }
+
+      .middle { margin-top: auto; margin-bottom: auto; }
+
+      h1 {
+        font-size: 82px;
+        line-height: 1.05;
+        font-weight: 800;
+        letter-spacing: -2px;
+        max-width: 940px;
+      }
+
+      .lead {
+        margin-top: 28px;
+        font-size: 30px;
+        line-height: 1.35;
+        color: rgba(255, 255, 255, 0.88);
+        max-width: 900px;
+      }
+
+      .chips { display: flex; gap: 16px; }
+
+      .chip {
+        border: 1px solid rgba(255, 255, 255, 0.38);
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 999px;
+        padding: 14px 28px;
+        font-size: 24px;
+      }
+    </style>
+  </head>
+  <body>
+    <svg class="waves" viewBox="0 0 1200 220" preserveAspectRatio="none" aria-hidden="true">
+      <path
+        fill="#FFFFFF"
+        d="M0,90 C150,150 300,30 450,90 C600,150 750,30 900,90 C1050,150 1150,60 1200,80 L1200,220 L0,220 Z"
+      />
+    </svg>
+    <svg class="waves" viewBox="0 0 1200 220" preserveAspectRatio="none" aria-hidden="true">
+      <path
+        fill="#FFFFFF"
+        d="M0,130 C180,70 320,170 500,120 C680,70 820,160 1000,110 C1100,85 1160,110 1200,120 L1200,220 L0,220 Z"
+      />
+    </svg>
+
+    <div class="frame">
+      <div class="top">
+        <div class="brand">Suptime</div>
+        <div class="badge">Biztonság először</div>
+      </div>
+
+      <div class="middle">
+        <h1>Melyik SUP-deszka való neked?</h1>
+        <p class="lead">Deszkaválasztó, Közös nevező és élő SUP-index a magyar vizekre.</p>
+      </div>
+
+      <div class="chips">
+        <span class="chip">Deszkaválasztó</span>
+        <span class="chip">Spot-térkép</span>
+        <span class="chip">SUP-index</span>
+      </div>
+    </div>
+  </body>
+</html>

@@ -4,11 +4,11 @@
   },
   "seo": {
     "list": {
-      "title": "SUP board catalog — specs, reviews, prices | [APPNAME]",
+      "title": "SUP board catalog — specs, reviews, prices | Suptime",
       "description": "Browse SUP boards: dimensions, stability index, common-ground reviews and shop prices in one place."
     },
     "detail": {
-      "title": "{{model}} review and specs | [APPNAME]",
+      "title": "{{model}} review and specs | Suptime",
       "description": "{{model}}{{brandSuffix}} — specs, stability index, common-ground reviews and best prices."
     }
   },

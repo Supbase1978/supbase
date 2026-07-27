@@ -9,11 +9,11 @@
   },
   "seo": {
     "list": {
-      "title": "SUP-spotok Magyarországon — térkép és SUP-index | [APPNÉV]",
+      "title": "SUP-spotok Magyarországon — térkép és SUP-index | Suptime",
       "description": "Interaktív SUP-spot-térkép: aktuális szél, vízhőmérséklet és SUP-index minden magyar helyszínre — hol biztonságos ma paddleboardozni."
     },
     "detail": {
-      "title": "{{spot}} SUP-spot — időjárás és SUP-index | [APPNÉV]",
+      "title": "{{spot}} SUP-spot — időjárás és SUP-index | Suptime",
       "description": "{{spot}}{{regionSuffix}}: aktuális vízi körülmények, SUP-index, besodró szél és viharjelzés — mielőtt vízre szállsz."
     }
   },

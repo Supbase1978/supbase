@@ -4,11 +4,11 @@
   },
   "seo": {
     "list": {
-      "title": "SUP providers — rental, tours, lessons, stays | [APPNAME]",
+      "title": "SUP providers — rental, tours, lessons, stays | Suptime",
       "description": "SUP rentals, tour operators, instructors and stays across Hungary's waters — browse by service type and get in touch."
     },
     "detail": {
-      "title": "{{name}} — SUP provider | [APPNAME]",
+      "title": "{{name}} — SUP provider | Suptime",
       "description": "{{name}}: SUP services, contact details and related spots. Send an enquiry directly to the provider."
     }
   },

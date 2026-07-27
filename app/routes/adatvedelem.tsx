@@ -2,6 +2,7 @@
  * /adatvedelem — Adatvédelmi tájékoztató (F1.8). Statikus, kétnyelvű jogi oldal
  * (a tartalom az `@core/legal`-ból, locale-helyesen). SEO: loader-alapú meta.
  */
+import { APP_NAME } from "@core/brand";
 import { getLocaleFromPath } from "@core/i18n";
 import { buildPageSeo } from "@core/seo/page-seo";
 import { privacyDocument } from "@core/legal/content";
@@ -16,7 +17,7 @@ export async function loader({ request }: Route.LoaderArgs) {
     request,
     locale,
     path: "/adatvedelem",
-    title: `${doc.title} | [APPNÉV]`,
+    title: `${doc.title} | ${APP_NAME}`,
     description: doc.disclaimer,
   });
   return { locale, seo };

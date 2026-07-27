@@ -7,6 +7,7 @@
 import { useTranslation } from "react-i18next";
 import { data, Form, Link } from "react-router";
 
+import { APP_NAME } from "@core/brand";
 import { requireUser } from "@core/auth/session.server";
 import { createSupabaseServerClient } from "@core/auth/supabase.server";
 import { Button, Card } from "@core/ui";
@@ -40,7 +41,7 @@ export async function action({ request }: Route.ActionArgs) {
 }
 
 export const meta: Route.MetaFunction = () => [
-  { title: "[APPNÉV] — Új jelszó" },
+  { title: `${APP_NAME} — Új jelszó` },
   { name: "robots", content: "noindex" },
 ];
 

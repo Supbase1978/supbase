@@ -4,11 +4,11 @@
   },
   "seo": {
     "list": {
-      "title": "SUP-deszkák katalógusa — paraméterek, vélemények, árak | [APPNÉV]",
+      "title": "SUP-deszkák katalógusa — paraméterek, vélemények, árak | Suptime",
       "description": "Böngéssz a SUP-deszkák között: méretek, stabilitási index, Közös nevező vélemények és bolti árak egy helyen."
     },
     "detail": {
-      "title": "{{model}} teszt és adatlap | [APPNÉV]",
+      "title": "{{model}} teszt és adatlap | Suptime",
       "description": "{{model}}{{brandSuffix}} — paraméterek, stabilitási index, Közös nevező vélemények és legjobb árak."
     }
   },

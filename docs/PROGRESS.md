@@ -704,6 +704,40 @@ gyenge merevsége a STABILITÁST rontja) · kezdő→felfújható preferencia (m
 nulla hatású, 20/20 felfújható) · biztonsági kiegészítők blokk (leash,
 mentőmellény — termék-bővítés).
 
+## F1.10/10 — A termék neve: „Suptime" (2026-07-27)
+
+A felhasználó eldöntötte a nevet (a domaint másnap regisztrálja), így az F1 óta
+nyitva álló **`[APPNÉV]` placeholder feloldva** — 28 helyen. Kapuk zöldek:
+typecheck · lint · 482 vitest · 64 e2e · 7 vizuális.
+
+**Ez nem kozmetika volt:** a placeholder RÁ VOLT ÍRVA a megosztás-kártyára is,
+tehát minden megosztott link „[APPNÉV]"-vel jelent volna meg a Facebookon.
+
+**Hol él a név, és miért pont ott** (`src/core/brand.ts` fejléce is felsorolja):
+- **`APP_NAME`** (`@core/brand`) — a TypeScript-kód EGYETLEN forrása; a 10
+  route-`meta` innen kapja a címet (eddig mindegyikben be volt égetve).
+- **i18n-fájlok** — ott a név lefordított MONDATOK része („… | Suptime"), a
+  fordítás pedig nem hivatkozhat kódra. hu + en, 5 namespace.
+- **`public/og/default.png`** — a kártyára RAJZOLVA.
+- **`public/sw.js`** (a service worker nem éri el a bundle-t) és a
+  **`basic-auth.ts` realm-je** (Deno-runtime, külön fordítási egység).
+Névváltáskor ez az öt hely a teljes lista: `grep -ri suptime`.
+
+**A megosztás-kártya mostantól ÚJRAGENERÁLHATÓ.** Az F1.10/8-as változatot csak
+PNG-ként commitoltuk, a generáló HTML eldobódott — a névváltás ezt azonnal
+számon kérte. Most a forrás is bent van (`scripts/og-card.html` +
+`node scripts/generate-og.mjs`, a meglévő Playwright-chromiummal).
+
+**A repó és a dokumentáció munkaneve marad „SUP Platform"** — az belső
+megnevezés, a felületen nem jelenik meg. A fejlesztési dokumentáció fejléce
+rögzíti a döntést.
+
+**Mellékesen javítva (valós, éles adat fogta):** a spot-adatlap e2e-tesztje a
+szigorú `h1`-keresővel elhasalt, amikor a mérés közben ÉLESBE váltott egy
+II. fokú viharjelzés — a teljes képernyős riasztásnak saját `h1`-e van. Ez
+véletlenszerű piros lett volna (a lokális futás a távoli DB-t nézi); a teszt
+mostantól az első címsorra vár, kommentben az okkal.
+
 ## F1.10/9 — Teljesítmény-kapu: LCP-mérés (2026-07-27)
 
 Az audit UTOLSÓ nyitott hiánya (`AUDIT_F1.md` 6.1) lezárva. Kapuk zöldek:

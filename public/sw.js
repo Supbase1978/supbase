@@ -1,5 +1,5 @@
 /*
- * SUP Platform — service worker (F1.9, 9. fejezet).
+ * Suptime — service worker (F1.9, 9. fejezet).
  *
  * Kizárólag a push-értesítéseket kezeli. SZÁNDÉKOSAN NINCS benne fetch-handler
  * és offline cache: a viharjelzés biztonságkritikus, és egy cache-elt riasztás
@@ -26,7 +26,7 @@ self.addEventListener("push", (event) => {
     data = {};
   }
 
-  const title = data.title || "SUP Platform";
+  const title = data.title || "Suptime";
   const options = {
     body: data.body || "",
     icon: "/icons/icon-192.png",

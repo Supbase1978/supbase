@@ -53,7 +53,12 @@ test.describe("Publikus felület", () => {
 
     await links.first().click();
     await expect(page).toHaveURL(/\/spotok\/[a-z0-9-]+/);
-    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+    // A `first()` NEM kozmetika: II. fokú viharjelzésnél a teljes képernyős
+    // riasztás (`role="alertdialog"`) SAJÁT h1-gyel jelenik meg az adatlap
+    // címsora mellett, és a szigorú keresés két találaton elhasal. Ez ÉLES
+    // adaton múlik (a lokális futás a távoli DB-t nézi), tehát a teszt
+    // véletlenszerűen bukna — pontosan ez történt 2026-07-27-én.
+    await expect(page.getByRole("heading", { level: 1 }).first()).toBeVisible();
   });
 
   test("szolgáltatók: lista → profil, lead-űrlappal", async ({ page }) => {

@@ -12,6 +12,7 @@ import {
   Turnstile,
   TURNSTILE_RESPONSE_FIELD,
 } from "@core/auth";
+import { APP_NAME } from "@core/brand";
 import { createSupabaseServerClient } from "@core/auth/supabase.server";
 import { getUser, safeRedirect } from "@core/auth/session.server";
 import { Button, Card } from "@core/ui";
@@ -92,7 +93,7 @@ export async function action({ request }: Route.ActionArgs) {
 }
 
 export const meta: Route.MetaFunction = () => [
-  { title: "[APPNÉV] — Belépés" },
+  { title: `${APP_NAME} — Belépés` },
   { name: "robots", content: "noindex" },
 ];
 

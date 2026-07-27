@@ -15,13 +15,13 @@
     "footerLabel": "Jogi információk"
   },
   "home": {
-    "phase": "SUP Platform — F1 (MVP) fejlesztés alatt",
-    "appName": "[APPNÉV]",
+    "phase": "Suptime — F1 (MVP) fejlesztés alatt",
+    "appName": "Suptime",
     "tagline": "Deszkaválasztó · Katalógus + Közös nevező · Spot-térkép + SUP-index · Szolgáltatói directory"
   },
   "seo": {
     "home": {
-      "title": "[APPNÉV] — SUP deszkaválasztó, spotok, közösség",
+      "title": "Suptime — SUP deszkaválasztó, spotok, közösség",
       "description": "Deszkaválasztó, katalógus Közös nevezővel, SUP-index a magyar vizekre és szolgáltatói directory — egy helyen."
     }
   },

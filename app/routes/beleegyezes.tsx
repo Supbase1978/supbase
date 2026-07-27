@@ -7,6 +7,7 @@
 import { useTranslation } from "react-i18next";
 import { data, Form, Link, redirect } from "react-router";
 
+import { APP_NAME } from "@core/brand";
 import { requireUser, safeRedirect } from "@core/auth/session.server";
 import { createSupabaseServerClient } from "@core/auth/supabase.server";
 import { REQUIRED_CONSENT_KINDS } from "@core/consent/config";
@@ -37,7 +38,7 @@ export async function action({ request }: Route.ActionArgs) {
 }
 
 export const meta: Route.MetaFunction = () => [
-  { title: "[APPNÉV] — Feltételek elfogadása" },
+  { title: `${APP_NAME} — Feltételek elfogadása` },
   { name: "robots", content: "noindex" },
 ];
 

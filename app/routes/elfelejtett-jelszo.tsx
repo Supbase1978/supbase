@@ -6,6 +6,7 @@
  */
 import { data, Form, Link, redirect } from "react-router";
 
+import { APP_NAME } from "@core/brand";
 import { isTurnstileEnabled, Turnstile, TURNSTILE_RESPONSE_FIELD } from "@core/auth";
 import { createSupabaseServerClient } from "@core/auth/supabase.server";
 import { getUser } from "@core/auth/session.server";
@@ -53,7 +54,7 @@ export async function action({ request }: Route.ActionArgs) {
 }
 
 export const meta: Route.MetaFunction = () => [
-  { title: "[APPNÉV] — Elfelejtett jelszó" },
+  { title: `${APP_NAME} — Elfelejtett jelszó` },
   { name: "robots", content: "noindex" },
 ];
 
