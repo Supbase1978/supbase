@@ -1,5 +1,5 @@
 /**
- * II. fokú viharjelzés — teljes képernyős, NEM eldugható riasztás (2. fejezet
+ * Teljes képernyős, NEM eldugható riasztás (2. fejezet
  * 4. pont; a `_design-source` "II. fokú viharjelzés riasztás" képernyője az
  * etalon, TOKENEKBŐL újraépítve — a design mélyvörös háttérszíne (#5C1610)
  * NEM token, ezért `--danger`-t használunk teljes képernyős háttérként; ez
@@ -9,6 +9,13 @@
  *
  * Nincs bezárás-gomb és nincs Escape/kattintás-kezelő — a komponens
  * szándékosan nem eldugható, amíg a szülő (a route) ki nem veszi a fából.
+ *
+ * KÉT OK, KÉT SZÖVEG (`variant`): II. fokú viharjelzés VAGY III. fokú árvízi
+ * készültség. Ezt élő teszt kényszerítette ki: árvíznél a viharjelzés-szöveg
+ * jelent meg („másodfokú viharjelzés", „várható széllökés: 10 km/h") szélcsend
+ * mellett — és a menekülési tanács is szél-specifikus volt („csökkentsd a
+ * szélfelületet"), ami áradó folyón félrevezető. A veszély más, a teendő is
+ * más; a keret (ikon, vízimentő-CTA, forrás-sor) közös.
  */
 import { useTranslation } from "react-i18next";
 
@@ -19,15 +26,25 @@ const RESCUE_TEL_DISPLAY = "+36 30 383 8383";
 
 const STEP_KEYS = ["1", "2", "3"] as const;
 
+/** A riasztás OKA — ettől függ a teljes szöveg (eyebrow, body, teendők). */
+export type AlertVariant = "storm" | "flood";
+
 export interface StormAlertScreenProps {
-  /** A spot neve — a riasztás-szöveg kontextusához (`stormAlert.body` interpolál). */
+  /**
+   * A riasztás oka. Ha MINDKETTŐ fennáll, a hívó a viharjelzést adja meg:
+   * a szél az azonnal ható tényező, a menekülési tanács is ahhoz igazodik.
+   */
+  variant?: AlertVariant;
+  /** A spot neve — a riasztás-szöveg kontextusához (`body` interpolál). */
   spotName: string;
   /** A viharjelzés forrása (pl. `weather_snapshots.source`). */
   source: string;
   /** A mérés/jelzés rögzítésének időbélyege (ISO) — a "Frissítve" sorhoz. */
   updatedAt: string;
-  /** Széllökés km/h, ha van mérés — opcionális kiegészítő mondat. */
+  /** Széllökés km/h, ha van mérés — csak a viharjelzés-változatban. */
   gustKmh?: number | null;
+  /** Vízállás cm, ha van mérés — csak az árvíz-változatban. */
+  waterLevelCm?: number | null;
   className?: string;
 }
 
@@ -60,13 +77,17 @@ function PhoneIcon() {
  * rendereljen (lásd `app/routes/spotok.$slug.tsx`).
  */
 export function StormAlertScreen({
+  variant = "storm",
   spotName,
   source,
   updatedAt,
   gustKmh,
+  waterLevelCm,
   className,
 }: StormAlertScreenProps) {
   const { t, i18n } = useTranslation("spots");
+  // A két változat i18n-blokkja azonos ALAKÚ, csak a tartalom más.
+  const ns = variant === "flood" ? "floodAlert" : "stormAlert";
 
   const updatedDate = new Date(updatedAt);
   const formattedTime = Number.isNaN(updatedDate.getTime())
@@ -93,25 +114,30 @@ export function StormAlertScreen({
         <WarningIcon />
         <div className="flex flex-col gap-2">
           <span className="text-xs font-bold tracking-[0.2em] text-surface uppercase">
-            {t("stormAlert.eyebrow")}
+            {t(`${ns}.eyebrow`)}
           </span>
           <h1
             id={titleId}
             className="text-3xl leading-tight font-bold text-surface"
             style={{ fontFamily: "var(--font-display)" }}
           >
-            {t("stormAlert.headline")}
+            {t(`${ns}.headline`)}
           </h1>
         </div>
         <p id={descId} className="text-[15px] leading-relaxed text-surface">
-          {t("stormAlert.body", { spotName })}
-          {gustKmh != null ? ` ${t("stormAlert.bodyGust", { gust: gustKmh })}` : ""}
+          {t(`${ns}.body`, { spotName })}
+          {variant === "storm" && gustKmh != null
+            ? ` ${t("stormAlert.bodyGust", { gust: gustKmh })}`
+            : ""}
+          {variant === "flood" && waterLevelCm != null
+            ? ` ${t("floodAlert.bodyLevel", { level: waterLevelCm })}`
+            : ""}
         </p>
       </div>
 
       <div className="mx-6 mt-6 flex flex-col gap-3 rounded-2xl bg-surface/10 p-4">
         <span className="text-xs font-bold tracking-wide text-surface">
-          {t("stormAlert.whatToDo")}
+          {t(`${ns}.whatToDo`)}
         </span>
         {STEP_KEYS.map((step) => (
           <div key={step} className="flex items-start gap-3">
@@ -123,7 +149,7 @@ export function StormAlertScreen({
               {step}
             </span>
             <span className="text-sm leading-relaxed text-surface">
-              {t(`stormAlert.steps.${step}`)}
+              {t(`${ns}.steps.${step}`)}
             </span>
           </div>
         ))}
@@ -137,11 +163,11 @@ export function StormAlertScreen({
           className="inline-flex min-h-[var(--cta-height)] items-center justify-center gap-2 rounded-[var(--radius-cta)] bg-amber px-6 text-base font-bold text-text"
         >
           <PhoneIcon />
-          {t("stormAlert.callRescue")} · {RESCUE_TEL_DISPLAY}
+          {t(`${ns}.callRescue`)} · {RESCUE_TEL_DISPLAY}
         </a>
         <span className="text-center text-xs text-surface">
-          {t("stormAlert.source")}: {source}
-          {formattedTime ? ` · ${t("stormAlert.updated")}: ${formattedTime}` : ""}
+          {t(`${ns}.source`)}: {source}
+          {formattedTime ? ` · ${t(`${ns}.updated`)}: ${formattedTime}` : ""}
         </span>
       </div>
     </div>

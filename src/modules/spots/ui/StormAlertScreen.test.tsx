@@ -74,3 +74,37 @@ describe("StormAlertScreen", () => {
     expect(screen.queryByText(/Várható széllökés/)).toBeNull();
   });
 });
+
+describe("StormAlertScreen — árvíz-változat", () => {
+  afterEach(() => {
+    cleanup();
+  });
+
+  it("árvíznél NEM viharjelzést mond, és nem beszél széllökésről", () => {
+    renderScreen({ variant: "flood", gustKmh: 10, waterLevelCm: 900 });
+    const dialog = screen.getByRole("alertdialog");
+    expect(dialog.textContent).toContain("árvízvédelmi készültség");
+    // Ez a KONKRÉT hiba volt élesben: szélcsend mellett „várható széllökés".
+    expect(dialog.textContent).not.toContain("viharjelzés");
+    expect(dialog.textContent).not.toContain("széllökés");
+  });
+
+  it("a vízállást kiírja, ha van mérés", () => {
+    renderScreen({ variant: "flood", waterLevelCm: 900 });
+    expect(screen.getByRole("alertdialog").textContent).toContain("900 cm");
+  });
+
+  it("a menekülési tanács a SODRÁSRÓL szól, nem a szélfelületről", () => {
+    renderScreen({ variant: "flood", waterLevelCm: 900 });
+    const text = screen.getByRole("alertdialog").textContent ?? "";
+    expect(text).toContain("sodra");
+    expect(text).not.toContain("szélfelület");
+  });
+
+  it("a vízimentő-CTA mindkét változatban ugyanaz, és NEM danger-színű", () => {
+    renderScreen({ variant: "flood", waterLevelCm: 900 });
+    const link = screen.getByRole("link", { name: /Vízimentők hívása/ });
+    expect(link.getAttribute("href")).toBe("tel:+36303838383");
+    expect(link.className).not.toContain("danger");
+  });
+});

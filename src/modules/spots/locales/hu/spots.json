@@ -121,5 +121,20 @@
       "2": "II. fokú árvízi készültség",
       "3": "III. fokú árvízi készültség"
     }
+  },
+  "floodAlert": {
+    "eyebrow": "III. fokú árvízi készültség",
+    "headline": "Azonnal menj partra!",
+    "body": "{{spotName}} környékén III. fokú árvízvédelmi készültség van érvényben — a megáradt folyón SUP-pal tartózkodni tilos és életveszélyes.",
+    "bodyLevel": "Aktuális vízállás: {{level}} cm.",
+    "whatToDo": "MIT TEGYÉL",
+    "steps": {
+      "1": "Evezz azonnal a legközelebbi biztonságos partszakaszra — az áradó folyó sodra ellen visszaevezni nem fogsz tudni.",
+      "2": "Kerüld a vízbe lógó fákat, hidakat és az uszadékot: a sodrás ezekhez szorít, és a deszka alattuk felborulhat.",
+      "3": "Baj esetén hívd a vízimentőket: +36 30 383 8383."
+    },
+    "callRescue": "Vízimentők hívása",
+    "source": "Forrás",
+    "updated": "Frissítve"
   }
 }

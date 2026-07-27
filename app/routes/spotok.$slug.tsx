@@ -282,14 +282,19 @@ export default function SpotDetailRoute({ loaderData, actionData }: Route.Compon
   return (
     <main className="mx-auto flex min-h-svh max-w-5xl flex-col gap-6 p-4 sm:p-6">
       {jsonLd ? <JsonLd data={jsonLd} /> : null}
-      {/* II. fokú viharjelzés: teljes képernyős, NEM eldugható riasztás a
-          tartalom FÖLÉ (2. fejezet 4. pont; F1.3-reviewer m5). */}
+      {/* Teljes képernyős, NEM eldugható riasztás a tartalom FÖLÉ (2. fejezet
+          4. pont; F1.3-reviewer m5). KÉT OK: II. fokú viharjelzés VAGY III.
+          fokú árvízi készültség — a szöveg és a menekülési tanács ehhez
+          igazodik. Ha mindkettő fennáll, a viharjelzés győz: a szél az
+          azonnal ható tényező. */}
       {evaluation?.status === "forbidden" && snapshot ? (
         <StormAlertScreen
+          variant={snapshot.stormLevel === 2 ? "storm" : "flood"}
           spotName={spot.name}
           source={snapshot.source}
           updatedAt={snapshot.fetchedAt}
           gustKmh={snapshot.gustKmh}
+          waterLevelCm={snapshot.waterLevelCm}
         />
       ) : null}
 

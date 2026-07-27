@@ -121,5 +121,20 @@
       "2": "Flood alert level II",
       "3": "Flood alert level III"
     }
+  },
+  "floodAlert": {
+    "eyebrow": "Flood alert level III",
+    "headline": "Get ashore immediately!",
+    "body": "A level III flood alert is in effect near {{spotName}} — being on the flooded river with a SUP is forbidden and life-threatening.",
+    "bodyLevel": "Current water level: {{level}} cm.",
+    "whatToDo": "WHAT TO DO",
+    "steps": {
+      "1": "Paddle to the nearest safe bank right away — you will not be able to paddle back against a flooding river.",
+      "2": "Stay clear of overhanging trees, bridges and floating debris: the current pushes you into them and the board can flip underneath.",
+      "3": "If you are in trouble, call water rescue: +36 30 383 8383."
+    },
+    "callRescue": "Call water rescue",
+    "source": "Source",
+    "updated": "Updated"
   }
 }

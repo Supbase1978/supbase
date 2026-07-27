@@ -708,8 +708,8 @@ mentőmellény — termék-bővítés).
 
 Az 5.1/6 pont eddig FIX −1 büntetést adott minden folyó-spotra, függetlenül
 attól, hogy a folyó nyugodt nyári vízálláson van-e vagy árad. Kapuk zöldek:
-typecheck · lint · **520 vitest** (+9 komponens, +16 adapter, +9 index/batch).
-**ÉLESÍTVE NINCS** — a migráció és a függvény-deploy jóváhagyásra vár.
+typecheck · lint · **524 vitest** (+9 komponens, +16 adapter, +9 index/batch,
++4 árvíz-riasztás) · 64 e2e. **ÉLESÍTVE ÉS BÖNGÉSZŐBEN VERIFIKÁLVA** (lent).
 
 **A FORRÁS-DÖNTÉS a lényeg.** A spec HydroInfo-scrapinget írt elő (a felhasználó
 DunApp-projektjéből portolva). A DunApp kódját megnézve kiderült, hogy ott a
@@ -761,8 +761,31 @@ mindkét másolatában az árvízi ág (bit-azonos, külön tesztekkel) ·
 4 snapshot-oszlop értékkészlet-kényszerrel, nézet-bővítés, seed) · pgTAP-
 kiegészítés · `spots/ui/WaterLevel.tsx` + i18n (hu/en).
 
-**HÁTRA:** éles `db push` + `weather-sync` újradeploy (jóváhagyással), majd
-böngésző-verifikáció a három folyó-spot adatlapján.
+**ÉLESÍTVE ÉS VERIFIKÁLVA (2026-07-27, felhasználói jóváhagyással):**
+1. Migráció kitolva (`db push --include-all` — a 099000-es GDPR-migráció
+   magasabb időbélyege miatt kellett a flag, ahogy F1.9-ben is).
+2. `weather-sync` újradeployolva; kézi hívás → **15/15 spot OK, `riverGauges: 3`**.
+3. Éles adat a snapshotokban: Szeged 62 cm · Bácsa 207 cm · Budapest 34 cm,
+   mind 0. fokon, a mérés saját időbélyegével. Az óránkénti cron azóta magától
+   írja (a verifikáció közben le is futott, valódi adattal).
+
+**A KIKÉNYSZERÍTETT TESZT AZONNAL FOGOTT EGY VALÓDI HIBÁT.** Mivel élesben
+mindhárom mérce 0. fokon áll, a fokozat-ág csak szimulációval ellenőrizhető:
+egy ideiglenes sorral (`source='teszt-vizallas'`, 900 cm, III. fok)
+kikényszerítettük az állapotot. Ekkor derült ki, hogy a teljes képernyős
+riasztás a VIHARJELZÉS szövegét mutatta árvízre: „másodfokú viharjelzés van
+érvényben" és „Várható széllökés: 10 km/h" — **szélcsend mellett** —, a
+menekülési tanács pedig szél-specifikus volt („csökkentsd a szélfelületet"),
+ami áradó folyón félrevezető, sőt veszélyes.
+**Javítva:** a `StormAlertScreen` `variant` propot kapott (`storm` | `flood`),
+saját i18n-blokkal (hu+en). Az árvíz-változat a sodrásról, az uszadékról és a
+vízbe lógó fákról szól, és a vízállást írja ki a széllökés helyett. A keret
+(ikon, vízimentő-CTA, forrás-sor) közös. Ha mindkét ok fennáll, a viharjelzés
+győz (a szél az azonnal ható tényező). 4 új teszt védi, köztük egy, ami
+kimondottan azt őrzi, hogy árvíznél NE szerepeljen a „viharjelzés" és a
+„széllökés" szó.
+
+A teszt-sorok törölve (ellenőrizve: 0 maradék), a spotok az éles adatot mutatják.
 
 ## F1.10/10 — A termék neve: „Suptime" (2026-07-27)
 
