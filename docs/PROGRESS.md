@@ -17,7 +17,7 @@
 | F1.7 Providers | ✅ kész (2026-07-24) | directory-lista + profil + lead-form + saját-listing (claim/regisztráció) + admin-hitelesítő panel; mind az 5 flow böngészőben élesben verifikálva. Részletek lent |
 | F1.8 SEO-réteg | ✅ mag kész (2026-07-24) | loader-alapú meta+hreflang, JSON-LD, sitemap+robots, consent (user_consents migráció + regisztrációs checkbox + re-consent), ÁSZF+adatvédelmi. HÁTRA: OG-kép-generálás + persona-landingek (F1.8b) + a consent-migráció éles push. Részletek lent |
 | F1.9 Push + viharjelzés | ✅ kész (2026-07-25) | teljes web push-pipeline (VAPID + RFC 8291 natív Web Cryptóval, npm nélkül), storm-alert push-ág, feliratkozó-UI, m4 `observed_at`. Élesítve (5 migráció + secretek + deploy) és **böngészőben végponttól végpontig verifikálva: a viharjelzés-push megérkezett**. Részletek lent |
-| F1.10 Záró audit + élesítés | ✅ audit lefutott (2026-07-26) | **`docs/AUDIT_F1.md`**: 24/26 tétel zöld. Két mérés-jellegű hiány (vizuális regresszió, LCP-budget) — egyik sem blokkoló, indoklás a riportban. HÁTRA az F1 lezárásához: **cégadatok** (felhasználó) + **Turnstile éles kulcs** a publikussá tétel előtt |
+| F1.10 Záró audit + élesítés | ✅ audit **26/26** (2026-07-27) | **`docs/AUDIT_F1.md`**: az audit két mérés-jellegű hiánya pótolva (vizuális regresszió 07-26, teljesítmény-budget 07-27). HÁTRA az F1 lezárásához a publikussá tétel — a lépések a `RUNBOOK.md` **élesítési checklistjében** (domain → Resend-SMTP → Turnstile → cégadatok → `SITE_PUBLIC=true`), mind felhasználói döntés/adat |
 
 ## ITINER a következő sessionnek (2026-07-21-i állapot)
 
@@ -703,6 +703,64 @@ mindig a legolcsóbbat jutalmazza, pedig a források szerint a nagyon olcsó sze
 gyenge merevsége a STABILITÁST rontja) · kezdő→felfújható preferencia (most
 nulla hatású, 20/20 felfújható) · biztonsági kiegészítők blokk (leash,
 mentőmellény — termék-bővítés).
+
+## F1.10/9 — Teljesítmény-kapu: LCP-mérés (2026-07-27)
+
+Az audit UTOLSÓ nyitott hiánya (`AUDIT_F1.md` 6.1) lezárva. Kapuk zöldek:
+typecheck · lint · 482 vitest · 64 e2e · 5 perf.
+
+**A mérés a PRODUKCIÓS build ellen megy, nem a dev-szerver ellen.** A dev nem
+bundle-öl, nem minifikál és HMR-kódot is szállít — abból mért LCP semmit nem
+mondana. Az F1.10/3 óta viszont nincs `npm run start`, ezért új futtató:
+`scripts/serve-build.mjs` (statikus fájl a `build/client`-ből + a generált
+SSR-handler, ugyanabban a sorrendben, ahogy a Netlify csinálja).
+
+**Fojtás Lighthouse-mobil profillal** (150 ms RTT / 1,6 Mbps / 4× CPU, CDP-n).
+Fojtás nélkül minden localhost-mérés pár száz ms lenne, és a kapu semmit nem
+fogna meg.
+
+**A módszertan MAGA fogott egy hibát:** az első futásnál a `/spotok` **2764 ms**
+LCP-t adott — a 2500-as budget FÖLÖTT. Az ok nem az oldal volt, hanem a mérés:
+a lokális szerver tömörítés nélkül szállított, a Netlify viszont br/gzip-pel.
+Fojtott hálózaton ez a legnagyobb egyetlen tényező. Tömörítés bekapcsolása után
+UGYANAZ a build **944 ms**. Tanulság: egy hűtlen mérőeszköz nem konzervatív,
+hanem hamis riasztást ad — és a hamis riasztás pont annyira rombolja a kapu
+hitelét, mint az elnézett hiba.
+
+**Alapérték (macOS, 2026-07-27):** `/` 584 ms · `/deszkak` 528 ms ·
+`/deszkavalaszto` 588 ms · `/spotok` 944 ms. Kliens-JS (brotli, átvitt):
+130 / 132 / 135 / 395 kB.
+
+**Két kapu, két jellegű küszöbbel:** az LCP-budget a SPEC célján marad
+(2500 ms) — szorosabb küszöb a gépek közti szórásra bukna, nem regresszióra.
+A JS-budget viszont mért értékhez igazított (~35 % fejtér), mert
+determinisztikus: ugyanaz a build ugyanannyi bájt. Külön teszt mondja ki, hogy
+a **MapLibre csak a térképes útvonalon** töltődik — ha kikerülne a dinamikus
+importból, minden oldal megfizetné, és a puszta budget-bukás nem nevezné meg az
+okot.
+
+**CI-ban SZÁNDÉKOSAN nem fut** (a vizuális kapuval azonos indok: osztott futók
+ingadozó CPU-ja → hamis piros). Release előtti kapu, a runbookban leírva.
+Az ÉLES oldal mérése a publikussá tétel után: `PERF_BASE_URL=https://… npm run e2e:perf`.
+
+**Mellékesen javítva:** a `SpotMap.test.tsx` maplibre-mockjából hiányzott az
+`once` — a betöltés-jelző (F1.10-es animált hullám) óta minden futás 3 kezeletlen
+elutasítást írt. A tesztek zöldek voltak, de a kezeletlen hiba elfedhet valódi
+regressziót.
+
+**Élesítési döntések (felhasználóval egyeztetve, 2026-07-27):**
+- **Captcha:** a Turnstile-kód kész, de éles kulcs NINCS és egyelőre nem is lesz
+  — a jelszó-kapu mögött nincs mit védeni. A felhasználó a publikussá tételkor
+  regisztrál a (ingyenes) Cloudflare-fiókra. Tisztázva: a Turnstile **nem
+  hosting** — a domain nem költözik sehova; és a Supabase-nek nincs saját
+  captchája, csak hCaptcha/Turnstile közül lehet választani. Elfogadott
+  kockázatként rögzítve: `SECURITY_FINDINGS.md` **F1.10-05**.
+- **E-mail-küldés:** a beépített Supabase-küldő próbára való (néhány levél/óra,
+  best-effort). Éles SMTP a **Resend**-en át lesz — előfeltétele a saját domain
+  (a `*.netlify.app` aldomain nem hitelesíthető feladóként). `SECURITY_FINDINGS.md`
+  **F1.10-06**.
+- Mindkettő + a cégadatok + a mérés bekerült a `RUNBOOK.md` **élesítési
+  checklistjébe**, sorrendben (a domain a többi előfeltétele).
 
 ## F1.10/8 — OG megosztás-kártya (2026-07-27)
 

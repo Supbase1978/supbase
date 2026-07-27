@@ -18,6 +18,14 @@ import { defineConfig, devices } from "@playwright/test";
 
 const baseURL = process.env.E2E_BASE_URL ?? "http://localhost:5173";
 
+/**
+ * A teljesítmény-futás (`npm run e2e:perf`) a PRODUKCIÓS build ellen megy, saját
+ * porton — a dev-szerverből mért LCP semmit nem mondana (nincs bundle-ölés,
+ * HMR-kód is utazik). `PERF_RUN=1` kapcsolja át a webServert.
+ */
+const isPerfRun = process.env.PERF_RUN === "1";
+const perfBaseURL = process.env.PERF_BASE_URL ?? "http://localhost:3100";
+
 export default defineConfig({
   testDir: "./e2e",
   // A dev-szerver bemelegítése a tesztek előtt (Vite dep-optimalizálás) —
@@ -62,14 +70,28 @@ export default defineConfig({
     {
       name: "chromium",
       use: { ...devices["Desktop Chrome"] },
-      testIgnore: /visual\.spec\.ts/,
+      testIgnore: /(visual|perf)\.spec\.ts/,
     },
     // Mobil: a projekt mobil-first (6. fejezet) — a layout-regressziók (pl. a
     // vízszintesen kicsúszó oldal) csak itt jönnek elő.
     {
       name: "mobile",
       use: { ...devices["Pixel 7"] },
-      testIgnore: /visual\.spec\.ts/,
+      testIgnore: /(visual|perf)\.spec\.ts/,
+    },
+    /**
+     * TELJESÍTMÉNY — külön projekt, saját baseURL-lel (produkciós build) és
+     * SOROS futással: párhuzamos munkások versengő CPU-ja pont azt a mérést
+     * torzítaná, amiért a teszt létezik. CI-ban nem fut (lásd `perf.spec.ts`).
+     *
+     * Futtatás: `npm run e2e:perf`
+     */
+    {
+      name: "perf",
+      use: { ...devices["Desktop Chrome"], baseURL: perfBaseURL },
+      testMatch: /perf\.spec\.ts/,
+      fullyParallel: false,
+      timeout: 90_000,
     },
     /**
      * VIZUÁLIS regresszió — SZÁNDÉKOSAN külön projekt, és a CI e2e-jobja NEM
@@ -89,9 +111,25 @@ export default defineConfig({
   ],
 
   // Ha kívülről kapunk URL-t (CI preview vagy futó dev-szerver), nem indítunk sajátot.
-  ...(process.env.E2E_BASE_URL
-    ? {}
-    : {
+  ...(isPerfRun
+    ? {
+        // A teljesítmény-futás a produkciós build kiszolgálóját indítja.
+        // `PERF_BASE_URL`-lel (pl. az éles oldal) kívülről is irányítható —
+        // akkor nem indítunk semmit.
+        ...(process.env.PERF_BASE_URL
+          ? {}
+          : {
+              webServer: {
+                command: "node scripts/serve-build.mjs 3100",
+                url: perfBaseURL,
+                reuseExistingServer: !process.env.CI,
+                timeout: 60_000,
+              },
+            }),
+      }
+    : process.env.E2E_BASE_URL
+      ? {}
+      : {
         webServer: {
           command: "npm run dev",
           url: "http://localhost:5173",

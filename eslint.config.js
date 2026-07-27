@@ -100,10 +100,20 @@ export default tseslint.config(
     },
   },
   {
-    // Node-scriptek (nem a bundle része).
+    // Node-scriptek (nem a bundle része). A web-globálisok (URL, Request…) a
+    // Node 22 futtatókörnyezetében natívan léteznek — a `serve-build.mjs`
+    // Fetch API-s handlert szolgál ki, ezért használja őket.
     files: ["scripts/**/*.mjs"],
     languageOptions: {
-      globals: { Buffer: "readonly", console: "readonly", process: "readonly" },
+      globals: {
+        Buffer: "readonly",
+        console: "readonly",
+        Headers: "readonly",
+        process: "readonly",
+        Request: "readonly",
+        Response: "readonly",
+        URL: "readonly",
+      },
     },
   },
 );

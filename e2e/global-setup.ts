@@ -17,7 +17,13 @@ import type { FullConfig } from "@playwright/test";
 const WARMUP_PATHS = ["/", "/deszkak", "/spotok", "/szolgaltatok", "/deszkavalaszto", "/belepes"];
 
 export default async function globalSetup(config: FullConfig): Promise<void> {
-  const baseURL = config.projects[0]?.use.baseURL ?? "http://localhost:5173";
+  // A teljesítmény-futás a produkciós szerver ellen megy (más port): ott a
+  // bemelegítés azért kell, hogy a MÉRT betöltésekben ne az első kérés
+  // modul-betöltése jelenjen meg.
+  const baseURL =
+    process.env.PERF_RUN === "1"
+      ? (process.env.PERF_BASE_URL ?? "http://localhost:3100")
+      : (config.projects[0]?.use.baseURL ?? "http://localhost:5173");
 
   for (const path of WARMUP_PATHS) {
     try {

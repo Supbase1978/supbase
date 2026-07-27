@@ -75,6 +75,38 @@ npm audit --omit=dev
 - **Teendő:** Snyk-fiók + `SNYK_TOKEN` repository secret → külön heti
   ütemezett workflow.
 
+### F1.10-05 · Captcha (bot-védelem) nincs élesítve — **ELFOGADOTT KOCKÁZAT a jelszó-kapu mögött**
+
+- **Állapot:** a Turnstile-integráció KÉSZ (`@core/auth/turnstile.tsx`, 3 űrlap:
+  `/belepes`, `/regisztracio`, `/elfelejtett-jelszo`), de éles kulcs nélkül a
+  `isTurnstileEnabled()` kikapcsolja — az űrlapok captcha nélkül működnek.
+- **Miért elfogadható MOST:** az oldal HTTP Basic auth mögött van, nyilvános
+  forgalom nélkül. Nincs mit védeni.
+- **Mi a valódi kockázat élesítés UTÁN:** nem adatszennyezés (a bot-regisztráció
+  megerősítetlen marad, és az `is_email_confirmed()` gate + RLS nem enged neki
+  írást), hanem az **e-mail-kvóta kimerítése** — egy spam-hullám elhasználja a
+  napi/órás küldési keretet, és onnantól a VALÓDI felhasználó nem kapja meg a
+  megerősítő levelét.
+- **Kiváltó ok (mikor kötelező):** a `SITE_PUBLIC=true` beállításával EGYIDŐBEN.
+  Felvéve a `RUNBOOK.md` élesítési checklistjébe. Felhasználói döntés
+  (2026-07-27): a fiók-regisztráció akkor történik meg.
+- **Ha akkor sem lesz captcha:** a Supabase Dashboard → Auth → Rate Limits
+  értékeit kell szigorítani (IP-alapú sign-up/e-mail limitek) — gyengébb
+  védelem, de nem nulla.
+
+### F1.10-06 · Éles e-mail-küldés: beépített Supabase SMTP — **NYITOTT (élesítési blokkoló)**
+
+- A regisztráció-megerősítő, magic link és jelszó-visszaállító levél jelenleg a
+  Supabase **beépített** küldőjén megy, amit a dokumentáció kifejezetten
+  próbára szán: néhány levél/óra, „best-effort" kézbesítés, idegen feladó-domain
+  (a spam-mappa reális kimenetel).
+- **Következmény élesben:** a regisztráció ténylegesen elromlik terhelés alatt —
+  ez üzemeltetési hiba, nem sérülékenység, de a captcha-kockázattal ÖSSZEÉR
+  (mindkettő ugyanazt a kvótát fogyasztja).
+- **Terv (felhasználói döntés, 2026-07-27):** saját SMTP a **Resend**-en át.
+  Előfeltétele saját domain (DNS-alapú domain-hitelesítés) — lásd a
+  `RUNBOOK.md` élesítési checklistjét.
+
 ## Korábbi fázisokból hozott, már lezárt tételek
 
 - **F1.9:** az `upsert_push_subscription()` RPC-t az anon szerep is hívhatta

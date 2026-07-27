@@ -12,11 +12,11 @@ A `docs/AUDIT_CHECKLIST.md` tételes végigfuttatása. Minden pont MÉRÉSSEL z�
 | 3. Biztonság | ✅ 3/3 |
 | 4. Tesztkapuk | ✅ 5/5 — vizuális regresszió PÓTOLVA (2026-07-26) |
 | 5. Design + a11y | ✅ 5/5 |
-| 6. Teljesítmény + SEO | ⚠️ 2/3 — LCP-mérés NINCS |
+| 6. Teljesítmény + SEO | ✅ 3/3 — LCP-mérés PÓTOLVA (2026-07-27) |
 | 7. Dokumentáció | ✅ 2/2 |
 
-**Két hiányzó tétel, egyik sem blokkoló az F1 lezárásához** — mindkettő
-mérés-jellegű kapu, nem funkció. Részletek a 4.5 és 6.1 pontnál.
+**Az audit két mérés-jellegű hiánya azóta PÓTOLVA: 26/26.** A vizuális
+regresszió 2026-07-26-án (4.5), a teljesítmény-budget 2026-07-27-én (6.1).
 
 ---
 
@@ -93,13 +93,20 @@ mérés-jellegű kapu, nem funkció. Részletek a 4.5 és 6.1 pontnál.
   MINDIG a scrape pillanata, tehát cache-elt viharjelzés nem jelenhet meg
   aktuálisként.
 
-## 6. Teljesítmény + SEO — ⚠️ 2/3
+## 6. Teljesítmény + SEO — ✅
 
-- **❌ LCP < 2,5 s: NINCS MÉRVE.** Lighthouse/CI budget nincs bekötve.
-  **Miért nem blokkoló most:** az oldal jelszó-kapu mögött van, valós
-  felhasználói forgalom nélkül; a mérés a publikussá tétel előtt értelmes.
-  **Kockázat:** alacsony-közepes. Ismert terhelő tétel: a MapLibre-csomag és
-  a külső csempe-CDN (ezért kapott betöltés-jelzőt).
+- **✅ LCP < 2,5 s: MÉRVE (2026-07-27).** A PRODUKCIÓS build ellen, Lighthouse-
+  mobil fojtással (150 ms RTT / 1,6 Mbps / 4× CPU): `/` **584 ms** ·
+  `/deszkak` **528 ms** · `/deszkavalaszto` **588 ms** · `/spotok` **944 ms** —
+  mind a 2500 ms-os cél alatt. Kliens-JS (brotli): 130 / 132 / 135 / 395 kB.
+  A mérés kapuvá vált (`e2e/perf.spec.ts`, `npm run e2e:perf`), külön teszttel
+  arra, hogy a MapLibre CSAK a térképes útvonalon töltődjön.
+  **A mérés fogott egy módszertani hibát is:** tömörítés nélküli kiszolgálóból
+  a `/spotok` 2764 ms-ot adott volna (budget fölött) — a Netlify viszont
+  tömörítve szállít, ezért a lokális futtató is br/gzip-el. Tömörítetlen
+  méréssel a kapu hamis riasztást adott volna.
+  **Amit NEM igazol:** ez nem field-LCP (nincs HTTP/2, CDN-távolság, valós
+  eszköz-szórás). Élő méréshez: `PERF_BASE_URL=https://… npm run e2e:perf`.
 - **SSR meta + hreflang + JSON-LD: VALIDÁL.** Minden fő route-on 1 `<title>`,
   1 canonical, 3 hreflang-link (hu + x-default), 4 OG-tag. A deszka-adatlapon
   JSON-LD: `Product` + `Brand` + `Offer` + `AggregateRating`.
@@ -123,6 +130,6 @@ mérés-jellegű kapu, nem funkció. Részletek a 4.5 és 6.1 pontnál.
 1. **Cégadatok** a jogi oldalakon (`@core/legal/entity.ts`) — felhasználói adat.
 2. **Turnstile éles kulcs** — a publikussá tétel ELŐTT kötelező, különben a
    regisztráció szabadon spamelhető.
-3. **LCP-budget (Lighthouse)** — az egyetlen megmaradt audit-hiány; javasolt a
-   publikussá tétel előtti körre (a jelszó-kapu mögött a mérésnek nincs valós
-   tétje).
+3. ~~**LCP-budget (Lighthouse)**~~ ✅ **PÓTOLVA (2026-07-27)** — lásd a 6.
+   szakaszt. Az ÉLES oldal mérése a publikussá tétel után esedékes
+   (`PERF_BASE_URL=…`), de a kapu és az alapérték megvan.

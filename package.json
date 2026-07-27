@@ -14,6 +14,7 @@
     "e2e": "playwright test --project=chromium --project=mobile",
     "e2e:ui": "playwright test --ui",
     "e2e:report": "playwright show-report",
+    "e2e:perf": "npm run build:web && cross-env PERF_RUN=1 playwright test --project=perf --workers=1",
     "e2e:visual": "playwright test --project=visual",
     "e2e:visual:update": "playwright test --project=visual --update-snapshots"
   },

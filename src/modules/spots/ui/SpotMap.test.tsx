@@ -25,6 +25,10 @@ vi.mock("maplibre-gl", () => {
     }
     remove = vi.fn();
     on = vi.fn();
+    // A betöltés-jelző (animált hullám) `once("load", …)`-ot hív. Hiánya nem
+    // buktatta a teszteket, csak kezeletlen elutasításként jelent meg a
+    // futásban — a kezeletlen hiba viszont ELFEDHET valódi regressziót.
+    once = vi.fn();
     off = vi.fn();
   }
 
