@@ -17,6 +17,8 @@ export const catalogModule: ModuleManifest = {
   ],
   nav: [{ labelKey: "nav.boards", path: "/deszkak", placement: "primary", order: 10 }],
   i18nNamespace: "catalog",
+  // catalog-watch moderáció (F2): a piacfigyelő jelöltjeinek elbírálása.
+  adminPanels: [{ path: "katalogus", file: "routes/admin.katalogus.tsx" }],
 };
 
 export default catalogModule;

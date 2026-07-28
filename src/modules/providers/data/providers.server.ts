@@ -9,31 +9,16 @@
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { SLUG_PATTERN, slugify } from "@core/text/slug";
+
 import {
   isProviderServiceType,
   type ProviderRow,
   type ProviderServiceType,
 } from "../types";
 
-/** Slug-alak: kisbetű/szám/kötőjel — a `.or()` szűrő-injektálás ellen (catalog-minta). */
-const SLUG_PATTERN = /^[a-z0-9-]+$/;
-
 /** Egyszerű, de elég szigorú e-mail-forma a barátságos hibáért (a DB NOT NULL a védőháló). */
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-/**
- * Név → URL-biztos slug (kisbetű, ékezet-hajtás, nem-alfanumerikus → kötőjel).
- * A `@core/i18n` nem tartalmaz slugify-t; ez a directory saját, tesztelt helpere.
- */
-export function slugify(name: string): string {
-  return name
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "") // ékezetek levágása
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 60);
-}
 
 /**
  * Külső URL séma-allowlist: CSAK `http`/`https` engedélyezett. A user-megadta

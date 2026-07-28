@@ -48,5 +48,39 @@
     "priceFrom": "from",
     "manual": "Manual",
     "noPrices": "No shop price at the moment."
+  },
+  "admin": {
+    "title": "Catalog moderation",
+    "lead": "Candidates from the market watcher. A new board can only enter the catalog from here — the watcher never publishes on its own.",
+    "pending": "Candidates awaiting review",
+    "pendingEmpty": "No candidate is waiting for review.",
+    "source": "Source",
+    "confidence": "Match",
+    "suggestedMatch": "Suggested pair",
+    "openSource": "Open product page",
+    "noPrice": "no price",
+    "typeLabel": "Board type",
+    "typeHint": "The watcher's guess is preselected — it drives the Board finder's purpose matching, so please review it.",
+    "mergeLabel": "Merge into an existing board",
+    "approve": "Approve — new board",
+    "merge": "Merge",
+    "reject": "Reject",
+    "lifecycle": "Discontinuation candidates",
+    "lifecycleLead": "No watched source has returned these models for {{days}} days. You confirm the status — a discontinued board is never deleted, it only gets a “no longer available” note.",
+    "lifecycleEmpty": "Every active model is fresh.",
+    "daysUnseen": "unseen for {{days}} days",
+    "markDiscontinued": "Mark as discontinued",
+    "markActive": "Available again",
+    "specsSummary": "Extracted data",
+    "unknown": "no data",
+    "error": {
+      "notFound": "This candidate is no longer in the queue (reviewed by someone else?).",
+      "noBrand": "The candidate has no brand name — merge or reject it.",
+      "brandFailed": "Could not create the brand.",
+      "insertFailed": "Could not create the board.",
+      "updateFailed": "Could not save.",
+      "noBoard": "Pick a board to merge into."
+    },
+    "done": "Done."
   }
 }

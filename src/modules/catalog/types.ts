@@ -72,6 +72,57 @@ export interface BoardWithBrand extends BoardRow {
   brand: BrandRow | null;
 }
 
+/**
+ * `catalog_candidates.status` — a moderációs sor állapotai
+ * (docs/CATALOG_WATCH_TERV.md 3. pont).
+ */
+export type CandidateStatus = "pending" | "approved" | "rejected" | "merged";
+
+/** Deszka-specifikáció a jelöltből; `null` = a forrás nem árulta el. */
+export interface ExtractedBoardSpecs {
+  lengthCm: number | null;
+  widthCm: number | null;
+  thicknessCm: number | null;
+  volumeL: number | null;
+  weightKg: number | null;
+  maxLoadKg: number | null;
+  inflatable: boolean | null;
+}
+
+/**
+ * A `catalog_candidates.extracted` jsonb SZERZŐDÉSE — ezt írja a figyelő
+ * (`tools/catalog-watch`), és ezt olvassa a moderációs UI. A típus itt, a
+ * catalog modulban él (a figyelő innen importálja), hogy a két oldal ne
+ * csúszhasson el egymástól.
+ */
+export interface ExtractedBoardData {
+  sourceUrl: string;
+  brandName: string | null;
+  modelName: string;
+  /** A termékoldal nyers címe — a moderátor ezt látja az azonosításhoz. */
+  rawTitle: string;
+  modelYear: number | null;
+  priceHuf: number | null;
+  inStock: boolean | null;
+  imageUrl: string | null;
+  boardType: BoardType | null;
+  specs: ExtractedBoardSpecs;
+}
+
+/** `public.catalog_candidates` sor (catalog-watch migráció). */
+export interface CatalogCandidateRow {
+  id: string;
+  source_id: string;
+  url: string | null;
+  raw: unknown;
+  extracted: ExtractedBoardData | null;
+  matched_board_id: string | null;
+  match_confidence: number | null;
+  status: CandidateStatus;
+  reviewed_by: string | null;
+  created_at: string;
+}
+
 /** `public.board_prices` sor (3.1). */
 export interface BoardPriceRow {
   id: string;

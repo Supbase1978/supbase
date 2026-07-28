@@ -6,7 +6,11 @@
  * a `board_type` CHECK-kényszer és a jelölt-normalizálás ne csúszhasson el —
  * `import type`, tehát futásidőben nyoma sincs (Node type-stripping).
  */
-import type { BoardType } from "../../src/modules/catalog/types.ts";
+import type {
+  BoardType,
+  ExtractedBoardData,
+  ExtractedBoardSpecs,
+} from "../../src/modules/catalog/types.ts";
 
 export type { BoardType };
 
@@ -60,16 +64,12 @@ export interface RawProduct {
   jsonLd: Record<string, unknown>;
 }
 
-/** Deszka-specifikáció normalizált, SI-egységes formában (null = nem tudjuk). */
-export interface BoardSpecs {
-  lengthCm: number | null;
-  widthCm: number | null;
-  thicknessCm: number | null;
-  volumeL: number | null;
-  weightKg: number | null;
-  maxLoadKg: number | null;
-  inflatable: boolean | null;
-}
+/**
+ * Deszka-specifikáció normalizált, SI-egységes formában (null = nem tudjuk).
+ * A típus a catalog modulé: a `catalog_candidates.extracted` jsonb-szerződését
+ * EGY helyen tartjuk, hogy a figyelő és a moderációs UI ne csúszhasson el.
+ */
+export type BoardSpecs = ExtractedBoardSpecs;
 
 /** Üres spec — a parse-olók innen indulnak (a hiányzó érték marad null). */
 export const EMPTY_SPECS: BoardSpecs = {
@@ -84,26 +84,11 @@ export const EMPTY_SPECS: BoardSpecs = {
 
 /**
  * Egy termékoldal normalizált kivonata — ez megy az egyezés-keresésbe, és ez
- * kerül a `catalog_candidates.extracted`-be.
+ * kerül a `catalog_candidates.extracted` jsonb-be. A mezők jelentése a
+ * catalog modul `ExtractedBoardData` típusánál van dokumentálva (ott él a
+ * szerződés, amit a moderációs UI is olvas).
  */
-export interface ExtractedProduct {
-  sourceUrl: string;
-  /** Normalizált márkanév (alias-feloldás után), null ha nem derült ki. */
-  brandName: string | null;
-  /** Tisztított modellnév (márka-prefix, méret-suffix, évjárat nélkül). */
-  modelName: string;
-  /** A termékoldal nyers címe — az admin ezt látja a moderációs sorban. */
-  rawTitle: string;
-  modelYear: number | null;
-  /** Ár forintban (más pénznem → null; a figyelő HU-forrásokat néz). */
-  priceHuf: number | null;
-  /** schema.org availability → van-e készleten (null = nem derült ki). */
-  inStock: boolean | null;
-  imageUrl: string | null;
-  /** Kulcsszóból következtetett típus (a moderátor felülírhatja). */
-  boardType: BoardType | null;
-  specs: BoardSpecs;
-}
+export type ExtractedProduct = ExtractedBoardData;
 
 /** Az egyezés-keresés három kimenete (terv 3. pont). */
 export type MatchKind = "known" | "uncertain" | "new";

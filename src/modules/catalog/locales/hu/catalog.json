@@ -48,5 +48,39 @@
     "priceFrom": "-tól",
     "manual": "Kézikönyv",
     "noPrices": "Jelenleg nincs bolti ár."
+  },
+  "admin": {
+    "title": "Katalógus-moderáció",
+    "lead": "A piacfigyelő jelöltjei. Új deszka CSAK innen kerülhet a katalógusba — a figyelő magától soha nem publikál.",
+    "pending": "Jóváhagyásra váró jelöltek",
+    "pendingEmpty": "Nincs elbírálásra váró jelölt.",
+    "source": "Forrás",
+    "confidence": "Egyezés",
+    "suggestedMatch": "Javasolt pár",
+    "openSource": "Termékoldal megnyitása",
+    "noPrice": "nincs ár",
+    "typeLabel": "Deszkatípus",
+    "typeHint": "A figyelő tippje előre kiválasztva — ez vezérli a Deszkaválasztó cél-illesztését, ezért nézd át.",
+    "mergeLabel": "Összefésülés meglévő deszkával",
+    "approve": "Jóváhagyás — új deszka",
+    "merge": "Összefésülés",
+    "reject": "Elutasítás",
+    "lifecycle": "Kifutás-jelöltek",
+    "lifecycleLead": "Ezeket a modelleket {{days}} napja egyetlen figyelt forrás sem hozta vissza. A státuszt te erősíted meg — a kifutott deszka nem törlődik, csak „már nem kapható” jelzést kap.",
+    "lifecycleEmpty": "Minden aktív modell friss.",
+    "daysUnseen": "{{days}} napja nem látott",
+    "markDiscontinued": "Kifutottnak jelölöm",
+    "markActive": "Mégis kapható",
+    "specsSummary": "Kinyert adatok",
+    "unknown": "nincs adat",
+    "error": {
+      "notFound": "A jelölt már nincs a sorban (valaki más elbírálta?).",
+      "noBrand": "A jelölthöz nem tartozik márkanév — összefésülés vagy elutasítás javasolt.",
+      "brandFailed": "A márka létrehozása nem sikerült.",
+      "insertFailed": "A deszka létrehozása nem sikerült.",
+      "updateFailed": "A mentés nem sikerült.",
+      "noBoard": "Válassz deszkát az összefésüléshez."
+    },
+    "done": "Kész."
   }
 }
