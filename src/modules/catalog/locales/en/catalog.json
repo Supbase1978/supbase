@@ -1,6 +1,7 @@
 {
   "nav": {
-    "boards": "Boards"
+    "boards": "Boards",
+    "gear": "Gear"
   },
   "seo": {
     "list": {
@@ -82,5 +83,104 @@
       "noBoard": "Pick a board to merge into."
     },
     "done": "Done."
+  },
+  "gear": {
+    "seo": {
+      "list": {
+        "title": "Gear — SUP accessory guide | Suptime",
+        "description": "Leash, PFD, pump, paddle and the other SUP accessories: what they're for, what to check when buying, and when it's a safety matter."
+      },
+      "detail": {
+        "title": "{{category}} — guide | Suptime",
+        "description": "{{category}}: what it's for, what to check when buying, and related safety notes."
+      }
+    },
+    "list": {
+      "title": "Gear",
+      "lead": "The board is only half the story — the right gear matters just as much for safety and enjoyment."
+    },
+    "detail": {
+      "backToList": "Back to the gear list",
+      "purposeTitle": "What it's for",
+      "buyingTitle": "What to check when buying",
+      "relatedTitle": "Related content",
+      "relatedSpots": "Browse the spots",
+      "relatedAdvisor": "Try the Board finder",
+      "notFound": "Unknown gear category."
+    },
+    "categories": {
+      "evezo": {
+        "title": "Paddle",
+        "short": "Drives the board – length, weight and material matter.",
+        "purpose": "The paddle provides the drive: the blade's size and shape, and the shaft's length and stiffness, determine how much energy each stroke takes and how much it loads your shoulders over a long session.",
+        "buying": "Pick an adjustable-length paddle if several people share it, or if you're still dialing in your own setup — 15–20 cm above your height is a good starting point. Carbon is lighter and stiffer (less tiring over distance) but pricier; an aluminium/plastic combo is plenty for starting out."
+      },
+      "poraz": {
+        "title": "Leash",
+        "short": "Tethers you to the board – but the type depends on the water.",
+        "purpose": "The leash keeps the board from drifting away from you after a fall — it's your most important link to your surface flotation device.",
+        "buying": "On flat water an ankle leash is enough; on rivers you need a quick-release waist leash (see below why). Match the length roughly to the board's length — a thicker cord takes more load but drags slightly more in the water."
+      },
+      "mentomelleny": {
+        "title": "PFD",
+        "short": "Not a luxury – especially on rivers and in cold water.",
+        "purpose": "A personal flotation device (PFD) keeps you afloat even if you lose consciousness or get exhausted — that's the difference between an uncomfortable and a genuinely dangerous situation.",
+        "buying": "For SUP, a compact, belt-pack style is the most comfortable — it only needs to inflate/activate after a fall. Children and non-swimmers always need a conventional, continuously worn vest, not a belt-pack.",
+        "safety": {
+          "title": "Especially warranted on rivers"
+        }
+      },
+      "pumpa": {
+        "title": "Pump",
+        "short": "Not optional on an inflatable board – it's core kit.",
+        "purpose": "An inflatable (iSUP) board only reaches its final stiffness at the manufacturer's pressure (typically 12–15 PSI) — without it, the board flexes and handles poorly on the water.",
+        "buying": "A double-action hand pump is faster at low pressure, but you need to switch to single-action for the high-pressure finish; an electric pump is more convenient but needs a car or battery power source. Check that the pump's connector fits your board's valve.",
+        "safety": {
+          "title": "An underinflated board is unstable",
+          "body": "Pressure below the manufacturer's PSI increases the board's flex on the water — this hurts stability and glide, and in extreme cases can lead to cracking or injury. Watch the gauge while pumping, not just the stroke count."
+        }
+      },
+      "szarazzsak": {
+        "title": "Dry bag",
+        "short": "For touring and cold conditions it protects your gear, not just your comfort.",
+        "purpose": "A dry bag keeps your phone, clothes and first-aid kit dry and buoyant even if you capsize.",
+        "buying": "A roll-top closure is the most reliable; size the litres to the length of your trip. A separate, smaller waterproof pouch for your phone/keys is handy even if you also carry a bigger dry bag.",
+        "safety": {
+          "title": "Keep first aid and a signal device reachable",
+          "body": "On a longer tour or unfamiliar water, don't strap your first-aid kit and a waterproof phone case to the bottom of the board — in an emergency, quick access matters, not just staying dry."
+        }
+      },
+      "ules": {
+        "title": "Seat",
+        "short": "Turns the board into kayak mode for longer distances.",
+        "purpose": "A seat attachment lets the SUP board be used kayak-style with a double-bladed paddle — a more restful position for long distances or strong wind.",
+        "buying": "Check that your board has D-rings or a strap system to attach the seat — most all-round and touring boards are set up for it from the factory, race boards less often."
+      },
+      "uszony": {
+        "title": "Fin",
+        "short": "Tracking and glide depend on it.",
+        "purpose": "The fin holds a straight line and reduces side-slip — its size and shape affect how manoeuvrable the board is versus how well it tracks.",
+        "buying": "The mounting type (US Box or FCS) depends on your board — check before buying. For shallow water or rivers, a shorter, flexible, or removable fin is recommended so it doesn't catch on the riverbed."
+      },
+      "taska": {
+        "title": "Bag",
+        "short": "Transport and storage – matters most for an inflatable board.",
+        "purpose": "A carry bag (usually backpack-style) protects an inflatable board from abrasion and UV exposure during transport and storage.",
+        "buying": "Check that the bag's size fits your folded board and its accessories (pump, paddle) — a padded backpack strap matters a lot if you're carrying it to the shore on foot."
+      }
+    },
+    "advisor": {
+      "title": "You'll also need this",
+      "lead": "The board alone isn't enough — start out safely with these.",
+      "linkLabel": "Open the guide",
+      "leash": {
+        "river": "On rivers you need a quick-release waist leash — an ankle leash can snag in moving water.",
+        "other": "An ankle leash tethers you to the board so it doesn't drift away after a fall."
+      },
+      "pfd": "A PFD or buoyancy aid — especially important for beginners and on rivers.",
+      "pump": "An inflatable board also needs a pump — most sets include one, but check the pressure range.",
+      "drybag": "For touring, a dry bag protects your clothes and gear from moisture."
+    },
+    "riverLeashLink": "More in the leash guide"
   }
 }

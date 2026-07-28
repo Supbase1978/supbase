@@ -275,6 +275,9 @@ export default function SpotDetailRoute({ loaderData, actionData }: Route.Compon
   // A póráz-szabály KÖZÖS igény (spots + advisor), ezért a core namespace-ben
   // él — a modul-szerződés szerint a közös tartalom a core-ba kerül.
   const { t: tCore } = useTranslation("core");
+  // A biztonsági blokk alá kerülő „bővebben" link a catalog `/felszereles/poraz`
+  // útmutatóra mutat — a szöveg maga a core-ban marad (F2.3 1. szakasz).
+  const { t: tCatalog } = useTranslation("catalog");
   const { spot, snapshot, evaluation, gaugeThresholds, reports, reportForm, jsonLd } = loaderData;
 
   const formattedIndex = evaluation
@@ -463,6 +466,11 @@ export default function SpotDetailRoute({ loaderData, actionData }: Route.Compon
         <SafetyNote title={tCore("safety.riverLeash.title")}>
           <p>{tCore("safety.riverLeash.body")}</p>
           <p className="mt-2">{tCore("safety.riverLeash.pfd")}</p>
+          <p className="mt-2">
+            <Link to="/felszereles/poraz" className="font-semibold text-petrol-text underline">
+              {tCatalog("gear.riverLeashLink")}
+            </Link>
+          </p>
         </SafetyNote>
       ) : null}
 

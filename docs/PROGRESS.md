@@ -21,6 +21,7 @@
 | F1.12 Analitika (süti-mentes) | ✅ kész + élesítve (2026-07-28) | `analytics_events` + definer-RPC + `/admin/analitika`. Nincs süti/IP/azonosító → nincs egyéni tölcsér, csak darabszám. Robot/DNT/dev nem számol |
 | F2.2 Visszajelzés-csatorna | ✅ kód kész (2026-07-28) | `/visszajelzes` (hiba · hiányzó bolt · hiányzó modell) + `/admin/visszajelzesek`. HÁTRA: migráció éles push + böngésző-verifikáció |
 | F2.1 catalog-watch piacfigyelő | ✅ kód kész (2026-07-28) | crawler + CLI + `/admin/katalogus` moderáció + heti GH Actions cron. HÁTRA: valós HU források bekötése és az első éles crawl (felhasználói döntés) |
+| F2.3 Felszerelés (kiegészítők), 1. szakasz | ✅ kész (2026-07-28) | `/felszereles` + `/felszereles/:kategoria` útmutató-oldalak, séma-módosítás nélkül; Deszkaválasztó „Ez is kell hozzá" blokk + spot-adatlap póráz-link. HÁTRA: 2–3. szakasz (termékszintű katalógus + catalog-watch besorolás) |
 | F1.10 Záró audit + élesítés | ✅ audit **26/26** (2026-07-27) | **`docs/AUDIT_F1.md`**: az audit két mérés-jellegű hiánya pótolva (vizuális regresszió 07-26, teljesítmény-budget 07-27). HÁTRA az F1 lezárásához a publikussá tétel — a lépések a `RUNBOOK.md` **élesítési checklistjében** (domain → Resend-SMTP → Turnstile → cégadatok → `SITE_PUBLIC=true`), mind felhasználói döntés/adat |
 
 ## ITINER a következő sessionnek (2026-07-28-i állapot)
@@ -30,7 +31,10 @@
 jelszó-kapu mögött. Azóta három továbbfejlesztés ment ki élesbe: folyó-vízállás
 (F1.11), póráz-figyelmeztetés (F1.11b) és süti-mentes analitika (F1.12).
 2026-07-28: elkészült az **F2.1 catalog-watch piacfigyelő** (kód kész, éles
-futás még nem volt — a nyitott lépések az F2.1-szakasz végén).
+futás még nem volt — a nyitott lépések az F2.1-szakasz végén), az **F2.2
+visszajelzés-csatorna** (kód kész, migráció még nincs élesítve), és az **F2.3
+Felszerelés-útmutató 1. szakasza** (séma-módosítás nélkül, lásd F2.3-szakasz —
+a 2–3. szakasz DB-migrációt igényel, HÁTRA).
 
 **A PUBLIKUSSÁ TÉTEL a felhasználón múlik** — a lépések sorrendben a
 `docs/RUNBOOK.md` „Élesítési checklist" szakaszában:
@@ -44,9 +48,13 @@ cégadatok addig várnak, amíg eldől a vállalkozási forma.
 felhasználó a HydroInfo-t választotta, majd az analitikát):
 
 1. **Biztonsági kiegészítők teljes blokkja** — a domain-review 2.8 pontja.
-   A biztonságkritikus mag (póráz + mentőmellény-mondat) MÁR MEGVAN (F1.11b);
-   ami hátra van, az terméklista (pumpa, szárazzsák, konkrét ajánlások) →
-   katalógus-bővítés, termékdöntést igényel.
+   A biztonságkritikus mag (póráz + mentőmellény-mondat, F1.11b) ÉS a
+   „Felszerelés" tartalmi útmutató (8 kategória, Deszkaválasztó-integráció)
+   MÁR MEGVAN (F2.3, 1. szakasz). Ami hátra van: a terv 2. szakasza
+   (termékszintű katalógus — `kind` diszkriminátor, konkrét ajánlások,
+   `would_recommend`) és 3. szakasza (catalog-watch besorolás) — ld.
+   `~/.claude/plans/rendben-kezdj-nk-a-2-vel-nested-wand.md`, mindkettő
+   DB-migrációt igényel.
 2. ~~**catalog-watch piacfigyelő pipeline** (F2)~~ — **KÓD KÉSZ (F2.1,
    2026-07-28)**. Ami hátra van, az nem fejlesztés: valós HU források
    bekötése (`add-source`), első `crawl --dry-run`, majd moderáció a
@@ -204,6 +212,65 @@ javítva.
 **HÁTRA:** a migráció éles push-a (jóváhagyással) · a beküldés böngésző-
 verifikációja bejelentkezett fiókkal · `RESEND_API_KEY` + `FEEDBACK_TO_EMAIL`
 beállítása, ha kell e-mail-értesítés (addig a DB + admin felület a csatorna).
+
+## F2.3 — Felszerelés (kiegészítők) — 1. szakasz: útmutató (2026-07-28)
+
+Terv: `~/.claude/plans/rendben-kezdj-nk-a-2-vel-nested-wand.md` (a munkamenet
+egy külső-SSD-megszakadás után folytatódott, a terv a lemezen maradt kész
+állapotban). A domain-review 2.8 nyitott tétele (leash/mentőmellény/pumpa/
+szárazzsák „legalább annyira fontos, mint a deszka mérete") + vásárlói igény
+(„melyik evezőt vegyem?") adja az indokot. Kiosztás: scaffolder. Kapuk zöldek:
+typecheck · lint · **737 vitest** (+9 új).
+
+**Elkészült — csak tartalom, séma-módosítás NÉLKÜL:**
+- `src/modules/catalog/gear.ts`: zárt 8-elemű `GEAR_CATEGORIES` lista (evező ·
+  póráz · mentőmellény · pumpa · szárazzsák · ülés · uszony · táska) +
+  `CORE_SAFETY_SOURCE`/`OWN_SAFETY_CATEGORIES` — melyik kategória-oldal
+  hasznosítja újra a meglévő core `safety.riverLeash.*` szöveget (póráz,
+  mentőmellény), melyiknek van saját catalog-szövege (pumpa, szárazzsák), és
+  melyiknek nincs biztonsági tartalma (evező/ülés/uszony/táska — nincs
+  `SafetyNote` ezeken, tudatosan nem kitalált tartalom).
+- `app/routes/felszereles.tsx` (kategória-áttekintő) +
+  `app/routes/felszereles.$kategoria.tsx` (útmutató: mire való · mire figyelj
+  vásárláskor · opcionális `SafetyNote` · kapcsolódó linkek; ismeretlen
+  kategória-slug → 404 az `isGearCategory` őrrel).
+- `src/modules/catalog/module.ts`: `nav.gear` bejegyzés `order: 15` (Deszkák=10
+  és Spotok/Szolgáltatók=20 közé — az érték a tényleges module.ts-ekből
+  ellenőrizve), a két új route regisztrálva.
+- i18n: `catalog` namespace `gear.*` fája hu+en, kulcs-paritás ellenőrizve
+  (ad hoc szkripttel — nincs a repóban erre kész teszt, follow-up alább).
+- `src/core/seo/sitemap.ts`: a `/felszereles` + 8 kategória-út felvéve a
+  `STATIC_SITEMAP_PATHS`-hoz (core fájl, de a minta megegyezik a
+  deszkak/spotok/szolgaltatok korábbi bővítésével).
+
+**Integráció a meglévő felületekbe (ez zárja le a domain-review 2.8-at):**
+- `app/routes/deszkavalaszto.gear.ts`: TISZTA `recommendGearFor({water, use,
+  storage})` — ROUTE-rétegben él (nem catalogban, nem advisorban), mert a
+  `GearCategory` (catalog) és a `WaterChoice`/`AdvisorUse`/`StorageChoice`
+  (advisor) típusokat köti össze — a modul-szerződés csak itt engedi (F1.5/F1.6
+  mintája). Mindig póráz (víztípus szerinti szöveggel) + mentőmellény;
+  felfújható-tárolás-preferenciánál pumpa-említés; túra célnál szárazzsák. 7
+  unit-teszt. Az „Ez is kell hozzá" `Card`-blokk a Deszkaválasztó eredménye
+  alatt, a meglévő folyó-`SafetyNote` alatt jelenik meg.
+- `app/routes/spotok.$slug.tsx`: a meglévő folyó-póráz `SafetyNote` linket
+  kapott a `/felszereles/poraz`-ra (a szöveg változatlan).
+
+**Tudatos döntés (a terv nem rögzítette egyértelműen):** a `tapasztalat`
+(experience) bemenet NEM számít a `recommendGearFor`-ban — a terv 84–87. sora
+csak víztípus/tárolás/cél szerint variál, ezt követtük a task-összefoglaló
+helyett (a terv az irányadó dokumentum).
+
+**Follow-up (nem blokkoló):** nincs repo-szintű i18n kulcs-paritás teszt (csak
+ad hoc szkripttel verifikálva) — érdemes lehet állandó tesztet írni rá, ha ez
+elvárás a jövőben. Az `e2e/a11y.spec.ts` és `e2e/public-paths.spec.ts` bővítve
+lett az új oldalakkal, de **nem futott** (nincs helyi Playwright-böngésző +
+az e2e-suite élő távoli Supabase-seedet igényel) — a CI-ban fut le előbb.
+
+**HÁTRA:** 2. szakasz (termékszintű kiegészítők: `kind` diszkriminátor a
+`boards` táblán, `would_recommend` oszlop, `/felszereles/:kategoria/:slug`
+adatlap) és 3. szakasz (catalog-watch: szűrés helyett besorolás,
+`classifyProduct`) — mindkettő a terv szerint, DB-migrációt igényel, tehát
+felhasználói jóváhagyással indul.
 
 ## F1.0 — Projekt-setup (2026-07-17)
 

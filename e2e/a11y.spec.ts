@@ -37,6 +37,10 @@ const KEY_SCREENS: { name: string; path: string }[] = [
   { name: "belépés", path: "/belepes" },
   { name: "regisztráció", path: "/regisztracio" },
   { name: "ÁSZF", path: "/aszf" },
+  // Felszerelés-útmutató (F2.3 1. szakasz) — áttekintő + egy kategória-oldal
+  // (a póráz, mert ott a SafetyNote is renderel, a kontraszt ott a legszigorúbb).
+  { name: "felszerelés-áttekintő", path: "/felszereles" },
+  { name: "felszerelés: póráz-útmutató", path: "/felszereles/poraz" },
 ];
 
 for (const screen of KEY_SCREENS) {

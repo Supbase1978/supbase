@@ -12,14 +12,22 @@ test.describe("Publikus felület", () => {
   test("a kezdőlap renderel, és a nav a modulokból épül", async ({ page }) => {
     await page.goto("/");
     await expect(page.getByRole("navigation", { name: "Főnavigáció" })).toBeVisible();
-    for (const label of ["Deszkaválasztó", "Deszkák", "Spotok", "Szolgáltatók"]) {
+    for (const label of ["Deszkaválasztó", "Deszkák", "Felszerelés", "Spotok", "Szolgáltatók"]) {
       await expect(page.getByRole("link", { name: label })).toBeVisible();
     }
   });
 
   test("az oldal SOHA nem csúszik el vízszintesen (mobil-regresszió)", async ({ page }) => {
     // Ezt a hibát élesben a fejléc-nav okozta: minden route-on kilógott.
-    for (const path of ["/", "/deszkak", "/spotok", "/deszkavalaszto", "/szolgaltatok"]) {
+    for (const path of [
+      "/",
+      "/deszkak",
+      "/spotok",
+      "/deszkavalaszto",
+      "/szolgaltatok",
+      "/felszereles",
+      "/felszereles/poraz",
+    ]) {
       await page.goto(path);
       const overflows = await page.evaluate(() => {
         const de = document.documentElement;
@@ -71,6 +79,21 @@ test.describe("Publikus felület", () => {
 
     await page.goto("/spotok/balatonfoldvar");
     await expect(page.getByRole("region", { name: /póráz/i })).toHaveCount(0);
+  });
+
+  test("felszerelés: áttekintő → kategória-útmutató", async ({ page }) => {
+    await page.goto("/felszereles");
+    const links = page.locator('a[href^="/felszereles/"]');
+    await expect(links.first()).toBeVisible();
+
+    await links.first().click();
+    await expect(page).toHaveURL(/\/felszereles\/[a-z]+/);
+    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+  });
+
+  test("ismeretlen felszerelés-kategória 404-et ad (nem 500-at)", async ({ page }) => {
+    const response = await page.goto("/felszereles/ilyen-kategoria-nincs-is");
+    expect(response?.status()).toBe(404);
   });
 
   test("szolgáltatók: lista → profil, lead-űrlappal", async ({ page }) => {

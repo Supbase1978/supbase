@@ -1,6 +1,7 @@
 {
   "nav": {
-    "boards": "Deszkák"
+    "boards": "Deszkák",
+    "gear": "Felszerelés"
   },
   "seo": {
     "list": {
@@ -82,5 +83,104 @@
       "noBoard": "Válassz deszkát az összefésüléshez."
     },
     "done": "Kész."
+  },
+  "gear": {
+    "seo": {
+      "list": {
+        "title": "Felszerelés — SUP-kiegészítők útmutatója | Suptime",
+        "description": "Póráz, mentőmellény, pumpa, evező és a többi SUP-kiegészítő: mire való, mire figyelj vásárláskor, és mikor számít biztonsági kérdésnek."
+      },
+      "detail": {
+        "title": "{{category}} — útmutató | Suptime",
+        "description": "{{category}}: mire való, mire figyelj vásárláskor, és a kapcsolódó biztonsági tudnivalók."
+      }
+    },
+    "list": {
+      "title": "Felszerelés",
+      "lead": "A deszka csak a fele a történetnek — a helyes kiegészítők ugyanúgy számítanak a biztonságra és az élményre."
+    },
+    "detail": {
+      "backToList": "Vissza a felszerelés-listához",
+      "purposeTitle": "Mire való",
+      "buyingTitle": "Mire figyelj vásárláskor",
+      "relatedTitle": "Kapcsolódó tartalmak",
+      "relatedSpots": "Nézd meg a spotokat",
+      "relatedAdvisor": "Próbáld ki a Deszkaválasztót",
+      "notFound": "Ismeretlen felszerelés-kategória."
+    },
+    "categories": {
+      "evezo": {
+        "title": "Evező",
+        "short": "Hajtja a deszkát – hossz, súly és anyag számít.",
+        "purpose": "Az evező adja a hajtóerőt: a lapát mérete és alakja, a nyél hossza és merevsége határozza meg, mennyi energiát fektetsz egy-egy húzásba, és mennyire terheli a vállat hosszabb távon.",
+        "buying": "Állítható hosszúságú evezőt válassz, ha többen használjátok, vagy még keresed a saját beállításodat — 15–20 cm-rel a tested magassága fölötti hossz a jó kiindulás. A karbon könnyebb és merevebb (kevésbé fáraszt hosszú távon), de drágább; alumínium/műanyag kombinációval kezdőként is bőven jól jársz."
+      },
+      "poraz": {
+        "title": "Póráz",
+        "short": "A deszkádhoz köt – de a típusa vízfajtánként más.",
+        "purpose": "A póráz megakadályozza, hogy a deszka leússzon tőled borulás után — ez a legfontosabb kapcsolatod a felszíni mentőeszközöddel.",
+        "buying": "Álló vízre a bokapóráz elég; folyóvízre gyorskioldós derékpóráz kell (lásd lentebb, miért). A hossz kb. a deszka hosszával egyezzen — a vastagabb zsinór terhelhetőbb, de kicsit lassítja az úszást."
+      },
+      "mentomelleny": {
+        "title": "Mentőmellény",
+        "short": "Nem luxus – főleg folyón és hidegvízben nem hagyható el.",
+        "purpose": "A mentőmellény (PFD) a felszínen tart eszméletvesztés vagy kimerülés esetén is — ez a különbség a kellemetlen és a valóban veszélyes helyzet között.",
+        "buying": "SUP-hoz a kompakt, derékra csatolható (belt-pack) típus a legkényelmesebb — csak esés után kell felfújni/aktiválni. Gyerekeknél és nem-úszóknál mindig hagyományos, folyamatosan viselt mellény kell, nem derékpakk.",
+        "safety": {
+          "title": "Folyón külön is indokolt"
+        }
+      },
+      "pumpa": {
+        "title": "Pumpa",
+        "short": "Felfújható deszkánál nem választás – alapfelszerelés.",
+        "purpose": "A felfújható (iSUP) deszka a megfelelő nyomásra (jellemzően 12–15 PSI) fújva veszi fel a végleges merevségét — enélkül a deszka „belóg”, és rosszul viselkedik vízen.",
+        "buying": "A dupla-akciós kézi pumpa gyorsabb alacsony nyomáson, de a magas nyomáshoz a végén egy-akciósra kell váltani; az elektromos pumpa kényelmesebb, de autós vagy akkus tápot igényel. Ellenőrizd, hogy a pumpa csatlakozója illik-e a deszkád szelepéhez.",
+        "safety": {
+          "title": "Az alulfújt deszka instabil",
+          "body": "A gyártó által megadott PSI-nél alacsonyabb nyomás megnöveli a deszka hajlását vízen — ez rontja a stabilitást és a siklást, és extrém esetben töréshez, sérüléshez is vezethet. Felfújás közben mindig a manométert nézd, ne csak a pumpázások számát."
+        }
+      },
+      "szarazzsak": {
+        "title": "Szárazzsák",
+        "short": "Túrázáshoz és hidegben a felszerelésed véd, nem csak kényelem.",
+        "purpose": "A szárazzsák a telefont, ruhát, elsősegély-felszerelést tartja száraz és úszóképes állapotban borulás esetén is.",
+        "buying": "A görgetett záródású (roll-top) típus a legmegbízhatóbb; a literes méretet a túra hosszához igazítsd. Egy külön, kisebb vízálló tok a telefonnak/kulcsnak akkor is hasznos, ha van nagyobb szárazzsákod.",
+        "safety": {
+          "title": "Elsősegély és jelzőeszköz elérhető helyen",
+          "body": "Hosszabb túrán vagy ismeretlen vízen ne a deszka aljára rögzítve tartsd az elsősegély-felszerelést és egy vízálló telefontokot — vészhelyzetben a gyors elérés számít, nem csak az, hogy száraz maradt."
+        }
+      },
+      "ules": {
+        "title": "Ülés",
+        "short": "Kajak-móddá alakítja a deszkát hosszabb távokra.",
+        "purpose": "Az ülés-kiegészítővel a SUP deszka kajakszerűen, két lapátos evezővel is használható — pihentetőbb testtartás hosszú távokon vagy erős szélben.",
+        "buying": "Ellenőrizd, hogy a deszkádon vannak-e D-gyűrűk vagy szíjrendszer az ülés rögzítéséhez — a legtöbb allround és túra-deszka gyárilag elő van rá készítve, versenydeszkáknál ritkábban."
+      },
+      "uszony": {
+        "title": "Uszony",
+        "short": "Az irányíthatóság és a siklás múlik rajta.",
+        "purpose": "Az uszony tartja az irányt és csökkenti az oldalra csúszást — mérete és alakja befolyásolja, mennyire fordulékony, illetve mennyire tartja az egyenes vonalat a deszka.",
+        "buying": "A csatlakozás típusa (US Box vagy FCS) a deszkádtól függ — ellenőrizd vásárlás előtt. Sekély vízhez vagy folyóhoz rövidebb, rugalmas, esetleg levehető uszony ajánlott, hogy ne akadjon bele a mederbe."
+      },
+      "taska": {
+        "title": "Táska",
+        "short": "Szállítás és tárolás – főleg felfújható deszkánál számít.",
+        "purpose": "A hordtáska (jellemzően hátizsák-formában) védi a felfújható deszkát szállítás és tárolás közben a horzsolástól és az UV-fénytől.",
+        "buying": "Ellenőrizd, hogy a táska mérete illik-e az összehajtott deszkádhoz és a tartozékokhoz (pumpa, evező) — a párnázott hátpánt sokat számít, ha gyalog viszed a parthoz."
+      }
+    },
+    "advisor": {
+      "title": "Ez is kell hozzá",
+      "lead": "A deszka önmagában nem elég — ezekkel indulj biztonságosan.",
+      "linkLabel": "Útmutató megnyitása",
+      "leash": {
+        "river": "Folyón gyorskioldós derékpóráz kell — sodró vízben a bokapóráz beakadhat.",
+        "other": "Bokapóráz köti a deszkádhoz, hogy borulás után se ússzon el tőled."
+      },
+      "pfd": "Mentőmellény vagy úszást segítő mellény — kezdőként és folyón különösen fontos.",
+      "pump": "Felfújható deszkánál pumpa is kell — a legtöbb szett tartalmazza, de ellenőrizd a nyomás-tartományt.",
+      "drybag": "Túrához szárazzsák véd a ruhád és a felszerelésed a nedvességtől."
+    },
+    "riverLeashLink": "Bővebben a póráz-útmutatóban"
   }
 }

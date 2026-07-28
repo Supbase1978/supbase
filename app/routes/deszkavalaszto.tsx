@@ -16,14 +16,14 @@
  *   4) display-mezőkkel adja vissza a rangsort.
  */
 import { useTranslation } from "react-i18next";
-import { redirect } from "react-router";
+import { Link, redirect } from "react-router";
 
 import { recordEvent } from "@core/analytics/analytics.server";
 import { getUser } from "@core/auth/session.server";
 import { createSupabaseServerClient } from "@core/auth/supabase.server";
 import { getLocaleFromPath, pickTranslated, serverT } from "@core/i18n";
 import { buildPageSeo } from "@core/seo/page-seo";
-import { SafetyNote } from "@core/ui";
+import { Card, SafetyNote } from "@core/ui";
 import { listBoards, listCheapestPriceByBoard } from "@modules/catalog/data/boards.server";
 import { computeReviewAggregate, toTen } from "@modules/reviews/aggregate";
 import { listAllPublishedReviews } from "@modules/reviews/data/reviews.server";
@@ -54,6 +54,7 @@ import {
 import { AdvisorResult, type AdvisorResultBoard } from "@modules/advisor/ui/AdvisorResult";
 import { AdvisorWizard } from "@modules/advisor/ui/AdvisorWizard";
 
+import { recommendGearFor } from "./deszkavalaszto.gear";
 import type { Route } from "./+types/deszkavalaszto";
 
 function oneOf<T extends string>(
@@ -93,7 +94,7 @@ export async function loader({ request }: Route.LoaderArgs) {
     // Tölcsér-ELEJE. A wizard-megjelenés és az eredmény-megjelenés aránya a
     // legfontosabb mérőszámunk: ebből látszik, hol esnek ki az emberek.
     await recordEvent(supabase, request, "advisor_wizard_view");
-    return { seo, results: null, sizing: null, noMatchReason: null, water: null };
+    return { seo, results: null, sizing: null, noMatchReason: null, water: null, gearItems: null };
   }
 
   const [boards, cheapest, publishedReviews] = await Promise.all([
@@ -180,8 +181,16 @@ export async function loader({ request }: Route.LoaderArgs) {
     props: { water: inputs.water, experience: inputs.experience, matched: results.length },
   });
 
+  // "Ez is kell hozzá" (F2.3 1. szakasz): TISZTA levezetés a wizard
+  // bemenetéből, nincs hozzá új DB-lekérdezés — lásd `deszkavalaszto.gear.ts`.
+  const gearItems = recommendGearFor({
+    water: inputs.water,
+    use: inputs.use,
+    storage: inputs.storage,
+  });
+
   // A víz-választás a megjelenítéshez is kell (folyón más póráz kell).
-  return { seo, results, sizing, noMatchReason, water: inputs.water };
+  return { seo, results, sizing, noMatchReason, water: inputs.water, gearItems };
 }
 
 /**
@@ -237,6 +246,7 @@ export const meta: Route.MetaFunction = ({ data }) => data?.seo ?? [];
 
 export default function AdvisorRoute({ loaderData }: Route.ComponentProps) {
   const { t: tCore } = useTranslation("core");
+  const { t: tCatalog } = useTranslation("catalog");
 
   if (loaderData.results) {
     return (
@@ -254,6 +264,33 @@ export default function AdvisorRoute({ loaderData }: Route.ComponentProps) {
             <p>{tCore("safety.riverLeash.body")}</p>
             <p className="mt-2">{tCore("safety.riverLeash.pfd")}</p>
           </SafetyNote>
+        ) : null}
+
+        {/* „Ez is kell hozzá" (F2.3 1. szakasz, domain-review 2.8): a deszka
+            önmagában nem elég — a catalog `/felszereles/:kategoria`
+            útmutatóira mutat. A `gearItems` tiszta levezetés a wizard
+            bemenetéből (lásd `deszkavalaszto.gear.ts`), nincs hozzá
+            adatbázis-lekérdezés. */}
+        {loaderData.gearItems && loaderData.gearItems.length > 0 ? (
+          <Card>
+            <h2 className="text-lg font-semibold text-ink-deep">
+              {tCatalog("gear.advisor.title")}
+            </h2>
+            <p className="text-sm text-text-2">{tCatalog("gear.advisor.lead")}</p>
+            <ul className="mt-1 flex flex-col gap-2">
+              {loaderData.gearItems.map((item) => (
+                <li key={item.category} className="text-sm text-text-2">
+                  <span>{tCatalog(item.textKey)}</span>{" "}
+                  <Link
+                    to={`/felszereles/${item.category}`}
+                    className="font-semibold text-petrol-text underline"
+                  >
+                    {tCatalog("gear.advisor.linkLabel")}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </Card>
         ) : null}
       </main>
     );

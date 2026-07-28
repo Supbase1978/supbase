@@ -51,6 +51,16 @@ export const STATIC_SITEMAP_PATHS: readonly string[] = [
   "/spotok",
   "/deszkavalaszto",
   "/szolgaltatok",
+  "/felszereles",
+  // Felszerelés-kategóriák (F2.3 1. szakasz) — statikus tartalom, nincs slug.
+  "/felszereles/evezo",
+  "/felszereles/poraz",
+  "/felszereles/mentomelleny",
+  "/felszereles/pumpa",
+  "/felszereles/szarazzsak",
+  "/felszereles/ules",
+  "/felszereles/uszony",
+  "/felszereles/taska",
   "/aszf",
   "/adatvedelem",
 ];

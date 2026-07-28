@@ -6,6 +6,10 @@
  * kötése a ROUTE-rétegben történik (a catalog nem importál reviews-t —
  * modul→modul import tilos). A manifeszt mellékhatás-mentes (csak típus-import),
  * az i18n-namespace regisztrációja a `./i18n` mellékhatás-modulban él.
+ *
+ * A `/felszereles` + `/felszereles/:kategoria` route-ok (F2.3 1. szakasz) a
+ * kiegészítők statikus útmutató-tartalmát adják — séma-módosítás NÉLKÜL, lásd
+ * `./gear.ts`.
  */
 import type { ModuleManifest } from "@core/module-contract";
 
@@ -14,8 +18,15 @@ export const catalogModule: ModuleManifest = {
   routes: [
     { path: "deszkak", file: "routes/deszkak.tsx" },
     { path: "deszkak/:slug", file: "routes/deszkak.$slug.tsx" },
+    { path: "felszereles", file: "routes/felszereles.tsx" },
+    { path: "felszereles/:kategoria", file: "routes/felszereles.$kategoria.tsx" },
   ],
-  nav: [{ labelKey: "nav.boards", path: "/deszkak", placement: "primary", order: 10 }],
+  nav: [
+    { labelKey: "nav.boards", path: "/deszkak", placement: "primary", order: 10 },
+    // Boards (10) és Spotok/Szolgáltatók (20) közé — önálló menüpont, NEM
+    // "Kiegészítők" (az kereskedelmi hangot adna a mentőmellénynek).
+    { labelKey: "nav.gear", path: "/felszereles", placement: "primary", order: 15 },
+  ],
   i18nNamespace: "catalog",
   // catalog-watch moderáció (F2): a piacfigyelő jelöltjeinek elbírálása.
   adminPanels: [{ path: "katalogus", file: "routes/admin.katalogus.tsx" }],
