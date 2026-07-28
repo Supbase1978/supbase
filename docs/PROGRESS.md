@@ -21,7 +21,7 @@
 | F1.12 Analitika (süti-mentes) | ✅ kész + élesítve (2026-07-28) | `analytics_events` + definer-RPC + `/admin/analitika`. Nincs süti/IP/azonosító → nincs egyéni tölcsér, csak darabszám. Robot/DNT/dev nem számol |
 | F2.2 Visszajelzés-csatorna | ✅ kód kész (2026-07-28) | `/visszajelzes` (hiba · hiányzó bolt · hiányzó modell) + `/admin/visszajelzesek`. HÁTRA: migráció éles push + böngésző-verifikáció |
 | F2.1 catalog-watch piacfigyelő | ✅ kód kész (2026-07-28) | crawler + CLI + `/admin/katalogus` moderáció + heti GH Actions cron. HÁTRA: valós HU források bekötése és az első éles crawl (felhasználói döntés) |
-| F2.3 Felszerelés (kiegészítők), 1. szakasz | ✅ kész (2026-07-28) | `/felszereles` + `/felszereles/:kategoria` útmutató-oldalak, séma-módosítás nélkül; Deszkaválasztó „Ez is kell hozzá" blokk + spot-adatlap póráz-link. HÁTRA: 2–3. szakasz (termékszintű katalógus + catalog-watch besorolás) |
+| F2.3 Felszerelés (kiegészítők), 1–2. szakasz | ✅ kész (2026-07-28) | 1.: `/felszereles` útmutató-oldalak, séma nélkül. 2.: `kind`/`accessory_type`/`would_recommend`/`ratings` migráció (NEM éles) + `kind='board'` szűrő minden deszka-lekérdezésen, őrszem-teszttel. HÁTRA: migráció éles push, route/UI a termékszintű kiegészítőkhöz, 3. szakasz (catalog-watch besorolás) |
 | F1.10 Záró audit + élesítés | ✅ audit **26/26** (2026-07-27) | **`docs/AUDIT_F1.md`**: az audit két mérés-jellegű hiánya pótolva (vizuális regresszió 07-26, teljesítmény-budget 07-27). HÁTRA az F1 lezárásához a publikussá tétel — a lépések a `RUNBOOK.md` **élesítési checklistjében** (domain → Resend-SMTP → Turnstile → cégadatok → `SITE_PUBLIC=true`), mind felhasználói döntés/adat |
 
 ## ITINER a következő sessionnek (2026-07-28-i állapot)
@@ -266,11 +266,60 @@ elvárás a jövőben. Az `e2e/a11y.spec.ts` és `e2e/public-paths.spec.ts` bőv
 lett az új oldalakkal, de **nem futott** (nincs helyi Playwright-böngésző +
 az e2e-suite élő távoli Supabase-seedet igényel) — a CI-ban fut le előbb.
 
-**HÁTRA:** 2. szakasz (termékszintű kiegészítők: `kind` diszkriminátor a
-`boards` táblán, `would_recommend` oszlop, `/felszereles/:kategoria/:slug`
-adatlap) és 3. szakasz (catalog-watch: szűrés helyett besorolás,
-`classifyProduct`) — mindkettő a terv szerint, DB-migrációt igényel, tehát
-felhasználói jóváhagyással indul.
+## F2.3 — Felszerelés — 2. szakasz: `kind`-diszkriminátor + adatréteg-szűrés (2026-07-28)
+
+Kiosztás: db-engineer. A terv 97–194. sora. **Csak a migráció + adatréteg-szűrés
+készült el ebben a körben, route/UI szándékosan NEM** — a séma-változtatás a
+legkritikusabb rész (a Deszkaválasztó SOHA nem ajánlhat kiegészítőt deszkaként),
+ezt kellett először stabilan, tesztelve látni. Kapuk zöldek: typecheck · lint ·
+**746 vitest** (+8 új). **A migráció NEM lett élesre tolva** (`db push` nem
+történt) — az külön, felhasználói jóváhagyással induló lépés.
+
+**Két ÚJ additív migráció** (modul-szerződés: catalog és reviews séma-tulajdona
+külön fájlban):
+- `20260717092200_catalog_board_kind.sql`: `boards.kind` (`board`/`accessory`,
+  default `board` — a meglévő 20 seed-sor érintetlen) + `accessory_type` (zárt
+  8-elemű lista, a `src/modules/catalog/gear.ts` `GEAR_CATEGORIES`-ével azonos)
+  + `board_type` NOT NULL feloldva + feltételes `boards_kind_shape` CHECK
+  (idempotens `do $$` blokk) + `boards_kind_idx`. RLS változatlan (a meglévő
+  policyk kind-agnosztikusak).
+- `20260717092300_reviews_recommend.sql`: `board_reviews.would_recommend`
+  (nullable — régi sorok `null`-lal maradnak, az aggregátor ezekből továbbra is
+  a `rating_overall >= 4` szabállyal származtat) + `ratings jsonb` (**egyelőre
+  NEM HASZNÁLT**, a jövőbeli kategória-szempontokhoz — a szabály a kódban
+  kimondva: a 4 deszka-oszlop marad a kanonikus tároló, minden ÚJ szempont ide
+  megy; `jsonb_typeof = 'object'` CHECK az alak védelmére).
+
+**pgTAP bővítés** (`10_catalog_test.sql`, `20_reviews_test.sql`): seed-assert
+(0 nem-`board` sor élesben), `boards_kind_shape` pozitív + 4 negatív eset
+(23514), RLS kiegészítő-sorra; `would_recommend`/`ratings` saját véleményben
+írható, miközben a `verified_owner`/`status` védve marad. **A CI `rls-tests`
+jobban fut le** (helyben nincs Docker/Postgres).
+
+**Adatréteg-szűrés — korrektségi invariáns, `kind='board'` mindenhol ahol
+deszka-listát ad vissza:**
+`catalog/data/boards.server.ts` (`listBoards`, `getBoardBySlug` — kiegészítő
+slugjára 404), `catalog/data/candidates.server.ts` (`listBoardChoices`,
+`listBoardsForLifecycle`), `tools/catalog-watch/store.ts`
+(`listBoardsForLifecycle`, `listBoardsForMatch`). Kivétel, dokumentálva:
+`resolveUniqueSlug` szándékosan kind-agnosztikus (a slug az egész táblán belül
+egyedi kell legyen).
+
+**Őrszem-teszt** (`app/routes/deszkavalaszto.kind.test.ts`, 8 teszt): ál-Supabase-
+kliens vegyes (deszka+kiegészítő) adaton igazolja, hogy a szűrt függvények csak
+deszkát adnak vissza; plusz forrás-szintű lefedettség-ellenőrzés, ami minden
+`boards`-olvasásra megköveteli a `.eq("kind", "board")`-ot. Mutációs próbával
+igazolva: a szűrő kivételekor a teszt elhasal.
+
+**Follow-up / HÁTRA:**
+- A migráció éles push-a (felhasználói jóváhagyással) — a CI rls-tests előbb
+  fusson le rajta.
+- Route + UI a termékszintű kiegészítő-adatlaphoz
+  (`/felszereles/:kategoria/:slug`), `BoardCard`/`BoardHero` kiegészítő-változat.
+- Az `would_recommend` bekötése az űrlapba és az aggregátor `percentRecommend`
+  szabályába (explicit érték elsőbbsége — MOST még nem történt meg, a terv
+  156. sora szerinti szabály még csak a típusban és a DB-ben létezik).
+- 3. szakasz: catalog-watch `classifyProduct` (szűrés helyett besorolás).
 
 ## F1.0 — Projekt-setup (2026-07-17)
 

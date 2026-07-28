@@ -18,6 +18,10 @@ function review(overrides: Partial<BoardReviewRow>): BoardReviewRow {
     used_water_type: "to",
     used_rider_weight_kg: null,
     used_experience: null,
+    // A bevezetés előtti alapállapot: nincs explicit ajánlás (az aggregátor a
+    // rating_overall >= 4 szabályt használja), és nincs kategória-szempont.
+    would_recommend: null,
+    ratings: null,
     verified_owner: false,
     status: "published",
     created_at: "2026-07-19T10:00:00.000Z",

@@ -2,6 +2,7 @@
  * catalog sor-típusok (3.1 séma). A `slug`/`description` fordítható jsonb
  * (Record<string,string>); a `geom`-hoz hasonló nyers reprezentációk itt nincsenek.
  */
+import type { GearCategory } from "./gear";
 
 /** boards.board_type CHECK-kényszerével egyező típusok (3.1). */
 export type BoardType =
@@ -29,6 +30,14 @@ export const BOARD_TYPES: readonly BoardType[] = [
  */
 export type BoardStatus = "active" | "discontinued" | "unverified";
 
+/**
+ * `boards.kind` diszkriminátor (20260717092200 migráció): a tábla a deszkák
+ * MELLETT a felszerelés-sorokat is hordozza. A `boards_kind_shape` CHECK tartja
+ * be, hogy a két alak ne keveredjen — a TS-oldali párja a `CatalogItemRow`
+ * diszkriminált unió.
+ */
+export type BoardKind = "board" | "accessory";
+
 /** `public.brands` sor (3.1). */
 export interface BrandRow {
   id: string;
@@ -36,14 +45,13 @@ export interface BrandRow {
   website_url: string | null;
 }
 
-/** `public.boards` sor (3.1) — minden oszlop. */
-export interface BoardRow {
+/** A `boards` tábla KIND-FÜGGETLEN oszlopai (deszka és kiegészítő közös része). */
+export interface CatalogItemRowBase {
   id: string;
   brand_id: string;
   model_name: string;
   model_year: number | null;
   slug: Record<string, string>;
-  board_type: BoardType;
   length_cm: number | null;
   width_cm: number | null;
   thickness_cm: number | null;
@@ -67,8 +75,43 @@ export interface BoardRow {
   discontinued_at: string | null;
 }
 
-/** boards + brand-join (PostgREST `brand:brands(*)`). */
+/**
+ * `public.boards` DESZKA-sor (`kind = 'board'`) — minden oszlop.
+ *
+ * A `board_type` itt SZÁNDÉKOSAN nem-null, noha az oszlop az adatbázisban már
+ * nullable: a `boards_kind_shape` CHECK garantálja, hogy deszka-soron mindig
+ * van típus. Ez a típus tehát csak `kind='board'`-ra szűrt lekérdezés
+ * eredményére igaz — épp ez a szűrés a korrektségi invariáns (a Deszkaválasztó
+ * SOHA nem kaphat kiegészítőt).
+ */
+export interface BoardRow extends CatalogItemRowBase {
+  kind: "board";
+  board_type: BoardType;
+  accessory_type: null;
+}
+
+/** `public.boards` FELSZERELÉS-sor (`kind = 'accessory'`) — minden oszlop. */
+export interface AccessoryRow extends CatalogItemRowBase {
+  kind: "accessory";
+  board_type: null;
+  /** A `GEAR_CATEGORIES` zárt listája (gear.ts) = az oszlop CHECK-kényszere. */
+  accessory_type: GearCategory;
+}
+
+/**
+ * A `boards` tábla bármelyik sora, DISZKRIMINÁLT unióként — a `kind` mezőre
+ * szűkítve a TS is kikényszeríti az alak-kényszert (kiegészítőn nincs
+ * `board_type`, deszkán nincs `accessory_type`).
+ */
+export type CatalogItemRow = BoardRow | AccessoryRow;
+
+/** deszka + brand-join (PostgREST `brand:brands(*)`). */
 export interface BoardWithBrand extends BoardRow {
+  brand: BrandRow | null;
+}
+
+/** kiegészítő + brand-join (PostgREST `brand:brands(*)`). */
+export interface AccessoryWithBrand extends AccessoryRow {
   brand: BrandRow | null;
 }
 

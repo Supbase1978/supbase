@@ -70,6 +70,10 @@ export async function listPendingCandidates(
 /**
  * A jóváhagyáshoz felkínált deszkák (merge-célpontok). A teljes lista megy ki,
  * mert a katalógus kicsi; a moderátor a legördülőből választ.
+ *
+ * `kind = 'board'`: a figyelő ma kizárólag deszka-jelöltet termel, ezért a
+ * merge-célpont is csak deszka lehet. Amikor a crawl kiegészítőt is besorol
+ * (terv 3. szakasz), ez a lista kap kind-paramétert — a szűrő NEM eshet ki.
  */
 export async function listBoardChoices(
   supabase: SupabaseClient,
@@ -77,6 +81,7 @@ export async function listBoardChoices(
   const { data, error } = await supabase
     .from("boards")
     .select("id, model_name, brand:brands(name)")
+    .eq("kind", "board")
     .order("model_name");
   if (error || !data) {
     return [];
@@ -114,13 +119,23 @@ async function resolveBrandId(supabase: SupabaseClient, name: string): Promise<s
   return (data as { id: string }).id;
 }
 
-/** Ütközésmentes slug: `-2`, `-3` … utótag, amíg szabad nem lesz. */
+/**
+ * Ütközésmentes slug: `-2`, `-3` … utótag, amíg szabad nem lesz.
+ *
+ * SZÁNDÉKOSAN kind-AGNOSZTIKUS: a slug az egész `boards` táblán belül egyedi
+ * kell legyen, mert deszka és kiegészítő ugyanabból a sorhalmazból kap URL-t.
+ * Ide tehát NEM jön `kind='board'` szűrő (különben egy kiegészítő slugjára
+ * ütköző deszka-slug születhetne).
+ */
 async function resolveUniqueSlug(supabase: SupabaseClient, base: string): Promise<string> {
   const root = base === "" ? "deszka" : base;
   for (let attempt = 0; attempt < 20; attempt += 1) {
     const candidate = attempt === 0 ? root : `${root}-${attempt + 1}`;
     const { data } = await supabase
       .from("boards")
+      // kind-AGNOSZTIKUS (szándékos): a slug a TELJES táblán belül egyedi, mert
+      // deszka és kiegészítő ugyanabból a sorhalmazból kap URL-t. A
+      // deszkavalaszto.kind.test.ts őrszem ezt a jelölést látva enged át.
       .select("id")
       .eq("slug->>hu", candidate)
       .limit(1);
@@ -151,6 +166,10 @@ export function buildBoardInsert(
     model_name: extracted.modelName === "" ? extracted.rawTitle : extracted.modelName,
     model_year: extracted.modelYear,
     slug: { hu: options.slug, en: options.slug },
+    // A `kind` KIÍRVA megy be, nem a séma default-jára hagyatkozva: a jóváhagyás
+    // deszkát hoz létre, és ezt a szándékot a payload mondja ki (a kiegészítő-ág
+    // a terv 3. szakaszában ide `kind: "accessory"` + `accessory_type` párt tesz).
+    kind: "board",
     board_type: options.boardType,
     length_cm: specs.lengthCm === null ? null : Math.round(specs.lengthCm),
     width_cm: specs.widthCm === null ? null : Math.round(specs.widthCm),
@@ -324,7 +343,11 @@ export async function rejectCandidate(
   return error ? { ok: false, errorKey: "admin.error.updateFailed" } : { ok: true };
 }
 
-/** Az életciklus-vizsgálathoz: minden deszka, kevés oszloppal. */
+/**
+ * Az életciklus-vizsgálathoz: minden deszka, kevés oszloppal.
+ * `kind = 'board'` — a lista deszka-életciklusról szól (a figyelő ma csak
+ * deszkát lát); a kiegészítők életciklusa a terv 3. szakaszával jön.
+ */
 export async function listBoardsForLifecycle(supabase: SupabaseClient): Promise<
   {
     id: string;
@@ -336,7 +359,8 @@ export async function listBoardsForLifecycle(supabase: SupabaseClient): Promise<
 > {
   const { data, error } = await supabase
     .from("boards")
-    .select("id, model_name, status, last_seen_at, availability_hu, brand:brands(name)");
+    .select("id, model_name, status, last_seen_at, availability_hu, brand:brands(name)")
+    .eq("kind", "board");
   if (error || !data) {
     return [];
   }

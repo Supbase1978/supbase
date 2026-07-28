@@ -39,6 +39,20 @@ export interface BoardReviewRow {
   used_water_type: UsedWaterType | null;
   used_rider_weight_kg: number | null;
   used_experience: string | null;
+  /**
+   * Explicit „ajánlom / nem ajánlom" (20260717092300 migráció). `null` = a
+   * vélemény a bevezetés ELŐTTRŐL való — ilyenkor az aggregátor a régi
+   * `rating_overall >= 4` származtatást használja, hogy a meglévő százalékok ne
+   * torzuljanak visszamenőleg. Az űrlap és az aggregátor bekötése külön lépés.
+   */
+  would_recommend: boolean | null;
+  /**
+   * EGYELŐRE NEM HASZNÁLT (20260717092300 migráció): a jövőbeli
+   * KATEGÓRIA-SPECIFIKUS szempontok tárolója, 1–5 skálán
+   * (pl. `{"suly": 4, "merevseg": 5}`). A szabály: a négy `rating_*` oszlop
+   * marad a DESZKA kanonikus tárolója, minden ÚJ szempont ide kerül.
+   */
+  ratings: Record<string, number> | null;
   verified_owner: boolean;
   status: ReviewStatus;
   created_at: string;

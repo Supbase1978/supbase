@@ -63,13 +63,18 @@ export async function insertSource(
   return data as CatalogSourceRow;
 }
 
-/** Az életciklus-vizsgálat bemenete (minden deszka, kevés oszloppal). */
+/**
+ * Az életciklus-vizsgálat bemenete (minden deszka, kevés oszloppal).
+ * `kind = 'board'`: a `boards` tábla F2.3 óta a felszerelést is hordozza, az
+ * életciklus-riport viszont deszkákról szól.
+ */
 export async function listBoardsForLifecycle(
   client: SupabaseClient,
 ): Promise<BoardForLifecycle[]> {
   const { data, error } = await client
     .from("boards")
-    .select("id, model_name, status, last_seen_at, availability_hu");
+    .select("id, model_name, status, last_seen_at, availability_hu")
+    .eq("kind", "board");
   fail("boards olvasás", error);
   return (data ?? []).map((row) => ({
     id: row.id as string,
@@ -83,10 +88,14 @@ export async function listBoardsForLifecycle(
 /** A crawl írási oldala. */
 export function createSupabaseStore(client: SupabaseClient): CrawlStore {
   return {
+    // `kind = 'board'`: a jelölt-egyeztetés DESZKÁRA keres párt (a crawl ma
+    // csak deszkát enged tovább, `looksLikeBoard`). Kiegészítő-sorok bekeverése
+    // hamis egyezést adna — pl. egy „Red Paddle" evező a „Red Paddle Ride"-ra.
     async listBoardsForMatch(): Promise<BoardForMatch[]> {
       const { data, error } = await client
         .from("boards")
-        .select("id, model_name, model_year, brand:brands(name)");
+        .select("id, model_name, model_year, brand:brands(name)")
+        .eq("kind", "board");
       fail("boards olvasás", error);
       return (data ?? []).map((row) => {
         // A PostgREST a to-one joint objektumként adja; régebbi/aliasolt

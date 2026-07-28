@@ -82,6 +82,55 @@ select is((select verified_owner from public.board_reviews where id='a0000001-00
 select is((select text_pros from public.board_reviews where id='a0000001-0000-0000-0000-000000000000'), 'jó',
   'reviews: a sima mező-módosítás viszont érvényesült');
 
+-- ===========================================================================
+-- would_recommend + ratings (F2.3 2. szakasz) — a SAJÁT véleményben szabadon
+-- írható mezők; a védett listára (verified_owner/status) NEM kerültek rá.
+-- ===========================================================================
+-- A bevezetés előtti sorok null-lal maradtak (az aggregátor ilyenkor származtat).
+select is((select would_recommend from public.board_reviews where id='a0000002-0000-0000-0000-000000000000'), NULL::boolean,
+  'reviews: a régi véleményeken a would_recommend NULL maradt (nincs visszamenőleges torzítás)');
+select is((select ratings from public.board_reviews where id='a0000002-0000-0000-0000-000000000000'), NULL::jsonb,
+  'reviews: a ratings jsonb alapból NULL (egyelőre nem használt oszlop)');
+
+set local role authenticated;
+select set_config('request.jwt.claims','{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}', true);
+select lives_ok($$ update public.board_reviews
+  set would_recommend = false, ratings = '{"suly": 4}'::jsonb, verified_owner = true, status = 'hidden'
+  where id='a0000001-0000-0000-0000-000000000000' $$,
+  'reviews: user update-je lefut a would_recommend/ratings mezőkkel is');
+reset role;
+select set_config('request.jwt.claims','', true);
+select is((select would_recommend from public.board_reviews where id='a0000001-0000-0000-0000-000000000000'), false,
+  'reviews: a user ÍRHATJA a would_recommend-et a saját véleményében');
+select is((select ratings->>'suly' from public.board_reviews where id='a0000001-0000-0000-0000-000000000000'), '4',
+  'reviews: a user ÍRHATJA a ratings jsonb-t a saját véleményében');
+select is((select verified_owner from public.board_reviews where id='a0000001-0000-0000-0000-000000000000'), false,
+  'reviews: ugyanebben az update-ben a verified_owner TOVÁBBRA IS védett');
+select is((select status from public.board_reviews where id='a0000001-0000-0000-0000-000000000000'), 'published',
+  'reviews: ugyanebben az update-ben a status TOVÁBBRA IS védett');
+
+-- Új vélemény explicit ajánlással (insert-úton is írható).
+set local role authenticated;
+select set_config('request.jwt.claims','{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}', true);
+select lives_ok($$ insert into public.board_reviews (board_id, user_id, rating_overall, would_recommend)
+  values ('b0000006-0000-0000-0000-000000000000','11111111-1111-1111-1111-111111111111', 3, true) $$,
+  'reviews: az explicit „ajánlom" insertkor is megadható');
+reset role;
+select set_config('request.jwt.claims','', true);
+select is((select would_recommend from public.board_reviews
+             where board_id='b0000006-0000-0000-0000-000000000000'
+               and user_id='11111111-1111-1111-1111-111111111111'), true,
+  'reviews: a 3-as pontszám mellett is „ajánlom" (az explicit érték győz a származtatás felett)');
+
+-- A ratings CSAK objektum lehet (a jövőbeli szempont-térkép alakja).
+set local role authenticated;
+select set_config('request.jwt.claims','{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}', true);
+select throws_ok($$ update public.board_reviews set ratings = '[1,2,3]'::jsonb
+  where id='a0000001-0000-0000-0000-000000000000' $$, '23514', NULL,
+  'reviews: a ratings nem lehet tömb (csak szempont → érték objektum)');
+reset role;
+select set_config('request.jwt.claims','', true);
+
 -- Moderátor VISZONT moderálhat (status + jelvény).
 set local role authenticated;
 select set_config('request.jwt.claims','{"sub":"33333333-3333-3333-3333-333333333333","role":"authenticated"}', true);

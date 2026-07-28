@@ -10,10 +10,18 @@ import type { BoardPriceRow, BoardWithBrand } from "../types";
 /** Slug-alak: kisbetű/szám/kötőjel — minden seed-slug ilyen (3.1 jsonb slug). */
 const SLUG_PATTERN = /^[a-z0-9-]+$/;
 
+/**
+ * A katalógus DESZKÁI. A `kind = 'board'` szűrő KORREKTSÉGI INVARIÁNS, nem
+ * kényelmi megoldás: a `boards` tábla F2.3 óta a felszerelés-sorokat is
+ * hordozza (`kind='accessory'`), és ez a lista táplálja a Deszkaválasztót is —
+ * szűrő nélkül evezőt ajánlhatna deszkaként. Őrszem:
+ * `app/routes/deszkavalaszto.kind.test.ts`.
+ */
 export async function listBoards(supabase: SupabaseClient): Promise<BoardWithBrand[]> {
   const { data, error } = await supabase
     .from("boards")
     .select("*, brand:brands(*)")
+    .eq("kind", "board")
     .order("model_name", { ascending: true });
   if (error || !data) {
     return [];
@@ -26,6 +34,9 @@ export async function listBoards(supabase: SupabaseClient): Promise<BoardWithBra
  * A slug URL-paraméter és nyersen kerül a PostgREST `.or()` szűrő-stringbe: az
  * alak-ellenőrzés kizárja a szűrő-injektálást (vessző/zárójel/operátor).
  * Nincs találat → `null` (a hívó 404-et dob).
+ *
+ * A `kind = 'board'` szűrő itt is kell: a `/deszkak/:slug` adatlap DESZKÁÉ — egy
+ * kiegészítő slugjára 404 a helyes válasz, nem egy fél mezős deszka-adatlap.
  */
 export async function getBoardBySlug(
   supabase: SupabaseClient,
@@ -37,6 +48,7 @@ export async function getBoardBySlug(
   const { data, error } = await supabase
     .from("boards")
     .select("*, brand:brands(*)")
+    .eq("kind", "board")
     .or(`slug->>hu.eq.${slug},slug->>en.eq.${slug}`)
     .maybeSingle();
   if (error || !data) {

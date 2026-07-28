@@ -38,6 +38,7 @@ describe("buildBoardInsert", () => {
       model_name: "Vapor",
       model_year: 2024,
       slug: { hu: "aqua-marina-vapor", en: "aqua-marina-vapor" },
+      kind: "board",
       board_type: "allround",
       length_cm: 315,
       width_cm: 81, // a séma int oszlopai kerekítve kapják a cm-t
@@ -52,6 +53,14 @@ describe("buildBoardInsert", () => {
       first_seen_at: OPTIONS.seenAt,
       last_seen_at: OPTIONS.seenAt,
     });
+  });
+
+  it("a jóváhagyott jelöltből DESZKA lesz, kiírt kind-dal (nem kiegészítő)", () => {
+    // A Deszkaválasztó-invariáns írási oldala: a moderációs jóváhagyás soha nem
+    // csempészhet `accessory` sort a deszka-katalógusba.
+    const insert = buildBoardInsert(EXTRACTED, OPTIONS);
+    expect(insert.kind).toBe("board");
+    expect(insert.accessory_type).toBeUndefined();
   });
 
   it("a moderátor típusa GYŐZ a figyelő tippje felett", () => {
