@@ -17,103 +17,71 @@
 | F1.7 Providers | ✅ kész (2026-07-24) | directory-lista + profil + lead-form + saját-listing (claim/regisztráció) + admin-hitelesítő panel; mind az 5 flow böngészőben élesben verifikálva. Részletek lent |
 | F1.8 SEO-réteg | ✅ mag kész (2026-07-24) | loader-alapú meta+hreflang, JSON-LD, sitemap+robots, consent (user_consents migráció + regisztrációs checkbox + re-consent), ÁSZF+adatvédelmi. HÁTRA: OG-kép-generálás + persona-landingek (F1.8b) + a consent-migráció éles push. Részletek lent |
 | F1.9 Push + viharjelzés | ✅ kész (2026-07-25) | teljes web push-pipeline (VAPID + RFC 8291 natív Web Cryptóval, npm nélkül), storm-alert push-ág, feliratkozó-UI, m4 `observed_at`. Élesítve (5 migráció + secretek + deploy) és **böngészőben végponttól végpontig verifikálva: a viharjelzés-push megérkezett**. Részletek lent |
+| F1.11 Folyó-vízállás (5.1/6) | ✅ kész + élesítve (2026-07-27) | vizugy.hu (OVF) REST API, HIVATALOS árvízvédelmi készültségi küszöbökkel; a fix −1 folyó-büntetés helyett fokozat-alapú index-plafon. Élesben verifikálva, cron írja. + F1.11b: póráz-figyelmeztetés folyóvízre |
+| F1.12 Analitika (süti-mentes) | ✅ kész + élesítve (2026-07-28) | `analytics_events` + definer-RPC + `/admin/analitika`. Nincs süti/IP/azonosító → nincs egyéni tölcsér, csak darabszám. Robot/DNT/dev nem számol |
 | F1.10 Záró audit + élesítés | ✅ audit **26/26** (2026-07-27) | **`docs/AUDIT_F1.md`**: az audit két mérés-jellegű hiánya pótolva (vizuális regresszió 07-26, teljesítmény-budget 07-27). HÁTRA az F1 lezárásához a publikussá tétel — a lépések a `RUNBOOK.md` **élesítési checklistjében** (domain → Resend-SMTP → Turnstile → cégadatok → `SITE_PUBLIC=true`), mind felhasználói döntés/adat |
 
-## ITINER a következő sessionnek (2026-07-21-i állapot)
+## ITINER a következő sessionnek (2026-07-28-i állapot)
 
-**Következő lépések (sorrendben):**
+**HOL TARTUNK:** az F1 funkcionálisan LEZÁRVA (fázis-záró audit 26/26,
+`docs/AUDIT_F1.md`). Az oldal a `supperz.netlify.app`-on él, HTTP Basic
+jelszó-kapu mögött. Azóta három továbbfejlesztés ment ki élesbe: folyó-vízállás
+(F1.11), póráz-figyelmeztetés (F1.11b) és süti-mentes analitika (F1.12).
 
-0. ~~AZONNALI MIKRO-LÉPÉS: admin-moderáció verifikáció~~ ✅ **KÉSZ (2026-07-24).**
-   `/admin/velemenyek` adminként 200 (korábban 403 — szerep-forrás javítás
-   böngészőben igazolva). Flag→panel→elrejtés (hidden, kiesik a Közös nevezőből)
-   →újra-közzététel→jelzés-lezárás végigkattintva, demo-adat helyreállítva.
-   Megjegyzés: a `verified_owner` kapcsoló a UI-ban csak a „Jóváhagyásra vár"
-   szekcióban jelenik meg — F1.5-ben nincs pending-queue (a vélemény azonnal
-   publikált), így a jelentett/publikált nézetben nem elérhető (nem blokkoló;
-   ugyanaz a Form-POST→action→RLS mechanizmus).
+**A PUBLIKUSSÁ TÉTEL a felhasználón múlik** — a lépések sorrendben a
+`docs/RUNBOOK.md` „Élesítési checklist" szakaszában:
+domain → Resend-SMTP → Turnstile-kulcs → cégadatok (`@core/legal/entity.ts`) →
+`SITE_PUBLIC=true` → éles LCP-mérés. Egyik sem fejlesztői feladat.
+Felhasználói döntések (2026-07-27): a domain regisztrációja folyamatban
+(a név **Suptime**); a Turnstile-fiók a publikussá tételkor jön létre; a
+cégadatok addig várnak, amíg eldől a vállalkozási forma.
 
-1. ~~F1.7 — Providers~~ ✅ **KÉSZ (2026-07-24).** Lásd az F1.7-szakaszt lent.
+**Fejlesztési irányok, amelyekből választani lehet** (a legutóbbi körben a
+felhasználó a HydroInfo-t választotta, majd az analitikát):
 
-2. ~~F1.8 — SEO-réteg + jogi + consent~~ ✅ **MAG KÉSZ (2026-07-24).** Lásd az
-   F1.8-szakaszt lent. HÁTRA (F1.8b): OG-kép-generálás + persona-landingek; és
-   egy ÚJ igény: **regisztráció-bővítés** — jelszó-emlékeztető (elfelejtett jelszó)
-   + Google/Apple közösségi belépés (Supabase Auth natívan; Dashboard-konfig kell).
-   A jogi szövegek már utalnak a közösségi belépésre. A consent-migráció (`090500`)
-   éles push-a jóváhagyással.
-
-   Az EREDETI F1.8-terv referenciaként:
-   **F1.8 — SEO-réteg + jogi oldalak [scaffolder + auth-security]:** JSON-LD
-   (a `@core/seo` builderek már megvannak: Product/Place/LocalBusiness/FAQPage),
-   hreflang, sitemap, persona-landingek, **OG-kép-generálás** (advisor megosztás-
-   kártya + deszka-adatlap); ÁSZF + adatvédelmi nyilatkozat (statikus kétnyelvű
-   route-ok) + **consent-checkbox a regisztrációban** (visszamenőleg is,
-   consent-időbélyeggel a profiles-ban). A meta-k jelenleg hardcode HU-k a
-   route-okban (home/deszkak/spotok/deszkavalaszto) — F1.8 köti loader-alapú,
-   locale-helyes `buildMeta`-ra.
-
-3. ~~F1.9 — Web push + viharjelzés-pipeline~~ ✅ **KÓD KÉSZ (2026-07-25).** Lásd
-   az F1.9-szakaszt lent. HÁTRA: az élesítés (felhasználói jóváhagyással) és a
-   böngésző-verifikáció; a HydroInfo vízállás-forrás + Fertő-forrás kérdése
-   külön tételként F1.10-re csúszott.
-
-4. **F1.10 — Záró audit + e2e + security + Netlify élesítés [karmester + test-
-   runner + security-auditor + reviewer]:** Playwright e2e-csomag, axe-a11y,
-   Semgrep+Snyk, **Netlify SSR-adapter bekötése** (`@netlify/vite-plugin-react-
-   router`) + a `[deploy]`-gated build élesítése, éles `db push` (a catalog-watch
-   migráció is), a nyitott kis tételek lezárása (lásd lent).
-
-**Teszt-fiókok (2026-07-21, a felhasználó Studio-SQL-lel hozta létre):**
-admin = `endre.sztellik@gmail.com` (profiles.role='admin'); teszt-user =
-`teszt@sup-platform.test` / `Teszt_1234` (sima user, megerősített). A vélemény-
-flow ezzel élesben verifikálva.
-
-**Szerep-forrás JAVÍTVA (2026-07-22):** a `requireRole` (`session.server.ts`)
-mostantól a `current_user_role()` RPC-ből olvassa a szerepet — UGYANAZ a
-`profiles.role`-forrás, amit az RLS is használ, így az app-réteg és a DB nem
-divergál. A `getUserRole` (roles.ts) csak NEM-autoritatív JWT-hint maradt
-(dokumentálva). Kapuk zöldek. **Következő MIKRO-lépés (böngészőben, dev-vel):**
-admin (`endre.sztellik@gmail.com`) belépés → `/admin/velemenyek` most 200-at ad
-(korábban 403); moderációs akciók végigkattintása (elrejtés / hitelesített-
-tulajdonos / jelzés-lezárás). A teszt-userrel írt vélemény (X100 11'0") kész
-alany a moderációhoz. Ezután az F1.5/F1.6 admin-ága is teljesen zöld.
+1. **Biztonsági kiegészítők teljes blokkja** — a domain-review 2.8 pontja.
+   A biztonságkritikus mag (póráz + mentőmellény-mondat) MÁR MEGVAN (F1.11b);
+   ami hátra van, az terméklista (pumpa, szárazzsák, konkrét ajánlások) →
+   katalógus-bővítés, termékdöntést igényel.
+2. **catalog-watch piacfigyelő pipeline** (F2) — a séma kész (F1.5,
+   `docs/CATALOG_WATCH_TERV.md`), a pipeline nincs meg. Ez töltené fel a
+   katalógust (most 20 deszka), ami EGYBEN előfeltétele az advisor ár-padló
+   tételének is (20 elemen az eloszlás-alapú küszöb zajos).
+3. **Capacitor natív build** (F2 nyitása) — a `build:native` SPA-mód megvan,
+   a wrapper nincs.
+4. **react-router 8 frissítés** — `SECURITY_FINDINGS.md` F1.10-01 (RSC-módú
+   CSRF; minket NEM érint, de a 7.x ágon nincs patch). Kiváltó ok: ha RSC-t
+   vezetnénk be.
+5. **Fertő-viharjelzés forrása** — nincs HungaroMet-forrása, ma fail-safe
+   „unknown". Nyitott kérdés F1.3 óta.
 
 **Nyitott kis tételek (nem blokkolók):**
-- m3: `supindex.stale_minutes` holt seed-kulcs — bekötni vagy kivenni (db-engineer).
-- ~~m4: Open-Meteo `observed_at`~~ ✅ **KÉSZ (2026-07-25, F1.9):** migráció
-  (`20260717091700`) + `WeatherSnapshotRow.observed_at` + weather-sync írja. A
-  stale-számítás TOVÁBBRA IS a `fetched_at`-ból megy — az átállás tudatos
-  UI-döntés, F1.10 audit.
-- **F1.9-utó (HydroInfo):** folyó-spotokhoz vízállás-forrás (5.1/6 korrekció) —
-  még nincs bekötve; a Fertő viharjelzés-forrás kérdése is nyitott.
-- **F1.4-utó (geom-forma):** a PostGIS `geom` a projekt PostgREST-jén
-  GeoJSON-OBJEKTUMKÉNT jön (`{type:"Point",coordinates:[lng,lat]}`), nem EWKB
-  hexként — a `data/wkb.ts` `pointFromGeom`-ja mindkettőt kezeli. Ha később
-  `distinct on`-nézetet/RPC-t vezetünk be a snapshotokhoz (lásd lent), a geom-
-  select formája ellenőrizendő.
-- **F1.4-utó (snapshot-lekérdezés):** `listLatestSnapshots` naiv (utolsó 200
-  sor + JS-reduce). Spot-/snapshot-szám növekedésénél `distinct on (spot_id)
-  ... order by spot_id, fetched_at desc` nézet/RPC (db-engineer).
-- **F1.4-utó (MapLibre-warning):** az OpenFreeMap-stílus renderelésekor 3×
-  „Expected value to be of type number, but found null" konzol-warning jön a
-  maplibre-gl workeréből (stílus-kifejezés, nem a mi kódunk) — ártalmatlan,
-  de F1.10 audit-nál nézni, elnémítható-e.
-- F1.2-reviewer follow-up: `amount_huf` update-revert assert; `anonymize_user`
-  runbook-jegyzet (service_role-claimmel hívandó).
-- Biztonsági ajánlás: a `.env`-beli Supabase access token forgatható (a session
-  során fájlba/beszélgetésbe került); a ~/.zshrc:5 régi globális token-exportja
-  kivehető, ha a régi projektekhez már nem kell.
-- storm-alert szezonon kívül: a cron hónapmezeje (`4-10`) intézi; ellenőrzés
-  tavasszal.
+- **Advisor ár-padló** (domain-review 2.5): NEM ár-büntetés kell, hanem
+  rendeltetés-jelzés („alkalmi, strandolós használatra jó"), a küszöb pedig a
+  katalógus saját ár-eloszlásából — ezért vár a katalógus bővülésére.
+- **Kezdő → felfújható preferencia** (2.7): ma nulla hatású (20/20 felfújható).
+- **MapLibre null-warning**: külső stílus-kifejezésből jön, nem a mi kódunkból.
+- **Snyk nincs bekötve** (F1.10-04): fiók-hitelesítés kell, felhasználói döntés.
+- **Persona-landingek** (F1.8b): terméki definíció kell hozzá.
+- A vízhozam/vízhő adat hézagos a mércéinken — ha sűrűbb lesz, bekötendő
+  (F1.11).
+
+**Teszt-fiókok:** admin = `endre.sztellik@gmail.com` (profiles.role='admin');
+teszt-user = `teszt@sup-platform.test` / `Teszt_1234`.
+
+**MUNKAMÓD (fontos):** lokál-first. Minden lépés zárása: `npm run typecheck` ·
+`npm run lint` · `npm test` zölden, PROGRESS frissítve, commit. Netlify-build
+CSAK `[deploy]` jelölős commit-üzenetre indul. Éles műveletet (migráció-push,
+függvény-deploy, adat-módosítás) KIZÁRÓLAG felhasználói jóváhagyással.
+A verifikáció MÉRÉSSEL zárul (parancs-kimenet), nem szemrevételezéssel — a
+legutóbbi három körben ez fogott meg egy blokkolót és két valódi hibát.
 
 **Környezet-emlékeztetők:** Supabase CLI CSAK `npm run sb --` wrapperrel
-(CLAUDE.md, zshrc-csapda) · a gépen nincs Docker/helyi Postgres — RLS-teszt
-verifikáció a CI `rls-tests` jobban · deploy/cron/SQL a Management API-n vagy
-a wrapperen át megy, éles művelethez felhasználói jóváhagyás kell.
-
-**Távolabbi, már bejegyzett tételek:** F1.5-nél catalog-watch séma-előkészítés
-(`docs/CATALOG_WATCH_TERV.md`) · F1.8-nál ÁSZF + adatvédelmi nyilatkozat +
-consent-checkbox · F1.9-nél `notifyStormChange()` push + HydroInfo vízállás +
-Fertő-forrás kérdése.
+(CLAUDE.md, zshrc-csapda; a `db push`-hoz `--include-all` kell a 099000-es
+migráció magasabb időbélyege miatt) · a gépen nincs Docker/helyi Postgres —
+pgTAP-verifikáció a CI `rls-tests` jobban · a szolgáltatói kulcs a Management
+API-ból kérhető le (`/v1/projects/<ref>/api-keys?reveal=true`), titkot ne írj
+a terminálra és ne `npm run`-on át adj át.
 
 ## F1.0 — Projekt-setup (2026-07-17)
 
