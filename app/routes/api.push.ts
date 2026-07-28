@@ -11,6 +11,7 @@
  * Bejelentkezés nélkül 401 JSON (NEM redirect — ez API-végpont).
  */
 import { getUser } from "@core/auth/session.server";
+import { recordEvent } from "@core/analytics/analytics.server";
 import { createSupabaseServerClient } from "@core/auth/supabase.server";
 import {
   listDeviceSubscriptions,
@@ -76,6 +77,11 @@ export async function action({ request }: Route.ActionArgs) {
     if (!token) return json({ error: "push.badToken" }, 400, headers);
 
     const result = await subscribeToSpot(supabase, token, spotId);
+    if (result.ok) {
+      // A viharjelzés-feliratkozás a platform legfontosabb visszatérő
+      // kapcsolódása — külön mérjük, nem page_view-ként.
+      await recordEvent(supabase, request, "push_subscribed", { path: "/api/push" });
+    }
     return result.ok
       ? json({ ok: true }, 200, headers)
       : json({ error: "push.saveFailed" }, 500, headers);

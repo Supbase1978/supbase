@@ -8,6 +8,7 @@
 import { useTranslation } from "react-i18next";
 import { data, Form, redirect } from "react-router";
 
+import { recordEvent } from "@core/analytics/analytics.server";
 import { APP_NAME } from "@core/brand";
 import { requireUser } from "@core/auth/session.server";
 import { createSupabaseServerClient } from "@core/auth/supabase.server";
@@ -51,6 +52,7 @@ export async function action({ request }: Route.ActionArgs) {
   });
 
   if (result.ok) {
+    await recordEvent(supabase, request, "provider_created");
     return redirect(`/szolgaltatok/${result.slug}`, { headers });
   }
   return data<ActionResult>(result, { headers });

@@ -540,4 +540,4 @@ Minden lépés Definition of Done-ja: típus-zöld · lint-zöld · érintett te
 3. **Jogi tartalom ellenőrzése elsődleges forrásból** (Hajózási Szabályzat, viharjelzési rendelet) + disclaimer-szöveg jogásszal — az app "tájékoztat, nem jogforrás".
 4. BM OKF scrape jogi/technikai stabilitása — ha van hivatalos API/feed, arra váltani.
 5. Seed-tartalom: az első 20 deszka spec-adatai és az első 15 spot (Balatonföldvár, Tihany, Agárd, Poroszló, Orfű, Mosoni-Duna, Gemenc…) — a te szakmai inputod kell hozzá.
-6. GDPR: adatkezelési tájékoztató, cookie-mentes analitika preferált (saját eseménynaplózás Supabase-be).
+6. ~~GDPR: adatkezelési tájékoztató, cookie-mentes analitika preferált (saját eseménynaplózás Supabase-be).~~ ✅ **Megvalósítva (F1.12, 2026-07-28):** `analytics_events` tábla + `record_analytics_event()` definer-RPC + `/admin/analitika`. Süti, eszköz-azonosító, IP és user_id NÉLKÜL — cserébe egyéni tölcsér nem mérhető, csak esemény-darabszám. DNT/GPC-jelzésnél és robotoknál nem mérünk, dev-módban sem.

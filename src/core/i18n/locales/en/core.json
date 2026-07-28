@@ -146,5 +146,28 @@
       "body": "On flat water an ankle leash is the right choice — the board is your flotation device and the wind cannot take it away. In moving water, however, an ankle leash can snag on a submerged obstacle (tree trunk, branch, bridge pier) and the current can hold you under. On rivers use a quick-release waist leash that you can release in one move, even under load.",
       "pfd": "A buoyancy aid or life jacket is especially warranted on moving water — reaching the bank in a current is far harder than on a lake."
     }
+  },
+  "analytics": {
+    "title": "Usage statistics",
+    "range": "Last {{days}} days",
+    "privacyNote": "Cookie-free and identifier-free measurement: no IP, no visitor id. You therefore see event counts, not individual journeys.",
+    "funnel": "Board advisor: reaching a result",
+    "funnelHint": "Result views per wizard view. It can exceed 100%: people opening a shared link land straight on the result.",
+    "totals": "Events in total",
+    "daily": "By day",
+    "day": "Day",
+    "total": "Total",
+    "empty": "No events recorded yet.",
+    "event": {
+      "page_view": "Page view",
+      "advisor_wizard_view": "Wizard opened",
+      "advisor_result_view": "Recommendation shown",
+      "advisor_submitted": "Wizard submitted",
+      "review_submitted": "Review submitted",
+      "report_submitted": "Spot report",
+      "lead_sent": "Provider enquiry",
+      "provider_created": "New provider",
+      "push_subscribed": "Storm alert subscription"
+    }
   }
 }

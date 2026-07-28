@@ -275,6 +275,7 @@ export const privacyDocument: Record<Locale, LegalDocument> = {
         heading: "5. Sütik és helyi tárolás",
         paragraphs: [
           "A Platform a bejelentkezéshez feltétlenül szükséges munkamenet-sütit használ. Analitikai vagy marketing célú sütik csak külön hozzájárulással kerülnek elhelyezésre.",
+          "Használati statisztikát süti és eszköz-azonosító NÉLKÜL vezetünk: a szerver összesített darabszámot rögzít bizonyos eseményekről (pl. hányszor nyitották meg a deszkaválasztót). Ehhez sem sütit, sem látogató-azonosítót nem helyezünk el, és IP-címet sem tárolunk — az így keletkező adat nem alkalmas az Ön azonosítására, és egyéni felhasználói út nem követhető belőle. Ha böngészője Do Not Track vagy Global Privacy Control jelzést küld, a mérést teljesen mellőzzük.",
         ],
       },
       {
@@ -348,6 +349,7 @@ export const privacyDocument: Record<Locale, LegalDocument> = {
         heading: "5. Cookies and local storage",
         paragraphs: [
           "The Platform uses a session cookie strictly necessary for sign-in. Analytics or marketing cookies are only set with separate consent.",
+          "Usage statistics are collected WITHOUT cookies or device identifiers: the server records aggregate counts of certain events (for example how many times the board advisor was opened). No cookie, no visitor identifier and no IP address is stored — the resulting data cannot identify you, and no individual user journey can be reconstructed from it. If your browser sends a \"Do Not Track\" or \"Global Privacy Control\" signal, we skip the measurement entirely.",
         ],
       },
       {

@@ -146,5 +146,28 @@
       "body": "Álló vízen a bokára kötött póráz a helyes választás — a deszka a mentőeszközöd, és a szél nem viszi el. Sodró vízen viszont a bokapóráz beakadhat víz alatti akadályba (fatörzs, ág, hídpillér), és a sodrás a víz alá szoríthat. Folyón ezért gyorskioldós derékpóráz (quick-release) használandó, amit feszülés alatt, egy mozdulattal le tudsz oldani.",
       "pfd": "Mentőmellény vagy úszást segítő mellény folyóvízen külön is indokolt — a sodrásban a partot elérni sokkal nehezebb, mint állóvízen."
     }
+  },
+  "analytics": {
+    "title": "Használati statisztika",
+    "range": "Az elmúlt {{days}} nap",
+    "privacyNote": "Süti- és azonosító-mentes mérés: nincs IP, nincs látogató-azonosító. Ezért esemény-darabszámot látsz, nem egyéni utakat.",
+    "funnel": "Deszkaválasztó: eredményig jutás",
+    "funnelHint": "Hány ajánlás-megjelenítés jut egy kérdőív-megjelenítésre. 100% fölé is mehet: a megosztott linket megnyitók egyből az eredményt látják.",
+    "totals": "Események összesen",
+    "daily": "Napi bontás",
+    "day": "Nap",
+    "total": "Összes",
+    "empty": "Még nincs mért esemény.",
+    "event": {
+      "page_view": "Oldalmegtekintés",
+      "advisor_wizard_view": "Kérdőív megnyitva",
+      "advisor_result_view": "Ajánlás megjelent",
+      "advisor_submitted": "Kérdőív beküldve",
+      "review_submitted": "Vélemény beküldve",
+      "report_submitted": "Spot-jelentés",
+      "lead_sent": "Szolgáltatói érdeklődés",
+      "provider_created": "Új szolgáltató",
+      "push_subscribed": "Viharjelzés-feliratkozás"
+    }
   }
 }

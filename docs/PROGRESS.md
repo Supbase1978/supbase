@@ -704,6 +704,60 @@ gyenge merevsége a STABILITÁST rontja) · kezdő→felfújható preferencia (m
 nulla hatású, 20/20 felfújható) · biztonsági kiegészítők blokk (leash,
 mentőmellény — termék-bővítés).
 
+## F1.12 — Süti-mentes használati statisztika (2026-07-28)
+
+A 12/6 pont („cookie-mentes analitika preferált, saját eseménynaplózás
+Supabase-be") megvalósítva. Eddig SEMMI nem mért: élesedés után visszamenőleg
+nem pótolható adatról van szó. Kapuk zöldek: typecheck · lint · **547 vitest**
+(+19 új). **Élesítve és verifikálva.**
+
+**A HATÁR, amit tudatosan vállalunk:** nincs süti, nincs eszköz-azonosító,
+nincs IP, nincs user_id — még napi rotációjú látogató-hash sem (amit a
+privacy-barát eszközök használnak). Következmény: **egyéni tölcsér nem
+mérhető**, csak esemény-darabszám. Cserébe az adat nem alkalmas személy
+azonosítására, és az adatvédelmi tájékoztatónk ígéretét (analitikai süti csak
+külön hozzájárulással) betű szerint tartjuk. A fő kérdésünk így is
+megválaszolható: hány kérdőív-megnyitásra hány ajánlás-megjelenítés jut.
+
+**Írás CSAK definer-függvényen át.** A táblára NINCS insert-policy, tehát
+közvetlenül senki nem írhat; az egyetlen út a `record_analytics_event()`, ami
+zárt eseménynév-listát, útvonal-alakot és props-méretet ellenőriz. Olvasás:
+admin-only. Élesben mind a négy viselkedés ellenőrizve (anon insert → 42501,
+anon olvasás → üres, ismeretlen név → nem keletkezik sor, query-s útvonal →
+levágva).
+
+**A megosztott advisor-link TESTSÚLYT tartalmaz** (`?suly=85&magassag=180`) —
+ezért az útvonalról a query-t KÉT helyen is levágjuk: a szerver-oldali
+helperben és magában az SQL-függvényben. Élesben ellenőrizve: a tárolt érték
+`/deszkavalaszto`, paraméterek nélkül.
+
+**A mérés nem törhet el és nem lassíthat oldalt:** minden hiba elnyelve
+(nincs `throw` egyetlen ágon sem), és 1,5 s-os időkorlát — ha a DB lassú, az
+esemény elveszik. Ez elfogadható ár egy statisztikáért.
+
+**Nem mérünk:** robotot (`isbot`), `DNT: 1` vagy `Sec-GPC: 1` jelzést küldő
+böngészőt, és **dev-módot**. Az utolsót élő próba kényszerítette ki: a lokális
+dev-szerver a TÁVOLI adatbázisba ír, tehát a saját kattintgatásom azonnal
+bekerült az éles statisztikába (6 sor). Kizárás után három oldalbetöltés
+nulla új eseményt adott; a dev-eredetű sorokat töröltem, a tábla üresen várja
+az első valódi forgalmat.
+
+**Admin-felület:** `/admin/analitika` (requireRole admin) — tölcsér-arány,
+eseményenkénti összeg, napi bontás. Szándékosan grafikon nélkül: a kérdés
+egyetlen aránnyal megválaszolható, egy diagram itt díszítés lenne. A
+tölcsér-arány 100% fölé is mehet — a megosztott linket megnyitók egyből az
+eredményt látják; ez információ, nem hiba (a súgó-szöveg is kimondja).
+
+**Jogi szöveg frissítve** (`@core/legal`, hu+en): az adatvédelmi tájékoztató
+5. szakasza most tételesen leírja a süti- és azonosító-mentes mérést, a
+DNT/GPC-tiszteletet, és hogy egyéni út nem rekonstruálható.
+
+**Fájlok:** migráció `20260717092000` (tábla + kényszerek + definer-RPC +
+admin-only RLS + `analytics_daily` nézet) · `@core/analytics` (events,
+analytics.server, analytics-query.server) · `/admin/analitika` route + i18n ·
+pgTAP `06_analytics_test.sql` · `SECURITY_FINDINGS.md` F1.12-01 (a végpont
+kívülről is hívható — elfogadott kockázat, indoklással).
+
 ## F1.11b — Póráz-figyelmeztetés folyóvízre (2026-07-27)
 
 Az F1.11 folytatása: ha már tudjuk, hogy a spot folyó, a legfontosabb

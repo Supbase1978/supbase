@@ -18,6 +18,7 @@
 import { useTranslation } from "react-i18next";
 import { redirect } from "react-router";
 
+import { recordEvent } from "@core/analytics/analytics.server";
 import { getUser } from "@core/auth/session.server";
 import { createSupabaseServerClient } from "@core/auth/supabase.server";
 import { getLocaleFromPath, pickTranslated, serverT } from "@core/i18n";
@@ -83,14 +84,18 @@ export async function loader({ request }: Route.LoaderArgs) {
     description: t("seo.description"),
   });
 
+  const { supabase } = createSupabaseServerClient(request);
+
   // A válaszok az URL-BEN vannak. Ha nincsenek (vagy hiányzik a testsúly), a
   // wizard jelenik meg — nem egy üres eredmény-lap.
   const inputs = inputsFromSearchParams(url.searchParams);
   if (!inputs) {
+    // Tölcsér-ELEJE. A wizard-megjelenés és az eredmény-megjelenés aránya a
+    // legfontosabb mérőszámunk: ebből látszik, hol esnek ki az emberek.
+    await recordEvent(supabase, request, "advisor_wizard_view");
     return { seo, results: null, sizing: null, noMatchReason: null, water: null };
   }
 
-  const { supabase } = createSupabaseServerClient(request);
   const [boards, cheapest, publishedReviews] = await Promise.all([
     listBoards(supabase),
     listCheapestPriceByBoard(supabase),
@@ -168,6 +173,12 @@ export async function loader({ request }: Route.LoaderArgs) {
   // Üres találatnál a VALÓDI kizárási okot adjuk vissza (ne vak tipp legyen).
   const noMatchReason =
     results.length === 0 ? explainNoMatch(boardsForAdvisor, inputs, config) : null;
+
+  // Tölcsér-VÉGE. Megosztott linkből is idejut valaki — az is releváns
+  // esemény, ezért nem az actionben mérünk (a session-log ott marad).
+  await recordEvent(supabase, request, "advisor_result_view", {
+    props: { water: inputs.water, experience: inputs.experience, matched: results.length },
+  });
 
   // A víz-választás a megjelenítéshez is kell (folyón más póráz kell).
   return { seo, results, sizing, noMatchReason, water: inputs.water };

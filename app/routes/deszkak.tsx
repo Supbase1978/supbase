@@ -4,6 +4,7 @@
  */
 import { useTranslation } from "react-i18next";
 
+import { recordEvent } from "@core/analytics/analytics.server";
 import { createSupabaseServerClient } from "@core/auth/supabase.server";
 import { getLocaleFromPath, pickTranslated, serverT } from "@core/i18n";
 import { buildPageSeo } from "@core/seo/page-seo";
@@ -15,6 +16,7 @@ import type { Route } from "./+types/deszkak";
 export async function loader({ request }: Route.LoaderArgs) {
   const locale = getLocaleFromPath(new URL(request.url).pathname);
   const { supabase } = createSupabaseServerClient(request);
+  await recordEvent(supabase, request, "page_view");
 
   const boards = await listBoards(supabase);
 

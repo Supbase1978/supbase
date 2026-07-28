@@ -34,6 +34,9 @@ export default [
   // SEO resource route-ok (F1.8) — nincs komponens, a loader XML/text választ ad.
   route("sitemap.xml", "routes/sitemap-xml.ts"),
   route("robots.txt", "routes/robots-txt.ts"),
+  // Használati statisztika (F1.12) — CORE admin-felület, ezért nem modul-
+  // manifesztből jön: a mérés keresztmetszeti, nem egy modul sajátja.
+  route("admin/analitika", "routes/admin.analitika.tsx"),
   // Jogi oldalak (F1.8) — statikus, kétnyelvű ÁSZF + adatvédelmi tájékoztató.
   route("aszf", "routes/aszf.tsx"),
   route("adatvedelem", "routes/adatvedelem.tsx"),

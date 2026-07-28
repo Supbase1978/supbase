@@ -10,6 +10,7 @@
 import { useTranslation } from "react-i18next";
 import { data, Form, Link } from "react-router";
 
+import { recordEvent } from "@core/analytics/analytics.server";
 import { getUser, requireUser } from "@core/auth/session.server";
 import { createSupabaseServerClient } from "@core/auth/supabase.server";
 import { isEmailConfirmed } from "@core/auth/email-confirmed";
@@ -61,6 +62,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 
   const locale = getLocaleFromPath(new URL(request.url).pathname);
   const { supabase } = createSupabaseServerClient(request);
+  await recordEvent(supabase, request, "page_view");
 
   const board = await getBoardBySlug(supabase, slug);
   if (!board) {
@@ -227,6 +229,9 @@ export async function action({ request, params }: Route.ActionArgs) {
     used_water_type: isUsedWaterType(usedWaterTypeRaw) ? usedWaterTypeRaw : null,
   });
 
+  if (result.ok) {
+    await recordEvent(supabase, request, "review_submitted");
+  }
   return result.ok
     ? data<ActionResult>({ ok: true, intent: "review" }, { headers })
     : data<ActionResult>({ ok: false, errorKey: result.errorKey }, { headers });

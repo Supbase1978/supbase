@@ -15,6 +15,7 @@
 import { useTranslation } from "react-i18next";
 import { data, Form, Link } from "react-router";
 
+import { recordEvent } from "@core/analytics/analytics.server";
 import { getUser, requireUser } from "@core/auth/session.server";
 import { createSupabaseServerClient } from "@core/auth/supabase.server";
 import { isEmailConfirmed } from "@core/auth/email-confirmed";
@@ -108,6 +109,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 
   const locale = getLocaleFromPath(new URL(request.url).pathname);
   const { supabase } = createSupabaseServerClient(request);
+  await recordEvent(supabase, request, "page_view");
 
   const spotRow = await getSpotBySlug(supabase, slug);
   if (!spotRow) {
@@ -254,6 +256,7 @@ export async function action({ request, params }: Route.ActionArgs) {
     return data<ActionResult>({ ok: false, errorKey: result.errorKey }, { headers });
   }
 
+  await recordEvent(supabase, request, "report_submitted");
   return data<ActionResult>({ ok: true }, { headers });
 }
 

@@ -107,6 +107,22 @@ npm audit --omit=dev
   Előfeltétele saját domain (DNS-alapú domain-hitelesítés) — lásd a
   `RUNBOOK.md` élesítési checklistjét.
 
+### F1.12-01 · Az analitika-végpont kívülről is hívható — **ELFOGADOTT KOCKÁZAT**
+
+- A `record_analytics_event()` RPC-nek `anon` EXECUTE-joga van, mert az
+  SSR-réteg a kérés saját (anon vagy authenticated) jogaival hív — a projekt
+  szándékosan NEM tart szerver-oldali titkos kulcsot a Netlify-on.
+- **Következmény:** bárki küldhet valótlan eseményt, ahogy minden webes
+  analitikánál (Plausible, GA). A kár STATISZTIKA-SZENNYEZÉS, nem adatszivárgás:
+  a tábla olvasása admin-only, a sorokban nincs személyes adat, és a
+  bemenetet a függvény ÉS a tábla-kényszerek is szűrik (zárt eseménynév-lista,
+  útvonal-alak, props-méret).
+- **Ami NEM lehetséges:** közvetlen `insert`/`update`/`delete` a táblára (nincs
+  policy), tetszőleges mező írása, vagy más adat kiolvasása a végponton át.
+- **Ha valaha zavaró lesz:** rate limit a Supabase oldalán, vagy az esemény-írás
+  átköltöztetése egy hitelesített Edge Functionbe. Az F1-es forgalomnál ez
+  fölösleges bonyolítás lenne.
+
 ## Korábbi fázisokból hozott, már lezárt tételek
 
 - **F1.9:** az `upsert_push_subscription()` RPC-t az anon szerep is hívhatta
