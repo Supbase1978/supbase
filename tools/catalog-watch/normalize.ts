@@ -1,0 +1,437 @@
+/**
+ * catalog-watch — normalizálás: nyers JSON-LD/szöveg → `ExtractedProduct`
+ * (terv 3. pont, „Normalizálás" bekezdés).
+ *
+ * TISZTA modul. Vezérelv: **inkább hiányozzon, mint tévedjen** — amit nem
+ * tudunk biztosan kiolvasni, az `null` marad, és a moderátor tölti ki. Egy
+ * rossz térfogat- vagy teherbírás-érték a Deszkaválasztóban BIZTONSÁGI hibává
+ * válna (a terhelhetőség kemény szűrő), ezért a spec-parse konzervatív:
+ * címkézett érték kell hozzá, „valahol a szövegben egy szám" nem elég.
+ */
+import type { BoardSpecs, BoardType, ExtractedProduct } from "./types.ts";
+import { EMPTY_SPECS } from "./types.ts";
+
+/**
+ * Márka-alias-lista: bolti írásmód → kanonikus márkanév. Bővíthető; ami nincs
+ * benne, az a bolt írásmódjával megy tovább (a moderátor javíthatja).
+ */
+export const BRAND_ALIASES: Record<string, string> = {
+  "red paddle": "Red Paddle Co",
+  "red paddle co": "Red Paddle Co",
+  redpaddle: "Red Paddle Co",
+  "starboard sup": "Starboard",
+  starboard: "Starboard",
+  "fanatic sup": "Fanatic",
+  fanatic: "Fanatic",
+  "aqua marina": "Aqua Marina",
+  aquamarina: "Aqua Marina",
+  "jobe sports": "Jobe",
+  jobe: "Jobe",
+  "f-one": "F-One",
+  "f one": "F-One",
+  gladiator: "Gladiator",
+  spinera: "Spinera",
+  "bluefin sup": "Bluefin",
+  bluefin: "Bluefin",
+  "itiwit / decathlon": "Itiwit",
+  itiwit: "Itiwit",
+};
+
+/** Zaj-szavak a modellnévben (a márkán és a méreten túl). */
+const NOISE_WORDS = [
+  "sup",
+  "supboard",
+  "paddleboard",
+  "paddle board",
+  "stand up paddle",
+  "állítható",
+  "felfújható",
+  "deszka",
+  "szett",
+  "csomag",
+  "set",
+  "package",
+  "inflatable",
+  "isup",
+  "i-sup",
+  "új",
+  "akció",
+];
+
+/** Az évjárat-felismerés ésszerű alsó korlátja (a SUP-piac ennél nem régebbi). */
+const MIN_MODEL_YEAR = 2010;
+
+const CM_PER_INCH = 2.54;
+const CM_PER_FOOT = 30.48;
+
+/** Ékezet- és kisbetű-semleges összehasonlító alak. */
+export function foldText(value: string): string {
+  return value
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .toLowerCase();
+}
+
+/** Bolti márkanév → kanonikus alak (alias-lista, majd whitespace-tisztítás). */
+export function normalizeBrandName(raw: string | null | undefined): string | null {
+  if (typeof raw !== "string") return null;
+  const trimmed = raw.replace(/\s+/g, " ").trim();
+  if (trimmed === "") return null;
+  return BRAND_ALIASES[foldText(trimmed)] ?? trimmed;
+}
+
+/**
+ * Évjárat kinyerése. Csak 4 jegyű, ésszerű tartományba eső szám számít, és a
+ * jövőbe legfeljebb egy évet engedünk (a boltok előre hirdetik a következő
+ * szezont) — így a „2024" évjárat és a „320" méret nem keveredik.
+ */
+export function extractModelYear(text: string, now = new Date()): number | null {
+  const maxYear = now.getUTCFullYear() + 1;
+  let found: number | null = null;
+  for (const match of text.matchAll(/\b(20\d{2})\b/g)) {
+    const year = Number(match[1]);
+    if (year >= MIN_MODEL_YEAR && year <= maxYear) {
+      // Több találatnál a LEGKÉSŐBBI a modellév (a leírásban gyakran szerepel
+      // korábbi évszám is, pl. „a 2022-es modell utódja").
+      found = found === null ? year : Math.max(found, year);
+    }
+  }
+  return found;
+}
+
+/**
+ * Termékcím → tiszta modellnév: márka-prefix, méret-jelölés, évjárat és
+ * zaj-szavak nélkül. Ez megy az egyezés-keresésbe, ezért a determinizmus
+ * fontosabb, mint a szépség.
+ */
+export function cleanModelName(rawTitle: string, brandName?: string | null): string {
+  let text = rawTitle.replace(/\s+/g, " ").trim();
+
+  if (brandName) {
+    // A márkanevet bárhol kivesszük (nem csak prefixként): „Aqua Marina Vapor
+    // 10'4" és „Vapor Aqua Marina" ugyanarra a modellnévre normalizálódik.
+    const pattern = new RegExp(escapeRegExp(brandName), "gi");
+    text = text.replace(pattern, " ");
+  }
+
+  text = text
+    // méret-jelölések: 10'6", 10' 6'', 320 cm, 3,2 m, 32"
+    .replace(/\d+\s*'\s*\d*\s*(?:''|"|”|’’)?/g, " ")
+    .replace(/\d+([.,]\d+)?\s*(cm|mm|m|inch|coll|"|”)\b/gi, " ")
+    .replace(/\b(20\d{2})(-(es|as|ös|os))?\b/g, " ");
+
+  for (const word of NOISE_WORDS) {
+    text = text.replace(wholeWordRegExp(word), " ");
+  }
+
+  return text
+    .replace(/[|/\\–—-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/**
+ * Egész szavas illesztés ÉKEZETES szavakra is. A `\b` itt használhatatlan: az
+ * ASCII szó-karakterekre épül, ezért a „felfújható" végén álló `ó` után NEM ad
+ * szóhatárt — a naiv `\bfelfújható\b` sosem illeszkedne.
+ */
+function wholeWordRegExp(word: string): RegExp {
+  return new RegExp(`(?<![\\p{L}\\d])${escapeRegExp(word)}(?![\\p{L}\\d])`, "giu");
+}
+
+/** Tizedesvessző-toleráns szám-parse (a magyar boltok vesszőt írnak). */
+function toNumber(raw: string): number | null {
+  const value = Number(raw.replace(/\s/g, "").replace(",", "."));
+  return Number.isFinite(value) ? value : null;
+}
+
+/**
+ * Egyetlen mérték kiolvasása szövegből, cm-re váltva. Kezelt alakok:
+ * `10'6"`, `10' 6''`, `320 cm`, `3,2 m`, `32"`, `32 inch`, `32 coll`.
+ * Egyik sem illeszkedik → null (nem találgatunk mértékegység nélküli számból).
+ */
+export function parseDimensionCm(text: string): number | null {
+  const feetInches = text.match(/(\d+)\s*'\s*(\d+(?:[.,]\d+)?)?\s*(?:''|"|”|’’)?/);
+  if (feetInches) {
+    const feet = toNumber(feetInches[1] ?? "");
+    const inches = feetInches[2] ? toNumber(feetInches[2]) : 0;
+    if (feet !== null && inches !== null) {
+      return round1(feet * CM_PER_FOOT + inches * CM_PER_INCH);
+    }
+  }
+
+  const cm = text.match(/(\d+(?:[.,]\d+)?)\s*cm\b/i);
+  if (cm) {
+    const value = toNumber(cm[1] ?? "");
+    if (value !== null) return round1(value);
+  }
+
+  const mm = text.match(/(\d+(?:[.,]\d+)?)\s*mm\b/i);
+  if (mm) {
+    const value = toNumber(mm[1] ?? "");
+    if (value !== null) return round1(value / 10);
+  }
+
+  const meter = text.match(/(\d+(?:[.,]\d+)?)\s*m\b/i);
+  if (meter) {
+    const value = toNumber(meter[1] ?? "");
+    if (value !== null) return round1(value * 100);
+  }
+
+  const inch = text.match(/(\d+(?:[.,]\d+)?)\s*(?:''|"|”|inch|in\b|coll)/i);
+  if (inch) {
+    const value = toNumber(inch[1] ?? "");
+    if (value !== null) return round1(value * CM_PER_INCH);
+  }
+
+  return null;
+}
+
+function round1(value: number): number {
+  return Math.round(value * 10) / 10;
+}
+
+/** Címke-szinonimák a magyar és angol spec-táblázatokhoz. */
+const SPEC_LABELS = {
+  lengthCm: ["hosszúság", "hossz", "length"],
+  widthCm: ["szélesség", "szeles", "width"],
+  thicknessCm: ["vastagság", "magasság", "thickness"],
+  volumeL: ["térfogat", "volumen", "volume"],
+  // A csupasz „weight" szándékosan hiányzik: a „Max weight: 140 kg" sorban
+  // beleillene, és a TEHERBÍRÁST írná a deszka saját súlyaként.
+  weightKg: ["deszka súlya", "saját súly", "súly", "tömeg", "board weight"],
+  maxLoadKg: [
+    "teherbírás",
+    "terhelhetőség",
+    "max terhelés",
+    "maximális terhelés",
+    "max load",
+    "max weight",
+    "capacity",
+  ],
+} as const satisfies Record<keyof Omit<BoardSpecs, "inflatable">, readonly string[]>;
+
+/**
+ * Egy CÍMKÉZETT érték kiolvasása: a címke után következő ~40 karakterből
+ * keressük a mértéket. A szűk ablak szándékos — enélkül a „Hosszúság" címke
+ * egy jóval későbbi, más sorhoz tartozó számot szedne fel.
+ */
+function valueAfterLabel(text: string, labels: readonly string[]): string | null {
+  const folded = foldText(text);
+  for (const label of labels) {
+    const index = folded.indexOf(foldText(label));
+    if (index < 0) continue;
+    const window = text.slice(index + label.length, index + label.length + 40);
+    if (/\d/.test(window)) return window;
+  }
+  return null;
+}
+
+/**
+ * Spec-táblázat (vagy termékleírás) → `BoardSpecs`. Csak címkézett értéket
+ * fogadunk el; a súly/teherbírás kg-ban, a térfogat literben.
+ */
+export function parseSpecsFromText(text: string): BoardSpecs {
+  const specs: BoardSpecs = { ...EMPTY_SPECS };
+
+  for (const key of ["lengthCm", "widthCm", "thicknessCm"] as const) {
+    const window = valueAfterLabel(text, SPEC_LABELS[key]);
+    if (window !== null) specs[key] = parseDimensionCm(window);
+  }
+
+  const volumeWindow = valueAfterLabel(text, SPEC_LABELS.volumeL);
+  if (volumeWindow !== null) {
+    const match = volumeWindow.match(/(\d+(?:[.,]\d+)?)\s*(?:l\b|liter|litre)/i);
+    specs.volumeL = match ? toNumber(match[1] ?? "") : null;
+  }
+
+  for (const key of ["weightKg", "maxLoadKg"] as const) {
+    const window = valueAfterLabel(text, SPEC_LABELS[key]);
+    if (window === null) continue;
+    const match = window.match(/(\d+(?:[.,]\d+)?)\s*kg\b/i);
+    specs[key] = match ? toNumber(match[1] ?? "") : null;
+  }
+
+  specs.inflatable = detectInflatable(text);
+  return specs;
+}
+
+/** Felfújható vagy kemény deszka? Bizonytalanságnál null. */
+export function detectInflatable(text: string): boolean | null {
+  const folded = foldText(text);
+  const inflatable = ["felfujhato", "inflatable", "isup", "i-sup", "pumpa"].some((w) =>
+    folded.includes(w),
+  );
+  const rigid = ["kemeny deszka", "hardboard", "hard board", "rigid", "epoxy"].some((w) =>
+    folded.includes(w),
+  );
+  if (inflatable && !rigid) return true;
+  if (rigid && !inflatable) return false;
+  return null;
+}
+
+/**
+ * Deszkatípus kulcsszóból. A sorrend SPECIFIKUS → általános: a „kids touring"
+ * gyerekdeszka, nem túradeszka. Nincs találat → null (a moderátor dönt).
+ */
+export function guessBoardType(text: string): BoardType | null {
+  const folded = foldText(text);
+  const rules: [BoardType, string[]][] = [
+    ["kids", ["kids", "gyerek", "junior", "youth"]],
+    ["fishing", ["fishing", "horgasz", "angler"]],
+    ["river", ["river", "folyo", "whitewater", "vadviz"]],
+    ["race", ["race", "verseny", "racing"]],
+    ["yoga", ["yoga", "joga", "fitness", "pilates"]],
+    ["touring", ["touring", "tura", "explorer", "adventure"]],
+    ["allround", ["allround", "all-round", "all round", "univerzalis"]],
+  ];
+  for (const [type, needles] of rules) {
+    if (needles.some((needle) => folded.includes(needle))) return type;
+  }
+  return null;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function firstString(value: unknown): string | null {
+  if (typeof value === "string") return value;
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const found = firstString(item);
+      if (found !== null) return found;
+    }
+    return null;
+  }
+  if (isRecord(value)) {
+    // schema.org Brand / ImageObject: a `name`, ill. `url` a hasznos mező.
+    return firstString(value.name ?? value.url);
+  }
+  return null;
+}
+
+/** Az `offers` alakjai: objektum, tömb, AggregateOffer (`lowPrice`). */
+function collectOffers(offers: unknown): Record<string, unknown>[] {
+  const list: Record<string, unknown>[] = [];
+  const stack: unknown[] = [offers];
+  while (stack.length > 0) {
+    const node = stack.pop();
+    if (Array.isArray(node)) {
+      stack.push(...node);
+      continue;
+    }
+    if (!isRecord(node)) continue;
+    list.push(node);
+    if (node.offers !== undefined) stack.push(node.offers);
+  }
+  return list;
+}
+
+/**
+ * Ár-string → szám. A JSON-LD szabvány gépi alakot ír elő („189000"), de a
+ * boltok sablonjai gyakran az EMBERI alakot teszik bele („429.000 Ft",
+ * „429 000"). A naiv `Number()` ezeket 429-cé olvasná — ezért a
+ * ezres-elválasztós alakokat külön ismerjük fel.
+ */
+export function parsePriceString(raw: string): number | null {
+  const cleaned = raw.replace(/[^\d.,\s]/g, "").trim();
+  if (cleaned === "") return null;
+
+  // Magyar/EU ezres-elválasztó: 429.000 · 429 000 · 429.000,50
+  if (/^\d{1,3}(?:[.\s]\d{3})+(?:,\d+)?$/.test(cleaned)) {
+    return toNumber(cleaned.replace(/[.\s]/g, "").replace(",", "."));
+  }
+  // Angolszász ezres-elválasztó: 429,000 · 429,000.50
+  if (/^\d{1,3}(?:,\d{3})+(?:\.\d+)?$/.test(cleaned)) {
+    return toNumber(cleaned.replace(/,/g, ""));
+  }
+  return toNumber(cleaned);
+}
+
+/**
+ * Ár forintban a JSON-LD `offers`-ből. Explicit NEM-HUF pénznem → null (nem
+ * váltunk át: az árfolyam a figyelő dolgán kívül esik). Hiányzó pénznem
+ * elfogadott, mert HU forrásokat nézünk — ezt a hívó forrás-szinten tudja.
+ * Több ajánlatnál a LEGOLCSÓBB (a katalógus is így mutatja).
+ */
+export function parsePriceHuf(offers: unknown): number | null {
+  let best: number | null = null;
+  for (const offer of collectOffers(offers)) {
+    const currency = firstString(offer.priceCurrency);
+    if (currency !== null && currency.toUpperCase() !== "HUF") continue;
+
+    const rawPrice = offer.price ?? offer.lowPrice ?? offer.highPrice;
+    const price =
+      typeof rawPrice === "number"
+        ? rawPrice
+        : typeof rawPrice === "string"
+          ? parsePriceString(rawPrice)
+          : null;
+    if (price === null || price <= 0) continue;
+
+    const rounded = Math.round(price);
+    best = best === null ? rounded : Math.min(best, rounded);
+  }
+  return best;
+}
+
+/** schema.org availability → van-e HU-elérhetőség. Ismeretlen → null. */
+export function parseAvailability(offers: unknown): boolean | null {
+  let result: boolean | null = null;
+  for (const offer of collectOffers(offers)) {
+    const availability = firstString(offer.availability);
+    if (availability === null) continue;
+    const folded = foldText(availability);
+    if (/(instock|instoreonly|limitedavailability|preorder|backorder)/.test(folded)) {
+      // Egyetlen kapható ajánlat elég ahhoz, hogy a modell elérhető legyen.
+      return true;
+    }
+    if (/(outofstock|soldout|discontinued)/.test(folded)) result = false;
+  }
+  return result;
+}
+
+/**
+ * JSON-LD Product node + termékoldal-szöveg → normalizált jelölt.
+ *
+ * A `pageText` (a termékoldal láthatóra tisztított szövege) opcionális: a
+ * spec-táblázatok ritkán vannak a JSON-LD-ben, ezért a méreteket onnan
+ * pótoljuk. A címből SOSEM következtetünk teherbírásra.
+ */
+export function extractProduct(
+  node: Record<string, unknown>,
+  sourceUrl: string,
+  pageText = "",
+): ExtractedProduct | null {
+  const rawTitle = firstString(node.name)?.replace(/\s+/g, " ").trim() ?? "";
+  if (rawTitle === "") return null;
+
+  const brandName = normalizeBrandName(firstString(node.brand ?? node.manufacturer));
+  const description = firstString(node.description) ?? "";
+  const haystack = `${rawTitle}\n${description}\n${pageText}`;
+
+  const specs = parseSpecsFromText(haystack);
+  // A cím méret-jelölése (10'6") a legmegbízhatóbb hossz-forrás: a bolt a
+  // konkrét variánst nevezi meg vele. Csak akkor él, ha a spec-táblázat hallgat.
+  if (specs.lengthCm === null && /\d\s*'/.test(rawTitle)) {
+    specs.lengthCm = parseDimensionCm(rawTitle);
+  }
+
+  return {
+    sourceUrl,
+    brandName,
+    modelName: cleanModelName(rawTitle, brandName),
+    rawTitle,
+    modelYear: extractModelYear(`${rawTitle} ${description}`),
+    priceHuf: parsePriceHuf(node.offers),
+    inStock: parseAvailability(node.offers),
+    imageUrl: firstString(node.image),
+    boardType: guessBoardType(haystack),
+    specs,
+  };
+}
