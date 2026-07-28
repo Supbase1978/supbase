@@ -1,8 +1,13 @@
 # Catalog-watch — piacfigyelő pipeline (terv)
 
-> Állapot: **jóváhagyott terv** (2026-07-17). Séma-előkészítés: F1.5. Futó
-> rendszer (crawler + moderációs UI): F2. Kapcsolódás: a fő spec 3.1 (catalog
-> séma), 5.1 (ütemezett scraper-minta), 11.4 (fázisbontás).
+> Állapot: **MEGÉPÜLT** (2026-07-28). Séma-előkészítés: F1.5. Crawler + CLI +
+> moderációs UI + heti cron: F2.1 — kód: [`tools/catalog-watch/`](../tools/catalog-watch/README.md),
+> moderáció: `/admin/katalogus`. Kapcsolódás: a fő spec 3.1 (catalog séma),
+> 5.1 (ütemezett scraper-minta), 11.4 (fázisbontás).
+>
+> Ami a tervből TUDATOSAN kimaradt (a `tools/catalog-watch/README.md`
+> „Korlátok" szakasza részletezi): LLM-fallback extrakció (API-kulcs +
+> költségdöntés kell) és az automatikus forrás-felderítés.
 
 ## Cél és alapelv
 
@@ -116,8 +121,8 @@ változatlan — a figyelő maga is csak jelölt- és ártáblákba ír.
 
 | Mikor | Mi készül |
 |---|---|
-| Most (F1.2 mellett) | Ez a tervdokumentum + spec-hivatkozás + PROGRESS-jegyzet |
-| F1.5 | Séma-bővítő migráció (boards-mezők, catalog_sources, catalog_candidates, pg_trgm) + RLS-tesztek |
-| F1.5 | Induló katalógus feltöltése **egyszeri, asszisztált importtal** (ugyanez a pipeline kézzel futtatva, admin-jóváhagyással) |
-| F2 | Crawler + GH Actions cron + add-source CLI + admin moderációs UI |
-| F2+ | Forrás-felderítő futás · CEE-források · árfigyelő-előkészítés (F3) |
+| Most (F1.2 mellett) | ✅ Ez a tervdokumentum + spec-hivatkozás + PROGRESS-jegyzet |
+| F1.5 | ✅ Séma-bővítő migráció (boards-mezők, catalog_sources, catalog_candidates, pg_trgm) + RLS-tesztek |
+| F2.1 | ✅ Crawler + GH Actions cron + add-source CLI + admin moderációs UI |
+| F2.1-utó | Induló katalógus feltöltése: valós HU források bekötése (`add-source` → `crawl --dry-run` → moderáció) |
+| F2+ | LLM-fallback spec-extrakció · forrás-felderítő futás · CEE-források · árfigyelő-előkészítés (F3) |

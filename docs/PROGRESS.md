@@ -19,6 +19,7 @@
 | F1.9 Push + viharjelzés | ✅ kész (2026-07-25) | teljes web push-pipeline (VAPID + RFC 8291 natív Web Cryptóval, npm nélkül), storm-alert push-ág, feliratkozó-UI, m4 `observed_at`. Élesítve (5 migráció + secretek + deploy) és **böngészőben végponttól végpontig verifikálva: a viharjelzés-push megérkezett**. Részletek lent |
 | F1.11 Folyó-vízállás (5.1/6) | ✅ kész + élesítve (2026-07-27) | vizugy.hu (OVF) REST API, HIVATALOS árvízvédelmi készültségi küszöbökkel; a fix −1 folyó-büntetés helyett fokozat-alapú index-plafon. Élesben verifikálva, cron írja. + F1.11b: póráz-figyelmeztetés folyóvízre |
 | F1.12 Analitika (süti-mentes) | ✅ kész + élesítve (2026-07-28) | `analytics_events` + definer-RPC + `/admin/analitika`. Nincs süti/IP/azonosító → nincs egyéni tölcsér, csak darabszám. Robot/DNT/dev nem számol |
+| F2.1 catalog-watch piacfigyelő | ✅ kód kész (2026-07-28) | crawler + CLI + `/admin/katalogus` moderáció + heti GH Actions cron. HÁTRA: valós HU források bekötése és az első éles crawl (felhasználói döntés) |
 | F1.10 Záró audit + élesítés | ✅ audit **26/26** (2026-07-27) | **`docs/AUDIT_F1.md`**: az audit két mérés-jellegű hiánya pótolva (vizuális regresszió 07-26, teljesítmény-budget 07-27). HÁTRA az F1 lezárásához a publikussá tétel — a lépések a `RUNBOOK.md` **élesítési checklistjében** (domain → Resend-SMTP → Turnstile → cégadatok → `SITE_PUBLIC=true`), mind felhasználói döntés/adat |
 
 ## ITINER a következő sessionnek (2026-07-28-i állapot)
@@ -27,6 +28,8 @@
 `docs/AUDIT_F1.md`). Az oldal a `supperz.netlify.app`-on él, HTTP Basic
 jelszó-kapu mögött. Azóta három továbbfejlesztés ment ki élesbe: folyó-vízállás
 (F1.11), póráz-figyelmeztetés (F1.11b) és süti-mentes analitika (F1.12).
+2026-07-28: elkészült az **F2.1 catalog-watch piacfigyelő** (kód kész, éles
+futás még nem volt — a nyitott lépések az F2.1-szakasz végén).
 
 **A PUBLIKUSSÁ TÉTEL a felhasználón múlik** — a lépések sorrendben a
 `docs/RUNBOOK.md` „Élesítési checklist" szakaszában:
@@ -43,10 +46,12 @@ felhasználó a HydroInfo-t választotta, majd az analitikát):
    A biztonságkritikus mag (póráz + mentőmellény-mondat) MÁR MEGVAN (F1.11b);
    ami hátra van, az terméklista (pumpa, szárazzsák, konkrét ajánlások) →
    katalógus-bővítés, termékdöntést igényel.
-2. **catalog-watch piacfigyelő pipeline** (F2) — a séma kész (F1.5,
-   `docs/CATALOG_WATCH_TERV.md`), a pipeline nincs meg. Ez töltené fel a
-   katalógust (most 20 deszka), ami EGYBEN előfeltétele az advisor ár-padló
-   tételének is (20 elemen az eloszlás-alapú küszöb zajos).
+2. ~~**catalog-watch piacfigyelő pipeline** (F2)~~ — **KÓD KÉSZ (F2.1,
+   2026-07-28)**. Ami hátra van, az nem fejlesztés: valós HU források
+   bekötése (`add-source`), első `crawl --dry-run`, majd moderáció a
+   `/admin/katalogus`-on. Ez tölti fel a katalógust (most 20 deszka), ami
+   EGYBEN előfeltétele az advisor ár-padló tételének (20 elemen az
+   eloszlás-alapú küszöb zajos).
 3. **Capacitor natív build** (F2 nyitása) — a `build:native` SPA-mód megvan,
    a wrapper nincs.
 4. **react-router 8 frissítés** — `SECURITY_FINDINGS.md` F1.10-01 (RSC-módú
@@ -82,6 +87,75 @@ migráció magasabb időbélyege miatt) · a gépen nincs Docker/helyi Postgres 
 pgTAP-verifikáció a CI `rls-tests` jobban · a szolgáltatói kulcs a Management
 API-ból kérhető le (`/v1/projects/<ref>/api-keys?reveal=true`), titkot ne írj
 a terminálra és ne `npm run`-on át adj át.
+
+## F2.1 — catalog-watch piacfigyelő pipeline (2026-07-28)
+
+Kiosztás: karmester. Terv: `docs/CATALOG_WATCH_TERV.md` (a séma F1.5 óta kész,
+migráció élesben). Kapuk zöldek: typecheck · lint · **693 vitest** (+150 új).
+
+**Elkészült — a figyelő (`tools/catalog-watch/`, a `src/modules`-on KÍVÜL):**
+- Minden döntés TISZTA függvény, az I/O injektált (az Edge Functionök `_shared`
+  mintája) → a teljes futás hálózat és adatbázis nélkül tesztelhető.
+- `robots.ts` (leghosszabb-minta illesztés, `*`/`$`, Crawl-delay) · `sitemap.ts`
+  (sitemapindex is) · `jsonld.ts` + `html.ts` (schema.org `Product`) ·
+  `normalize.ts` (márka-alias, modellnév-tisztítás, spec/ár/elérhetőség) ·
+  `match.ts` (pg_trgm-kompatibilis trigram) · `crawl.ts` (hibatűrő orchestrátor) ·
+  `store.ts` (az EGYETLEN író fájl, service-role) · `cli.ts`.
+- CLI: `list-sources` · `add-source` · `crawl [--dry-run] [--source] [--max]` ·
+  `lifecycle`. Node 22 natívan futtatja a TS-t, build nincs.
+- Heti cron: `.github/workflows/catalog-watch.yml` (hétfő hajnal UTC +
+  `workflow_dispatch` dry-run kapcsolóval, `concurrency` védelem, SHA-pinnelt
+  action-ök).
+
+**Elkészült — a kapu (`/admin/katalogus`, catalog adminPanel):**
+- `catalog/data/candidates.server.ts`: jelölt-lista (forrás + javasolt pár),
+  **jóváhagyás** (márka-feloldás vagy -létrehozás, ütközésmentes slug, ársor),
+  **összefésülés** meglévő deszkába, **elutasítás**, **kifutás** megerősítése.
+- A route `requireRole('moderator')` a loaderben ÉS az actionben; a jelölt-
+  kártyán a kinyert adatok, a típus-választó (a figyelő tippje csak elő-
+  választás) és a merge-legördülő.
+
+**Két sérthetetlen szabály a kódban:**
+1. **A figyelő SOHA nem publikál magától** — `boards` sort nem hoz létre, minden
+   új típus a moderációs sorba kerül (ez a dupla-név elleni védelem).
+2. **Státuszt sem állít**: a kifutás-jelölt csak jelentés, a `discontinued`-ot
+   ember erősíti meg. Amit a figyelő SOHA nem látott (`last_seen_at IS NULL`,
+   pl. a seed-sorok), ahhoz hozzá sem nyúl.
+
+**Modul-szerződés (1.3) — duplikáció helyett core/domén (3 helyen):**
+- `slugify` a providersből → `@core/text/slug` (két modulnak kell; a RatingBar
+  mintája, F1.6-utó).
+- A kifutás-felismerés a **catalog modul** `lifecycle.ts`-ébe került; a figyelő
+  onnan importálja — egy implementáció szolgálja a CLI-t és az admin felületet.
+- A `catalog_candidates.extracted` jsonb szerződése EGYETLEN típus
+  (`ExtractedBoardData` a catalogban), amit a figyelő is onnan vesz.
+
+**VALÓS HIBÁT FOGOTT A MUNKA KÖZBEN (env-árnyékolás, `tools/catalog-watch/env.ts`):**
+a gép shell-profilja globálisan exportál egy **IDEGEN projekt**
+`SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` párosát — ugyanaz a zshrc-csapda,
+amit a CLAUDE.md a Supabase CLI-nél ír le, csak más változókkal. A CLI első
+futása emiatt az idegen projektre csatlakozott (olvasás volt, nem írt semmit —
+a hiba „nincs ilyen tábla" volt). Javítva: a repo `.env`-je az AUTORITÁS, a
+szolgáltatói kulcs `ref` claimjét összevetjük a cél-projekttel, eltérésnél a
+futás **leáll**, és minden futás kiírja, melyik projekttel dolgozik.
+**Tanulság a jövőre:** ha egy új eszköz `SUPABASE_*` env-változót olvas,
+először az árnyékolásra gyanakodj — a gépen több változó is idegen fiókra mutat.
+
+**Verifikáció (mérés, nem szemrevételezés):**
+- 150 új Vitest a tiszta logikára (robots-illesztés, sitemap, JSON-LD-hibatűrés,
+  spec-parse, trigram-egyezés, teljes crawl-menet hamis hálózattal).
+- `tools/catalog-watch/cli.ts` natívan fut Node 22-n (súgó + hibaágak).
+- Az env-őr élesben kipróbálva: a foreign-kulcsos futás LEÁLL.
+- `catalog_candidates` és `catalog_sources` tábla ÉL az éles projekten
+  (anon REST → `[]`, tehát létezik és az RLS zár).
+- `/admin/katalogus` kijelentkezve → **302** a belépőre (guard áll).
+
+**HÁTRA (felhasználói döntés):**
+- **Valós HU források bekötése** (`add-source`) és az első `crawl --dry-run` —
+  ez már élő oldalak lekérése, ezért jóváhagyással.
+- **Az admin felület böngésző-verifikációja** moderátor-sessionnel (jelölt-
+  kártya renderelése, jóváhagyás→új deszka). Ehhez admin-belépés kell.
+- **GitHub-secretek** a cronhoz: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`.
 
 ## F1.0 — Projekt-setup (2026-07-17)
 

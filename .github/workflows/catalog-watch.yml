@@ -1,0 +1,62 @@
+# catalog-watch — heti piacfigyelő futás (docs/CATALOG_WATCH_TERV.md).
+#
+# Mit csinál: bejárja az aktív forrásokat, ismert deszkára ársort/„láttuk"
+# jelzést ír, ismeretlenre JELÖLTET készít a moderációs sorba
+# (/admin/katalogus). Publikálni NEM tud: `boards` sort nem hoz létre.
+#
+# A `uses:` hivatkozások TELJES COMMIT-SHA-ra pinnelve — indoklás a ci.yml
+# fejlécében (mozgó tag = ellátási lánc kockázat).
+name: catalog-watch
+
+on:
+  schedule:
+    # Hétfő hajnal (UTC) — a boltok forgalmán kívül, udvarias crawl.
+    - cron: "17 3 * * 1"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Próbafutás írás nélkül"
+        type: boolean
+        default: false
+      max_products:
+        description: "Forrásonkénti termék-korlát (üres = a forrás beállítása)"
+        type: string
+        default: ""
+
+# A futás service-role kulccsal ír: több párhuzamos futás ugyanabba a
+# jelölt-sorba dolgozna, ezért egyszerre csak egy mehet.
+concurrency:
+  group: catalog-watch
+  cancel-in-progress: false
+
+jobs:
+  crawl:
+    runs-on: ubuntu-latest
+    # Egy elakadt bolt ne égesse a perckeretet (a CLI-ben kérésenként 20 s).
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+
+      - name: Crawl
+        env:
+          # Repo-secretek. A runnerben nincs .env, ezért itt a környezeti
+          # változók élnek (tools/catalog-watch/env.ts feloldási sorrendje).
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          node tools/catalog-watch/cli.ts crawl \
+            ${{ inputs.dry_run && '--dry-run' || '' }} \
+            ${{ inputs.max_products && format('--max {0}', inputs.max_products) || '' }}
+
+      - name: Kifutás-jelöltek jelentése
+        if: ${{ !inputs.dry_run }}
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        # Csak JELENTÉS: a státuszt a moderátor erősíti meg az admin felületen.
+        run: node tools/catalog-watch/cli.ts lifecycle
