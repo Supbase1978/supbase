@@ -182,6 +182,28 @@ describe("crawlSource — teljes menet", () => {
     expect(prices).toHaveLength(1); // az ismert deszka ára attól még megvan
   });
 
+  it("KIEGÉSZÍTŐBŐL nem csinál jelöltet (a moderációs sor deszkákról szól)", async () => {
+    const network = makeNetwork({
+      ...HAPPY_NETWORK,
+      [`${ORIGIN}/termek/gladiator-origin`]: {
+        // Élesben mért eset: a SUP-bolt sitemapjében napszemüveg is szerepel.
+        text: `<html><head><script type="application/ld+json">
+          {"@type":"Product","name":"Jobe DIM napszemüveg Tortoise",
+           "brand":{"@type":"Brand","name":"Jobe"},
+           "offers":{"@type":"Offer","price":"19900","priceCurrency":"HUF"}}
+        </script></head><body></body></html>`,
+      },
+    });
+    const { store, candidates } = makeStore();
+
+    const summary = await crawlSource(SOURCE, { fetchText: network.fetchText, store });
+
+    expect(summary.productsExtracted).toBe(2);
+    expect(summary.skippedNonBoard).toBe(1);
+    expect(summary.candidatesCreated).toBe(0);
+    expect(candidates).toEqual([]);
+  });
+
   it("JSON-LD nélküli oldalt csendben átugorja", async () => {
     const network = makeNetwork({
       ...HAPPY_NETWORK,

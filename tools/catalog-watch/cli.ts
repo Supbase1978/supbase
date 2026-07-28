@@ -21,6 +21,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { crawlAll, DEFAULT_MIN_DELAY_MS, type CrawlDeps, type FetchText } from "./crawl.ts";
 import { resolveSupabaseTarget } from "./env.ts";
 import { findDiscontinuedCandidates, DEFAULT_UNSEEN_DAYS } from "./lifecycle.ts";
+import { probeSource } from "./probe.ts";
 import { CRAWLER_USER_AGENT } from "./robots.ts";
 import {
   createDryRunStore,
@@ -38,6 +39,10 @@ const FETCH_TIMEOUT_MS = 20_000;
 const HELP = `catalog-watch — SUP-katalógus piacfigyelő (docs/CATALOG_WATCH_TERV.md)
 
 Parancsok:
+  probe --url U                    Forrás-felderítés ADATBÁZIS NÉLKÜL: van-e
+      [--name N] [--pattern RÉSZLET]... [--exclude RÉSZLET]...
+      [--sitemap URL] [--samples N]     sitemap, JSON-LD, ár — és milyen
+                                        kapcsolókkal érdemes felvenni
   list-sources                     A figyelt források listája
   add-source --name N --url U      Új forrás felvétele
       [--kind shop|brand_site|feed] [--sitemap URL] [--pattern RÉSZLET]...
@@ -234,7 +239,8 @@ async function commandCrawl(args: Args): Promise<void> {
   for (const source of summary.sources) {
     console.log(
       `\n${source.sourceName}: ${source.urlsConsidered} URL · ` +
-        `${source.productsExtracted} termék · ${source.matchedKnown} ismert · ` +
+        `${source.productsExtracted} termék · ${source.skippedNonBoard} kiegészítő · ` +
+        `${source.matchedKnown} ismert · ` +
         `${source.candidatesCreated} új jelölt · ${source.pricesRecorded} ársor · ` +
         `${source.robotsBlocked} robots-tiltás`,
     );
@@ -254,6 +260,52 @@ async function commandCrawl(args: Args): Promise<void> {
     }
     console.log("  (semmi nem íródott az adatbázisba)");
   }
+}
+
+/**
+ * Forrás-felderítés — adatbázis NÉLKÜL. Ezt futtatjuk, mielőtt bármit
+ * felvennénk: megmondja, alkalmas-e a bolt, és milyen kapcsolókkal.
+ */
+async function commandProbe(args: Args): Promise<void> {
+  const url = flag(args, "url");
+  if (!url) throw new Error("Kötelező: --url");
+
+  const result = await probeSource(
+    url,
+    {
+      name: flag(args, "name"),
+      productUrlPatterns: flagList(args, "pattern"),
+      excludeUrlPatterns: flagList(args, "exclude"),
+      sitemapUrl: flag(args, "sitemap"),
+      samples: flagNumber(args, "samples"),
+    },
+    { fetchText: realFetch, sleep },
+  );
+
+  console.log(`\n${result.origin}`);
+  console.log(`  robots.txt: ${result.robotsAvailable ? "elérhető" : "NEM elérhető"}`);
+  if (result.crawlDelaySec !== null) console.log(`  Crawl-delay: ${result.crawlDelaySec} s`);
+  console.log(`  termék-URL a sitemapben: ${result.productUrlCount}`);
+
+  for (const sample of result.samples) {
+    const extracted = sample.extracted;
+    const price = extracted?.priceHuf === null ? "nincs ár" : `${extracted?.priceHuf} Ft`;
+    console.log(
+      `  · ${sample.url}\n` +
+        `      HTTP ${sample.status} · JSON-LD Product: ${sample.hasProductJsonLd ? "van" : "NINCS"}` +
+        (sample.hasProductJsonLd ? ` · ${sample.isBoard ? "DESZKA" : "kiegészítő"}` : "") +
+        (extracted
+          ? ` · ${extracted.brandName ?? "?"} / ${extracted.modelName || "?"} · ${price}` +
+            ` · hossz ${extracted.specs.lengthCm ?? "?"} cm · teherbírás ${
+              extracted.specs.maxLoadKg ?? "?"
+            } kg`
+          : ""),
+    );
+  }
+  for (const error of result.errors) console.log(`  hiba: ${error}`);
+
+  console.log(`\n  ${result.verdict}`);
+  if (result.suggestedCommand) console.log(`\n  Felvétel:\n  ${result.suggestedCommand}`);
 }
 
 async function commandLifecycle(args: Args): Promise<void> {
@@ -280,6 +332,8 @@ async function main(): Promise<void> {
   const args = parseArgs(process.argv.slice(2));
 
   switch (args.command) {
+    case "probe":
+      return commandProbe(args);
     case "list-sources":
       return commandListSources();
     case "add-source":

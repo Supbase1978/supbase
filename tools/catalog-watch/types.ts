@@ -116,6 +116,8 @@ export interface SourceCrawlSummary {
   /** Sitemapből kiszűrt termék-URL-ek száma (a maxProducts vágás UTÁN). */
   urlsConsidered: number;
   productsExtracted: number;
+  /** Kinyert, de NEM deszka (evező, pumpa, ruházat) — nem kerül a jelölt-sorba. */
+  skippedNonBoard: number;
   /** Ismert deszkára illesztett találat (ársor + last_seen_at). */
   matchedKnown: number;
   /** Új/bizonytalan → catalog_candidates sor. */

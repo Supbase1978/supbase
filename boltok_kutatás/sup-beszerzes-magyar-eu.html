@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="utf-8">
+  <title>SUP beszerzési útmutató – Magyarország és Európa (2026)</title>
+  <style>
+    body { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; line-height: 1.6; padding: 1.5rem; max-width: 980px; margin: auto; }
+    h1, h2, h3 { color: #154360; }
+    h1 { margin-bottom: 0.5rem; }
+    h2 { margin-top: 2rem; border-bottom: 2px solid #ddd; padding-bottom: 0.25rem; }
+    h3 { margin-top: 1.5rem; }
+    p { margin: 0.4rem 0 0.8rem; }
+    a { color: #0b79d0; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    ul { margin: 0.2rem 0 0.8rem 1.3rem; }
+    li { margin-bottom: 0.2rem; }
+    .shop-block { margin-top: 1.3rem; padding: 0.9rem 0; border-top: 1px solid #eee; }
+    .country { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.08em; color: #777; }
+    .meta { font-size: 0.92rem; color: #555; }
+    .tag { display: inline-block; padding: 0.18rem 0.45rem; margin: 0 0.25rem 0.25rem 0; border-radius: 999px; background: #e8f4ff; color: #0b4f96; font-size: 0.78rem; }
+    .section-intro { font-size: 0.95rem; color: #444; }
+    .footer { margin-top: 2.5rem; font-size: 0.85rem; color: #777; border-top: 1px solid #eee; padding-top: 0.8rem; }
+    code { background: #f5f5f5; padding: 0.1rem 0.25rem; border-radius: 3px; font-size: 0.9rem; }
+  </style>
+</head>
+<body>
+  <h1>SUP beszerzési útmutató – Magyarország és Európa</h1>
+  <p class="section-intro">
+    Ez az összefoglaló a fontosabb magyarországi és jelentősebb európai SUP (Stand Up Paddle) beszerzési pontokat gyűjti össze, 
+    bolt- és webshop szinten szűrhető formában. A lista kiváló alap offline seed-adatnak egy SUP-fókuszú PWA-hoz: 
+    minden tételnél külön szerepel az ország, a főbb márkák, a tipikus deszka-típusok és a hasznos megjegyzések.
+  </p>
+
+  <h2>Használati javaslat PWA-hoz</h2>
+  <p>
+    Az itt szereplő adatokat érdemes strukturálni például <code>country</code>, <code>shop_name</code>, <code>url</code>, 
+    <code>brands</code>, <code>types</code> és <code>notes</code> mezőkbe, majd offline-first módon seedelni egy 
+    beépített JSON-ból. A felhasználó így országra, márkára, deszka-típusra (allround, touring, race, yoga, river) 
+    és árkategóriára is szűrhet.
+  </p>
+
+  <h2>Magyarországi SUP boltok és webshopok</h2>
+  <p class="section-intro">
+    A hazai kínálatnál a specializált SUP szaküzleteket és a nagyobb sportáruházakat külön jelöltem. A SUPshop és a SUPlife 
+    kiemelt központok, előbbinél bolt + webshop, utóbbinál közösségi portál jellegű gyűjtés érhető el.
+  </p>
+
+  <div class="shop-block">
+    <div class="country">MAGYARORSZÁG</div>
+    <h3>SUPshop.hu – SUP szaküzlet (Siófok, Budapest BudaPart) és online webshop</h3>
+    <p class="meta">
+      Web: <a href="https://supshop.hu/" target="_blank" rel="noopener">supshop.hu</a> &middot;
+      BudaPart üzlet: <a href="https://supshop.hu/uzleteink/supshop-budapart" target="_blank" rel="noopener">BudaPart SUPshop</a> &middot;
+      Siófoki üzlet: <a href="https://supshop.hu/uzleteink/supshop-siofok" target="_blank" rel="noopener">SUPshop Siófok</a>
+    </p>
+    <p>
+      A SUPlife.hu szerint Magyarország legnagyobb SUP kínálatával rendelkező szaküzlet, fizikai bolttal Siófokon és a budaparti Duna-parton, 
+      valamint országos kiszállítással működő webshoppal. Merev és felfújható SUP deszkák, evezők, ruházat és kiegészítők egyaránt kaphatók.
+    </p>
+    <p><strong>Főbb márkák (SUPlife ajánlás alapján):</strong></p>
+    <ul>
+      <li>Starboard</li>
+      <li>Coasto</li>
+      <li>Skiffo</li>
+      <li>Yoloboard</li>
+      <li>Aztron</li>
+      <li>Wattsup</li>
+      <li>Aquatone</li>
+      <li>Zray</li>
+    </ul>
+    <p><strong>Tipikus deszka-típusok:</strong></p>
+    <ul>
+      <li>Allround iSUP kezdőknek és hobbiveszősöknek</li>
+      <li>Touring/túra SUP hosszabb távokra, jobb iránytartással</li>
+      <li>Race/verseny SUP nagyobb sebességre optimalizált formával</li>
+      <li>Yoga és fitness SUP nagy stabilitással</li>
+    </ul>
+    <p><strong>Megjegyzés a PWA-hoz:</strong> érdemes külön flaget adni ennek a boltnak (pl. <code>"flagship": true</code>), 
+      mivel fizikai tesztelési lehetőséget és szakértő tanácsadást is adnak, ami a felhasználók számára kiemelt érték.</p>
+  </div>
+
+  <div class="shop-block">
+    <div class="country">MAGYARORSZÁG</div>
+    <h3>SUPlife.hu – ajánlott SUP forgalmazók gyűjteménye</h3>
+    <p class="meta">Web: <a href="https://suplife.hu/ajanlott-sup-forgalmazok/" target="_blank" rel="noopener">suplife.hu/ajanlott-sup-forgalmazok</a></p>
+    <p>
+      Közösségi portál, amely összegyűjti azokat a hazai forgalmazókat, akiket a SUPlife szerkesztősége szívesen ajánl a SUP-közösségnek. 
+      Nem közvetlen webshop, hanem „white list” jellegű lista – kiváló hivatkozási alap a PWA-ban egy „megbízható kereskedők” szekcióhoz.
+    </p>
+    <p><strong>Kiemelt partnerek SUPlife szerint:</strong></p>
+    <ul>
+      <li>SUPshop.hu – SUP szaküzlet és webshop</li>
+      <li>BICsurf.hu – Tahe (BIC) és SIC SUP forgalmazó</li>
+      <li>SUPzone.hu – JOBE SUP magyarországi partnere</li>
+    </ul>
+  </div>
+
+  <div class="shop-block">
+    <div class="country">MAGYARORSZÁG</div>
+    <h3>BICsurf.hu – TAHE / SIC SUP forgalmazó</h3>
+    <p class="meta">Web: <a href="https://www.bicsurf.hu" target="_blank" rel="noopener">bicsurf.hu</a> (SUPlife ajánlásként szerepel)</p>
+    <p>
+      Online bolt, amely elsősorban a TAHE (korábban BIC) és SIC márkák merev és felfújható SUP deszkáira fókuszál. 
+      Jellemzően túra, allround és windSUP modellek érhetők el, a márkák klasszikus szortimentjére építve.
+    </p>
+  </div>
+
+  <div class="shop-block">
+    <div class="country">MAGYARORSZÁG</div>
+    <h3>SUPzone.hu – JOBE SUP forgalmazó</h3>
+    <p class="meta">Web: <a href="https://supzone.hu" target="_blank" rel="noopener">supzone.hu</a></p>
+    <p>
+      A SUPlife.hu JOBE márkaforgalmazóként ajánlja. A kínálatban merev és felfújható JOBE SUP deszkák, evezők és kiegészítők találhatók, 
+      jellemzően 3 év garanciával. Jó kiindulópont, ha a PWA-ban felhasználók konkrétan JOBE modellekre szeretnének szűrni.
+    </p>
+  </div>
+
+  <div class="shop-block">
+    <div class="country">MAGYARORSZÁG</div>
+    <h3>Decathlon Magyarország – SUP kategória</h3>
+    <p class="meta">
+      Web: <a href="https://www.decathlon.hu/sportok/stand-up-paddle-sup" target="_blank" rel="noopener">decathlon.hu – SUP kategória</a> &middot;
+      SUP deszkák: <a href="https://www.decathlon.hu/sportok/stand-up-paddle-sup/stand-up-paddle-sup-deszka" target="_blank" rel="noopener">SUP deszkák</a>
+    </p>
+    <p>
+      Országos sportszerlánc, 24 áruházzal és nagy online kínálattal. A SUP kategóriában főleg felfújható ITIWIT és további márkák 
+      (pl. Wattsup, Thunder, Huiike, Zray/ZIPP, Hana Outdoors, Aqua Marina) érhetők el, komplett szettekben (deszka + pumpa + evező).
+    </p>
+    <p><strong>Tipikus felhasználás:</strong> belépő és középkategóriás deszkák vásárlása egyszerű, átlátható árakon, 
+      bolti átvétellel és hosszabb áruházi nyitvatartással.</p>
+  </div>
+
+  <div class="shop-block">
+    <div class="country">MAGYARORSZÁG</div>
+    <h3>Paddleshop.hu – „Magyarország legalacsonyabb SUP-árai”</h3>
+    <p class="meta">Web: <a href="https://www.paddleshop.hu/" target="_blank" rel="noopener">paddleshop.hu</a></p>
+    <p>
+      Kifejezetten SUP-ra fókuszáló magyar webshop, amely az akciós árakat és gyors szállítást emeli ki. A kínálatban 
+      felfújható SUP deszkák, karbon evezők, uszonyok és kiegészítők szerepelnek, gyakran 40–50% kedvezménnyel.
+    </p>
+    <p><strong>Főbb márkák (a termékek alapján):</strong></p>
+    <ul>
+      <li>Aqua Marina (Fusion, Vapor, Pure Air sorozatok)</li>
+      <li>Flowa (MAKA, IKAIKA túra/allround modellek)</li>
+      <li>További iSUP márkák az akciós szortimentben</li>
+    </ul>
+  </div>
+
+  <div class="shop-block">
+    <div class="country">MAGYARORSZÁG</div>
+    <h3>inSPORTline.hu – SUP kínálat</h3>
+    <p class="meta">Web: <a href="https://www.insportline.hu/sup" target="_blank" rel="noopener">insportline.hu/sup</a></p>
+    <p>
+      Multisport webshop, stabil, minőségi felfújható SUP deszkákkal kezdőknek és haladóknak. A főoldalon márkák nincsenek részletezve, 
+      de termékszinten több gyártó jelenik meg, szettekkel (deszka + pumpa + evező + táska).
+    </p>
+  </div>
+
+  <div class="shop-block">
+    <div class="country">MAGYARORSZÁG</div>
+    <h3>Sportano.hu – SUP kategória magyar nyelvű felülettel</h3>
+    <p class="meta">Web: <a href="https://sportano.hu/sup" target="_blank" rel="noopener">sportano.hu/sup</a></p>
+    <p>
+      Nemzetközi sportwebshop, magyar nyelvű felülettel és széles SUP kínálattal. Deszkák, pumpák, evezők, ruházat és kiegészítők 
+      érhetők el, több nagy nemzetközi SUP márka termékeivel. A PWA-ban akkor hasznos, ha egyetlen forrásból szeretnél 
+      márkák széles körét elérni.
+    </p>
+  </div>
+
+  <div class="shop-block">
+    <div class="country">MAGYARORSZÁG</div>
+    <h3>DomaSport – SUP ÜZLET</h3>
+    <p class="meta">Web: <a href="https://domasport.hu/shop/" target="_blank" rel="noopener">domasport.hu/shop – SUP ÜZLET</a></p>
+    <p>
+      Minőségi, megfizethető SUP szetteket kínáló bolt, felfújható, allround, jóga, túra és windsurf SUP variánsokkal. 
+      A főoldalon konkrét márkák nincsenek felsorolva, de a termékszinten részletes információk találhatók a gyártókról.
+    </p>
+    <p><strong>Extra funkció:</strong> online SUP bérlés, ami lehetővé teszi a kipróbálást vásárlás előtt – ezt külön mezővel 
+      (<code>"rental": true</code>) jelölheted a PWA adatmodellben.</p>
+  </div>
+
+  <div class="shop-block">
+    <div class="country">MAGYARORSZÁG</div>
+    <h3>Gymstore.hu – SUP deszka, kajak, csónak, evező</h3>
+    <p class="meta">Web: <a href="https://gymstore.hu/kategoria/sup_deszka_stand_up_paddle.html" target="_blank" rel="noopener">gymstore.hu – SUP kategória</a></p>
+    <p>
+      Fitness- és sporteszközökre fókuszáló webshop, amely a SUP/kajak/csónak szegmensben is kínál deszkákat, kajakokat, evezőket és kiegészítőket. 
+      Márkák részletesen a termékoldalakon szerepelnek; PWA szempontból a „SUP + kajak” kombinált felszerelés szűréséhez lehet releváns.
+    </p>
+  </div>
+
+  <h2>Jelentősebb európai SUP webshopok</h2>
+  <p class="section-intro">
+    Az alábbi listában elsősorban olyan európai webshopok jelennek meg, amelyek vagy kifejezetten SUP-specialisták, vagy 
+    kiemelkedően nagy SUP kínálattal rendelkeznek. Ezeket külön szekcióba érdemes tenni („Nemzetközi beszerzés”), és 
+    jelölni, ha EU-szintű kiszállítást kínálnak.
+  </p>
+
+  <div class="shop-block">
+    <div class="country">EURÓPA / AUSZTRIA</div>
+    <h3>Supboard-99 – Europe’s SUP specialist</h3>
+    <p class="meta">
+      Web (AT): <a href="https://www.supboard-99.at/stand-up-paddle-board" target="_blank" rel="noopener">supboard-99.at</a> &middot;
+      Web (EN): <a href="https://supboard-99.com/sup-boards/bluefin" target="_blank" rel="noopener">supboard-99.com</a>
+    </p>
+    <p>
+      Európai SUP-specialista bolt, amely részletes tesztekkel, összehasonlításokkal és „best of” ajánlókkal segíti a választást. 
+      Fő fókusz a felfújható SUP deszkákon, de kiegészítők és kajakok is szerepelnek.
+    </p>
+    <p><strong>Főbb márkák:</strong></p>
+    <ul>
+      <li>Bluefin (Cruise, Cruise Carbon, Sprint, Aura Fit, Mammoth stb.)</li>
+      <li>Aqua Marina</li>
+      <li>MOAI</li>
+      <li>Outdoormaster</li>
+      <li>Thurso Surf</li>
+    </ul>
+    <p><strong>PWA szempontból:</strong> kiváló forrás „top board” ajánlókhoz, mivel a termékleírások gyakran tartalmaznak 
+      súly, stabilitás, sebesség és felhasználási cél szerinti értékelést.</p>
+  </div>
+
+  <div class="shop-block">
+    <div class="country">EURÓPA / NÉMETORSZÁG + EU</div>
+    <h3>iSUPCENTER – Europe’s online SUP board webshop</h3>
+    <p class="meta">Web: <a href="https://www.isupcenter.com/" target="_blank" rel="noopener">isupcenter.com</a></p>
+    <p>
+      Pan-európai SUP-specialista webshop, amely felfújható SUP deszkák, evezők, elektromos pumpák és kiegészítők széles választékát kínálja. 
+      A „Europe and the United Kingdom” megjelölés alapján EU-szintű kiszállítást nyújt – ezt érdemes külön flaggel jelölni.
+    </p>
+  </div>
+
+  <div class="shop-block">
+    <div class="country">EURÓPA / NÉMETORSZÁG</div>
+    <h3>BluefinSUPBoards.eu – hivatalos Bluefin store</h3>
+    <p class="meta">
+      Web (DE): <a href="https://bluefinsupboards.eu/de" target="_blank" rel="noopener">bluefinsupboards.eu/de</a> &middot;
+      Főoldal: <a href="https://bluefinsupboards.eu/ga/collections/all" target="_blank" rel="noopener">összes modell</a>
+    </p>
+    <p>
+      A Bluefin saját európai online boltja, több nyelven elérhető felülettel. Csak Bluefin márkájú deszkákat és kiegészítőket forgalmaz, 
+      allround, touring, race, yoga és team SUP kategóriákban.
+    </p>
+  </div>
+
+  <div class="shop-block">
+    <div class="country">EURÓPA / NÉMETORSZÁG + EU</div>
+    <h3>Watersport.eu – Aqua Marina szekció</h3>
+    <p class="meta">Web: <a href="https://www.watersport.eu/en/aquamarina" target="_blank" rel="noopener">watersport.eu/en/aquamarina</a></p>
+    <p>
+      Nemzetközi vízi- és trend sportokat fedező webshop, amelyben külön szekciót kapnak az Aqua Marina SUP-ok, kajakok és kiegészítők. 
+      Jó „Aqua Marina only” forrás, ha a PWA-ban külön márkaoldalt akarsz készíteni.
+    </p>
+  </div>
+
+  <div class="shop-block">
+    <div class="country">EURÓPA / AUSZTRIA</div>
+    <h3>Kiteladen.at – SUP Shop Salzburg</h3>
+    <p class="meta">Web: <a href="https://kiteladen.at/SUP-Shop-Salzburg-Stand-Up-Paddling-Shop-Salzburg" target="_blank" rel="noopener">kiteladen.at – SUP Shop Salzburg</a></p>
+    <p>
+      10+ éve működő osztrák bolt és webshop kombináció, amely SUP deszkák széles választékát kínálja, különböző árkategóriákban. 
+      A kínálatban például Naish, Glory Boards, STX, Starboard, Ensis és más ismert márkák találhatók.
+    </p>
+  </div>
+
+  <div class="shop-block">
+    <div class="country">EURÓPA / AUSZTRIA</div>
+    <h3>Hangloose.at – SUP boards</h3>
+    <p class="meta">Web: <a href="https://hangloose.at/water/foil-surfen-standuppaddeln/sup-boards" target="_blank" rel="noopener">hangloose.at – SUP boards</a></p>
+    <p>
+      Surf és foil fókuszú bolt, amely több prémium márka SUP deszkáit forgalmazza (pl. Fanatic, Red Paddle, Starboard, Naish, Ensis, Indiana, Setboards). 
+      Kiemelten hasznos, ha a PWA haladó, performance-orientált felhasználóknak szól.
+    </p>
+  </div>
+
+  <div class="shop-block">
+    <div class="country">EURÓPA / NÉMETORSZÁG</div>
+    <h3>SurfTools.de – SUP Online Shop</h3>
+    <p class="meta">Web: <a href="https://www.surftools.de/sup-surf-shop/sup-shop/" target="_blank" rel="noopener">surftools.de – SUP Shop</a></p>
+    <p>
+      Német SUP és surf bolt, két teszt/bérlő központtal (Starnberger See, Wangen). A kínálatban Angulo, JP, RRD, Starboard, Naish, Fanatic, Vandal 
+      és további márkák deszkái szerepelnek, iSUP, hardboard, wave és touring kategóriákban.
+    </p>
+  </div>
+
+  <div class="shop-block">
+    <div class="country">EURÓPA / NÉMETORSZÁG</div>
+    <h3>SUP-Shop Berlin – JOBE specialist</h3>
+    <p class="meta">Web: <a href="https://www.sup-shop.berlin/en/" target="_blank" rel="noopener">sup-shop.berlin</a></p>
+    <p>
+      Berlinben működő bolt és webshop, Európa egyik legnagyobb JOBE SUP dealer-e. A kínálatban többek között Duna 11.6 (touring), 
+      Yarra 10.6 (allround), Neva 12.6 (long-distance touring) és Ventura 10.6 (hard board) modellek szerepelnek.
+    </p>
+  </div>
+
+  <div class="shop-block">
+    <div class="country">EURÓPA / NÉMETORSZÁG</div>
+    <h3>SUPshop.de – SUP Shop Boards, Paddel, Bags</h3>
+    <p class="meta">Web: <a href="https://www.supshop.de/" target="_blank" rel="noopener">supshop.de</a></p>
+    <p>
+      2008 óta működő német SUP bolt, amely Infinity, Black Project, Fanatic, RRD, Mistral stb. márkák deszkáit, evezőit és táskáit árulja. 
+      A VDWS SUP-képzés és túrák révén közösségi fókuszú, amihez a PWA-ban külön „tanfolyamok és túrák” szekciót lehet kapcsolni.
+    </p>
+  </div>
+
+  <div class="shop-block">
+    <div class="country">EURÓPA / NÉMETORSZÁG</div>
+    <h3>Surfshop Münster – Stand Up Paddling</h3>
+    <p class="meta">Web: <a href="https://surfshop-muenster.de/SUP-Surfshop" target="_blank" rel="noopener">surfshop-muenster.de – SUP</a></p>
+    <p>
+      Surf és SUP felszerelésre fókuszáló bolt, amely Starboard, Duotone, JP Australia, Mistral, STX, TAHE, Simmer Style és más márkák 
+      deszkáit forgalmazza. A kínálatban allround, touring, race és river SUP modellek, valamint prémium evezők és leash-ek találhatók.
+    </p>
+  </div>
+
+  <div class="shop-block">
+    <div class="country">EURÓPA / AUSZTRIA</div>
+    <h3>UNIVERSAL.at – SUP Boards kategória</h3>
+    <p class="meta">Web: <a href="https://www.universal.at/sport-freizeit/staycation-urlaub-in-oesterreich/urlaub-am-wasser/sup-boards/" target="_blank" rel="noopener">universal.at – SUP Boards</a></p>
+    <p>
+      Általános osztrák webshop, amely SUP boards kategóriát is kínál, ráadásul részletfizetés lehetőségével. A kínálatban EXPLORER, Intex, 
+      Aqua Marina, F2, YEAZ, Crazy4Boating és más márkák belépő és középkategóriás felfújható szettjei találhatók.
+    </p>
+  </div>
+
+  <div class="footer">
+    <p>
+      Az itt felsorolt adatok 2026 közepi online kutatás alapján készültek. A pontos márkakínálat és elérhető modellek idővel változhatnak, 
+      ezért a PWA-ban érdemes rendszeres frissítést vagy felhasználói visszajelzési (report) funkciót beépíteni.
+    </p>
+  </div>
+</body>
+</html>

@@ -6,6 +6,7 @@ import {
   extractModelYear,
   extractProduct,
   guessBoardType,
+  looksLikeBoard,
   normalizeBrandName,
   parseAvailability,
   parseDimensionCm,
@@ -22,6 +23,8 @@ describe("normalizeBrandName", () => {
     ["RED PADDLE CO", "Red Paddle Co"],
     ["Aqua  Marina", "Aqua Marina"],
     ["Ismeretlen Márka", "Ismeretlen Márka"],
+    // Élesben mért: a bolt „Gladiator SUP"-ot ír oda, ahol a katalógus „Gladiator".
+    ["Gladiator SUP", "Gladiator"],
   ])("%s → %s", (input, expected) => {
     expect(normalizeBrandName(input)).toBe(expected);
   });
@@ -182,6 +185,23 @@ describe("parsePriceHuf", () => {
     expect(parsePriceHuf({ price: "499", priceCurrency: "EUR" })).toBeNull();
   });
 
+  it("a WooCommerce/Rank Math priceSpecification-beágyazásból is kiolvassa", () => {
+    // Élesben mért alak: az ár nem az Offeren, hanem egy PriceSpecification-ben.
+    expect(
+      parsePriceHuf([
+        {
+          "@type": "Offer",
+          availability: "Nincs raktáron",
+          priceSpecification: {
+            "@type": "PriceSpecification",
+            price: "224000",
+            priceCurrency: "HUF",
+          },
+        },
+      ]),
+    ).toBe(224000);
+  });
+
   it("hiányzó ár vagy offers → null", () => {
     expect(parsePriceHuf(undefined)).toBeNull();
     expect(parsePriceHuf({ priceCurrency: "HUF" })).toBeNull();
@@ -194,6 +214,11 @@ describe("parseAvailability", () => {
     ["http://schema.org/OutOfStock", false],
     ["PreOrder", true],
     ["Ismeretlen", null],
+    // Magyar szabad szöveg (élesben mért). A tagadást előbb kell vizsgálni:
+    // a „Nincs raktáron" tartalmazza a „raktáron"-t is.
+    ["Nincs raktáron", false],
+    ["Raktáron", true],
+    ["Elfogyott", false],
   ])("%s → %s", (availability, expected) => {
     expect(parseAvailability({ availability })).toBe(expected);
   });
@@ -205,6 +230,56 @@ describe("parseAvailability", () => {
         { availability: "https://schema.org/InStock" },
       ]),
     ).toBe(true);
+  });
+});
+
+describe("looksLikeBoard", () => {
+  const NO_SPECS = {
+    lengthCm: null,
+    widthCm: null,
+    thicknessCm: null,
+    volumeL: null,
+    weightKg: null,
+    maxLoadKg: null,
+    inflatable: null,
+  };
+
+  it.each([
+    [`Aqua Marina Vapor 10'4" felfújható SUP deszka`, "allround" as const, true],
+    ["Gladiator Origin paddleboard", null, true],
+    ["Jobe Aero SUP Yoga 10.6", "yoga" as const, true],
+    // Élesben mért eset: egy SUP-bolt sitemapjében napszemüveg is van.
+    ["Jobe DIM napszemüveg Tortoise", null, false],
+    ["Karbon SUP evező állítható", null, false],
+    ["Kétkamrás SUP pumpa", null, false],
+    ["Vízhatlan táska 20 l", null, false],
+    ["Valami ismeretlen termék", null, false],
+  ])("%s → %s", (rawTitle, boardType, expected) => {
+    expect(looksLikeBoard({ rawTitle, modelName: rawTitle, boardType, specs: NO_SPECS })).toBe(
+      expected,
+    );
+  });
+
+  it("a MÉRT deszka-spec erősebb minden kulcsszónál", () => {
+    expect(
+      looksLikeBoard({
+        rawTitle: "Névtelen termék",
+        modelName: "Névtelen",
+        boardType: null,
+        specs: { ...NO_SPECS, lengthCm: 320, maxLoadKg: 140 },
+      }),
+    ).toBe(true);
+  });
+
+  it("a deszka-tartományon kívüli hossz önmagában nem elég", () => {
+    expect(
+      looksLikeBoard({
+        rawTitle: "Evezőlapát",
+        modelName: "Evezőlapát",
+        boardType: null,
+        specs: { ...NO_SPECS, lengthCm: 180, volumeL: 2 },
+      }),
+    ).toBe(false);
   });
 });
 

@@ -75,7 +75,13 @@ export function foldText(value: string): string {
 /** Bolti márkanév → kanonikus alak (alias-lista, majd whitespace-tisztítás). */
 export function normalizeBrandName(raw: string | null | undefined): string | null {
   if (typeof raw !== "string") return null;
-  const trimmed = raw.replace(/\s+/g, " ").trim();
+  // A ZÁRÓ „SUP" kategória-szó, nem márkajel: a boltok „Gladiator SUP"-ként
+  // írják azt, ami a katalógusban „Gladiator" (élesben mért eltérés, ami e
+  // nélkül a márka-egyezést a küszöb alá vinné).
+  const trimmed = raw
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/\s+sup$/i, "");
   if (trimmed === "") return null;
   return BRAND_ALIASES[foldText(trimmed)] ?? trimmed;
 }
@@ -125,7 +131,7 @@ export function cleanModelName(rawTitle: string, brandName?: string | null): str
   }
 
   return text
-    .replace(/[|/\\–—-]+/g, " ")
+    .replace(/[|/\\~·•–—-]+/g, " ")
     .replace(/\s+/g, " ")
     .trim();
 }
@@ -295,6 +301,98 @@ export function guessBoardType(text: string): BoardType | null {
   return null;
 }
 
+/**
+ * Kiegészítő-kulcsszavak: ha ezek egyike szerepel a névben, a termék NEM deszka.
+ * (Élesben mért igény: egy SUP-bolt sitemapje evezőt, uszonyt, sőt napszemüveget
+ * is tartalmaz — szűrő nélkül a moderációs sor használhatatlanná válna.)
+ */
+const ACCESSORY_KEYWORDS = [
+  "napszemuveg",
+  "szemuveg",
+  "evezo",
+  "pumpa",
+  "uszony",
+  "finbox",
+  "taska",
+  "hatizsak",
+  "polo",
+  "sapka",
+  "kesztyu",
+  "cipo",
+  "mellen",
+  "mentomellen",
+  "neopren",
+  "ruha",
+  "wetsuit",
+  "leash",
+  "poraz",
+  "ules",
+  "javito",
+  "szelep",
+  "kulacs",
+  "szij",
+  "kocsi",
+  "allvany",
+  "matrica",
+  "ajandekutalvany",
+  "utalvany",
+  "sunglass",
+  "paddle blade",
+  "pump",
+  "bag",
+  "seat",
+  "strap",
+  "repair",
+  "valve",
+  "leggings",
+  "cap ",
+];
+
+/** A deszka-mivolt pozitív jelei a névben/leírásban. */
+const BOARD_NOUNS = ["deszka", "board", "isup", "i-sup", "paddleboard", "paddle board"];
+
+/** Deszkahossz ésszerű tartománya cm-ben — ez a spec-alapú, DÖNTŐ jel. */
+const BOARD_LENGTH_MIN_CM = 240;
+const BOARD_LENGTH_MAX_CM = 520;
+
+/**
+ * SUP-DESZKA-e a termék, vagy kiegészítő?
+ *
+ * A figyelő minden termékoldalt lát, de a katalógus DESZKÁKAT gyűjt. A döntés
+ * konzervatív két irányban is:
+ *  * a mért spec (deszka-tartományba eső hossz + térfogat/teherbírás) MINDIG
+ *    deszkát jelent — ez erősebb, mint bármelyik kulcsszó;
+ *  * kulcsszó-alapon csak akkor mondunk deszkát, ha van pozitív jel ÉS nincs
+ *    kiegészítő-szó (az „evező" vagy a „pumpa" a névben egyértelmű nem).
+ *
+ * Ami így kiesik, az nem vész el végleg: a következő futás újra megnézi, és a
+ * forrás `crawl_config`-jában a mintákkal is szűkíthető a kör.
+ */
+export function looksLikeBoard(product: {
+  rawTitle: string;
+  modelName: string;
+  boardType: BoardType | null;
+  specs: BoardSpecs;
+}): boolean {
+  const { specs } = product;
+  const lengthInRange =
+    specs.lengthCm !== null &&
+    specs.lengthCm >= BOARD_LENGTH_MIN_CM &&
+    specs.lengthCm <= BOARD_LENGTH_MAX_CM;
+  if (lengthInRange && (specs.volumeL !== null || specs.maxLoadKg !== null)) {
+    return true;
+  }
+
+  const folded = foldText(product.rawTitle);
+  if (ACCESSORY_KEYWORDS.some((word) => folded.includes(word))) {
+    return false;
+  }
+
+  const hasBoardNoun = BOARD_NOUNS.some((noun) => folded.includes(noun));
+  const hasSup = /\bsup\b/.test(folded);
+  return hasBoardNoun || (hasSup && product.boardType !== null) || lengthInRange;
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
@@ -315,7 +413,11 @@ function firstString(value: unknown): string | null {
   return null;
 }
 
-/** Az `offers` alakjai: objektum, tömb, AggregateOffer (`lowPrice`). */
+/**
+ * Az `offers` alakjai: objektum, tömb, AggregateOffer (`lowPrice`), és a
+ * WooCommerce/Rank Math által írt `priceSpecification` beágyazás — élesben mért
+ * eset: az ár NEM az Offeren, hanem egy `PriceSpecification` gyerekben ül.
+ */
 function collectOffers(offers: unknown): Record<string, unknown>[] {
   const list: Record<string, unknown>[] = [];
   const stack: unknown[] = [offers];
@@ -328,6 +430,7 @@ function collectOffers(offers: unknown): Record<string, unknown>[] {
     if (!isRecord(node)) continue;
     list.push(node);
     if (node.offers !== undefined) stack.push(node.offers);
+    if (node.priceSpecification !== undefined) stack.push(node.priceSpecification);
   }
   return list;
 }
@@ -380,18 +483,31 @@ export function parsePriceHuf(offers: unknown): number | null {
   return best;
 }
 
-/** schema.org availability → van-e HU-elérhetőség. Ismeretlen → null. */
+/**
+ * `availability` → van-e HU-elérhetőség. Ismeretlen → null.
+ *
+ * A szabvány schema.org-enumon túl a MAGYAR SZABAD SZÖVEGET is értjük (élesben
+ * mért eset: `"availability": "Nincs raktáron"`). A tagadást ELŐBB vizsgáljuk,
+ * mert a „nincs raktáron" tartalmazza a „raktáron"-t is — fordított sorrendben
+ * pont az ellenkezőjét olvasnánk ki.
+ */
+const UNAVAILABLE_PATTERN =
+  /(outofstock|soldout|discontinued|nincs raktaron|nincs keszleten|elfogyott|nem kaphato|nem rendelheto)/;
+const AVAILABLE_PATTERN =
+  /(instock|instoreonly|limitedavailability|preorder|backorder|raktaron|keszleten|azonnal)/;
+
 export function parseAvailability(offers: unknown): boolean | null {
   let result: boolean | null = null;
   for (const offer of collectOffers(offers)) {
     const availability = firstString(offer.availability);
     if (availability === null) continue;
     const folded = foldText(availability);
-    if (/(instock|instoreonly|limitedavailability|preorder|backorder)/.test(folded)) {
-      // Egyetlen kapható ajánlat elég ahhoz, hogy a modell elérhető legyen.
-      return true;
+    if (UNAVAILABLE_PATTERN.test(folded)) {
+      result = false;
+      continue;
     }
-    if (/(outofstock|soldout|discontinued)/.test(folded)) result = false;
+    // Egyetlen kapható ajánlat elég ahhoz, hogy a modell elérhető legyen.
+    if (AVAILABLE_PATTERN.test(folded)) return true;
   }
   return result;
 }

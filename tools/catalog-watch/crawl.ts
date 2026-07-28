@@ -22,7 +22,7 @@ import type {
 import { htmlToText } from "./html.ts";
 import { findProductNodes, pickPrimaryProduct } from "./jsonld.ts";
 import { matchCandidate } from "./match.ts";
-import { extractProduct } from "./normalize.ts";
+import { extractProduct, looksLikeBoard } from "./normalize.ts";
 import {
   CRAWLER_USER_AGENT,
   crawlDelayFor,
@@ -91,6 +91,7 @@ function emptySummary(source: CatalogSourceRow): SourceCrawlSummary {
     sourceName: source.name,
     urlsConsidered: 0,
     productsExtracted: 0,
+    skippedNonBoard: 0,
     matchedKnown: 0,
     candidatesCreated: 0,
     pricesRecorded: 0,
@@ -112,7 +113,7 @@ function errorMessage(error: unknown): string {
  * „minden engedélyezett"; a NEM ELÉRHETŐ (hálózati hiba, 5xx) viszont ismeretlen
  * állapot → `null`, és a hívó kihagyja a forrást.
  */
-async function loadRobots(origin: string, fetchText: FetchText): Promise<RobotsTxt | null> {
+export async function loadRobots(origin: string, fetchText: FetchText): Promise<RobotsTxt | null> {
   try {
     const result = await fetchText(`${origin}/robots.txt`);
     if (result.status === 404 || result.status === 410) {
@@ -141,7 +142,7 @@ function resolveSitemapUrls(source: CatalogSourceRow, robots: RobotsTxt, origin:
  * Termék-URL-ek összegyűjtése: sitemap (és egy szint sitemap-index) →
  * minta-szűrés → `maxProducts` vágás.
  */
-async function collectProductUrls(
+export async function collectProductUrls(
   source: CatalogSourceRow,
   robots: RobotsTxt,
   origin: string,
@@ -152,7 +153,9 @@ async function collectProductUrls(
   const maxProducts = config.maxProducts ?? DEFAULT_MAX_PRODUCTS;
   const locs: string[] = [];
 
+  const defaultSitemap = `${origin}/sitemap.xml`;
   const queue = resolveSitemapUrls(source, robots, origin);
+  const tried = new Set(queue);
   let childrenFetched = 0;
 
   while (queue.length > 0) {
@@ -188,6 +191,20 @@ async function collectProductUrls(
     }
     locs.push(...parsed.locs);
     if (locs.length >= maxProducts * 5) break; // elég nyersanyag a szűréshez
+  }
+
+  // VISSZAESÉS: a robots.txt-ben hirdetett sitemap gyakran sablon-maradék
+  // (élesben látott példa: `Sitemap: http://www.example.com/sitemap.xml`). Ha a
+  // hirdetett forrásokból egyetlen URL sem jött, próbáljuk a SZABVÁNYOS helyet,
+  // mielőtt „nincs termék"-et mondanánk.
+  if (locs.length === 0 && !tried.has(defaultSitemap)) {
+    return collectProductUrls(
+      { ...source, crawl_config: { ...config, sitemapUrl: defaultSitemap } },
+      robots,
+      origin,
+      deps,
+      summary,
+    );
   }
 
   const selected = selectProductUrls(locs, {
@@ -287,6 +304,14 @@ export async function crawlSource(
           });
           summary.pricesRecorded += 1;
         }
+        continue;
+      }
+
+      // A boltok sitemapje evezőt, pumpát, ruházatot is tartalmaz. A jelölt-sor
+      // csak DESZKÁKAT kaphat, különben használhatatlanná válik a moderáció.
+      // (A fenti „ismert" ág ELŐBB van: meglévő deszka árát ez nem blokkolja.)
+      if (!looksLikeBoard(product)) {
+        summary.skippedNonBoard += 1;
         continue;
       }
 

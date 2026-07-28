@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Magyar és Európai SUP Üzletek - PWA Adatbázis és Katalógus</title>
+    <style>
+        :root {
+            --primary-color: #0284c7;
+            --primary-dark: #0369a1;
+            --secondary-color: #0f172a;
+            --bg-light: #f8fafc;
+            --card-bg: #ffffff;
+            --border-color: #e2e8f0;
+            --text-main: #334155;
+            --text-dark: #0f172a;
+            --accent-blue: #e0f2fe;
+            --accent-green: #dcfce7;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-light);
+            color: var(--text-main);
+            line-height: 1.6;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: var(--card-bg);
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        header {
+            border-bottom: 3px solid var(--primary-color);
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            color: var(--text-dark);
+            font-size: 2.2rem;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: var(--primary-dark);
+            font-size: 1.1rem;
+            font-weight: 500;
+        }
+
+        h2 {
+            color: var(--secondary-color);
+            font-size: 1.5rem;
+            margin-top: 35px;
+            margin-bottom: 15px;
+            border-left: 4px solid var(--primary-color);
+            padding-left: 10px;
+        }
+
+        h3 {
+            color: var(--text-dark);
+            font-size: 1.2rem;
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+
+        p {
+            margin-bottom: 15px;
+        }
+
+        ul {
+            margin-bottom: 20px;
+            padding-left: 20px;
+        }
+
+        li {
+            margin-bottom: 5px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 25px 0;
+            font-size: 0.95rem;
+        }
+
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th {
+            background-color: var(--secondary-color);
+            color: #ffffff;
+            font-weight: 600;
+        }
+
+        tr:nth-child(even) {
+            background-color: var(--bg-light);
+        }
+
+        tr:hover {
+            background-color: #f1f5f9;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-right: 4px;
+            margin-bottom: 4px;
+        }
+
+        .badge-brand {
+            background-color: var(--accent-blue);
+            color: var(--primary-dark);
+        }
+
+        .badge-type {
+            background-color: var(--accent-green);
+            color: #166534;
+        }
+
+        .grid-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .card {
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            background-color: #ffffff;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        .card-title {
+            font-weight: bold;
+            font-size: 1.1rem;
+            color: var(--primary-dark);
+            margin-bottom: 8px;
+        }
+
+        .card-location {
+            font-size: 0.85rem;
+            color: #64748b;
+            margin-bottom: 12px;
+        }
+
+        .code-block {
+            background-color: #1e293b;
+            color: #f8fafc;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 0.9rem;
+            overflow-x: auto;
+            margin: 15px 0;
+        }
+
+        @media print {
+            body {
+                background: none;
+                padding: 0;
+            }
+            .container {
+                box-shadow: none;
+                padding: 0;
+            }
+            .card {
+                break-inside: avoid;
+            }
+            table {
+                break-inside: auto;
+            }
+            tr {
+                break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Magyarországi és Európai SUP Beszerzési Források</h1>
+        <div class="subtitle">Adatstruktúra és Piacelemzés PWA (Progressive Web App) Fejlesztéshez</div>
+    </header>
+
+    <section id="bevezetes">
+        <h2>1. Bevezetés és Piaci Áttekintés</h2>
+        <p>A Stand-Up Paddle (SUP) szektor az elmúlt években a tömegsporttá válás és a technológiai specializáció kettős folyamatán ment keresztül. A korai belépőszintű, univerzális (Allround) felfújható deszkák mellett megjelent a szegmentált prémium kínálat: Touring, Race, Wave, valamint a vitorlával vagy szárnnyal kombinálható WindSUP és Wing Foil kategóriák.</p>
+        <p>A fejlesztés alatt álló Progressive Web App (PWA) adatmodelljének, keresőmotorjának és katalógus-architektúrájának optimalizálásához elengedhetetlen a forgalmazói hálózat, a beszállítói struktúra és a forgalmazott márkák pontos feltérképezése.</p>
+    </section>
+
+    <section id="hazai-piac">
+        <h2>2. Magyarországi SUP Szaküzletek és Kereskedők</h2>
+        <p>A magyar piacon működő szaküzletek döntő többsége Budapestre és a Balaton régiójára összpontosul. A balatoni helyszínek sajátossága,hogy a fizikai üzletek jelentős része szezonális átvételi pontként, bérlőként és tesztközpontként is funkcionál.</p>
+
+        <div class="grid-cards">
+            <div class="card">
+                <div class="card-title">SUPshop.hu</div>
+                <div class="card-location">📍 Budapest (BudaPart) & Siófok</div>
+                <p>Magyarország egyik legrégebbi és legátfogóbb szakkereskedője. Több mint 27 márka hivatalos forgalmazója, bemutatótermekkel és szervizhátterével.</p>
+
+                <p><strong>Márkák:</strong> Starboard, Aqua Marina, Coasto, Skiffo, Aztron, Wattsup, AquaTone, Zray, F2, Sunova, NSP, Aquadesign, Lozen, Delta, ABSTRACT, Brača-sport.</p>
+            </div>
+
+            <div class="card">
+                <div class="card-title">Kiteline.hu</div>
+                <div class="card-location">📍 1015 Budapest, Batthyány utca</div>
+                <p>Technikai vízisport-szaküzlet, professzionális szervizközpont és oktatási bázis. Elsősorban a prémium olasz RRD márkára és fóliás rendszerekre specializálódott.</p>
+                <p><strong>Márkák:</strong> RRD (Roberto Ricci Designs), Naish, North.</p>
+
+            </div>
+
+            <div class="card">
+                <div class="card-title">SUP Center Balaton (standuppaddle.hu)</div>
+                <div class="card-location">📍 Tihany (Club Tihany)</div>
+                <p>A Balaton kiemelt prémium teszt- és értékesítési pontja. Kizárólagosan a csúcskategóriás, fúziós MSL technológiájú deszkák forgalmazója.</p>
+                <p><strong>Márkák:</strong> RED Paddle Co, Red Original, Hakuna.</p>
+            </div>
+
+            <div class="card">
+                <div class="card-title">Kajaksziget Balaton</div>
+                <div class="card-location">📍 Gyenesdiás (Diási játékstrand)</div>
+                <p>Raktárral kombinált szezonális értékesítési pont a Balaton nyugati medencéjében. Túra- és versenymodellekre orientált kínálat.</p>
+
+                <p><strong>Márkák:</strong> Gladiator (Pro és Elite szériák).</p>
+            </div>
+
+            <div class="card">
+                <div class="card-title">Aqualing Kft.</div>
+                <div class="card-location">📍 Budapest és Országos hálózat</div>
+                <p>Uszodatechnikai és vízisport-kereskedő, amely komplett iSUP szettekre, gurulós hátitáskákra és duplatartályos pumpákra összpontosít.</p>
+
+                <p><strong>Márkák:</strong> Gladiator (Origin, Pro, Elite), Hydro-Force.</p>
+            </div>
+
+            <div class="card">
+                <div class="card-title">Decathlon Magyarország</div>
+                <div class="card-location">📍 Országos áruházi hálózat + Online Marketplace</div>
+                <p>Hibrid modell: saját márkás termékek mellett kiterjedt Marketplace platformot működtet külső hazai és nemzetközi kereskedők integrálásával.</p>
+                <p><strong>Márkák:</strong> Aqua Marina, Huiike, X Paddle Boards, Thunder, F2, Zray, Mistral, STX, Jobe, MOAI, Body Glove, Spartan.</p>
+
+            </div>
+        </div>
+
+        <h3>Magyarországi Kereskedők Összefoglaló Mátrixa</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Kereskedő / Weboldal</th>
+                    <th>Fizikai Üzlet / Helyszín</th>
+                    <th>Elsődleges Márkák</th>
+                    <th>Specializáció</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>SUPshop.hu</strong></td>
+                    <td>Budapest, Siófok</td>
+                    <td>Starboard, Aqua Marina, Coasto, Aztron, F2, Sunova, NSP</td>
+                    <td>27+ márka, kemény és iSUP deszkák, szerviz, SZÉP-kártya</td>
+                </tr>
+                <tr>
+                    <td><strong>Decathlon.hu</strong></td>
+                    <td>Országos áruházak + Online</td>
+                    <td>Aqua Marina, Huiike, F2, Zray, Mistral, STX, Jobe</td>
+                    <td>Kiterjedt Marketplace, alkatrész-ellátás</td>
+                </tr>
+                <tr>
+                    <td><strong>Aqualing.hu</strong></td>
+                    <td>Budapest + Országos boltívek</td>
+                    <td>Gladiator (Origin, Pro, Elite), Hydro-Force</td>
+                    <td>Komplett iSUP készletek, gurulós táskák</td>
+                </tr>
+                <tr>
+                    <td><strong>Kiteline.hu</strong></td>
+                    <td>Budapest (Batthyány u.)</td>
+                    <td>RRD (Roberto Ricci Designs), Naish, North</td>
+                    <td>WindSUP, WingFoil, szerviz, iSUP javítás</td>
+                </tr>
+                <tr>
+                    <td><strong>SUP Center Balaton</strong></td>
+                    <td>Tihany (Club Tihany)</td>
+                    <td>RED Paddle Co, Red Original</td>
+                    <td>Prémium MSL technológia, szezonális tesztközpont</td>
+                </tr>
+                <tr>
+                    <td><strong>Kajaksziget Balaton</strong></td>
+                    <td>Gyenesdiás (Diási strand)</td>
+                    <td>Gladiator (Pro, Elite)</td>
+                    <td>Túra és Race iSUP deszkák, strandközeli átvétel</td>
+                </tr>
+                <tr>
+                    <td><strong>DomaSport.hu</strong></td>
+                    <td>Online / Bemutatóterem</td>
+                    <td>Aqua Marina, F2, Spinera, Aquaglide</td>
+                    <td>Elektromos pumpák, e-motorok (Blue Drive), WindSUP</td>
+                </tr>
+                <tr>
+                    <td><strong>SUP Áruház</strong></td>
+                    <td>Online</td>
+                    <td>Aqua Marina, Mistral, FunWater</td>
+                    <td>Ingyenes szállítás, bérleti partnerprogramok</td>
+                </tr>
+                <tr>
+                    <td><strong>SUPstore.hu</strong></td>
+                    <td>Online</td>
+                    <td>Gladiator, Slingshot, Aquarius</td>
+                    <td>iSUP szettek, vízhatlan tárolórendszerek</td>
+                </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section id="europai-piac">
+        <h2>3. Jelentősebb Európai és Határon Átnyúló Forgalmazók</h2>
+        <p>A PWA adatbázisának építésekor kulcsfontosságú azon európai platformok bevonása, amelyek közvetlen logisztikai elérést és szállítást biztosítanak Magyarországra. Ezek a kereskedők olyan specifikus márkákat vagy kompozit konstrukciókat értékesítenek, amelyek a hazai raktárkészletekben korlátozottan érhetők el.</p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Kereskedő / Platform</th>
+                    <th>Székhely</th>
+                    <th>Magyarországi Logisztika</th>
+                    <th>Főbb Márkák</th>
+                    <th>Kínálat és Specializáció</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>GONG Galaxy</strong> (gong-galaxy.com)</td>
+                    <td>Franciaország</td>
+                    <td>Közvetlen EU szállítás (24/48h feladás)</td>
+                    <td>GONG (Saját gyártás), FCS, Dakine</td>
+                    <td>Direct-to-Consumer: Shortboard SUP, SUP Foil, Prone, Downwind</td>
+                </tr>
+                <tr>
+                    <td><strong>Surfpirates</strong> (surfpirates.de)</td>
+                    <td>Flensburg, Németország</td>
+                    <td>Nemzetközi EU szállítás (automata díj)</td>
+                    <td>Duotone, Naish, Fanatic, STX, Slingshot, Quatro</td>
+                    <td>Észak-Európa legnagyobb vízisport-raktára, WindSUP, e-Fin rendszerek</td>
+                </tr>
+                <tr>
+                    <td><strong>Sportano</strong> (sportano.hu)</td>
+                    <td>Zielona Góra, Lengyelország</td>
+                    <td>Lokalizált 3-4 munkanapos szállítás</td>
+                    <td>Aquastic, Aqua Marina, Lift Foils, Aztron, Jobe</td>
+                    <td>Közép-európai e-commerce óriás, lokalizált magyar felület, e-Foil</td>
+                </tr>
+                <tr>
+                    <td><strong>Blue Tomato</strong> (blue-tomato.com)</td>
+                    <td>Schladming / Graz, Ausztria</td>
+                    <td>EU szállítás (terjedelmes deszkák kivételével)</td>
+                    <td>Fanatic, Light, ION, FCS</td>
+                    <td>iSUP csomagok, prémium szénszálas evezők, cserélhető uszonyok</td>
+                </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section id="kategoria-matrix">
+        <h2>4. Márka- és Típuslefedettségi Mátrix</h2>
+        <p>A PWA keresőmotorjának és szűrőrendszerének kialakításához az alábbi szabványosított kategóriastruktúra használható:</p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Kategória</th>
+                    <th>Kialakítás és Specifikáció</th>
+                    <th>Meghatározó Márkák</th>
+                    <th>Beszerzési Csatorna</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Allround / Családi</strong></td>
+                    <td>Hossz: 300–330 cm | Szélesség: 75–85 cm<br>Kerek orr, magas primer stabilitás.</td>
+                    <td>Aqua Marina, Hydro-Force, Gladiator Origin, Skiffo, Zray, Aquastic</td>
+                    <td>Decathlon, SUPshop, Aqualing, Sportano</td>
+                </tr>
+                <tr>
+                    <td><strong>Touring / Túra</strong></td>
+                    <td>Hossz: 350–427 cm | Szélesség: 76–84 cm<br>Hegyesedő orr a jobb vízkiszorításért.</td>
+                    <td>Gladiator Pro/Elite, Coasto, Starboard, RED Paddle Co, STX</td>
+                    <td>SUPshop, Kajaksziget, SUP Center Balaton, Surfpirates</td>
+                </tr>
+                <tr>
+                    <td><strong>Race / Verseny</strong></td>
+                    <td>Hossz: 12'6" – 18'0" | Szélesség: 20" – 29"<br>Áramvonalas, keskeny törzs a sebességért.</td>
+                    <td>Starboard, Mistral, GONG, Duotone, Gladiator Elite</td>
+                    <td>GONG Galaxy, SUPshop, Surfpirates</td>
+                </tr>
+                <tr>
+                    <td><strong>WindSUP / Wing Foil</strong></td>
+                    <td>Árbocrögzítő insert, uszonybox foilhoz, megerősített szerkezet.</td>
+                    <td>RRD, F2, Starboard, GONG, Naish, Slingshot</td>
+                    <td>Kiteline, DomaSport, GONG Galaxy, Surfpirates</td>
+                </tr>
+                <tr>
+                    <td><strong>Wave / Shortboard</strong></td>
+                    <td>Hossz: 6'8" – 9'5"<br>Ívelt élvonal (rocker), több uszonyos rögzítés.</td>
+                    <td>GONG, Fanatic, Naish, Quatro</td>
+                    <td>GONG Galaxy, Surfpirates</td>
+                </tr>
+                <tr>
+                    <td><strong>Prémium iSUP</strong></td>
+                    <td>MSL / Woven Drop-stitch, hegesztett élek (Welded Rails), 20+ PSI nyomás.</td>
+                    <td>RED Paddle Co, Starboard, RRD, Gladiator Elite</td>
+                    <td>SUP Center Balaton, SUPshop, Kiteline</td>
+                </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section id="pwa-architektura">
+        <h2>5. Stratégiai Architektúra és PWA Adatmodell Követelmények</h2>
+        <p>A gyűjtött adatok alapján az alábbi technikai modulok beépítése szükséges a fejlesztés alatt álló Progressive Web App szoftverarchitektúrájába:</p>
+
+        <h3>5.1 Adatmodell Sématervezet (JSON-LD példa)</h3>
+        <p>A termékek és forgalmazók egységes reprezentációjához az alábbi struktúra javasolt a PWA backendjében:</p>
+
+        <div class="code-block">
+{
+  "@context": "https://schema.org/",
+  "@type": "Product",
+  "name": "Gladiator Pro 12.6T SUP",
+  "brand": {
+    "@type": "Brand",
+    "name": "Gladiator"
+  },
+  "category": "Touring iSUP",
+  "offers": {
+    "@type": "AggregateOffer",
+    "priceCurrency": "HUF",
+    "lowPrice": "246000",
+    "offerCount": "3",
+    "offers": [
+      {
+        "@type": "Offer",
+        "seller": "Kajaksziget Balaton",
+        "availability": "https://schema.org/InStock",
+        "itemCondition": "https://schema.org/NewCondition"
+      }
+    ]
+  },
+  "additionalProperty": [
+    { "@type": "PropertyValue", "name": "Construction", "value": "Fusion Double Layer Drop-stitch" },
+    { "@type": "PropertyValue", "name": "Length", "value": "12'6\" (384 cm)" },
+    { "@type": "PropertyValue", "name": "FinBox", "value": "US Box" }
+  ]
+}
+        </div>
+
+        <h3>5.2 Fejlesztési Irányelvek</h3>
+        <ul>
+            <li><strong>Attribútum-szabványosítás:</strong> Különbséget kell tenni az egyrétegű (Single layer), duplarétegű (Double layer), fúziós (MSL/Fusion), szövött (Woven drop-stitch) és kompozit (FSP Sandwich) technológiák között.</li>
+            <li><strong>Geolokációs Készletkezelés:</strong> A nyári szezonban a Balaton környéki és budapesti fizikai tesztpontok/üzletek raktárkészletének prioritásos megjelenítése a felhasználó tartózkodási helye alapján.</li>
+            <li><strong>Marketplace Attribúció:</strong> A Decathlonhoz hasonló hibrid platformoknál az áruházi saját készlet és a külső Marketplace forgalmazók logisztikai idejének külön kezelése.</li>
+            <li><strong>Technikai Kompatibilitás-ellenőrző:</strong> Az uszonybox típusok (Slide-in, US Box, FCS2, Click Fin), az elektromos pumpa adapterek és a WindSUP árboccsatlakozók automatikus illesztési logikája.</li>
+        </ul>
+    </section>
+</div>
+
+</body>
+</html>
