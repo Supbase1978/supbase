@@ -8,6 +8,7 @@ import { recordEvent } from "@core/analytics/analytics.server";
 import { createSupabaseServerClient } from "@core/auth/supabase.server";
 import { getLocaleFromPath, pickTranslated, serverT } from "@core/i18n";
 import { buildPageSeo } from "@core/seo/page-seo";
+import { FeedbackPrompt } from "@core/feedback/FeedbackPrompt";
 import { listBoards } from "@modules/catalog/data/boards.server";
 import { BoardCard } from "@modules/catalog/ui/BoardCard";
 
@@ -74,6 +75,8 @@ export default function BoardsListRoute({ loaderData }: Route.ComponentProps) {
           ))}
         </ul>
       )}
+
+      <FeedbackPrompt kind="board" path="/deszkak" />
     </main>
   );
 }

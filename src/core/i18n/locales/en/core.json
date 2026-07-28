@@ -169,5 +169,58 @@
       "provider_created": "New provider",
       "push_subscribed": "Storm alert subscription"
     }
+  },
+  "feedback": {
+    "nav": "Report a bug · suggest",
+    "title": "Feedback to the developer",
+    "lead": "Found a bug? Missing a shop or a board model? Tell us — this message goes straight to the developer and is never shown publicly.",
+    "kindLabel": "What is it about?",
+    "kind": {
+      "bug": "I found a bug",
+      "shop": "Missing shop / where to buy",
+      "board": "Missing board model",
+      "idea": "Idea or suggestion",
+      "other": "Other"
+    },
+    "messageLabel": "Description",
+    "messagePlaceholder": "For a shop or model suggestion, a link helps the most.",
+    "messageHint": "At least {{min}} characters. Please don't include contact details — we can reach you through your account.",
+    "pageLabel": "From which page",
+    "submit": "Send",
+    "thanks": "Thank you! We got your feedback.",
+    "loginRequired": "You need to sign in to send feedback — that lets us follow up, and keeps spam out.",
+    "confirmRequired": "Please confirm your email address before sending feedback.",
+    "error": {
+      "tooShort": "The description is too short — write at least one sentence.",
+      "tooLong": "The description is too long.",
+      "invalidKind": "Pick what this is about.",
+      "rateLimited": "You can send at most 5 pieces of feedback per hour. Try again later.",
+      "failed": "Sending failed. Please try again."
+    },
+    "admin": {
+      "title": "Feedback",
+      "lead": "Bug reports and suggestions from users. Not public content.",
+      "empty": "No feedback to show.",
+      "filterAll": "All",
+      "statusLabel": "Status",
+      "status": {
+        "new": "New",
+        "in_progress": "In progress",
+        "done": "Done",
+        "rejected": "Rejected"
+      },
+      "noteLabel": "Note",
+      "save": "Save",
+      "fromPage": "Sent from",
+      "saved": "Saved."
+    },
+    "prompt": {
+      "board": "Is a board model missing from the catalog?",
+      "shop": "Is a shop or place to buy missing?",
+      "bug": "Found a bug on this page?",
+      "idea": "Any idea about what's missing?",
+      "other": "Anything else to tell us?",
+      "cta": "Let us know."
+    }
   }
 }

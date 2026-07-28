@@ -97,6 +97,10 @@ function SiteFooter() {
         <Link to="/adatvedelem" className="hover:text-petrol-text hover:underline">
           {t("consent.privacyLink")}
         </Link>
+        {/* Visszajelzés-csatorna (F2.2): hiba, hiányzó bolt vagy deszka-modell. */}
+        <Link to="/visszajelzes" className="hover:text-petrol-text hover:underline">
+          {t("feedback.nav")}
+        </Link>
       </nav>
     </footer>
   );

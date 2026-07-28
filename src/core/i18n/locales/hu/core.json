@@ -169,5 +169,58 @@
       "provider_created": "Új szolgáltató",
       "push_subscribed": "Viharjelzés-feliratkozás"
     }
+  },
+  "feedback": {
+    "nav": "Hiba jelentése · javaslat",
+    "title": "Visszajelzés a fejlesztőnek",
+    "lead": "Találtál hibát? Hiányzik egy bolt vagy egy deszka-modell? Írd meg — ez az üzenet közvetlenül a fejlesztőhöz jut, sehol nem jelenik meg nyilvánosan.",
+    "kindLabel": "Miről van szó?",
+    "kind": {
+      "bug": "Hibát találtam",
+      "shop": "Hiányzó bolt / beszerzési hely",
+      "board": "Hiányzó deszka-modell",
+      "idea": "Ötlet, javaslat",
+      "other": "Egyéb"
+    },
+    "messageLabel": "Leírás",
+    "messagePlaceholder": "Bolt vagy modell javaslatnál a link a leghasznosabb.",
+    "messageHint": "Legalább {{min}} karakter. Elérhetőséget ne írj ide — a fiókodon keresztül elérünk.",
+    "pageLabel": "Melyik oldalról",
+    "submit": "Elküldöm",
+    "thanks": "Köszönjük! Megkaptuk a visszajelzést.",
+    "loginRequired": "A visszajelzéshez be kell jelentkezned — így tudunk visszakérdezni, és ez véd a szemét-üzenetektől.",
+    "confirmRequired": "Erősítsd meg az e-mail-címedet, mielőtt visszajelzést küldesz.",
+    "error": {
+      "tooShort": "Túl rövid a leírás — írj le legalább egy mondatot.",
+      "tooLong": "Túl hosszú a leírás.",
+      "invalidKind": "Válaszd ki, miről van szó.",
+      "rateLimited": "Egy órán belül legfeljebb 5 visszajelzés küldhető. Próbáld később.",
+      "failed": "A küldés nem sikerült. Próbáld újra."
+    },
+    "admin": {
+      "title": "Visszajelzések",
+      "lead": "A felhasználók hibajelentései és javaslatai. Nem publikus tartalom.",
+      "empty": "Nincs megjeleníthető visszajelzés.",
+      "filterAll": "Mind",
+      "statusLabel": "Állapot",
+      "status": {
+        "new": "Új",
+        "in_progress": "Folyamatban",
+        "done": "Kész",
+        "rejected": "Elvetve"
+      },
+      "noteLabel": "Jegyzet",
+      "save": "Mentés",
+      "fromPage": "Beküldve innen",
+      "saved": "Mentve."
+    },
+    "prompt": {
+      "board": "Hiányzik egy deszka-modell a katalógusból?",
+      "shop": "Hiányzik egy bolt vagy beszerzési hely?",
+      "bug": "Hibát találtál ezen az oldalon?",
+      "idea": "Van ötleted, mi hiányzik?",
+      "other": "Bármi más észrevétel?",
+      "cta": "Írd meg nekünk."
+    }
   }
 }

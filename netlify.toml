@@ -65,6 +65,12 @@
 #   SITE_USERNAME                  felhasználónév (opcionális, default "sup")
 #   SITE_PUBLIC                    "true" → kapu ki (éles nyilvánossá tételkor)
 #
+# A visszajelzés-csatorna e-mail-értesítéséhez (opcionális, F2.2):
+#   RESEND_API_KEY                 Resend API-kulcs (titok, csak a Netlify UI-ban)
+#   FEEDBACK_TO_EMAIL              ide érkezik az értesítés
+#   FEEDBACK_FROM_EMAIL            feladó (default: Suptime <noreply@suptime.hu>)
+#   Bármelyik hiányában az értesítés kimarad — a visszajelzés a DB-ben megvan.
+#
 # TITOK IDE NEM KERÜLHET: a Supabase secret/service_role kulcs és a VAPID PRIVÁT
 # kulcs kizárólag a Supabase Edge Function secrets-ben él.
 # ---------------------------------------------------------------------------

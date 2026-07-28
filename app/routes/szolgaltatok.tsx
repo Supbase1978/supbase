@@ -13,6 +13,7 @@ import { createSupabaseServerClient } from "@core/auth/supabase.server";
 import { getLocaleFromPath, pickTranslated, serverT } from "@core/i18n";
 import { buildPageSeo } from "@core/seo/page-seo";
 import { cx } from "@core/ui";
+import { FeedbackPrompt } from "@core/feedback/FeedbackPrompt";
 import { listProviders } from "@modules/providers/data/providers.server";
 import { ProviderCard, type ProviderCardData } from "@modules/providers/ui/ProviderCard";
 import { PROVIDER_SERVICE_TYPES, type ProviderServiceType } from "@modules/providers/types";
@@ -101,6 +102,8 @@ export default function ProvidersListRoute({ loaderData }: Route.ComponentProps)
           ))}
         </ul>
       )}
+
+      <FeedbackPrompt kind="shop" path="/szolgaltatok" />
     </main>
   );
 }

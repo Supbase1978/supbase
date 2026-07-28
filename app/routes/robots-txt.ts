@@ -18,6 +18,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
     "Disallow: /auth/",
     "Disallow: /api/",
     "Disallow: /szolgaltatok/uj",
+    // Bejelentkezés mögötti űrlap (F2.2) — nincs SEO-értéke.
+    "Disallow: /visszajelzes",
     "",
     `Sitemap: ${origin}/sitemap.xml`,
     "",

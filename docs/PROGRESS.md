@@ -19,6 +19,7 @@
 | F1.9 Push + viharjelzés | ✅ kész (2026-07-25) | teljes web push-pipeline (VAPID + RFC 8291 natív Web Cryptóval, npm nélkül), storm-alert push-ág, feliratkozó-UI, m4 `observed_at`. Élesítve (5 migráció + secretek + deploy) és **böngészőben végponttól végpontig verifikálva: a viharjelzés-push megérkezett**. Részletek lent |
 | F1.11 Folyó-vízállás (5.1/6) | ✅ kész + élesítve (2026-07-27) | vizugy.hu (OVF) REST API, HIVATALOS árvízvédelmi készültségi küszöbökkel; a fix −1 folyó-büntetés helyett fokozat-alapú index-plafon. Élesben verifikálva, cron írja. + F1.11b: póráz-figyelmeztetés folyóvízre |
 | F1.12 Analitika (süti-mentes) | ✅ kész + élesítve (2026-07-28) | `analytics_events` + definer-RPC + `/admin/analitika`. Nincs süti/IP/azonosító → nincs egyéni tölcsér, csak darabszám. Robot/DNT/dev nem számol |
+| F2.2 Visszajelzés-csatorna | ✅ kód kész (2026-07-28) | `/visszajelzes` (hiba · hiányzó bolt · hiányzó modell) + `/admin/visszajelzesek`. HÁTRA: migráció éles push + böngésző-verifikáció |
 | F2.1 catalog-watch piacfigyelő | ✅ kód kész (2026-07-28) | crawler + CLI + `/admin/katalogus` moderáció + heti GH Actions cron. HÁTRA: valós HU források bekötése és az első éles crawl (felhasználói döntés) |
 | F1.10 Záró audit + élesítés | ✅ audit **26/26** (2026-07-27) | **`docs/AUDIT_F1.md`**: az audit két mérés-jellegű hiánya pótolva (vizuális regresszió 07-26, teljesítmény-budget 07-27). HÁTRA az F1 lezárásához a publikussá tétel — a lépések a `RUNBOOK.md` **élesítési checklistjében** (domain → Resend-SMTP → Turnstile → cégadatok → `SITE_PUBLIC=true`), mind felhasználói döntés/adat |
 
@@ -156,6 +157,53 @@ először az árnyékolásra gyanakodj — a gépen több változó is idegen fi
 - **Az admin felület böngésző-verifikációja** moderátor-sessionnel (jelölt-
   kártya renderelése, jóváhagyás→új deszka). Ehhez admin-belépés kell.
 - **GitHub-secretek** a cronhoz: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`.
+
+## F2.2 — Visszajelzés-csatorna a fejlesztőnek (2026-07-28)
+
+Felhasználói kérés a katalógus-források felderítése közben: kelljen egy felület,
+ahol a felhasználó **hibát jelenthet**, illetve **hiányzó boltot vagy
+deszka-modellt javasolhat** — a tartalom NEM a nagyközönségnek, hanem a
+fejlesztőnek szól. Minta: a PecApp `send-feedback` megoldása. Kapuk zöldek:
+typecheck · lint · **728 vitest**.
+
+**Elkészült:**
+- ÚJ core-migráció `20260717092100_core_feedback.sql`: `feedback` tábla
+  (kind: bug/shop/board/idea/other, message, page_path, status, admin_note).
+  RLS: **írni** csak bejelentkezett, megerősített e-mailű user a SAJÁT nevében;
+  **olvasni CSAK admin** (a beküldő a saját sorát sem látja vissza — ez nem
+  közösségi felület); **állapotot** csak admin ír. Oszlop-védő trigger
+  (a beküldő nem állíthatja magát „kész"-re) + **gyakoriság-korlát
+  definer-triggerben** (óránként 5/user).
+- pgTAP `07_feedback_test.sql`: saját néven írás, idegen név tiltva,
+  e-mail-gate, anonim tiltás, admin-olvasás/állapotkezelés, rate limit,
+  hossz- és kind-kényszerek.
+- `@core/feedback`: adatréteg + tiszta validálás (13 teszt) és **best-effort
+  Resend-értesítés** (13+4 teszt; kulcs nélkül csendben kimarad, a levél HTML-
+  escape-eli a beküldött szabad szöveget).
+- `/visszajelzes` űrlap (requireUser + e-mail-gate, `?tema=`/`?ut=`
+  előválasztással) és `/admin/visszajelzesek` (szűrés állapotra, jegyzet).
+  Mindkettő CORE-route, mint az F1.12 analitika — a csatorna keresztmetszeti.
+- Belépési pontok: lábléc-link mindenhol, plusz kontextusos hívás a
+  `/deszkak` és `/szolgaltatok` lista alján (`FeedbackPrompt`).
+
+**Miért kötelező a bejelentkezés:** a hitelesítés nélküli visszajelzés-végpont
+levélbombázható és szemét-özönnel eltömíthető — ez a hiba a testvér-projektben
+élesben elő is fordult. A projekt vélemény- és jelentés-folyamatai ugyanígy
+e-mail-gate-eltek.
+
+**A gyakoriság-korlát az ADATBÁZISBAN van**, nem az alkalmazásban: a beküldő a
+saját sorait sem olvashatja vissza (admin-only select), tehát az app nem tudná
+megszámolni őket; és így a korlát a REST-en át is él, nem csak a mi űrlapunkon.
+
+**Verifikáció:** `/visszajelzes` kijelentkezve → 302 a belépőre;
+`/admin/visszajelzesek` → 302; a lábléc-link és a `/deszkak` kontextusos hívás
+renderel; robots.txt tiltja a `/visszajelzes`-t. A lap-szélesség invariáns
+teszt **elkapott két eltérést** (max-w-2xl/4xl a kötelező max-w-5xl helyett) —
+javítva.
+
+**HÁTRA:** a migráció éles push-a (jóváhagyással) · a beküldés böngésző-
+verifikációja bejelentkezett fiókkal · `RESEND_API_KEY` + `FEEDBACK_TO_EMAIL`
+beállítása, ha kell e-mail-értesítés (addig a DB + admin felület a csatorna).
 
 ## F1.0 — Projekt-setup (2026-07-17)
 
