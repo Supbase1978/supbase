@@ -60,7 +60,13 @@ export function computeReviewAggregate(rows: readonly BoardReviewRow[]): ReviewA
     ]),
   ) as Record<ReviewDimension, number | null>;
 
-  const recommendCount = published.filter((r) => r.rating_overall >= 4).length;
+  // Explicit ajánlás elsőbbsége (F2.3 2. szakasz, terv 156. sor): ha a
+  // beküldő megválaszolta az „ajánlom/nem ajánlom" kérdést, az számít; ha
+  // `null` (a mező bevezetése ELŐTTI vélemény), a régi rating_overall>=4
+  // szabály marad — a meglévő százalékok így nem torzulnak visszamenőleg.
+  const recommendCount = published.filter((r) =>
+    r.would_recommend !== null ? r.would_recommend : r.rating_overall >= 4,
+  ).length;
   const percentRecommend = Math.round((recommendCount / count) * 100);
 
   const verifiedCount = published.filter((r) => r.verified_owner).length;

@@ -18,15 +18,17 @@ import { Link } from "react-router";
 
 import { recordEvent } from "@core/analytics/analytics.server";
 import { createSupabaseServerClient } from "@core/auth/supabase.server";
-import { getLocaleFromPath, serverT } from "@core/i18n";
+import { getLocaleFromPath, pickTranslated, serverT } from "@core/i18n";
 import { buildPageSeo } from "@core/seo/page-seo";
 import { Card, SafetyNote } from "@core/ui";
+import { listAccessories } from "@modules/catalog/data/boards.server";
 import {
   CORE_SAFETY_SOURCE,
   isGearCategory,
   OWN_SAFETY_CATEGORIES,
   type GearCategory,
 } from "@modules/catalog/gear";
+import { AccessoryCard } from "@modules/catalog/ui/AccessoryCard";
 
 import type { Route } from "./+types/felszereles.$kategoria";
 
@@ -40,6 +42,8 @@ export async function loader({ request, params }: Route.LoaderArgs) {
   const { supabase } = createSupabaseServerClient(request);
   await recordEvent(supabase, request, "page_view");
 
+  const accessories = await listAccessories(supabase, kategoria);
+
   const t = serverT(locale, "catalog");
   const seo = buildPageSeo({
     request,
@@ -51,7 +55,18 @@ export async function loader({ request, params }: Route.LoaderArgs) {
     }),
   });
 
-  return { seo, category: kategoria };
+  return {
+    seo,
+    category: kategoria,
+    products: accessories.map((a) => ({
+      id: a.id,
+      slug: pickTranslated(a.slug, locale),
+      modelName: a.model_name,
+      brandName: a.brand?.name ?? null,
+      category: kategoria,
+      imageUrl: a.image_url,
+    })),
+  };
 }
 
 export const meta: Route.MetaFunction = ({ data }) => data?.seo ?? [];
@@ -68,7 +83,7 @@ function safetySourceFor(category: GearCategory): "core-leash" | "core-pfd" | "o
 export default function GearCategoryRoute({ loaderData }: Route.ComponentProps) {
   const { t } = useTranslation("catalog");
   const { t: tCore } = useTranslation("core");
-  const { category } = loaderData;
+  const { category, products } = loaderData;
 
   const safetySource = safetySourceFor(category);
 
@@ -114,6 +129,21 @@ export default function GearCategoryRoute({ loaderData }: Route.ComponentProps) 
           <p>{t(`gear.categories.${category}.safety.body`)}</p>
         </SafetyNote>
       ) : null}
+
+      <section className="flex flex-col gap-2">
+        <h2 className="text-lg font-semibold text-ink-deep">{t("gear.detail.productsTitle")}</h2>
+        {products.length === 0 ? (
+          <Card>
+            <p className="text-sm text-text-2">{t("gear.detail.productsEmpty")}</p>
+          </Card>
+        ) : (
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {products.map((product) => (
+              <AccessoryCard key={product.id} accessory={product} />
+            ))}
+          </div>
+        )}
+      </section>
 
       <Card>
         <h2 className="text-lg font-semibold text-ink-deep">{t("gear.detail.relatedTitle")}</h2>

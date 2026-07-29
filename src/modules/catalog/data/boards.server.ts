@@ -5,7 +5,8 @@
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-import type { BoardPriceRow, BoardWithBrand } from "../types";
+import type { GearCategory } from "../gear";
+import type { AccessoryWithBrand, BoardPriceRow, BoardWithBrand } from "../types";
 
 /** Slug-alak: kisbetű/szám/kötőjel — minden seed-slug ilyen (3.1 jsonb slug). */
 const SLUG_PATTERN = /^[a-z0-9-]+$/;
@@ -55,6 +56,53 @@ export async function getBoardBySlug(
     return null;
   }
   return data as unknown as BoardWithBrand;
+}
+
+/**
+ * Egy kiegészítő (`kind='accessory'`) kategória + slug szerint — a
+ * `/felszereles/:kategoria/:slug` adatlapé. KÜLÖN függvény a `getBoardBySlug`-tól
+ * (nem bővítjük ki azt kind-paraméterrel): a kettő más invariánst őriz — ez itt
+ * MINDIG `kind='accessory'`-ra ÉS a megadott kategóriára szűr, hogy egy deszka
+ * vagy más kategória slugja véletlenül se jelenjen meg felszerelés-adatlapként.
+ */
+export async function getAccessoryBySlug(
+  supabase: SupabaseClient,
+  category: GearCategory,
+  slug: string,
+): Promise<AccessoryWithBrand | null> {
+  if (!SLUG_PATTERN.test(slug)) {
+    return null;
+  }
+  const { data, error } = await supabase
+    .from("boards")
+    .select("*, brand:brands(*)")
+    .eq("kind", "accessory")
+    .eq("accessory_type", category)
+    .or(`slug->>hu.eq.${slug},slug->>en.eq.${slug}`)
+    .maybeSingle();
+  if (error || !data) {
+    return null;
+  }
+  return data as unknown as AccessoryWithBrand;
+}
+
+/**
+ * Kiegészítők listája — `category` nélkül minden felszerelés-sor (sitemaphez),
+ * `category`-val egy kategória termékei (`/felszereles/:kategoria` listához).
+ */
+export async function listAccessories(
+  supabase: SupabaseClient,
+  category?: GearCategory,
+): Promise<AccessoryWithBrand[]> {
+  let query = supabase.from("boards").select("*, brand:brands(*)").eq("kind", "accessory");
+  if (category) {
+    query = query.eq("accessory_type", category);
+  }
+  const { data, error } = await query.order("model_name", { ascending: true });
+  if (error || !data) {
+    return [];
+  }
+  return data as unknown as AccessoryWithBrand[];
 }
 
 /** Egy deszka bolti árai, legolcsóbb elöl (ár-sávos „X e Ft-tól" megjelenítéshez). */

@@ -9,7 +9,9 @@
  *
  * A `/felszereles` + `/felszereles/:kategoria` route-ok (F2.3 1. szakasz) a
  * kiegészítők statikus útmutató-tartalmát adják — séma-módosítás NÉLKÜL, lásd
- * `./gear.ts`.
+ * `./gear.ts`. A `/felszereles/:kategoria/:slug` (F2.3 2. szakasz) a
+ * termékszintű kiegészítő-adatlap — ugyanaz a catalog↔reviews route-szintű
+ * kompozíció, mint a `/deszkak/:slug`-nál.
  */
 import type { ModuleManifest } from "@core/module-contract";
 
@@ -20,6 +22,7 @@ export const catalogModule: ModuleManifest = {
     { path: "deszkak/:slug", file: "routes/deszkak.$slug.tsx" },
     { path: "felszereles", file: "routes/felszereles.tsx" },
     { path: "felszereles/:kategoria", file: "routes/felszereles.$kategoria.tsx" },
+    { path: "felszereles/:kategoria/:slug", file: "routes/felszereles.$kategoria.$slug.tsx" },
   ],
   nav: [
     { labelKey: "nav.boards", path: "/deszkak", placement: "primary", order: 10 },

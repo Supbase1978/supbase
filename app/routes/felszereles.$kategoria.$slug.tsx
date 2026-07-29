@@ -1,11 +1,14 @@
 /**
- * /deszkak/:slug — deszka-adatlap (F1.5). A catalog (deszka) és a reviews
- * (Közös nevező) modul összekötése KIZÁRÓLAG itt, a route-rétegben történik
- * (1.3 modul-szerződés: a catalog nem importál reviews-t és fordítva).
+ * /felszereles/:kategoria/:slug — kiegészítő-adatlap (F2.3 2. szakasz). A
+ * catalog (kiegészítő) és a reviews (Közös nevező) modul összekötése
+ * KIZÁRÓLAG itt, a route-rétegben történik (1.3 modul-szerződés) — ugyanaz a
+ * minta, mint a `/deszkak/:slug`-nál (`deszkak.$slug.tsx`).
  *
- * A komponens a modulok UI-komponenseiből komponál: `BoardHero`, `ReviewSummary`
- * (RatingBar-okkal — NEM a biztonsági Gauge, NEM danger), `ReviewCard` +
- * `FlagButton`, plusz a natív vélemény-űrlap (e-mail-gate).
+ * A Közös nevező itt DIMENZIÓK NÉLKÜL jelenik meg (`getReviewDimensions
+ * ("accessory")` → `[]`): a 4 deszka-szempont (stabilitás/siklás/építés/
+ * ár-érték) egy evezőn vagy pumpán értelmetlen — csak az összesített pontszám,
+ * a % ajánlaná és a szabad szöveg számít. Az űrlap ezért sem kéri a
+ * dimenzió-bontást, csak az összbenyomást + az explicit „ajánlom/nem ajánlom"-ot.
  */
 import { useTranslation } from "react-i18next";
 import { data, Form, Link } from "react-router";
@@ -19,7 +22,8 @@ import { absoluteUrl, buildPageSeo } from "@core/seo/page-seo";
 import { productJsonLd } from "@core/seo/jsonld";
 import { JsonLd } from "@core/seo/json-ld";
 import { Button, Card, StatusBadge } from "@core/ui";
-import { getBoardBySlug, listBoardPrices } from "@modules/catalog/data/boards.server";
+import { getAccessoryBySlug, listBoardPrices } from "@modules/catalog/data/boards.server";
+import { isGearCategory } from "@modules/catalog/gear";
 import { BoardHero } from "@modules/catalog/ui/BoardHero";
 import { computeReviewAggregate, toTen } from "@modules/reviews/aggregate";
 import {
@@ -31,17 +35,10 @@ import {
 import { FlagButton } from "@modules/reviews/ui/FlagButton";
 import { ReviewCard } from "@modules/reviews/ui/ReviewCard";
 import { ReviewSummary } from "@modules/reviews/ui/ReviewSummary";
-import {
-  isFlagReason,
-  isUsedWaterType,
-  REVIEW_DIMENSIONS,
-  USED_WATER_TYPES,
-  type ReviewDimension,
-} from "@modules/reviews/types";
+import { getReviewDimensions, isFlagReason } from "@modules/reviews/types";
 
-import type { Route } from "./+types/deszkak.$slug";
+import type { Route } from "./+types/felszereles.$kategoria.$slug";
 
-/** formData → 1–5 rating vagy null (üres/„-" választás). */
 function parseRating(value: FormDataEntryValue | null): number | null {
   if (typeof value !== "string" || value.trim() === "") {
     return null;
@@ -54,7 +51,6 @@ function trimmedOrNull(value: FormDataEntryValue | null): string | null {
   return typeof value === "string" && value.trim().length > 0 ? value.trim() : null;
 }
 
-/** formData „yes"/"no"/üres → explicit boolean vagy null (F2.3 2. szakasz). */
 function parseWouldRecommend(value: FormDataEntryValue | null): boolean | null {
   if (value === "yes") return true;
   if (value === "no") return false;
@@ -62,8 +58,9 @@ function parseWouldRecommend(value: FormDataEntryValue | null): boolean | null {
 }
 
 export async function loader({ request, params }: Route.LoaderArgs) {
+  const kategoria = params.kategoria;
   const slug = params.slug;
-  if (!slug) {
+  if (!kategoria || !isGearCategory(kategoria) || !slug) {
     throw new Response("Not Found", { status: 404 });
   }
 
@@ -71,42 +68,42 @@ export async function loader({ request, params }: Route.LoaderArgs) {
   const { supabase } = createSupabaseServerClient(request);
   await recordEvent(supabase, request, "page_view");
 
-  const board = await getBoardBySlug(supabase, slug);
-  if (!board) {
+  const accessory = await getAccessoryBySlug(supabase, kategoria, slug);
+  if (!accessory) {
     throw new Response("Not Found", { status: 404 });
   }
 
   const [prices, reviewRows, user] = await Promise.all([
-    listBoardPrices(supabase, board.id),
-    listReviews(supabase, board.id, { publishedOnly: true }),
+    listBoardPrices(supabase, accessory.id),
+    listReviews(supabase, accessory.id, { publishedOnly: true }),
     getUser(request),
   ]);
 
   const aggregate = computeReviewAggregate(reviewRows);
-  const ownReview = user ? await getUserReview(supabase, board.id, user.id) : null;
+  const ownReview = user ? await getUserReview(supabase, accessory.id, user.id) : null;
 
   const t = serverT(locale, "catalog");
-  const detailPath = `/deszkak/${pickTranslated(board.slug, locale)}`;
+  const detailPath = `/felszereles/${kategoria}/${pickTranslated(accessory.slug, locale)}`;
   const canonicalUrl = absoluteUrl(request, detailPath, locale);
-  const brandSuffix = board.brand?.name ? ` — ${board.brand.name}` : "";
-  const description = pickTranslated(board.description, locale) || undefined;
+  const description = pickTranslated(accessory.description, locale) || undefined;
   const seo = buildPageSeo({
     request,
     locale,
     path: detailPath,
-    title: t("seo.detail.title", { model: board.model_name }),
-    description: t("seo.detail.description", { model: board.model_name, brandSuffix }),
-    // A deszka saját terméképe beszédesebb megosztás-kártya, mint az általános
-    // márka-kártya; hiányában a `resolveOgImage` az alapértelmezettre esik.
-    imagePath: board.image_url,
+    title: t("seo.detail.title", { model: accessory.model_name }),
+    description: t("seo.detail.description", {
+      model: accessory.model_name,
+      brandSuffix: accessory.brand?.name ? ` — ${accessory.brand.name}` : "",
+    }),
+    imagePath: accessory.image_url,
   });
 
   const jsonLd = productJsonLd({
-    name: board.model_name,
+    name: accessory.model_name,
     description,
-    brand: board.brand?.name ?? undefined,
+    brand: accessory.brand?.name ?? undefined,
     url: canonicalUrl,
-    image: board.image_url ?? undefined,
+    image: accessory.image_url ?? undefined,
     aggregateRating:
       aggregate.count > 0 && aggregate.avgOverall !== null
         ? { ratingValue: aggregate.avgOverall, reviewCount: aggregate.count }
@@ -122,26 +119,18 @@ export async function loader({ request, params }: Route.LoaderArgs) {
   return {
     seo,
     jsonLd,
-    board: {
-      id: board.id,
-      slug: pickTranslated(board.slug, locale),
-      modelName: board.model_name,
-      modelYear: board.model_year,
-      brandName: board.brand?.name ?? null,
-      boardType: board.board_type,
-      lengthCm: board.length_cm,
-      widthCm: board.width_cm,
-      thicknessCm: board.thickness_cm,
-      volumeL: board.volume_l,
-      weightKg: board.weight_kg,
-      riderWeightMinKg: board.rider_weight_min_kg,
-      riderWeightMaxKg: board.rider_weight_max_kg,
-      maxLoadKg: board.max_load_kg,
-      inflatable: board.inflatable,
-      stabilityIndex: board.stability_index,
-      manualUrl: board.manual_url,
-      imageUrl: board.image_url,
-      description: pickTranslated(board.description, locale) || null,
+    category: kategoria,
+    accessory: {
+      id: accessory.id,
+      slug: pickTranslated(accessory.slug, locale),
+      modelName: accessory.model_name,
+      modelYear: accessory.model_year,
+      brandName: accessory.brand?.name ?? null,
+      lengthCm: accessory.length_cm,
+      widthCm: accessory.width_cm,
+      weightKg: accessory.weight_kg,
+      imageUrl: accessory.image_url,
+      description: pickTranslated(accessory.description, locale) || null,
     },
     prices: prices.map((p) => ({
       id: p.id,
@@ -150,10 +139,6 @@ export async function loader({ request, params }: Route.LoaderArgs) {
       priceHuf: p.price_huf,
     })),
     aggregate,
-    // A Közös nevező-mércékhez 10-es skálázott dimenzió-értékek (1–5 → *2).
-    dimensionsTen: Object.fromEntries(
-      REVIEW_DIMENSIONS.map((dim) => [dim, toTen(aggregate.perDimension[dim])]),
-    ) as Record<ReviewDimension, number | null>,
     overallTen: toTen(aggregate.avgOverall),
     reviews: reviewRows.map((r) => ({
       id: r.id,
@@ -184,8 +169,9 @@ type ActionResult =
     };
 
 export async function action({ request, params }: Route.ActionArgs) {
+  const kategoria = params.kategoria;
   const slug = params.slug;
-  if (!slug) {
+  if (!kategoria || !isGearCategory(kategoria) || !slug) {
     throw new Response("Not Found", { status: 404 });
   }
 
@@ -196,8 +182,8 @@ export async function action({ request, params }: Route.ActionArgs) {
     return data<ActionResult>({ ok: false, errorKey: "form.confirmPrompt" }, { headers });
   }
 
-  const board = await getBoardBySlug(supabase, slug);
-  if (!board) {
+  const accessory = await getAccessoryBySlug(supabase, kategoria, slug);
+  if (!accessory) {
     throw new Response("Not Found", { status: 404 });
   }
 
@@ -221,19 +207,15 @@ export async function action({ request, params }: Route.ActionArgs) {
       : data<ActionResult>({ ok: false, errorKey: result.errorKey }, { headers });
   }
 
-  // Alapértelmezett: vélemény-beküldés.
-  const usedWaterTypeRaw = String(formData.get("usedWaterType") ?? "");
+  // Alapértelmezett: vélemény-beküldés. Nincs dimenzió-bontás (getReviewDimensions
+  // ("accessory") === []) — a kiegészítő-review csak az összbenyomást, az
+  // explicit ajánlást és a szabad szöveget kéri.
   const result = await insertReview(supabase, {
-    board_id: board.id,
+    board_id: accessory.id,
     user_id: user.id,
     rating_overall: parseRating(formData.get("ratingOverall")) ?? 0,
-    rating_stability: parseRating(formData.get("ratingStability")),
-    rating_glide: parseRating(formData.get("ratingGlide")),
-    rating_build: parseRating(formData.get("ratingBuild")),
-    rating_value: parseRating(formData.get("ratingValue")),
     text_pros: trimmedOrNull(formData.get("textPros")),
     text_cons: trimmedOrNull(formData.get("textCons")),
-    used_water_type: isUsedWaterType(usedWaterTypeRaw) ? usedWaterTypeRaw : null,
     would_recommend: parseWouldRecommend(formData.get("wouldRecommend")),
   });
 
@@ -249,10 +231,10 @@ export const meta: Route.MetaFunction = ({ data }) => data?.seo ?? [];
 
 const RATING_OPTIONS = [1, 2, 3, 4, 5] as const;
 
-export default function BoardDetailRoute({ loaderData, actionData }: Route.ComponentProps) {
+export default function AccessoryDetailRoute({ loaderData, actionData }: Route.ComponentProps) {
   const { t } = useTranslation("catalog");
   const { t: tr, i18n } = useTranslation("reviews");
-  const { board, prices, aggregate, dimensionsTen, overallTen, reviews, reviewForm, jsonLd } =
+  const { category, accessory, prices, aggregate, overallTen, reviews, reviewForm, jsonLd } =
     loaderData;
 
   const cheapest = prices.length > 0 ? prices[0] : null;
@@ -263,13 +245,19 @@ export default function BoardDetailRoute({ loaderData, actionData }: Route.Compo
     <main className="mx-auto flex min-h-svh max-w-5xl flex-col gap-6 p-4 sm:p-6">
       <JsonLd data={jsonLd} />
       <header className="flex flex-col gap-2">
-        <BoardHero modelName={board.modelName} imageUrl={board.imageUrl} />
+        <Link
+          to={`/felszereles/${category}`}
+          className="text-sm font-semibold text-petrol-text underline"
+        >
+          {t(`gear.categories.${category}.title`)}
+        </Link>
+        <BoardHero modelName={accessory.modelName} imageUrl={accessory.imageUrl} />
         <div className="flex flex-wrap items-baseline justify-between gap-2">
           <h1
             className="text-3xl font-semibold text-ink-deep"
             style={{ fontFamily: "var(--font-display)" }}
           >
-            {board.modelName}
+            {accessory.modelName}
           </h1>
           {cheapest ? (
             <span className="text-lg font-bold text-text">
@@ -278,33 +266,25 @@ export default function BoardDetailRoute({ loaderData, actionData }: Route.Compo
           ) : null}
         </div>
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-text-2">
-          {board.brandName ? <span>{board.brandName}</span> : null}
-          <span>· {t(`boardType.${board.boardType}`)}</span>
-          {board.modelYear ? <span>· {board.modelYear}</span> : null}
-          <span>· {t(`inflatable.${board.inflatable}`)}</span>
+          {accessory.brandName ? <span>{accessory.brandName}</span> : null}
+          {accessory.modelYear ? <span>· {accessory.modelYear}</span> : null}
         </div>
       </header>
 
-      {/* Paraméterek */}
-      <Card>
-        <h2 className="text-lg font-semibold text-ink-deep">{t("detail.specs")}</h2>
-        <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-sm text-text-2">
-          <SpecItem label={t("spec.length")} value={board.lengthCm} unit="cm" />
-          <SpecItem label={t("spec.width")} value={board.widthCm} unit="cm" />
-          <SpecItem label={t("spec.thickness")} value={board.thicknessCm} unit="cm" />
-          <SpecItem label={t("spec.volume")} value={board.volumeL} unit="l" />
-          <SpecItem label={t("spec.weight")} value={board.weightKg} unit="kg" />
-          <SpecItem label={t("spec.maxLoad")} value={board.maxLoadKg} unit="kg" />
-          <SpecItem label={t("spec.stabilityIndex")} value={board.stabilityIndex} />
-        </dl>
-        {board.description ? (
-          <p className="mt-3 text-sm text-text-2">{board.description}</p>
-        ) : null}
-      </Card>
+      {accessory.lengthCm || accessory.weightKg ? (
+        <Card>
+          <h2 className="text-lg font-semibold text-ink-deep">{t("detail.specs")}</h2>
+          <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-sm text-text-2">
+            <SpecItem label={t("spec.length")} value={accessory.lengthCm} unit="cm" />
+            <SpecItem label={t("spec.width")} value={accessory.widthCm} unit="cm" />
+            <SpecItem label={t("spec.weight")} value={accessory.weightKg} unit="kg" />
+          </dl>
+          {accessory.description ? (
+            <p className="mt-3 text-sm text-text-2">{accessory.description}</p>
+          ) : null}
+        </Card>
+      ) : null}
 
-      {/* Közös nevező — a `kozos-nevezo` horgonyra a Deszkaválasztó
-          eredmény-kártyája is hivatkozik (`/deszkak/<slug>#kozos-nevezo`).
-          `scroll-mt` a fejléc alá görgetéshez. */}
       <div id="kozos-nevezo" className="scroll-mt-4">
         <ReviewSummary
           count={aggregate.count}
@@ -312,11 +292,11 @@ export default function BoardDetailRoute({ loaderData, actionData }: Route.Compo
           overallTen={overallTen}
           percentRecommend={aggregate.percentRecommend}
           verifiedCount={aggregate.verifiedCount}
-          dimensionsTen={dimensionsTen}
+          dimensionsTen={{ stability: null, glide: null, build: null, value: null }}
+          dimensions={getReviewDimensions("accessory")}
         />
       </div>
 
-      {/* Vélemény-lista */}
       {reviews.length > 0 ? (
         <ul className="flex flex-col gap-3">
           {reviews.map((review) => (
@@ -329,7 +309,6 @@ export default function BoardDetailRoute({ loaderData, actionData }: Route.Compo
         </ul>
       ) : null}
 
-      {/* Vélemény-űrlap (e-mail-gate) */}
       <Card>
         <h2 className="text-lg font-semibold text-ink-deep">{tr("form.title")}</h2>
         {!reviewForm.isLoggedIn ? (
@@ -359,28 +338,6 @@ export default function BoardDetailRoute({ loaderData, actionData }: Route.Compo
               <option value="">—</option>
               <option value="yes">{tr("form.wouldRecommendYes")}</option>
               <option value="no">{tr("form.wouldRecommendNo")}</option>
-            </select>
-
-            <RatingSelect name="ratingStability" label={tr("form.stability")} />
-            <RatingSelect name="ratingGlide" label={tr("form.glide")} />
-            <RatingSelect name="ratingBuild" label={tr("form.build")} />
-            <RatingSelect name="ratingValue" label={tr("form.value")} />
-
-            <label htmlFor="usedWaterType" className="text-sm font-semibold text-text-2">
-              {tr("form.usedWaterType")}
-            </label>
-            <select
-              id="usedWaterType"
-              name="usedWaterType"
-              defaultValue=""
-              className="rounded-[var(--radius-card)] border border-line px-3 py-2 text-sm"
-            >
-              <option value="">—</option>
-              {USED_WATER_TYPES.map((w) => (
-                <option key={w} value={w}>
-                  {tr(`waterType.${w}`)}
-                </option>
-              ))}
             </select>
 
             <label htmlFor="textPros" className="text-sm font-semibold text-text-2">
@@ -418,7 +375,6 @@ export default function BoardDetailRoute({ loaderData, actionData }: Route.Compo
         ) : null}
       </Card>
 
-      {/* Hol kapható */}
       <Card>
         <h2 className="text-lg font-semibold text-ink-deep">{t("detail.prices")}</h2>
         {prices.length === 0 ? (

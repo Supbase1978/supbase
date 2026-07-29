@@ -56,6 +56,14 @@ describe("ReviewSummary", () => {
     expect(container.querySelector("[role='meter']")).toBeNull();
   });
 
+  it("dimensions=[] eseten (kiegeszito) nincs dimenzio-sor, csak az osszesitett sav", () => {
+    const { container } = render(withI18n(<ReviewSummary {...FULL} dimensions={[]} />));
+    expect(container.querySelector("dl")).toBeNull();
+    expect(screen.getByText("4,6")).toBeTruthy();
+    const bars = container.querySelectorAll("div[role='img']");
+    expect(bars.length).toBe(1); // csak az osszesitett sav
+  });
+
   it("ures allapotban a meg nincs ertekeles uzenet jelenik meg", () => {
     render(
       withI18n(

@@ -19,6 +19,12 @@
  *   2. LEFEDETTSÉG — a `boards` táblát olvasó MINDEN adatréteg-lekérdezésben
  *      ott a szűrő, és egyetlen route sem kérdezi le a táblát közvetlenül.
  *      Ez fogja meg a JÖVŐBELI, ma még meg nem írt lekérdezést is.
+ *
+ * A lefedettség-ellenőrzés MINDKÉT kind-értéket elfogadja (`board` VAGY
+ * `accessory`) — a felszerelés-adatréteg (`getAccessoryBySlug`, `listAccessories`,
+ * F2.3 2. szakasz) szándékosan `kind='accessory'`-ra szűr. Az invariáns nem az,
+ * hogy csak deszkát lehet lekérdezni, hanem hogy EGYETLEN lekérdezés se maradjon
+ * kind-szűrő NÉLKÜL — ezt a mutációs próba (a szűrő kivétele) igazolja.
  */
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
@@ -26,7 +32,12 @@ import { join } from "node:path";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { describe, expect, it } from "vitest";
 
-import { getBoardBySlug, listBoards } from "@modules/catalog/data/boards.server";
+import {
+  getAccessoryBySlug,
+  getBoardBySlug,
+  listAccessories,
+  listBoards,
+} from "@modules/catalog/data/boards.server";
 
 // ---------------------------------------------------------------------------
 // 1. Viselkedés — ál-kliens, ami TÉNYLEG alkalmazza az `.eq()` szűrőket
@@ -123,6 +134,40 @@ describe("a Deszkaválasztó bemenete csak deszka lehet", () => {
     const board = await getBoardBySlug(filteringClient(MIXED_ROWS), "red-paddle-ride");
     expect(board?.id).toBe("board-1");
   });
+
+  it("a listAccessories vegyes katalógusból CSAK a kind='accessory' sorokat adja vissza", async () => {
+    const accessories = await listAccessories(filteringClient(MIXED_ROWS));
+    expect(accessories).toHaveLength(1);
+    expect(accessories[0]?.id).toBe("accessory-1");
+  });
+
+  it("a listAccessories kategória-szűrővel csak az adott kategóriát adja vissza", async () => {
+    const rowsWithTwoCategories: Row[] = [
+      ...MIXED_ROWS,
+      {
+        id: "accessory-2",
+        kind: "accessory",
+        model_name: "Mentőmellény L",
+        board_type: null,
+        accessory_type: "mentomelleny",
+        slug: { hu: "mentomelleny-l", en: "pfd-l" },
+      },
+    ];
+    const evezok = await listAccessories(filteringClient(rowsWithTwoCategories), "evezo");
+    expect(evezok).toHaveLength(1);
+    expect(evezok[0]?.id).toBe("accessory-1");
+  });
+
+  it("a getAccessoryBySlug egy deszka slugjára null-t ad", async () => {
+    await expect(
+      getAccessoryBySlug(filteringClient(MIXED_ROWS), "evezo", "red-paddle-ride"),
+    ).resolves.toBeNull();
+  });
+
+  it("a getAccessoryBySlug a helyes kategória+slug párra megtalálja a sort", async () => {
+    const accessory = await getAccessoryBySlug(filteringClient(MIXED_ROWS), "evezo", "alu-evezo");
+    expect(accessory?.id).toBe("accessory-1");
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -136,7 +181,7 @@ const DATA_LAYER_FILES = [
   join("tools", "catalog-watch", "store.ts"),
 ];
 
-const KIND_FILTER = '.eq("kind", "board")';
+const KIND_FILTER = /\.eq\("kind",\s*"(board|accessory)"\)/;
 
 /**
  * Szándékos kivétel jelölése a lekérdezés-láncban. Egyetlen ilyen van: a
@@ -164,7 +209,7 @@ describe("kind='board' szűrő-lefedettség", () => {
     const chains = boardsReadChains(source);
     expect(chains.length, `${relative}: nem találtam boards-lekérdezést`).toBeGreaterThan(0);
     for (const chain of chains) {
-      expect(chain, `${relative}: kind-szűrő nélküli boards-olvasás`).toContain(KIND_FILTER);
+      expect(KIND_FILTER.test(chain), `${relative}: kind-szűrő nélküli boards-olvasás`).toBe(true);
     }
   });
 

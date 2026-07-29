@@ -21,7 +21,7 @@
 | F1.12 Analitika (süti-mentes) | ✅ kész + élesítve (2026-07-28) | `analytics_events` + definer-RPC + `/admin/analitika`. Nincs süti/IP/azonosító → nincs egyéni tölcsér, csak darabszám. Robot/DNT/dev nem számol |
 | F2.2 Visszajelzés-csatorna | ✅ kód kész (2026-07-28) | `/visszajelzes` (hiba · hiányzó bolt · hiányzó modell) + `/admin/visszajelzesek`. HÁTRA: migráció éles push + böngésző-verifikáció |
 | F2.1 catalog-watch piacfigyelő | ✅ kód kész (2026-07-28) | crawler + CLI + `/admin/katalogus` moderáció + heti GH Actions cron. HÁTRA: valós HU források bekötése és az első éles crawl (felhasználói döntés) |
-| F2.3 Felszerelés (kiegészítők), 1–2. szakasz | ✅ kész (2026-07-28) | 1.: `/felszereles` útmutató-oldalak, séma nélkül. 2.: `kind`/`accessory_type`/`would_recommend`/`ratings` migráció (NEM éles) + `kind='board'` szűrő minden deszka-lekérdezésen, őrszem-teszttel. HÁTRA: migráció éles push, route/UI a termékszintű kiegészítőkhöz, 3. szakasz (catalog-watch besorolás) |
+| F2.3 Felszerelés (kiegészítők), 1–2. szakasz | ✅ kész (2026-07-29) | 1.: `/felszereles` útmutató-oldalak. 2.: `kind`/`would_recommend` migráció (NEM éles) + `kind='board'` szűrő mindenhol + `/felszereles/:kategoria/:slug` termékadatlap + „ajánlom/nem ajánlom" bekötve. HÁTRA: migráció éles push, 3. szakasz (catalog-watch besorolás) |
 | F1.10 Záró audit + élesítés | ✅ audit **26/26** (2026-07-27) | **`docs/AUDIT_F1.md`**: az audit két mérés-jellegű hiánya pótolva (vizuális regresszió 07-26, teljesítmény-budget 07-27). HÁTRA az F1 lezárásához a publikussá tétel — a lépések a `RUNBOOK.md` **élesítési checklistjében** (domain → Resend-SMTP → Turnstile → cégadatok → `SITE_PUBLIC=true`), mind felhasználói döntés/adat |
 
 ## ITINER a következő sessionnek (2026-07-28-i állapot)
@@ -311,15 +311,59 @@ deszkát adnak vissza; plusz forrás-szintű lefedettség-ellenőrzés, ami mind
 `boards`-olvasásra megköveteli a `.eq("kind", "board")`-ot. Mutációs próbával
 igazolva: a szűrő kivételekor a teszt elhasal.
 
-**Follow-up / HÁTRA:**
-- A migráció éles push-a (felhasználói jóváhagyással) — a CI rls-tests előbb
-  fusson le rajta.
-- Route + UI a termékszintű kiegészítő-adatlaphoz
-  (`/felszereles/:kategoria/:slug`), `BoardCard`/`BoardHero` kiegészítő-változat.
-- Az `would_recommend` bekötése az űrlapba és az aggregátor `percentRecommend`
-  szabályába (explicit érték elsőbbsége — MOST még nem történt meg, a terv
-  156. sora szerinti szabály még csak a típusban és a DB-ben létezik).
-- 3. szakasz: catalog-watch `classifyProduct` (szűrés helyett besorolás).
+**Follow-up (ekkor még nyitva, a folytatásban lezárva — ld. alább):** route+UI a
+termékadatlaphoz, `would_recommend` bekötése, 3. szakasz catalog-watch besorolás.
+
+### 2. szakasz folytatása — termékadatlap + „ajánlom/nem ajánlom" (2026-07-29)
+
+A ui-builder subagent munkamenet-kvótába futott a felderítő fázisban (fájlt nem
+írt) — a karmester vette át és fejezte be közvetlenül. Kapuk zöldek: typecheck ·
+lint · **753 vitest** (+7 új).
+
+**Elkészült:**
+- `reviews/aggregate.ts`: a `percentRecommend` az EXPLICIT `would_recommend`
+  értéket veszi elsőbbséggel; `null` (bevezetés előtti sor) esetén marad a régi
+  `rating_overall >= 4` származtatás — a meglévő százalékok nem torzulnak
+  visszamenőleg. Táblázatos teszt a keveredésre.
+- `reviews/types.ts`: `getReviewDimensions(target)` — `"board"` a mai 4
+  szempont, `"accessory"` `[]` (a terv 166. sora szerinti felkészítés, ZÁRT
+  változtatás: a `REVIEW_DIMENSIONS` maga NEM változott, az advisor↔reviews
+  őrszem-teszt továbbra is érvényes).
+- `reviews/ui/ReviewSummary.tsx`: `dimensions` prop (alapértelmezetten a mai 4
+  szempont) — üres tömbre a dimenzió-sávok blokkja nem renderel, csak az
+  összesített sáv marad. Új teszt fedi.
+- `reviews/data/reviews.server.ts` + `app/routes/deszkak.$slug.tsx`: az
+  „Ajánlanád másnak?" választó (igen/nem/—) az űrlapon, `would_recommend`
+  mezőként mentve.
+- `catalog/data/boards.server.ts`: `getAccessoryBySlug` és `listAccessories`
+  (kategória-szűrős VAGY teljes lista) — KÜLÖN függvények a deszka-lekérdezésektől
+  (nem bővítjük ki azokat kind-paraméterrel, más invariánst őriznek), mindkettő
+  `kind='accessory'`-ra szűr.
+- `catalog/ui/AccessoryCard.tsx`: önálló komponens a `BoardCard` helyett (nincs
+  `board_type`/stabilitási index, a kártya olvashatóbb, ha ezt eleve nem
+  tartalmazza feltételek mögé rejtve).
+- `app/routes/felszereles.$kategoria.tsx`: a kategória-oldal most már lekéri és
+  kártyarácsban listázza az adott kategória termékeit (üres-állapot üzenettel —
+  ma minden kategória üres, nincs még kiegészítő-sor).
+- ÚJ `app/routes/felszereles.$kategoria.$slug.tsx`: termékadatlap (specifikáció,
+  árak — a meglévő `board_prices`/`listBoardPrices` változatlanul szolgálja ki,
+  `board_id`-n keresztül kind-agnosztikus —, Közös nevező dimenziók NÉLKÜL,
+  vélemény-lista+flag, egyszerűsített űrlap [összbenyomás + ajánlom/nem ajánlom
+  + szabad szöveg, NINCS 4 dimenzió-select], JSON-LD `Product`). Regisztrálva a
+  `catalog/module.ts`-ben.
+- `core/seo/sitemap.ts` dinamikus loadere (`sitemap-xml.ts`) mostantól a
+  kiegészítőket is felveszi (`kind='accessory'`, MOST 0 sor).
+
+**Az őrszem-teszt (`deszkavalaszto.kind.test.ts`) frissítve:** a lefedettség-
+ellenőrzés MOST már `.eq("kind", "board")` VAGY `.eq("kind", "accessory")`-t
+fogad el (regex) — az invariáns nem az, hogy csak deszkát lehet lekérdezni,
+hanem hogy egyetlen `boards`-olvasás se maradjon kind-szűrő NÉLKÜL. Mutációs
+próbával újra igazolva (a szűrő kivételekor a teszt elhasal, visszaállítva zöld).
+
+**HÁTRA:** a migráció éles push-a (felhasználói jóváhagyással, a CI rls-tests
+előbb fusson le rajta) · 3. szakasz: catalog-watch `classifyProduct` (szűrés
+helyett besorolás) · böngésző-verifikáció, ha lesz legalább egy valós
+kiegészítő-sor a katalógusban (ma 0 sor, a UI csak üres-állapotot mutathat).
 
 ## F1.0 — Projekt-setup (2026-07-17)
 

@@ -83,6 +83,8 @@ export interface InsertReviewInput {
   text_cons?: string | null;
   used_water_type?: UsedWaterType | null;
   used_rider_weight_kg?: number | null;
+  /** Explicit „ajánlom/nem ajánlom" (F2.3 2. szakasz). `undefined`/hiány → null. */
+  would_recommend?: boolean | null;
 }
 
 export type InsertReviewResult =
@@ -131,6 +133,7 @@ export async function insertReview(
     text_cons: input.text_cons ?? null,
     used_water_type: input.used_water_type ?? null,
     used_rider_weight_kg: input.used_rider_weight_kg ?? null,
+    would_recommend: input.would_recommend ?? null,
   });
 
   if (error) {

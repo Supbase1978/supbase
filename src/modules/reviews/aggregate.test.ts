@@ -91,6 +91,20 @@ describe("computeReviewAggregate", () => {
     expect(agg.percentRecommend).toBe(50);
   });
 
+  it("explicit would_recommend elsőbbséget élvez a rating_overall>=4 származtatással szemben", () => {
+    const agg = computeReviewAggregate([
+      // Alacsony pontszám, de EXPLICIT ajánlás → számít (nem a rating dönt).
+      review({ rating_overall: 2, would_recommend: true }),
+      // Magas pontszám, de EXPLICIT elutasítás → számít.
+      review({ rating_overall: 5, would_recommend: false }),
+      // Régi sor (a mező bevezetése előtt): a származtatás marad.
+      review({ rating_overall: 4, would_recommend: null }),
+      review({ rating_overall: 1, would_recommend: null }),
+    ]);
+    // Ajánlaná: 1. sor (explicit true) + 3. sor (rating>=4 származtatva) = 2/4.
+    expect(agg.percentRecommend).toBe(50);
+  });
+
   it("verifiedCount csak a publikált verified_owner sorokat számolja", () => {
     const agg = computeReviewAggregate([
       review({ verified_owner: true, status: "published" }),

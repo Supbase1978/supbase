@@ -82,6 +82,17 @@ export const REVIEW_DIMENSIONS: readonly ReviewDimension[] = [
 ];
 
 /**
+ * Melyik célhoz mely dimenziók jelennek meg (F2.3 2. szakasz, terv 166. sor).
+ * Deszkánál a mai 4 szempont; kiegészítőnél üres — a 4 deszka-oszlop (stability/
+ * glide/build/value) egy evezőn vagy pumpán értelmetlen. ÚJ kategória-specifikus
+ * szempont a jövőben a `ratings` jsonb-be kerül (lásd `BoardReviewRow.ratings`),
+ * NEM új oszlopként — ez a függvény akkor bővül target-specifikus listával.
+ */
+export function getReviewDimensions(target: "board" | "accessory"): readonly ReviewDimension[] {
+  return target === "board" ? REVIEW_DIMENSIONS : [];
+}
+
+/**
  * A publikált vélemények aggregátuma (Közös nevező-blokk). Az átlagok 1–5 skálán,
  * 1 tizedesre kerekítve; a 10-es mércéhez a `toTen` helper skáláz.
  */

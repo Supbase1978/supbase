@@ -23,6 +23,12 @@ export interface ReviewSummaryProps {
   percentRecommend: number;
   verifiedCount: number;
   dimensionsTen: Record<ReviewDimension, number | null>;
+  /**
+   * Mely dimenziók jelenjenek meg (F2.3 2. szakasz — `getReviewDimensions`).
+   * Alapértelmezett a mai 4 deszka-szempont; kiegészítőnél a hívó `[]`-t ad át,
+   * ekkor a dimenzió-sávok blokkja nem renderel (csak az összesített sáv marad).
+   */
+  dimensions?: readonly ReviewDimension[];
 }
 
 /** A blokk-cím színkiemelt „evező" résszel (a szójáték láttatásához). */
@@ -48,6 +54,7 @@ export function ReviewSummary({
   percentRecommend,
   verifiedCount,
   dimensionsTen,
+  dimensions = REVIEW_DIMENSIONS,
 }: ReviewSummaryProps) {
   const { t, i18n } = useTranslation("reviews");
   const fmt1 = (v: number | null) =>
@@ -96,23 +103,25 @@ export function ReviewSummary({
             </div>
           </div>
 
-          <dl className="flex flex-col gap-2">
-            {REVIEW_DIMENSIONS.map((dim) => (
-              <div key={dim} className="flex items-center gap-3">
-                <dt className="w-28 shrink-0 text-xs font-semibold text-text-2">
-                  {t(`dim.${dim}`)}
-                </dt>
-                <RatingBar
-                  value={dimensionsTen[dim]}
-                  ariaLabel={`${t(`dim.${dim}`)}: ${fmt1(dimensionsTen[dim])}`}
-                  className="flex-1"
-                />
-                <dd className="w-9 shrink-0 text-right text-xs font-bold text-petrol-text">
-                  {fmt1(dimensionsTen[dim])}
-                </dd>
-              </div>
-            ))}
-          </dl>
+          {dimensions.length > 0 ? (
+            <dl className="flex flex-col gap-2">
+              {dimensions.map((dim) => (
+                <div key={dim} className="flex items-center gap-3">
+                  <dt className="w-28 shrink-0 text-xs font-semibold text-text-2">
+                    {t(`dim.${dim}`)}
+                  </dt>
+                  <RatingBar
+                    value={dimensionsTen[dim]}
+                    ariaLabel={`${t(`dim.${dim}`)}: ${fmt1(dimensionsTen[dim])}`}
+                    className="flex-1"
+                  />
+                  <dd className="w-9 shrink-0 text-right text-xs font-bold text-petrol-text">
+                    {fmt1(dimensionsTen[dim])}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          ) : null}
         </Card>
       )}
     </section>
