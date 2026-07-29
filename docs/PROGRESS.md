@@ -19,9 +19,9 @@
 | F1.9 Push + viharjelzés | ✅ kész (2026-07-25) | teljes web push-pipeline (VAPID + RFC 8291 natív Web Cryptóval, npm nélkül), storm-alert push-ág, feliratkozó-UI, m4 `observed_at`. Élesítve (5 migráció + secretek + deploy) és **böngészőben végponttól végpontig verifikálva: a viharjelzés-push megérkezett**. Részletek lent |
 | F1.11 Folyó-vízállás (5.1/6) | ✅ kész + élesítve (2026-07-27) | vizugy.hu (OVF) REST API, HIVATALOS árvízvédelmi készültségi küszöbökkel; a fix −1 folyó-büntetés helyett fokozat-alapú index-plafon. Élesben verifikálva, cron írja. + F1.11b: póráz-figyelmeztetés folyóvízre |
 | F1.12 Analitika (süti-mentes) | ✅ kész + élesítve (2026-07-28) | `analytics_events` + definer-RPC + `/admin/analitika`. Nincs süti/IP/azonosító → nincs egyéni tölcsér, csak darabszám. Robot/DNT/dev nem számol |
-| F2.2 Visszajelzés-csatorna | ✅ kód kész (2026-07-28) | `/visszajelzes` (hiba · hiányzó bolt · hiányzó modell) + `/admin/visszajelzesek`. HÁTRA: migráció éles push + böngésző-verifikáció |
+| F2.2 Visszajelzés-csatorna | ✅ kész + élesítve (2026-07-29) | `/visszajelzes` (hiba · hiányzó bolt · hiányzó modell) + `/admin/visszajelzesek`. Migráció éles push (2026-07-29), REST-tel verifikálva (RLS zár). HÁTRA: böngésző-verifikáció, `RESEND_API_KEY` ha kell e-mail-értesítés |
 | F2.1 catalog-watch piacfigyelő | ✅ kód kész (2026-07-28) | crawler + CLI + `/admin/katalogus` moderáció + heti GH Actions cron. HÁTRA: valós HU források bekötése és az első éles crawl (felhasználói döntés) |
-| F2.3 Felszerelés (kiegészítők), 1–3. szakasz | ✅ kész (2026-07-29) | 1.: `/felszereles` útmutató-oldalak. 2.: `kind`/`would_recommend` migráció (NEM éles) + `kind='board'` szűrő mindenhol + `/felszereles/:kategoria/:slug` termékadatlap. 3.: catalog-watch `classifyProduct` (evező/mentőmellény/pumpa jelöltté válik) + admin deszka/kiegészítő kapcsoló. HÁTRA: migráció éles push, valós forrás-bekötés |
+| F2.3 Felszerelés (kiegészítők), 1–3. szakasz | ✅ kész + élesítve (2026-07-29) | 1.: `/felszereles` útmutató-oldalak. 2.: `kind`/`would_recommend` migráció (élesítve, REST-tel verifikálva) + `kind='board'` szűrő mindenhol + `/felszereles/:kategoria/:slug` termékadatlap. 3.: catalog-watch `classifyProduct` (evező/mentőmellény/pumpa jelöltté válik) + admin deszka/kiegészítő kapcsoló. HÁTRA: valós forrás-bekötés (ugyanaz a lépés, mint F2.1) |
 | F1.10 Záró audit + élesítés | ✅ audit **26/26** (2026-07-27) | **`docs/AUDIT_F1.md`**: az audit két mérés-jellegű hiánya pótolva (vizuális regresszió 07-26, teljesítmény-budget 07-27). HÁTRA az F1 lezárásához a publikussá tétel — a lépések a `RUNBOOK.md` **élesítési checklistjében** (domain → Resend-SMTP → Turnstile → cégadatok → `SITE_PUBLIC=true`), mind felhasználói döntés/adat |
 
 ## ITINER a következő sessionnek (2026-07-28-i állapot)
@@ -31,11 +31,12 @@
 jelszó-kapu mögött. Azóta három továbbfejlesztés ment ki élesbe: folyó-vízállás
 (F1.11), póráz-figyelmeztetés (F1.11b) és süti-mentes analitika (F1.12).
 2026-07-28: elkészült az **F2.1 catalog-watch piacfigyelő** (kód kész, éles
-futás még nem volt) és az **F2.2 visszajelzés-csatorna** (kód kész, migráció
-még nincs élesítve). 2026-07-29: elkészült az **F2.3 Felszerelés** mind a 3
-szakasza (útmutató · `kind`-diszkriminátor + termékadatlap · catalog-watch
-besorolás) — a `kind`/`would_recommend` migráció még NEM éles, ez az egyetlen
-hátralévő lépés a katalógus-oldalon.
+futás még nem volt) és az **F2.2 visszajelzés-csatorna**. 2026-07-29: elkészült
+az **F2.3 Felszerelés** mind a 3 szakasza (útmutató · `kind`-diszkriminátor +
+termékadatlap · catalog-watch besorolás), és **mindhárom nyitott migráció
+(feedback + a két F2.3-migráció) éles push-olva + REST-tel verifikálva**. Az
+egyetlen hátralévő lépés a katalógus-oldalon: valós HU-forrás bekötése
+(felhasználói döntés, ld. lent).
 
 **A PUBLIKUSSÁ TÉTEL a felhasználón múlik** — a lépések sorrendben a
 `docs/RUNBOOK.md` „Élesítési checklist" szakaszában:
@@ -48,18 +49,18 @@ cégadatok addig várnak, amíg eldől a vállalkozási forma.
 **Fejlesztési irányok, amelyekből választani lehet** (a legutóbbi körben a
 felhasználó a HydroInfo-t választotta, majd az analitikát):
 
-1. ~~**Biztonsági kiegészítők teljes blokkja**~~ — **KÓD KÉSZ (F2.3, mind a 3
-   szakasz, 2026-07-29)**: a domain-review 2.8 pontja lezárva. Ami hátra van,
-   az nem fejlesztés: a `kind`/`would_recommend` migráció éles push-a, majd
-   valós HU-forrás bekötése úgy, hogy evező/mentőmellény/pumpa jelöltek is
-   érkezzenek — ez ugyanaz a lépés, mint a 2. pont.
-2. ~~**catalog-watch piacfigyelő pipeline** (F2)~~ — **KÓD KÉSZ (F2.1+F2.3,
-   2026-07-29)**. Ami hátra van, az nem fejlesztés: a migráció éles push-a,
-   valós HU források bekötése (`add-source`, lásd a boltkutatás-jegyzet a
-   memóriában), első `crawl --dry-run`, majd moderáció a `/admin/katalogus`-on
-   (deszka ÉS a 3 követett felszerelés-kategória). Ez tölti fel a katalógust
-   (most 20 deszka + 0 kiegészítő), ami EGYBEN előfeltétele az advisor
-   ár-padló tételének (20 elemen az eloszlás-alapú küszöb zajos).
+1. ~~**Biztonsági kiegészítők teljes blokkja**~~ — **KÉSZ + ÉLESÍTVE (F2.3,
+   mind a 3 szakasz, 2026-07-29)**: a domain-review 2.8 pontja lezárva. Ami
+   hátra van, az nem fejlesztés: valós HU-forrás bekötése úgy, hogy evező/
+   mentőmellény/pumpa jelöltek is érkezzenek — ez ugyanaz a lépés, mint a
+   2. pont.
+2. ~~**catalog-watch piacfigyelő pipeline** (F2)~~ — **KÉSZ + ÉLESÍTVE
+   (F2.1+F2.3, 2026-07-29)**. Ami hátra van, az nem fejlesztés: valós HU
+   források bekötése (`add-source`, lásd a boltkutatás-jegyzet a memóriában),
+   első `crawl --dry-run`, majd moderáció a `/admin/katalogus`-on (deszka ÉS a
+   3 követett felszerelés-kategória). Ez tölti fel a katalógust (most 20
+   deszka + 0 kiegészítő), ami EGYBEN előfeltétele az advisor ár-padló
+   tételének (20 elemen az eloszlás-alapú küszöb zajos).
 3. **Capacitor natív build** (F2 nyitása) — a `build:native` SPA-mód megvan,
    a wrapper nincs.
 4. **react-router 8 frissítés** — `SECURITY_FINDINGS.md` F1.10-01 (RSC-módú
@@ -208,9 +209,12 @@ renderel; robots.txt tiltja a `/visszajelzes`-t. A lap-szélesség invariáns
 teszt **elkapott két eltérést** (max-w-2xl/4xl a kötelező max-w-5xl helyett) —
 javítva.
 
-**HÁTRA:** a migráció éles push-a (jóváhagyással) · a beküldés böngésző-
-verifikációja bejelentkezett fiókkal · `RESEND_API_KEY` + `FEEDBACK_TO_EMAIL`
-beállítása, ha kell e-mail-értesítés (addig a DB + admin felület a csatorna).
+**Élesítve (2026-07-29):** a migráció kitolva (`npm run sb -- db push
+--include-all`, a két F2.3-migrációval együtt); REST-tel verifikálva: anon
+SELECT `[]` (RLS admin-only olvasás áll), anon INSERT `401` (bejelentkezés
+kell). **HÁTRA:** a beküldés böngésző-verifikációja bejelentkezett fiókkal ·
+`RESEND_API_KEY` + `FEEDBACK_TO_EMAIL` beállítása, ha kell e-mail-értesítés
+(addig a DB + admin felület a csatorna).
 
 ## F2.3 — Felszerelés (kiegészítők) — 1. szakasz: útmutató (2026-07-28)
 
@@ -410,10 +414,15 @@ táska → `skippedNonBoard`, nem jelölt) + `buildAccessoryInsert` 3 teszt. A
 `kind='accessory'`-lekérdezésekre is — zöld, mutációval igazolva korábban.
 i18n kulcs-paritás (hu↔en) ellenőrizve szkripttel.
 
-**HÁTRA:** a migráció éles push-a (felhasználói jóváhagyással, a CI rls-tests
-előbb fusson le rajta) · valós HU-forrás bekötése (`add-source` — lásd a
-korábban elmentett boltkutatás-jegyzet) és az első `crawl --dry-run` · böngésző-
-verifikáció, ha lesz legalább egy valós kiegészítő-jelölt a moderációs sorban.
+**Élesítve (2026-07-29):** a migráció kitolva (`npm run sb -- db push
+--include-all`, 3 migráció együtt a feedbackkel); REST-tel verifikálva: a 20
+meglévő deszka-sor változatlanul `kind='board'`, `boards.accessory_type` és
+`board_reviews.would_recommend`/`ratings` oszlop olvasható anonként (üres/null
+értékkel, ahogy vártuk).
+
+**HÁTRA:** valós HU-forrás bekötése (`add-source` — lásd a korábban elmentett
+boltkutatás-jegyzet) és az első `crawl --dry-run` · böngésző-verifikáció, ha
+lesz legalább egy valós kiegészítő-jelölt a moderációs sorban.
 
 ## F1.0 — Projekt-setup (2026-07-17)
 
