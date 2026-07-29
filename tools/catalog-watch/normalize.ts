@@ -8,6 +8,7 @@
  * válna (a terhelhetőség kemény szűrő), ezért a spec-parse konzervatív:
  * címkézett érték kell hozzá, „valahol a szövegben egy szám" nem elég.
  */
+import type { GearCategory } from "../../src/modules/catalog/gear.ts";
 import type { BoardSpecs, BoardType, ExtractedProduct } from "./types.ts";
 import { EMPTY_SPECS } from "./types.ts";
 
@@ -302,50 +303,55 @@ export function guessBoardType(text: string): BoardType | null {
 }
 
 /**
- * Kiegészítő-kulcsszavak: ha ezek egyike szerepel a névben, a termék NEM deszka.
- * (Élesben mért igény: egy SUP-bolt sitemapje evezőt, uszonyt, sőt napszemüveget
- * is tartalmaz — szűrő nélkül a moderációs sor használhatatlanná válna.)
+ * Kategorizált kiegészítő-kulcsszavak (F2.3 3. szakasz — a korábbi lapos
+ * `ACCESSORY_KEYWORDS` lista helyett). SPECIFIKUS → ÁLTALÁNOS sorrend (mint a
+ * `guessBoardType`): a „szárazzsák" előbb jön, mint a „táska", mert az előbbi
+ * az utóbbi szűkebb esete, és a substring-illesztés a legelső találatot veszi.
+ * Csak a `GEAR_CATEGORIES` (catalog modul, `gear.ts`) 8 kategóriáját fedi le.
  */
-const ACCESSORY_KEYWORDS = [
+const ACCESSORY_CATEGORY_RULES: [GearCategory, string[]][] = [
+  ["szarazzsak", ["szarazzsak", "dry bag", "drybag"]],
+  ["mentomelleny", ["mentomellen", "mellen", "life vest", "life jacket", "pfd"]],
+  ["uszony", ["uszony", "finbox", "fin box"]],
+  ["poraz", ["poraz", "leash"]],
+  ["pumpa", ["pumpa", "pump"]],
+  // Bare "paddle" szándékosan hiányzik: az beleillene a "paddleboard"/"paddle
+  // board" BOARD_NOUNS-szóba is — csak az egyértelmű "evező"/"paddle blade" számít.
+  ["evezo", ["evezo", "paddle blade"]],
+  ["taska", ["hatizsak", "taska", "backpack"]],
+  ["ules", ["ules", "kayak seat", "seat"]],
+];
+
+/**
+ * Egyéb kiegészítő-jellegű szavak, amik EGYIK gear-kategóriának SEM felelnek
+ * meg (ruházat, apró tartozékok, ajándékutalvány…) — ezek is kizárják a
+ * deszka-besorolást, de nem termelnek jelöltet SEM (`ignore`, nem `accessory`).
+ */
+const MISC_NON_BOARD_KEYWORDS = [
   "napszemuveg",
   "szemuveg",
-  "evezo",
-  "pumpa",
-  "uszony",
-  "finbox",
-  "taska",
-  "hatizsak",
+  "sunglass",
   "polo",
   "sapka",
   "kesztyu",
   "cipo",
-  "mellen",
-  "mentomellen",
   "neopren",
   "ruha",
   "wetsuit",
-  "leash",
-  "poraz",
-  "ules",
+  "leggings",
+  "cap ",
   "javito",
   "szelep",
+  "valve",
+  "repair",
   "kulacs",
   "szij",
+  "strap",
   "kocsi",
   "allvany",
   "matrica",
   "ajandekutalvany",
   "utalvany",
-  "sunglass",
-  "paddle blade",
-  "pump",
-  "bag",
-  "seat",
-  "strap",
-  "repair",
-  "valve",
-  "leggings",
-  "cap ",
 ];
 
 /** A deszka-mivolt pozitív jelei a névben/leírásban. */
@@ -356,41 +362,78 @@ const BOARD_LENGTH_MIN_CM = 240;
 const BOARD_LENGTH_MAX_CM = 520;
 
 /**
- * SUP-DESZKA-e a termék, vagy kiegészítő?
+ * Csak ezt a 3 kategóriát KÖVETJÜK jelöltként egyelőre (terv 3. szakasz,
+ * „Mennyiségi korlát"): ne kövessünk minden 3000 Ft-os apróságot (póráz,
+ * szárazzsák, ülés, uszony, táska felismerve is `ignore` marad). Bővíthető,
+ * ha a moderációs tapasztalat úgy kívánja.
+ */
+export const TRACKED_ACCESSORY_TYPES: readonly GearCategory[] = [
+  "evezo",
+  "mentomelleny",
+  "pumpa",
+];
+
+/** Kategorizált kiegészítő-egyezés a névben, specifikus→általános sorrendben. */
+function guessAccessoryCategory(folded: string): GearCategory | null {
+  for (const [category, needles] of ACCESSORY_CATEGORY_RULES) {
+    if (needles.some((needle) => folded.includes(needle))) return category;
+  }
+  return null;
+}
+
+export type ProductClassification =
+  | { kind: "board" }
+  | { kind: "accessory"; accessoryType: GearCategory }
+  | { kind: "ignore" };
+
+/**
+ * SUP-DESZKA, KÖVETETT FELSZERELÉS, vagy figyelmen kívül hagyandó termék?
  *
- * A figyelő minden termékoldalt lát, de a katalógus DESZKÁKAT gyűjt. A döntés
- * konzervatív két irányban is:
+ * A figyelő minden termékoldalt lát, de a katalógus deszkákat ÉS a 3 érdemi
+ * felszerelés-kategóriát (evező/mentőmellény/pumpa) gyűjti. A döntés
+ * konzervatív minden irányban:
  *  * a mért spec (deszka-tartományba eső hossz + térfogat/teherbírás) MINDIG
  *    deszkát jelent — ez erősebb, mint bármelyik kulcsszó;
- *  * kulcsszó-alapon csak akkor mondunk deszkát, ha van pozitív jel ÉS nincs
- *    kiegészítő-szó (az „evező" vagy a „pumpa" a névben egyértelmű nem).
+ *  * kategorizált kulcsszóra a KÖVETETT kategóriák jelöltet kapnak, a többi
+ *    (póráz/szárazzsák/ülés/uszony/táska) felismerve is `ignore`;
+ *  * az egyéb kiegészítő-jellegű szavak (ruházat, apróság) is `ignore`-t adnak;
+ *  * kulcsszó-egyezés hiányában a régi deszka-heurisztika dönt.
  *
- * Ami így kiesik, az nem vész el végleg: a következő futás újra megnézi, és a
- * forrás `crawl_config`-jában a mintákkal is szűkíthető a kör.
+ * Ami így kiesik (`ignore`), az nem vész el végleg: a következő futás újra
+ * megnézi, és a forrás `crawl_config`-jában a mintákkal is szűkíthető a kör.
  */
-export function looksLikeBoard(product: {
+export function classifyProduct(product: {
   rawTitle: string;
   modelName: string;
   boardType: BoardType | null;
   specs: BoardSpecs;
-}): boolean {
+}): ProductClassification {
   const { specs } = product;
   const lengthInRange =
     specs.lengthCm !== null &&
     specs.lengthCm >= BOARD_LENGTH_MIN_CM &&
     specs.lengthCm <= BOARD_LENGTH_MAX_CM;
   if (lengthInRange && (specs.volumeL !== null || specs.maxLoadKg !== null)) {
-    return true;
+    return { kind: "board" };
   }
 
   const folded = foldText(product.rawTitle);
-  if (ACCESSORY_KEYWORDS.some((word) => folded.includes(word))) {
-    return false;
+
+  const accessoryType = guessAccessoryCategory(folded);
+  if (accessoryType !== null) {
+    return TRACKED_ACCESSORY_TYPES.includes(accessoryType)
+      ? { kind: "accessory", accessoryType }
+      : { kind: "ignore" };
+  }
+
+  if (MISC_NON_BOARD_KEYWORDS.some((word) => folded.includes(word))) {
+    return { kind: "ignore" };
   }
 
   const hasBoardNoun = BOARD_NOUNS.some((noun) => folded.includes(noun));
   const hasSup = /\bsup\b/.test(folded);
-  return hasBoardNoun || (hasSup && product.boardType !== null) || lengthInRange;
+  const isBoard = hasBoardNoun || (hasSup && product.boardType !== null) || lengthInRange;
+  return isBoard ? { kind: "board" } : { kind: "ignore" };
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -538,16 +581,24 @@ export function extractProduct(
     specs.lengthCm = parseDimensionCm(rawTitle);
   }
 
+  const modelName = cleanModelName(rawTitle, brandName);
+  const boardType = guessBoardType(haystack);
+  // A besorolás itt is lefut (nem csak a crawl.ts vezérlésében), hogy a
+  // moderációs UI a kategória-legördülőt a figyelő tippjével előválaszthassa —
+  // ugyanaz a minta, mint a `boardType` tippnél (a moderátor felülbírálhatja).
+  const classification = classifyProduct({ rawTitle, modelName, boardType, specs });
+
   return {
     sourceUrl,
     brandName,
-    modelName: cleanModelName(rawTitle, brandName),
+    modelName,
     rawTitle,
     modelYear: extractModelYear(`${rawTitle} ${description}`),
     priceHuf: parsePriceHuf(node.offers),
     inStock: parseAvailability(node.offers),
     imageUrl: firstString(node.image),
-    boardType: guessBoardType(haystack),
+    boardType,
     specs,
+    accessoryType: classification.kind === "accessory" ? classification.accessoryType : null,
   };
 }

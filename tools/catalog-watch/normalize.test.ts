@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  classifyProduct,
   cleanModelName,
   detectInflatable,
   extractModelYear,
   extractProduct,
   guessBoardType,
-  looksLikeBoard,
   normalizeBrandName,
   parseAvailability,
   parseDimensionCm,
@@ -233,7 +233,7 @@ describe("parseAvailability", () => {
   });
 });
 
-describe("looksLikeBoard", () => {
+describe("classifyProduct", () => {
   const NO_SPECS = {
     lengthCm: null,
     widthCm: null,
@@ -245,41 +245,46 @@ describe("looksLikeBoard", () => {
   };
 
   it.each([
-    [`Aqua Marina Vapor 10'4" felfújható SUP deszka`, "allround" as const, true],
-    ["Gladiator Origin paddleboard", null, true],
-    ["Jobe Aero SUP Yoga 10.6", "yoga" as const, true],
-    // Élesben mért eset: egy SUP-bolt sitemapjében napszemüveg is van.
-    ["Jobe DIM napszemüveg Tortoise", null, false],
-    ["Karbon SUP evező állítható", null, false],
-    ["Kétkamrás SUP pumpa", null, false],
-    ["Vízhatlan táska 20 l", null, false],
-    ["Valami ismeretlen termék", null, false],
-  ])("%s → %s", (rawTitle, boardType, expected) => {
-    expect(looksLikeBoard({ rawTitle, modelName: rawTitle, boardType, specs: NO_SPECS })).toBe(
-      expected,
-    );
+    [`Aqua Marina Vapor 10'4" felfújható SUP deszka`, "allround" as const, { kind: "board" }],
+    ["Gladiator Origin paddleboard", null, { kind: "board" }],
+    ["Jobe Aero SUP Yoga 10.6", "yoga" as const, { kind: "board" }],
+    // Élesben mért eset: egy SUP-bolt sitemapjében napszemüveg is van — egyik
+    // gear-kategóriának sem felel meg, tehát `ignore` (nem `accessory`).
+    ["Jobe DIM napszemüveg Tortoise", null, { kind: "ignore" }],
+    // A 3 KÖVETETT kategória (terv 3. szakasz, mennyiségi korlát) jelöltet kap.
+    ["Karbon SUP evező állítható", null, { kind: "accessory", accessoryType: "evezo" }],
+    ["Kétkamrás SUP pumpa", null, { kind: "accessory", accessoryType: "pumpa" }],
+    ["ION mentőmellény L-es méret", null, { kind: "accessory", accessoryType: "mentomelleny" }],
+    // A többi felismert kategória (nem követett) `ignore` marad.
+    ["Vízhatlan táska 20 l", null, { kind: "ignore" }],
+    ["SUP póráz derékon hordható", null, { kind: "ignore" }],
+    ["Valami ismeretlen termék", null, { kind: "ignore" }],
+  ])("%s → %o", (rawTitle, boardType, expected) => {
+    expect(
+      classifyProduct({ rawTitle, modelName: rawTitle, boardType, specs: NO_SPECS }),
+    ).toEqual(expected);
   });
 
   it("a MÉRT deszka-spec erősebb minden kulcsszónál", () => {
     expect(
-      looksLikeBoard({
+      classifyProduct({
         rawTitle: "Névtelen termék",
         modelName: "Névtelen",
         boardType: null,
         specs: { ...NO_SPECS, lengthCm: 320, maxLoadKg: 140 },
       }),
-    ).toBe(true);
+    ).toEqual({ kind: "board" });
   });
 
-  it("a deszka-tartományon kívüli hossz önmagában nem elég", () => {
+  it("a deszka-tartományon kívüli hossz önmagában nem elég, de a KÖVETETT kulcsszó felülír", () => {
     expect(
-      looksLikeBoard({
+      classifyProduct({
         rawTitle: "Evezőlapát",
         modelName: "Evezőlapát",
         boardType: null,
         specs: { ...NO_SPECS, lengthCm: 180, volumeL: 2 },
       }),
-    ).toBe(false);
+    ).toEqual({ kind: "accessory", accessoryType: "evezo" });
   });
 });
 

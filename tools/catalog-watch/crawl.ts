@@ -22,7 +22,7 @@ import type {
 import { htmlToText } from "./html.ts";
 import { findProductNodes, pickPrimaryProduct } from "./jsonld.ts";
 import { matchCandidate } from "./match.ts";
-import { extractProduct, looksLikeBoard } from "./normalize.ts";
+import { classifyProduct, extractProduct } from "./normalize.ts";
 import {
   CRAWLER_USER_AGENT,
   crawlDelayFor,
@@ -308,9 +308,12 @@ export async function crawlSource(
       }
 
       // A boltok sitemapje evezőt, pumpát, ruházatot is tartalmaz. A jelölt-sor
-      // csak DESZKÁKAT kaphat, különben használhatatlanná válik a moderáció.
-      // (A fenti „ismert" ág ELŐBB van: meglévő deszka árát ez nem blokkolja.)
-      if (!looksLikeBoard(product)) {
+      // deszkát VAGY a 3 követett felszerelés-kategóriát kaphatja (F2.3 3.
+      // szakasz) — minden más `ignore` marad, különben használhatatlanná válik
+      // a moderáció. (A fenti „ismert" ág ELŐBB van: meglévő deszka árát ez
+      // nem blokkolja.)
+      const classification = classifyProduct(product);
+      if (classification.kind === "ignore") {
         summary.skippedNonBoard += 1;
         continue;
       }

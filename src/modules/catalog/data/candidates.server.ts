@@ -14,6 +14,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { slugify } from "@core/text/slug";
 
+import { GEAR_CATEGORIES, type GearCategory } from "../gear";
 import type {
   BoardType,
   CatalogCandidateRow,
@@ -71,9 +72,10 @@ export async function listPendingCandidates(
  * A jóváhagyáshoz felkínált deszkák (merge-célpontok). A teljes lista megy ki,
  * mert a katalógus kicsi; a moderátor a legördülőből választ.
  *
- * `kind = 'board'`: a figyelő ma kizárólag deszka-jelöltet termel, ezért a
- * merge-célpont is csak deszka lehet. Amikor a crawl kiegészítőt is besorol
- * (terv 3. szakasz), ez a lista kap kind-paramétert — a szűrő NEM eshet ki.
+ * `kind = 'board'`: a merge-célpont csak deszka lehet — a kiegészítő-jelöltek
+ * merge-célpontjait a `listAccessoryChoices` adja (F2.3 3. szakasz), KÜLÖN
+ * lekérdezésként (nem közös kind-paraméterrel), hogy egyik lista se keveredhessen
+ * a másikkal a moderációs űrlapon.
  */
 export async function listBoardChoices(
   supabase: SupabaseClient,
@@ -90,6 +92,41 @@ export async function listBoardChoices(
     const typed = row as { id: string; model_name: string; brand: { name: string } | null };
     return { id: typed.id, label: boardLabel(typed) };
   });
+}
+
+/**
+ * A jóváhagyáshoz felkínált kiegészítők (merge-célpontok), KATEGÓRIÁNKÉNT
+ * csoportosítva — egy evező-jelölt csak evezőbe fésülhető, nem pumpába.
+ * Egyetlen lekérdezés az ÖSSZES kiegészítőre (`kind = 'accessory'`), a
+ * szétosztás JS-ben történik — a moderációs oldal mind a 8 kategóriára
+ * felkínálja a merge-célpontokat, nem csak a figyelő KÖVETETT 3 kategóriájára
+ * (a moderátor bármelyik kategóriába besorolhat, a crawl-időbeli korlátozás
+ * csak a jelölt-termelést szűkíti, a moderáció döntését nem).
+ */
+export async function listAccessoryChoicesByCategory(
+  supabase: SupabaseClient,
+): Promise<Record<GearCategory, { id: string; label: string }[]>> {
+  const empty = Object.fromEntries(
+    GEAR_CATEGORIES.map((c) => [c, [] as { id: string; label: string }[]]),
+  ) as Record<GearCategory, { id: string; label: string }[]>;
+  const { data, error } = await supabase
+    .from("boards")
+    .select("id, model_name, accessory_type, brand:brands(name)")
+    .eq("kind", "accessory")
+    .order("model_name");
+  if (error || !data) {
+    return empty;
+  }
+  for (const row of data as unknown[]) {
+    const typed = row as {
+      id: string;
+      model_name: string;
+      accessory_type: GearCategory;
+      brand: { name: string } | null;
+    };
+    empty[typed.accessory_type].push({ id: typed.id, label: boardLabel(typed) });
+  }
+  return empty;
 }
 
 /**
@@ -186,6 +223,40 @@ export function buildBoardInsert(
   };
 }
 
+/**
+ * Tiszta leképezés: kinyert jelölt-adat → `boards` insert-payload, KIEGÉSZÍTŐ
+ * ágon (F2.3 3. szakasz). A `buildBoardInsert` párja — szándékosan KÜLÖN
+ * függvény, nem egy közös `kind`-elágazós verzió: a két alak (`board_type`
+ * kontra `accessory_type`) más mezőt visel, a szétválasztás olvashatóbb, mint
+ * egy mindkét ágat kiszolgáló feltétel-erdő.
+ */
+export function buildAccessoryInsert(
+  extracted: ExtractedBoardData,
+  options: { brandId: string; accessoryType: GearCategory; slug: string; seenAt: string },
+): Record<string, unknown> {
+  const specs: ExtractedBoardSpecs = extracted.specs;
+  return {
+    brand_id: options.brandId,
+    model_name: extracted.modelName === "" ? extracted.rawTitle : extracted.modelName,
+    model_year: extracted.modelYear,
+    slug: { hu: options.slug, en: options.slug },
+    kind: "accessory",
+    accessory_type: options.accessoryType,
+    length_cm: specs.lengthCm === null ? null : Math.round(specs.lengthCm),
+    width_cm: specs.widthCm === null ? null : Math.round(specs.widthCm),
+    thickness_cm: specs.thicknessCm === null ? null : Math.round(specs.thicknessCm),
+    volume_l: specs.volumeL === null ? null : Math.round(specs.volumeL),
+    weight_kg: specs.weightKg,
+    max_load_kg: specs.maxLoadKg === null ? null : Math.round(specs.maxLoadKg),
+    inflatable: specs.inflatable ?? true,
+    image_url: extracted.imageUrl,
+    availability_hu: extracted.inStock ?? false,
+    status: "active",
+    first_seen_at: options.seenAt,
+    last_seen_at: options.seenAt,
+  };
+}
+
 async function loadPendingCandidate(
   supabase: SupabaseClient,
   candidateId: string,
@@ -221,13 +292,18 @@ async function recordCandidatePrice(
 }
 
 /**
- * JÓVÁHAGYÁS: a jelöltből ÚJ deszka lesz. A `boardType` a moderátoré — a
- * figyelő tippje csak előválasztás az űrlapon, mert a típus a Deszkaválasztó
- * cél-illesztését vezérli.
+ * JÓVÁHAGYÁS: a jelöltből ÚJ deszka VAGY ÚJ kiegészítő lesz (F2.3 3. szakasz —
+ * a `kind` a moderátor kapcsolójából jön). A típus/kategória a moderátoré — a
+ * figyelő tippje csak előválasztás az űrlapon, mert deszkánál ez a
+ * Deszkaválasztó cél-illesztését vezérli, kiegészítőnél a `/felszereles/:kategoria`
+ * besorolást.
  */
 export async function approveCandidate(
   supabase: SupabaseClient,
-  input: { candidateId: string; boardType: BoardType; reviewerId: string },
+  input: { candidateId: string; reviewerId: string } & (
+    | { kind: "board"; boardType: BoardType }
+    | { kind: "accessory"; accessoryType: GearCategory }
+  ),
 ): Promise<ModerationResult> {
   const candidate = await loadPendingCandidate(supabase, input.candidateId);
   if (!candidate?.extracted) {
@@ -249,9 +325,19 @@ export async function approveCandidate(
     slugify(`${extracted.brandName} ${extracted.modelName}`),
   );
 
+  const insertPayload =
+    input.kind === "board"
+      ? buildBoardInsert(extracted, { brandId, boardType: input.boardType, slug, seenAt })
+      : buildAccessoryInsert(extracted, {
+          brandId,
+          accessoryType: input.accessoryType,
+          slug,
+          seenAt,
+        });
+
   const { data, error } = await supabase
     .from("boards")
-    .insert(buildBoardInsert(extracted, { brandId, boardType: input.boardType, slug, seenAt }))
+    .insert(insertPayload)
     .select("id")
     .single();
   if (error || !data) {

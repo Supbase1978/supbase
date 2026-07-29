@@ -21,6 +21,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { crawlAll, DEFAULT_MIN_DELAY_MS, type CrawlDeps, type FetchText } from "./crawl.ts";
 import { resolveSupabaseTarget } from "./env.ts";
 import { findDiscontinuedCandidates, DEFAULT_UNSEEN_DAYS } from "./lifecycle.ts";
+import type { ProductClassification } from "./normalize.ts";
 import { probeSource } from "./probe.ts";
 import { CRAWLER_USER_AGENT } from "./robots.ts";
 import {
@@ -262,6 +263,14 @@ async function commandCrawl(args: Args): Promise<void> {
   }
 }
 
+/** A besorolás (`classifyProduct`) rövid, ember-olvasható címkéje a probe-kimenethez. */
+function classificationLabel(classification: ProductClassification | null): string {
+  if (classification === null) return "?";
+  if (classification.kind === "board") return "DESZKA";
+  if (classification.kind === "accessory") return `kiegészítő (${classification.accessoryType})`;
+  return "figyelmen kívül hagyva";
+}
+
 /**
  * Forrás-felderítés — adatbázis NÉLKÜL. Ezt futtatjuk, mielőtt bármit
  * felvennénk: megmondja, alkalmas-e a bolt, és milyen kapcsolókkal.
@@ -293,7 +302,7 @@ async function commandProbe(args: Args): Promise<void> {
     console.log(
       `  · ${sample.url}\n` +
         `      HTTP ${sample.status} · JSON-LD Product: ${sample.hasProductJsonLd ? "van" : "NINCS"}` +
-        (sample.hasProductJsonLd ? ` · ${sample.isBoard ? "DESZKA" : "kiegészítő"}` : "") +
+        (sample.hasProductJsonLd ? ` · ${classificationLabel(sample.classification)}` : "") +
         (extracted
           ? ` · ${extracted.brandName ?? "?"} / ${extracted.modelName || "?"} · ${price}` +
             ` · hossz ${extracted.specs.lengthCm ?? "?"} cm · teherbírás ${

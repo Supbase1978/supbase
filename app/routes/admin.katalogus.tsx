@@ -10,6 +10,7 @@
  * belőle katalógus-elem. Ugyanez igaz a kifutásra: a figyelő csak JELÖL, a
  * `discontinued` státuszt a moderátor erősíti meg.
  */
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { data, Form } from "react-router";
 
@@ -19,6 +20,7 @@ import { APP_NAME } from "@core/brand";
 import { Button, Card, StatusBadge } from "@core/ui";
 import {
   approveCandidate,
+  listAccessoryChoicesByCategory,
   listBoardChoices,
   listBoardsForLifecycle,
   listPendingCandidates,
@@ -26,6 +28,7 @@ import {
   rejectCandidate,
   setBoardDiscontinued,
 } from "@modules/catalog/data/candidates.server";
+import { GEAR_CATEGORIES, isGearCategory, type GearCategory } from "@modules/catalog/gear";
 import { DEFAULT_UNSEEN_DAYS, findDiscontinuedCandidates } from "@modules/catalog/lifecycle";
 import { BOARD_TYPES, type BoardType } from "@modules/catalog/types";
 
@@ -35,9 +38,10 @@ export async function loader({ request }: Route.LoaderArgs) {
   await requireRole(request, "moderator");
   const { supabase } = createSupabaseServerClient(request);
 
-  const [candidates, boardChoices, boards] = await Promise.all([
+  const [candidates, boardChoices, accessoryChoicesByCategory, boards] = await Promise.all([
     listPendingCandidates(supabase),
     listBoardChoices(supabase),
+    listAccessoryChoicesByCategory(supabase),
     listBoardsForLifecycle(supabase),
   ]);
 
@@ -52,6 +56,7 @@ export async function loader({ request }: Route.LoaderArgs) {
       extracted: candidate.extracted,
     })),
     boardChoices,
+    accessoryChoicesByCategory,
     unseen: findDiscontinuedCandidates(boards),
     unseenDays: DEFAULT_UNSEEN_DAYS,
   };
@@ -75,6 +80,21 @@ export async function action({ request }: Route.ActionArgs) {
   let result: ActionResult = { ok: false, errorKey: "admin.error.updateFailed" };
   switch (intent) {
     case "approve": {
+      const kind = String(formData.get("kind") ?? "board");
+      if (kind === "accessory") {
+        const rawCategory = String(formData.get("accessoryType") ?? "");
+        if (!isGearCategory(rawCategory)) {
+          result = { ok: false, errorKey: "admin.error.updateFailed" };
+          break;
+        }
+        result = await approveCandidate(supabase, {
+          candidateId,
+          kind: "accessory",
+          accessoryType: rawCategory,
+          reviewerId: user.id,
+        });
+        break;
+      }
       const rawType = String(formData.get("boardType") ?? "");
       if (!isBoardType(rawType)) {
         result = { ok: false, errorKey: "admin.error.updateFailed" };
@@ -82,6 +102,7 @@ export async function action({ request }: Route.ActionArgs) {
       }
       result = await approveCandidate(supabase, {
         candidateId,
+        kind: "board",
         boardType: rawType,
         reviewerId: user.id,
       });
@@ -113,7 +134,7 @@ export const meta: Route.MetaFunction = () => {
 
 export default function AdminCatalogRoute({ loaderData, actionData }: Route.ComponentProps) {
   const { t } = useTranslation("catalog");
-  const { candidates, boardChoices, unseen, unseenDays } = loaderData;
+  const { candidates, boardChoices, accessoryChoicesByCategory, unseen, unseenDays } = loaderData;
 
   return (
     <main className="mx-auto flex min-h-svh max-w-5xl flex-col gap-6 p-4 sm:p-6">
@@ -141,7 +162,11 @@ export default function AdminCatalogRoute({ loaderData, actionData }: Route.Comp
           <ul className="flex flex-col gap-3">
             {candidates.map((candidate) => (
               <li key={candidate.id}>
-                <CandidateCard candidate={candidate} boardChoices={boardChoices} />
+                <CandidateCard
+                  candidate={candidate}
+                  boardChoices={boardChoices}
+                  accessoryChoicesByCategory={accessoryChoicesByCategory}
+                />
               </li>
             ))}
           </ul>
@@ -182,16 +207,29 @@ export default function AdminCatalogRoute({ loaderData, actionData }: Route.Comp
 
 type LoaderCandidate = Awaited<ReturnType<typeof loader>>["candidates"][number];
 type BoardChoice = { id: string; label: string };
+type AccessoryChoicesByCategory = Record<GearCategory, BoardChoice[]>;
 
 function CandidateCard({
   candidate,
   boardChoices,
+  accessoryChoicesByCategory,
 }: {
   candidate: LoaderCandidate;
   boardChoices: BoardChoice[];
+  accessoryChoicesByCategory: AccessoryChoicesByCategory;
 }) {
   const { t } = useTranslation("catalog");
   const extracted = candidate.extracted;
+
+  // A figyelő tippje csak ELŐVÁLASZTÁS (F2.3 3. szakasz): ha a `classifyProduct`
+  // kiegészítőnek látta, a kapcsoló ott indul, de a moderátor bármikor átváltja.
+  const [kind, setKind] = useState<"board" | "accessory">(
+    extracted?.accessoryType ? "accessory" : "board",
+  );
+  const [category, setCategory] = useState<GearCategory>(
+    extracted?.accessoryType ?? GEAR_CATEGORIES[0],
+  );
+
   if (!extracted) {
     return null;
   }
@@ -199,6 +237,7 @@ function CandidateCard({
   const title = [extracted.brandName, extracted.modelName].filter(Boolean).join(" ");
   const confidence =
     candidate.confidence === null ? null : `${Math.round(candidate.confidence * 100)}%`;
+  const mergeChoices = kind === "board" ? boardChoices : accessoryChoicesByCategory[category];
 
   return (
     <Card>
@@ -249,31 +288,68 @@ function CandidateCard({
         </p>
       ) : null}
 
-      {/* Jóváhagyás — a típus a moderátoré (a figyelő tippje csak előválasztás). */}
+      {/* Deszka/kiegészítő kapcsoló (F2.3 3. szakasz) — a jóváhagyás ÉS az
+          összefésülés legördülője is ehhez igazodik. */}
+      <div className="mt-3 flex flex-wrap items-end gap-2">
+        <label className="flex flex-col gap-1 text-sm">
+          <span className="font-medium text-text">{t("admin.kindLabel")}</span>
+          <select
+            value={kind}
+            onChange={(e) => setKind(e.target.value === "accessory" ? "accessory" : "board")}
+            className="rounded-lg border border-line bg-surface px-2 py-1.5 text-sm text-text"
+          >
+            <option value="board">{t("admin.kindBoard")}</option>
+            <option value="accessory">{t("admin.kindAccessory")}</option>
+          </select>
+        </label>
+        {kind === "accessory" ? (
+          <label className="flex flex-col gap-1 text-sm">
+            <span className="font-medium text-text">{t("admin.categoryLabel")}</span>
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value as GearCategory)}
+              className="rounded-lg border border-line bg-surface px-2 py-1.5 text-sm text-text"
+            >
+              {GEAR_CATEGORIES.map((cat) => (
+                <option key={cat} value={cat}>
+                  {t(`gear.categories.${cat}.title`)}
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : null}
+      </div>
+
+      {/* Jóváhagyás — a típus/kategória a moderátoré (a figyelő tippje csak előválasztás). */}
       <Form method="post" className="mt-3 flex flex-wrap items-end gap-2">
         <input type="hidden" name="intent" value="approve" />
         <input type="hidden" name="candidateId" value={candidate.id} />
-        <label className="flex flex-col gap-1 text-sm">
-          <span className="font-medium text-text">{t("admin.typeLabel")}</span>
-          <select
-            name="boardType"
-            defaultValue={extracted.boardType ?? "allround"}
-            className="rounded-lg border border-line bg-surface px-2 py-1.5 text-sm text-text"
-          >
-            {BOARD_TYPES.map((type) => (
-              <option key={type} value={type}>
-                {t(`boardType.${type}`)}
-              </option>
-            ))}
-          </select>
-        </label>
+        <input type="hidden" name="kind" value={kind} />
+        {kind === "accessory" ? (
+          <input type="hidden" name="accessoryType" value={category} />
+        ) : (
+          <label className="flex flex-col gap-1 text-sm">
+            <span className="font-medium text-text">{t("admin.typeLabel")}</span>
+            <select
+              name="boardType"
+              defaultValue={extracted.boardType ?? "allround"}
+              className="rounded-lg border border-line bg-surface px-2 py-1.5 text-sm text-text"
+            >
+              {BOARD_TYPES.map((type) => (
+                <option key={type} value={type}>
+                  {t(`boardType.${type}`)}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
         <Button type="submit" variant="primary">
           {t("admin.approve")}
         </Button>
       </Form>
       <p className="mt-1 text-xs text-text-3">{t("admin.typeHint")}</p>
 
-      {/* Összefésülés meglévő deszkába — a dupla-név elleni védelem. */}
+      {/* Összefésülés meglévő deszkába/kiegészítőbe — a dupla-név elleni védelem. */}
       <Form method="post" className="mt-3 flex flex-wrap items-end gap-2">
         <input type="hidden" name="intent" value="merge" />
         <input type="hidden" name="candidateId" value={candidate.id} />
@@ -285,7 +361,7 @@ function CandidateCard({
             className="rounded-lg border border-line bg-surface px-2 py-1.5 text-sm text-text"
           >
             <option value="">—</option>
-            {boardChoices.map((choice) => (
+            {mergeChoices.map((choice) => (
               <option key={choice.id} value={choice.id}>
                 {choice.label}
               </option>

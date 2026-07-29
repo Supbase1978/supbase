@@ -204,6 +204,47 @@ describe("crawlSource — teljes menet", () => {
     expect(candidates).toEqual([]);
   });
 
+  it("KÖVETETT felszerelést (evező) jelöltnek ment, accessoryType-tal (F2.3 3. szakasz)", async () => {
+    const network = makeNetwork({
+      ...HAPPY_NETWORK,
+      [`${ORIGIN}/termek/gladiator-origin`]: {
+        text: `<html><head><script type="application/ld+json">
+          {"@type":"Product","name":"Karbon SUP evező állítható 170-220 cm",
+           "brand":{"@type":"Brand","name":"Jobe"},
+           "offers":{"@type":"Offer","price":"29900","priceCurrency":"HUF"}}
+        </script></head><body></body></html>`,
+      },
+    });
+    const { store, candidates } = makeStore();
+
+    const summary = await crawlSource(SOURCE, { fetchText: network.fetchText, store });
+
+    expect(summary.skippedNonBoard).toBe(0);
+    expect(summary.candidatesCreated).toBe(1);
+    expect(candidates).toHaveLength(1);
+    expect(candidates[0]?.extracted.accessoryType).toBe("evezo");
+  });
+
+  it("nem KÖVETETT felszerelést (táska) sem jelöltnek, sem deszkának nem vesz — csak skippedNonBoard", async () => {
+    const network = makeNetwork({
+      ...HAPPY_NETWORK,
+      [`${ORIGIN}/termek/gladiator-origin`]: {
+        text: `<html><head><script type="application/ld+json">
+          {"@type":"Product","name":"Vízhatlan SUP táska 20 l",
+           "brand":{"@type":"Brand","name":"Jobe"},
+           "offers":{"@type":"Offer","price":"12900","priceCurrency":"HUF"}}
+        </script></head><body></body></html>`,
+      },
+    });
+    const { store, candidates } = makeStore();
+
+    const summary = await crawlSource(SOURCE, { fetchText: network.fetchText, store });
+
+    expect(summary.skippedNonBoard).toBe(1);
+    expect(summary.candidatesCreated).toBe(0);
+    expect(candidates).toEqual([]);
+  });
+
   it("JSON-LD nélküli oldalt csendben átugorja", async () => {
     const network = makeNetwork({
       ...HAPPY_NETWORK,

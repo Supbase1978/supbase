@@ -17,8 +17,9 @@ import {
 } from "./crawl.ts";
 import { htmlToText } from "./html.ts";
 import { findProductNodes, pickPrimaryProduct } from "./jsonld.ts";
-import { extractProduct, looksLikeBoard } from "./normalize.ts";
+import { classifyProduct, extractProduct } from "./normalize.ts";
 import { CRAWLER_USER_AGENT, crawlDelayFor, isPathAllowed } from "./robots.ts";
+import type { ProductClassification } from "./normalize.ts";
 import type { CatalogSourceRow, ExtractedProduct, SourceCrawlSummary } from "./types.ts";
 
 /** Egy minta-termékoldal eredménye. */
@@ -28,8 +29,11 @@ export interface ProbeSample {
   /** Van-e schema.org Product JSON-LD (ez dönti el, hogy szelektor nélkül megy-e). */
   hasProductJsonLd: boolean;
   extracted: ExtractedProduct | null;
-  /** Deszkának minősül-e (a kiegészítők nem kerülnek a jelölt-sorba). */
-  isBoard: boolean;
+  /**
+   * A `classifyProduct` döntése (F2.3 3. szakasz): `board` VAGY `accessory`
+   * jelöltet kap a moderációs sor, `ignore` nem.
+   */
+  classification: ProductClassification | null;
 }
 
 export interface ProbeResult {
@@ -165,7 +169,7 @@ export async function probeSource(
         status: page.status,
         hasProductJsonLd: node !== null,
         extracted,
-        isBoard: extracted !== null && looksLikeBoard(extracted),
+        classification: extracted !== null ? classifyProduct(extracted) : null,
       });
     } catch (error) {
       errors.push(`${url}: ${error instanceof Error ? error.message : String(error)}`);
@@ -188,16 +192,22 @@ export async function probeSource(
     verdict =
       `Használható (${withJsonLd}/${samples.length} mintán van Product JSON-LD), ` +
       "de ÁR nem jött ki — a jelöltek ár nélkül érkeznének.";
-  } else if (samples.every((sample) => !sample.isBoard)) {
+  } else if (samples.every((sample) => sample.classification?.kind === "ignore")) {
     verdict =
       `Használható (${withJsonLd}/${samples.length} mintán Product JSON-LD), de a mintákban ` +
-      "csak KIEGÉSZÍTŐ volt (evező, pumpa, ruházat). A figyelő ezeket kiszűri; szűkítsd a " +
-      "--pattern mintát a deszka-kategóriára, hogy ne kérjünk le fölösleges oldalakat.";
+      "csak figyelmen kívül hagyott termék volt (ruházat, apróság, vagy nem követett " +
+      "felszerelés-kategória — póráz/szárazzsák/ülés/uszony/táska). A figyelő ezeket kiszűri; " +
+      "szűkítsd a --pattern mintát a deszka- vagy evező/mentőmellény/pumpa-kategóriára.";
   } else {
-    const boards = samples.filter((sample) => sample.isBoard).length;
+    const boards = samples.filter((sample) => sample.classification?.kind === "board").length;
+    const accessories = samples.filter(
+      (sample) => sample.classification?.kind === "accessory",
+    ).length;
     verdict =
       `ALKALMAS: ${urls.length} termék-URL, ${withJsonLd}/${samples.length} mintán Product ` +
-      `JSON-LD, ${boards} deszka, ár is kijön.`;
+      `JSON-LD, ${boards} deszka` +
+      (accessories > 0 ? ` + ${accessories} követett felszerelés` : "") +
+      ", ár is kijön.";
   }
 
   const patternFlags = (options.productUrlPatterns ?? [])

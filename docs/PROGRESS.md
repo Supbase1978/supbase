@@ -21,7 +21,7 @@
 | F1.12 Analitika (süti-mentes) | ✅ kész + élesítve (2026-07-28) | `analytics_events` + definer-RPC + `/admin/analitika`. Nincs süti/IP/azonosító → nincs egyéni tölcsér, csak darabszám. Robot/DNT/dev nem számol |
 | F2.2 Visszajelzés-csatorna | ✅ kód kész (2026-07-28) | `/visszajelzes` (hiba · hiányzó bolt · hiányzó modell) + `/admin/visszajelzesek`. HÁTRA: migráció éles push + böngésző-verifikáció |
 | F2.1 catalog-watch piacfigyelő | ✅ kód kész (2026-07-28) | crawler + CLI + `/admin/katalogus` moderáció + heti GH Actions cron. HÁTRA: valós HU források bekötése és az első éles crawl (felhasználói döntés) |
-| F2.3 Felszerelés (kiegészítők), 1–2. szakasz | ✅ kész (2026-07-29) | 1.: `/felszereles` útmutató-oldalak. 2.: `kind`/`would_recommend` migráció (NEM éles) + `kind='board'` szűrő mindenhol + `/felszereles/:kategoria/:slug` termékadatlap + „ajánlom/nem ajánlom" bekötve. HÁTRA: migráció éles push, 3. szakasz (catalog-watch besorolás) |
+| F2.3 Felszerelés (kiegészítők), 1–3. szakasz | ✅ kész (2026-07-29) | 1.: `/felszereles` útmutató-oldalak. 2.: `kind`/`would_recommend` migráció (NEM éles) + `kind='board'` szűrő mindenhol + `/felszereles/:kategoria/:slug` termékadatlap. 3.: catalog-watch `classifyProduct` (evező/mentőmellény/pumpa jelöltté válik) + admin deszka/kiegészítő kapcsoló. HÁTRA: migráció éles push, valós forrás-bekötés |
 | F1.10 Záró audit + élesítés | ✅ audit **26/26** (2026-07-27) | **`docs/AUDIT_F1.md`**: az audit két mérés-jellegű hiánya pótolva (vizuális regresszió 07-26, teljesítmény-budget 07-27). HÁTRA az F1 lezárásához a publikussá tétel — a lépések a `RUNBOOK.md` **élesítési checklistjében** (domain → Resend-SMTP → Turnstile → cégadatok → `SITE_PUBLIC=true`), mind felhasználói döntés/adat |
 
 ## ITINER a következő sessionnek (2026-07-28-i állapot)
@@ -31,10 +31,11 @@
 jelszó-kapu mögött. Azóta három továbbfejlesztés ment ki élesbe: folyó-vízállás
 (F1.11), póráz-figyelmeztetés (F1.11b) és süti-mentes analitika (F1.12).
 2026-07-28: elkészült az **F2.1 catalog-watch piacfigyelő** (kód kész, éles
-futás még nem volt — a nyitott lépések az F2.1-szakasz végén), az **F2.2
-visszajelzés-csatorna** (kód kész, migráció még nincs élesítve), és az **F2.3
-Felszerelés-útmutató 1. szakasza** (séma-módosítás nélkül, lásd F2.3-szakasz —
-a 2–3. szakasz DB-migrációt igényel, HÁTRA).
+futás még nem volt) és az **F2.2 visszajelzés-csatorna** (kód kész, migráció
+még nincs élesítve). 2026-07-29: elkészült az **F2.3 Felszerelés** mind a 3
+szakasza (útmutató · `kind`-diszkriminátor + termékadatlap · catalog-watch
+besorolás) — a `kind`/`would_recommend` migráció még NEM éles, ez az egyetlen
+hátralévő lépés a katalógus-oldalon.
 
 **A PUBLIKUSSÁ TÉTEL a felhasználón múlik** — a lépések sorrendben a
 `docs/RUNBOOK.md` „Élesítési checklist" szakaszában:
@@ -47,20 +48,18 @@ cégadatok addig várnak, amíg eldől a vállalkozási forma.
 **Fejlesztési irányok, amelyekből választani lehet** (a legutóbbi körben a
 felhasználó a HydroInfo-t választotta, majd az analitikát):
 
-1. **Biztonsági kiegészítők teljes blokkja** — a domain-review 2.8 pontja.
-   A biztonságkritikus mag (póráz + mentőmellény-mondat, F1.11b) ÉS a
-   „Felszerelés" tartalmi útmutató (8 kategória, Deszkaválasztó-integráció)
-   MÁR MEGVAN (F2.3, 1. szakasz). Ami hátra van: a terv 2. szakasza
-   (termékszintű katalógus — `kind` diszkriminátor, konkrét ajánlások,
-   `would_recommend`) és 3. szakasza (catalog-watch besorolás) — ld.
-   `~/.claude/plans/rendben-kezdj-nk-a-2-vel-nested-wand.md`, mindkettő
-   DB-migrációt igényel.
-2. ~~**catalog-watch piacfigyelő pipeline** (F2)~~ — **KÓD KÉSZ (F2.1,
-   2026-07-28)**. Ami hátra van, az nem fejlesztés: valós HU források
-   bekötése (`add-source`), első `crawl --dry-run`, majd moderáció a
-   `/admin/katalogus`-on. Ez tölti fel a katalógust (most 20 deszka), ami
-   EGYBEN előfeltétele az advisor ár-padló tételének (20 elemen az
-   eloszlás-alapú küszöb zajos).
+1. ~~**Biztonsági kiegészítők teljes blokkja**~~ — **KÓD KÉSZ (F2.3, mind a 3
+   szakasz, 2026-07-29)**: a domain-review 2.8 pontja lezárva. Ami hátra van,
+   az nem fejlesztés: a `kind`/`would_recommend` migráció éles push-a, majd
+   valós HU-forrás bekötése úgy, hogy evező/mentőmellény/pumpa jelöltek is
+   érkezzenek — ez ugyanaz a lépés, mint a 2. pont.
+2. ~~**catalog-watch piacfigyelő pipeline** (F2)~~ — **KÓD KÉSZ (F2.1+F2.3,
+   2026-07-29)**. Ami hátra van, az nem fejlesztés: a migráció éles push-a,
+   valós HU források bekötése (`add-source`, lásd a boltkutatás-jegyzet a
+   memóriában), első `crawl --dry-run`, majd moderáció a `/admin/katalogus`-on
+   (deszka ÉS a 3 követett felszerelés-kategória). Ez tölti fel a katalógust
+   (most 20 deszka + 0 kiegészítő), ami EGYBEN előfeltétele az advisor
+   ár-padló tételének (20 elemen az eloszlás-alapú küszöb zajos).
 3. **Capacitor natív build** (F2 nyitása) — a `build:native` SPA-mód megvan,
    a wrapper nincs.
 4. **react-router 8 frissítés** — `SECURITY_FINDINGS.md` F1.10-01 (RSC-módú
@@ -360,10 +359,61 @@ fogad el (regex) — az invariáns nem az, hogy csak deszkát lehet lekérdezni,
 hanem hogy egyetlen `boards`-olvasás se maradjon kind-szűrő NÉLKÜL. Mutációs
 próbával újra igazolva (a szűrő kivételekor a teszt elhasal, visszaállítva zöld).
 
+**HÁTRA (ekkor még nyitva, lezárva alább):** 3. szakasz: catalog-watch
+`classifyProduct` (szűrés helyett besorolás).
+
+### 3. szakasz — catalog-watch: szűrés helyett besorolás (2026-07-29)
+
+Terv 197–216. sor. Kapuk zöldek: typecheck · lint · **760 vitest** (+12 új).
+Migráció nem kellett (a `catalog_candidates.extracted` jsonb-szerződés a
+`ExtractedBoardData` típuson át már F1.5 óta rugalmas — az `accessoryType`
+mező bővítése nem sémaváltozás).
+
+**Elkészült:**
+- `tools/catalog-watch/normalize.ts`: a lapos `ACCESSORY_KEYWORDS` lista
+  helyett **kategorizált** `ACCESSORY_CATEGORY_RULES` (specifikus→általános
+  sorrend, mint a `guessBoardType`) + `MISC_NON_BOARD_KEYWORDS` (ruházat,
+  apróság — ezek EGYIK gear-kategóriának sem felelnek meg). `looksLikeBoard`
+  (boolean) → **`classifyProduct`** (`{kind:"board"} | {kind:"accessory",
+  accessoryType} | {kind:"ignore"}`).
+- **Mennyiségi korlát** (a terv kifejezett kérése): `TRACKED_ACCESSORY_TYPES =
+  ["evezo","mentomelleny","pumpa"]` — csak ez a 3 kategória termel jelöltet a
+  CRAWL-időben; a többi felismert kategória (póráz/szárazzsák/ülés/uszony/
+  táska) `ignore` marad, hogy a moderációs sor ne teljen meg aprósággal. A
+  moderátor a jóváhagyáskor bármelyik 8 kategóriát választhatja — a korlát
+  csak a jelölt-TERMELÉST szűkíti, a moderáció döntését nem.
+- `extractProduct` a besorolást is elvégzi és az `ExtractedBoardData.accessoryType`
+  mezőbe írja (bővített típus, `src/modules/catalog/types.ts`) — ez adja az
+  admin UI kategória-legördülőjének előválasztását, ugyanúgy, ahogy a
+  `boardType` tipp is előválasztás.
+- `crawl.ts`: a `looksLikeBoard` elágazás helyén `classifyProduct`, `ignore`-nál
+  `skippedNonBoard++`, egyébként (board VAGY accessory) jelölt-sor.
+- `probe.ts`+`cli.ts`: a próba-kimenet a besorolást mutatja
+  (`DESZKA`/`kiegészítő (kategória)`/`figyelmen kívül hagyva`), a verdict-szöveg
+  frissítve.
+- `candidates.server.ts`: ÚJ `buildAccessoryInsert` (a `buildBoardInsert` párja,
+  szándékosan KÜLÖN függvény — más alakot ír, nem közös feltétel-erdő),
+  `approveCandidate` mostantól diszkriminált union bemenetet vesz
+  (`{kind:"board", boardType}` | `{kind:"accessory", accessoryType}`), ÚJ
+  `listAccessoryChoicesByCategory` (egyetlen lekérdezés, kategóriánként
+  csoportosítva a merge-célpontokhoz).
+- `/admin/katalogus`: a jelölt-kártyán ÚJ **deszka/kiegészítő kapcsoló** (a
+  figyelő tippje előválasztja, `extracted.accessoryType`-ból), kiegészítőnél
+  kategória-legördülő; az összefésülés-legördülő a kapcsoló szerint vált
+  `boardChoices`/`accessoryChoicesByCategory` között (kliens-oldali `useState`,
+  a lista már a loaderben lekérve).
+
+**Verifikáció:** 12 új teszt (`classifyProduct` táblázatos + 2 új
+`crawlSource`-eset: KÖVETETT evező → jelölt `accessoryType`-tal, NEM követett
+táska → `skippedNonBoard`, nem jelölt) + `buildAccessoryInsert` 3 teszt. A
+`deszkavalaszto.kind.test.ts` őrszem-lefedettség újra lefuttatva az ÚJ
+`kind='accessory'`-lekérdezésekre is — zöld, mutációval igazolva korábban.
+i18n kulcs-paritás (hu↔en) ellenőrizve szkripttel.
+
 **HÁTRA:** a migráció éles push-a (felhasználói jóváhagyással, a CI rls-tests
-előbb fusson le rajta) · 3. szakasz: catalog-watch `classifyProduct` (szűrés
-helyett besorolás) · böngésző-verifikáció, ha lesz legalább egy valós
-kiegészítő-sor a katalógusban (ma 0 sor, a UI csak üres-állapotot mutathat).
+előbb fusson le rajta) · valós HU-forrás bekötése (`add-source` — lásd a
+korábban elmentett boltkutatás-jegyzet) és az első `crawl --dry-run` · böngésző-
+verifikáció, ha lesz legalább egy valós kiegészítő-jelölt a moderációs sorban.
 
 ## F1.0 — Projekt-setup (2026-07-17)
 

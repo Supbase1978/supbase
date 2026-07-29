@@ -4,6 +4,10 @@ Terv és indoklás: [`docs/CATALOG_WATCH_TERV.md`](../../docs/CATALOG_WATCH_TERV
 
 A figyelő megkeresi a boltok/márkaoldalak SUP-deszkáit, **ismert** modellnél
 árat és „láttuk" jelzést ír, **ismeretlennél** jelöltet tesz a moderációs sorba.
+A `classifyProduct` (F2.3 3. szakasz) a deszkán túl a 3 érdemi felszerelés-
+kategóriát (evező, mentőmellény, pumpa) is jelöltnek veszi — a többi
+kiegészítő (póráz, szárazzsák, ülés, uszony, táska, ruházat) egyelőre kimarad
+(„mennyiségi korlát", ne kövessünk minden apróságot).
 
 > **A figyelő soha nem publikál magától.** `boards` sort nem hoz létre: új típus
 > kizárólag a `/admin/katalogus` moderációs felületről születhet. Ugyanez a

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { buildBoardInsert } from "./candidates.server";
+import { buildAccessoryInsert, buildBoardInsert } from "./candidates.server";
 import type { ExtractedBoardData } from "../types";
 
 const EXTRACTED: ExtractedBoardData = {
@@ -22,6 +22,7 @@ const EXTRACTED: ExtractedBoardData = {
     maxLoadKg: 140,
     inflatable: true,
   },
+  accessoryType: null,
 };
 
 const OPTIONS = {
@@ -100,5 +101,68 @@ describe("buildBoardInsert", () => {
   it("üres modellnév esetén a nyers címet használja (ne legyen névtelen sor)", () => {
     const insert = buildBoardInsert({ ...EXTRACTED, modelName: "" }, OPTIONS);
     expect(insert.model_name).toBe(EXTRACTED.rawTitle);
+  });
+});
+
+const ACCESSORY_EXTRACTED: ExtractedBoardData = {
+  ...EXTRACTED,
+  brandName: "Jobe",
+  modelName: "Karbon evező",
+  rawTitle: "Jobe Karbon SUP evező állítható 170-220 cm",
+  boardType: null,
+  specs: {
+    lengthCm: null,
+    widthCm: null,
+    thicknessCm: null,
+    volumeL: null,
+    weightKg: 0.9,
+    maxLoadKg: null,
+    inflatable: null,
+  },
+  accessoryType: "evezo",
+};
+
+const ACCESSORY_OPTIONS = {
+  brandId: "brand-2",
+  accessoryType: "evezo" as const,
+  slug: "jobe-karbon-evezo",
+  seenAt: "2026-07-29T10:00:00.000Z",
+};
+
+describe("buildAccessoryInsert", () => {
+  it("a jelöltből kind='accessory' payloadot épít, board_type nélkül", () => {
+    expect(buildAccessoryInsert(ACCESSORY_EXTRACTED, ACCESSORY_OPTIONS)).toEqual({
+      brand_id: "brand-2",
+      model_name: "Karbon evező",
+      model_year: 2024,
+      slug: { hu: "jobe-karbon-evezo", en: "jobe-karbon-evezo" },
+      kind: "accessory",
+      accessory_type: "evezo",
+      length_cm: null,
+      width_cm: null,
+      thickness_cm: null,
+      volume_l: null,
+      weight_kg: 0.9,
+      max_load_kg: null,
+      inflatable: true,
+      image_url: "https://bolt.hu/kep.jpg",
+      availability_hu: true,
+      status: "active",
+      first_seen_at: ACCESSORY_OPTIONS.seenAt,
+      last_seen_at: ACCESSORY_OPTIONS.seenAt,
+    });
+  });
+
+  it("nincs board_type mező a payloadban (a boards_kind_shape kényszer szerint)", () => {
+    const insert = buildAccessoryInsert(ACCESSORY_EXTRACTED, ACCESSORY_OPTIONS);
+    expect(insert.board_type).toBeUndefined();
+  });
+
+  it("a moderátor kategóriája győz a figyelő tippje felett", () => {
+    const insert = buildAccessoryInsert(ACCESSORY_EXTRACTED, {
+      ...ACCESSORY_OPTIONS,
+      accessoryType: "pumpa",
+    });
+    expect(insert.accessory_type).toBe("pumpa");
   });
 });

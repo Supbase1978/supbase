@@ -150,6 +150,12 @@ export interface ExtractedBoardData {
   imageUrl: string | null;
   boardType: BoardType | null;
   specs: ExtractedBoardSpecs;
+  /**
+   * Felszerelés-kategória, ha a figyelő `classifyProduct` döntése `accessory`
+   * (F2.3 3. szakasz) — deszka-jelöltnél MINDIG `null`. A moderációs UI ez
+   * alapján dönti el, melyik jóváhagyó űrlapot (deszka vagy kiegészítő) mutassa.
+   */
+  accessoryType: GearCategory | null;
 }
 
 /** `public.catalog_candidates` sor (catalog-watch migráció). */
