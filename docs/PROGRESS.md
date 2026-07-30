@@ -22,6 +22,7 @@
 | F2.2 Visszajelzés-csatorna | ✅ kész + élesítve (2026-07-29) | `/visszajelzes` (hiba · hiányzó bolt · hiányzó modell) + `/admin/visszajelzesek`. Migráció éles push (2026-07-29), REST-tel verifikálva (RLS zár). HÁTRA: böngésző-verifikáció, `RESEND_API_KEY` ha kell e-mail-értesítés |
 | F2.1 catalog-watch piacfigyelő | ✅ kód kész (2026-07-28) | crawler + CLI + `/admin/katalogus` moderáció + heti GH Actions cron. HÁTRA: valós HU források bekötése és az első éles crawl (felhasználói döntés) |
 | F2.3 Felszerelés (kiegészítők), 1–3. szakasz | ✅ kész + élesítve (2026-07-29) | 1.: `/felszereles` útmutató-oldalak. 2.: `kind`/`would_recommend` migráció (élesítve, REST-tel verifikálva) + `kind='board'` szűrő mindenhol + `/felszereles/:kategoria/:slug` termékadatlap. 3.: catalog-watch `classifyProduct` (evező/mentőmellény/pumpa jelöltté válik) + admin deszka/kiegészítő kapcsoló. HÁTRA: valós forrás-bekötés (ugyanaz a lépés, mint F2.1) |
+| F2.4 Direkt bolti ár eltávolítása | ✅ kész (2026-07-30) | A deszka- és kiegészítő-adatlapról (fejléc-ár + „Hol kapható" blokk + JSON-LD `offers`) eltávolítva — felhasználói döntés, ld. F2.4-szakasz. A `board_prices` gyűjtés (catalog-watch) VÁLTOZATLAN, a Deszkaválasztó budget-szűrője/eredmény-ára is VÁLTOZATLAN (felhasználói döntés szerint) |
 | F1.10 Záró audit + élesítés | ✅ audit **26/26** (2026-07-27) | **`docs/AUDIT_F1.md`**: az audit két mérés-jellegű hiánya pótolva (vizuális regresszió 07-26, teljesítmény-budget 07-27). HÁTRA az F1 lezárásához a publikussá tétel — a lépések a `RUNBOOK.md` **élesítési checklistjében** (domain → Resend-SMTP → Turnstile → cégadatok → `SITE_PUBLIC=true`), mind felhasználói döntés/adat |
 
 ## ITINER a következő sessionnek (2026-07-28-i állapot)
@@ -423,6 +424,45 @@ meglévő deszka-sor változatlanul `kind='board'`, `boards.accessory_type` és
 **HÁTRA:** valós HU-forrás bekötése (`add-source` — lásd a korábban elmentett
 boltkutatás-jegyzet) és az első `crawl --dry-run` · böngésző-verifikáció, ha
 lesz legalább egy valós kiegészítő-jelölt a moderációs sorban.
+
+## F2.4 — Direkt bolti ár eltávolítása (2026-07-30)
+
+Felhasználói döntés a forrás-bekötés előkészítése közben: a platform NE
+mutasson direkt bolti Ft-árat, mert (1) sosem friss (akciók, amiket nem
+követünk), (2) ha csak néhány boltot kötünk be forrásnak, az igazságtalan/
+hiányos képet ad a ki nem választott boltok kárára, (3) az ár/érték ítélet MÁR
+MA IS a közösségé (`board_reviews.rating_value` — „ár-érték" dimenzió), a
+nyers Ft elrejtése nem veszi el ezt a jelet. Memóriában rögzítve:
+`ar-megjelenites-politika.md`. Kapuk zöldek: typecheck · lint · **760 vitest**
+(nem csökkent — egyetlen teszt sem hivatkozott a törölt UI-ra).
+
+**Tudatosan KIVÉTEL — a Deszkaválasztó (F1.6) VÁLTOZATLAN marad** (felhasználói
+döntés): a budget-szűrés (a felhasználó SAJÁT megadott büdzséjét párosítja a
+katalógus áraival) és az eredmény-kártya ár-kiírása más jellegű, mint egy
+bolti ár-lista — nem „ez ennyibe kerül" ténymegállapítás, hanem a felhasználó
+saját preferenciájának visszaigazolása.
+
+**Elkészült (`app/routes/deszkak.$slug.tsx` + `felszereles.$kategoria.$slug.tsx`,
+azonos mintával mindkettőn):**
+- A fejléc „X Ft-tól" jelvénye eltávolítva.
+- A teljes „Hol kapható" `Card`-szekció (bolti ár-lista + kimenő linkek)
+  eltávolítva.
+- A `productJsonLd(...)` hívásból az `offers` mező törölve — a JSON-LD-ben sem
+  jelenik meg ár (a keresőmotorok se mutassanak elavult/hiányos ár-snippetet).
+- A loaderek már nem hívják a `listBoardPrices`-t (a korábban csak
+  megjelenítésre szolgáló lekérdezés fölöslegessé vált) — ez NEM érinti a
+  `board_prices` ÍRÁSI oldalát: a catalog-watch (`crawl.ts` `recordPrice`,
+  `candidates.server.ts` `recordCandidatePrice`) továbbra is csendben gyűjt.
+- Az árva i18n-kulcsok (`catalog.detail.prices/priceFrom/noPrices`) törölve
+  hu+en-ből, paritás ellenőrizve.
+- Az admin-moderáció (`/admin/katalogus`) ÉRINTETLEN — a moderátor a jelölt
+  kártyáján továbbra is látja a crawl-olt árat (belső döntéstámogató adat, nem
+  nyilvános megjelenítés).
+
+**Nyitott, még el nem döntött irány** (a memóriajegyzetben rögzítve): kimenő
+link egy dedikált árfigyelőre (pl. Árukereső) a saját ár-UI helyett — ha ez
+megvalósul, a `board_prices.shop_name`/`url` mezőkre hosszú távon nem is lesz
+szükség. Ez KÜLÖN döntés, nem ennek a körnek a része.
 
 ## F1.0 — Projekt-setup (2026-07-17)
 

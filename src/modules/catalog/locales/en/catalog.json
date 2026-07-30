@@ -45,10 +45,7 @@
   "detail": {
     "description": "Description",
     "specs": "Specs",
-    "prices": "Where to buy",
-    "priceFrom": "from",
-    "manual": "Manual",
-    "noPrices": "No shop price at the moment."
+    "manual": "Manual"
   },
   "admin": {
     "title": "Catalog moderation",

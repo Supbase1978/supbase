@@ -22,7 +22,7 @@ import { absoluteUrl, buildPageSeo } from "@core/seo/page-seo";
 import { productJsonLd } from "@core/seo/jsonld";
 import { JsonLd } from "@core/seo/json-ld";
 import { Button, Card, StatusBadge } from "@core/ui";
-import { getAccessoryBySlug, listBoardPrices } from "@modules/catalog/data/boards.server";
+import { getAccessoryBySlug } from "@modules/catalog/data/boards.server";
 import { isGearCategory } from "@modules/catalog/gear";
 import { BoardHero } from "@modules/catalog/ui/BoardHero";
 import { computeReviewAggregate, toTen } from "@modules/reviews/aggregate";
@@ -73,8 +73,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
     throw new Response("Not Found", { status: 404 });
   }
 
-  const [prices, reviewRows, user] = await Promise.all([
-    listBoardPrices(supabase, accessory.id),
+  const [reviewRows, user] = await Promise.all([
     listReviews(supabase, accessory.id, { publishedOnly: true }),
     getUser(request),
   ]);
@@ -108,12 +107,8 @@ export async function loader({ request, params }: Route.LoaderArgs) {
       aggregate.count > 0 && aggregate.avgOverall !== null
         ? { ratingValue: aggregate.avgOverall, reviewCount: aggregate.count }
         : undefined,
-    offers: prices.map((p) => ({
-      price: p.price_huf,
-      priceCurrency: "HUF",
-      url: p.url ?? undefined,
-      availability: "https://schema.org/InStock" as const,
-    })),
+    // NINCS offers: a platform szándékosan nem mutat direkt bolti árat — lásd
+    // az ár-megjelenítés politikáját (ugyanaz a döntés, mint a deszka-adatlapon).
   });
 
   return {
@@ -132,12 +127,6 @@ export async function loader({ request, params }: Route.LoaderArgs) {
       imageUrl: accessory.image_url,
       description: pickTranslated(accessory.description, locale) || null,
     },
-    prices: prices.map((p) => ({
-      id: p.id,
-      shopName: p.shop_name,
-      url: p.url,
-      priceHuf: p.price_huf,
-    })),
     aggregate,
     overallTen: toTen(aggregate.avgOverall),
     reviews: reviewRows.map((r) => ({
@@ -233,12 +222,9 @@ const RATING_OPTIONS = [1, 2, 3, 4, 5] as const;
 
 export default function AccessoryDetailRoute({ loaderData, actionData }: Route.ComponentProps) {
   const { t } = useTranslation("catalog");
-  const { t: tr, i18n } = useTranslation("reviews");
-  const { category, accessory, prices, aggregate, overallTen, reviews, reviewForm, jsonLd } =
-    loaderData;
+  const { t: tr } = useTranslation("reviews");
+  const { category, accessory, aggregate, overallTen, reviews, reviewForm, jsonLd } = loaderData;
 
-  const cheapest = prices.length > 0 ? prices[0] : null;
-  const nf = new Intl.NumberFormat(i18n.language);
   const canFlag = reviewForm.isLoggedIn && reviewForm.isEmailConfirmed;
 
   return (
@@ -259,11 +245,6 @@ export default function AccessoryDetailRoute({ loaderData, actionData }: Route.C
           >
             {accessory.modelName}
           </h1>
-          {cheapest ? (
-            <span className="text-lg font-bold text-text">
-              {nf.format(cheapest.priceHuf)} Ft{t("detail.priceFrom")}
-            </span>
-          ) : null}
         </div>
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-text-2">
           {accessory.brandName ? <span>{accessory.brandName}</span> : null}
@@ -375,33 +356,6 @@ export default function AccessoryDetailRoute({ loaderData, actionData }: Route.C
         ) : null}
       </Card>
 
-      <Card>
-        <h2 className="text-lg font-semibold text-ink-deep">{t("detail.prices")}</h2>
-        {prices.length === 0 ? (
-          <p className="mt-2 text-sm text-text-2">{t("detail.noPrices")}</p>
-        ) : (
-          <ul className="mt-2 flex flex-col gap-2">
-            {prices.map((price) => (
-              <li key={price.id} className="flex items-center justify-between gap-3 text-sm">
-                <span className="text-text-2">{price.shopName}</span>
-                <span className="flex items-center gap-3">
-                  <span className="font-semibold text-text">{nf.format(price.priceHuf)} Ft</span>
-                  {price.url ? (
-                    <a
-                      href={price.url}
-                      target="_blank"
-                      rel="noreferrer noopener"
-                      className="font-semibold text-petrol-text underline"
-                    >
-                      {t("detail.prices")}
-                    </a>
-                  ) : null}
-                </span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </Card>
     </main>
   );
 }

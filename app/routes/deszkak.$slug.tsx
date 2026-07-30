@@ -19,7 +19,7 @@ import { absoluteUrl, buildPageSeo } from "@core/seo/page-seo";
 import { productJsonLd } from "@core/seo/jsonld";
 import { JsonLd } from "@core/seo/json-ld";
 import { Button, Card, StatusBadge } from "@core/ui";
-import { getBoardBySlug, listBoardPrices } from "@modules/catalog/data/boards.server";
+import { getBoardBySlug } from "@modules/catalog/data/boards.server";
 import { BoardHero } from "@modules/catalog/ui/BoardHero";
 import { computeReviewAggregate, toTen } from "@modules/reviews/aggregate";
 import {
@@ -76,8 +76,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
     throw new Response("Not Found", { status: 404 });
   }
 
-  const [prices, reviewRows, user] = await Promise.all([
-    listBoardPrices(supabase, board.id),
+  const [reviewRows, user] = await Promise.all([
     listReviews(supabase, board.id, { publishedOnly: true }),
     getUser(request),
   ]);
@@ -111,12 +110,10 @@ export async function loader({ request, params }: Route.LoaderArgs) {
       aggregate.count > 0 && aggregate.avgOverall !== null
         ? { ratingValue: aggregate.avgOverall, reviewCount: aggregate.count }
         : undefined,
-    offers: prices.map((p) => ({
-      price: p.price_huf,
-      priceCurrency: "HUF",
-      url: p.url ?? undefined,
-      availability: "https://schema.org/InStock" as const,
-    })),
+    // NINCS offers: a platform szándékosan nem mutat direkt bolti árat (elavul,
+    // méltánytalan a be nem kötött boltokkal) — lásd az ár-megjelenítés
+    // politikáját. A `board_prices` adat a catalog-watch-on át továbbra is
+    // gyűlik, csak nem jelenik meg sem itt, sem a JSON-LD-ben.
   });
 
   return {
@@ -143,12 +140,6 @@ export async function loader({ request, params }: Route.LoaderArgs) {
       imageUrl: board.image_url,
       description: pickTranslated(board.description, locale) || null,
     },
-    prices: prices.map((p) => ({
-      id: p.id,
-      shopName: p.shop_name,
-      url: p.url,
-      priceHuf: p.price_huf,
-    })),
     aggregate,
     // A Közös nevező-mércékhez 10-es skálázott dimenzió-értékek (1–5 → *2).
     dimensionsTen: Object.fromEntries(
@@ -251,12 +242,9 @@ const RATING_OPTIONS = [1, 2, 3, 4, 5] as const;
 
 export default function BoardDetailRoute({ loaderData, actionData }: Route.ComponentProps) {
   const { t } = useTranslation("catalog");
-  const { t: tr, i18n } = useTranslation("reviews");
-  const { board, prices, aggregate, dimensionsTen, overallTen, reviews, reviewForm, jsonLd } =
-    loaderData;
+  const { t: tr } = useTranslation("reviews");
+  const { board, aggregate, dimensionsTen, overallTen, reviews, reviewForm, jsonLd } = loaderData;
 
-  const cheapest = prices.length > 0 ? prices[0] : null;
-  const nf = new Intl.NumberFormat(i18n.language);
   const canFlag = reviewForm.isLoggedIn && reviewForm.isEmailConfirmed;
 
   return (
@@ -271,11 +259,6 @@ export default function BoardDetailRoute({ loaderData, actionData }: Route.Compo
           >
             {board.modelName}
           </h1>
-          {cheapest ? (
-            <span className="text-lg font-bold text-text">
-              {nf.format(cheapest.priceHuf)} Ft{t("detail.priceFrom")}
-            </span>
-          ) : null}
         </div>
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-text-2">
           {board.brandName ? <span>{board.brandName}</span> : null}
@@ -418,34 +401,6 @@ export default function BoardDetailRoute({ loaderData, actionData }: Route.Compo
         ) : null}
       </Card>
 
-      {/* Hol kapható */}
-      <Card>
-        <h2 className="text-lg font-semibold text-ink-deep">{t("detail.prices")}</h2>
-        {prices.length === 0 ? (
-          <p className="mt-2 text-sm text-text-2">{t("detail.noPrices")}</p>
-        ) : (
-          <ul className="mt-2 flex flex-col gap-2">
-            {prices.map((price) => (
-              <li key={price.id} className="flex items-center justify-between gap-3 text-sm">
-                <span className="text-text-2">{price.shopName}</span>
-                <span className="flex items-center gap-3">
-                  <span className="font-semibold text-text">{nf.format(price.priceHuf)} Ft</span>
-                  {price.url ? (
-                    <a
-                      href={price.url}
-                      target="_blank"
-                      rel="noreferrer noopener"
-                      className="font-semibold text-petrol-text underline"
-                    >
-                      {t("detail.prices")}
-                    </a>
-                  ) : null}
-                </span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </Card>
     </main>
   );
 }
