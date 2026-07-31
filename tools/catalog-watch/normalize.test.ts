@@ -123,6 +123,63 @@ describe("parseSpecsFromText", () => {
       maxLoadKg: null,
     });
   });
+
+  it("a Paddle Length NEM írja felül a deszka hosszát (élesben mért ütközés)", () => {
+    // bluefinsupboards.eu deszka+evező csomag oldala: az evező saját "Paddle
+    // Length" címkéje a deszka "length" címkéjével ütközne szűrő nélkül.
+    const specs = parseSpecsFromText(
+      "Paddle Length: Max height: 210cm & 83 inches\nDimensions: 325 x 82 x16cm & 128 x 32 x 6 inches",
+    );
+    expect(specs.lengthCm).toBe(325);
+  });
+
+  it("a Max User Weight a teherbírás (nem csak a csupasz Max weight)", () => {
+    const specs = parseSpecsFromText("Max User Weight: 150kg");
+    expect(specs.maxLoadKg).toBe(150);
+  });
+
+  it("összevont 'Dimensions: L x W x Hcm' sorból mindhárom méretet kiolvassa", () => {
+    const specs = parseSpecsFromText("Dimensions: 325 x 82 x16cm & 128 x 32 x 6 inches");
+    expect(specs.lengthCm).toBe(325);
+    expect(specs.widthCm).toBe(82);
+    expect(specs.thicknessCm).toBe(16);
+  });
+
+  it("a Bag Dimensions NEM keveredik a deszka méretével", () => {
+    const specs = parseSpecsFromText(
+      "Board Weight: 9.1kg\nBag Dimensions: 90 x 40 x20cm",
+    );
+    expect(specs.lengthCm).toBeNull();
+    expect(specs.widthCm).toBeNull();
+    expect(specs.thicknessCm).toBeNull();
+  });
+
+  it("a külön címkéjű méret ELSŐBBSÉGET élvez az összevont sorral szemben", () => {
+    const specs = parseSpecsFromText(
+      "Hosszúság: 320 cm\nDimensions: 325 x 82 x 16cm",
+    );
+    expect(specs.lengthCm).toBe(320);
+    // A width/thickness külön címke híján az összevontból pótlódik.
+    expect(specs.widthCm).toBe(82);
+    expect(specs.thicknessCm).toBe(16);
+  });
+
+  it("valós Bluefin-oldal szövege — mindhárom méret + súly + teherbírás helyesen jön ki", () => {
+    // Élesben letöltött oldal (2026-07-31) tömörített szövege, a releváns rész.
+    const text =
+      "Dimensions: 325 x 82 x16cm & 128 x 32 x 6 inches\n" +
+      "Max User Weight: 150kg\n" +
+      "Board Weight: 9.1kg\n" +
+      "Package Weight: 14kg\n" +
+      "Paddle Length: Max height: 210cm & 83 inches";
+    expect(parseSpecsFromText(text)).toMatchObject({
+      lengthCm: 325,
+      widthCm: 82,
+      thicknessCm: 16,
+      weightKg: 9.1,
+      maxLoadKg: 150,
+    });
+  });
 });
 
 describe("detectInflatable", () => {

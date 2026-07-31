@@ -209,6 +209,11 @@ function round1(value: number): number {
 
 /** Címke-szinonimák a magyar és angol spec-táblázatokhoz. */
 const SPEC_LABELS = {
+  // Bare "length"/"width"/"thickness" — élesben mért ütközés (2026-07-31,
+  // bluefinsupboards.eu): egy deszka+evező CSOMAG oldalán az evező saját
+  // "Paddle Length" címkéje is illeszkedne rájuk, és az EVEZŐ hosszát írná a
+  // deszka hosszaként. A `paddle`-előzményű találatokat a `valueAfterLabel`
+  // kizárja (lásd lent).
   lengthCm: ["hosszúság", "hossz", "length"],
   widthCm: ["szélesség", "szeles", "width"],
   thicknessCm: ["vastagság", "magasság", "thickness"],
@@ -221,26 +226,70 @@ const SPEC_LABELS = {
     "terhelhetőség",
     "max terhelés",
     "maximális terhelés",
+    // Élesben mért címke (Bluefin): "Max User Weight" — a "max weight"
+    // RÉSZSTRING-illesztés ezt nem fogja meg, mert közte van a "user" szó.
+    "max user weight",
     "max load",
     "max weight",
     "capacity",
   ],
 } as const satisfies Record<keyof Omit<BoardSpecs, "inflatable">, readonly string[]>;
 
+/** Összevont "Hossz × Szélesség × Vastagság" méret-sor címkéi. */
+const DIMENSIONS_LABELS = ["méretek", "dimensions"];
+
 /**
  * Egy CÍMKÉZETT érték kiolvasása: a címke után következő ~40 karakterből
  * keressük a mértéket. A szűk ablak szándékos — enélkül a „Hosszúság" címke
  * egy jóval későbbi, más sorhoz tartozó számot szedne fel.
+ *
+ * `excludePrecededBy`: ha a címke-találat közvetlenül egy tiltott szó után
+ * áll (pl. "Paddle Length", "Bag Dimensions"), a találatot ÁTUGORJA és a
+ * SZÖVEGBEN KÉSŐBBI előfordulást keresi tovább — nem csak az elsőt nézi.
  */
-function valueAfterLabel(text: string, labels: readonly string[]): string | null {
+function valueAfterLabel(
+  text: string,
+  labels: readonly string[],
+  excludePrecededBy: readonly string[] = [],
+): string | null {
   const folded = foldText(text);
   for (const label of labels) {
-    const index = folded.indexOf(foldText(label));
-    if (index < 0) continue;
-    const window = text.slice(index + label.length, index + label.length + 40);
-    if (/\d/.test(window)) return window;
+    const needle = foldText(label);
+    let searchFrom = 0;
+    for (;;) {
+      const index = folded.indexOf(needle, searchFrom);
+      if (index < 0) break;
+      searchFrom = index + needle.length;
+
+      const before = folded.slice(Math.max(0, index - 15), index).trimEnd();
+      const excluded = excludePrecededBy.some((word) => before.endsWith(foldText(word)));
+      if (excluded) continue;
+
+      const window = text.slice(index + label.length, index + label.length + 40);
+      if (/\d/.test(window)) return window;
+    }
   }
   return null;
+}
+
+/**
+ * "325 x 82 x 16cm" jellegű, EGY sorba írt hossz×szélesség×vastagság minta —
+ * a boltok gyakran nem külön "Hosszúság"/"Szélesség"/"Vastagság" címkével,
+ * hanem egyetlen "Dimensions:" sorral adják meg. `×` és `x` is elfogadott,
+ * a szóköz a szám és az `x`/`cm` között opcionális (élesben látott: "82 x16cm").
+ */
+function parseTripleDimensionCm(
+  text: string,
+): { lengthCm: number; widthCm: number; thicknessCm: number } | null {
+  const match = text.match(
+    /(\d+(?:[.,]\d+)?)\s*[x×]\s*(\d+(?:[.,]\d+)?)\s*[x×]\s*(\d+(?:[.,]\d+)?)\s*cm\b/i,
+  );
+  if (!match) return null;
+  const lengthCm = toNumber(match[1] ?? "");
+  const widthCm = toNumber(match[2] ?? "");
+  const thicknessCm = toNumber(match[3] ?? "");
+  if (lengthCm === null || widthCm === null || thicknessCm === null) return null;
+  return { lengthCm: round1(lengthCm), widthCm: round1(widthCm), thicknessCm: round1(thicknessCm) };
 }
 
 /**
@@ -251,8 +300,21 @@ export function parseSpecsFromText(text: string): BoardSpecs {
   const specs: BoardSpecs = { ...EMPTY_SPECS };
 
   for (const key of ["lengthCm", "widthCm", "thicknessCm"] as const) {
-    const window = valueAfterLabel(text, SPEC_LABELS[key]);
+    const window = valueAfterLabel(text, SPEC_LABELS[key], ["paddle"]);
     if (window !== null) specs[key] = parseDimensionCm(window);
+  }
+
+  // Ha a fenti KÜLÖN címkék nem adtak mindhárom méretet, próbáljuk az
+  // ÖSSZEVONT "Dimensions: 325 x 82 x 16cm" formát — csak a hiányzó mezőket
+  // töltjük ki belőle, a már megtalált (specifikusabb címkéjű) érték marad.
+  if (specs.lengthCm === null || specs.widthCm === null || specs.thicknessCm === null) {
+    const dimensionsWindow = valueAfterLabel(text, DIMENSIONS_LABELS, ["bag", "package", "táska", "csomag"]);
+    const triple = dimensionsWindow !== null ? parseTripleDimensionCm(dimensionsWindow) : null;
+    if (triple !== null) {
+      if (specs.lengthCm === null) specs.lengthCm = triple.lengthCm;
+      if (specs.widthCm === null) specs.widthCm = triple.widthCm;
+      if (specs.thicknessCm === null) specs.thicknessCm = triple.thicknessCm;
+    }
   }
 
   const volumeWindow = valueAfterLabel(text, SPEC_LABELS.volumeL);
