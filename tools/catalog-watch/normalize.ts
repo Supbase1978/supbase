@@ -235,8 +235,12 @@ const SPEC_LABELS = {
   ],
 } as const satisfies Record<keyof Omit<BoardSpecs, "inflatable">, readonly string[]>;
 
-/** Összevont "Hossz × Szélesség × Vastagság" méret-sor címkéi. */
-const DIMENSIONS_LABELS = ["méretek", "dimensions"];
+/**
+ * Összevont "Hossz × Szélesség × Vastagság" méret-sor címkéi. "méret" (nem
+ * csak "méretek") — élesben mért: aquamarinahungary.com "Mérete (366 x 84 x
+ * 15 cm)" alakot ír, a rövidebb tő mindkét szóalakra illeszkedik.
+ */
+const DIMENSIONS_LABELS = ["méret", "dimensions"];
 
 /**
  * Egy CÍMKÉZETT érték kiolvasása: a címke után következő ~40 karakterből

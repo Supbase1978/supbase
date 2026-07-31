@@ -15,6 +15,7 @@
  */
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { gunzipSync } from "node:zlib";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 
@@ -125,6 +126,31 @@ function flagNumber(args: Args, name: string): number | undefined {
   return value;
 }
 
+/**
+ * `.gz`-tömörített válasz szöveggé alakítása. Élesben mért eset
+ * (aquamarinahungary.com sitemap-lánc): a szerver a sitemap-gyereket
+ * `content-type: application/x-gzip`-ként adja, `Content-Encoding: gzip`
+ * fejléc NÉLKÜL — a `fetch()` transzport-szintű automata kicsomagolása ilyenkor
+ * NEM fut le, a `.text()` a nyers gzip-bájtokat próbálná UTF-8-ként olvasni
+ * (hibás/olvashatatlan szöveg lenne). A `.gz` kiterjesztés vagy a content-type
+ * alapján kézzel csomagoljuk ki.
+ */
+async function responseToText(response: Response): Promise<string> {
+  const url = response.url;
+  const contentType = response.headers.get("content-type") ?? "";
+  const looksGzipped = url.endsWith(".gz") || /gzip/i.test(contentType);
+  if (!looksGzipped) {
+    return response.text();
+  }
+  const buffer = Buffer.from(await response.arrayBuffer());
+  try {
+    return gunzipSync(buffer).toString("utf8");
+  } catch {
+    // Ha mégsem valódi gzip (téves content-type), essünk vissza a nyers szövegre.
+    return buffer.toString("utf8");
+  }
+}
+
 /** Valós hálózati primitív: saját user-agent, időkorlát, hibatűrő olvasás. */
 const realFetch: FetchText = async (url) => {
   const controller = new AbortController();
@@ -139,7 +165,7 @@ const realFetch: FetchText = async (url) => {
         accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
       },
     });
-    const text = response.status >= 400 ? "" : await response.text();
+    const text = response.status >= 400 ? "" : await responseToText(response);
     return { status: response.status, text };
   } finally {
     clearTimeout(timer);

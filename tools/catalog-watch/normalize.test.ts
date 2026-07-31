@@ -164,6 +164,15 @@ describe("parseSpecsFromText", () => {
     expect(specs.thicknessCm).toBe(16);
   });
 
+  it("magyar 'Mérete (L x W x H cm)' címke is felismert (nem csak 'Méretek')", () => {
+    // Élesben mért: aquamarinahungary.com a "Mérete" (nem "Méretek") szót írja.
+    const specs = parseSpecsFromText("Mérete (366 x 84 x 15 cm)\nNettó súly 10.5kg");
+    expect(specs.lengthCm).toBe(366);
+    expect(specs.widthCm).toBe(84);
+    expect(specs.thicknessCm).toBe(15);
+    expect(specs.weightKg).toBe(10.5);
+  });
+
   it("összevont 'Dimensions: L x W x H Inches' (csak hüvelyk, cm nélkül) is felismeri", () => {
     // Élesben mért eset: bluefinsupboards.eu "Lite" termékvonala csak
     // hüvelyket ad, cm-et nem.
