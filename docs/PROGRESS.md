@@ -277,23 +277,44 @@ látható HTML-ben — a crawler szándékosan nem parse-ol script-tartalmat
 tool filozófiája: „inkább hiányozzon, mint tévedjen") — a moderátor kézzel
 pótolhatja, ha fontos.
 
-**Ez módosítja a korábbi mérlegelést:** mivel a minta a FORRÁSON BELÜL is
-gyakori (közel a felén), nem csak több forrás között, egy böngésző-
-automatizált fetch (JS lefuttatása, majd a renderelt DOM olvasása) most már
-inkább indokolt lehetne, HA a Bluefin továbbra is fontos marad — ez egy
-NYITOTT, felhasználói döntést igénylő tétel, NEM valósult meg.
+### F2.1-utó-3 — böngésző-renderelt fallback megépítve (2026-07-31)
 
-**A Scrapling GitHub-repó (D4Vinci/Scrapling, 72k csillag) átnézve** —
-érdemi funkciók: `ShopifySpider` (a bolt hivatalos `/products.json` API-ját
-hívja, nem HTML-t scrape-el — de a metafieldeket ez sem adná, azok
-Storefront API-tokent igényelnének, amink nincs), adaptív CSS/XPath-
-szelektorok (JS-renderelt oldalakhoz), stealth/anti-bot-bypass (Cloudflare
-Turnstile). **Döntés: egyelőre NEM vezetjük be** — Python lenne, külön
-stack; a Playwright-tal (már meglévő TS/Node-natív függőség, `npm run e2e`)
-ugyanaz a JS-renderelési képesség elérhető lenne, ha valaha szükség lenne
-rá, második nyelv nélkül. A stealth/anti-bot-bypass funkciókat elvi okból
-sem használnánk (a platform "udvarias crawl" filozófiája: ha egy oldal
-blokkolni akar, azt tiszteletben tartjuk).
+A felhasználó explicit kérte: „ne hagyjuk lezáratlanul" — a hiányzó
+méret-adatokat most, aktívan orvosoltuk, nem csak dokumentáltuk. Kapuk
+zöldek: typecheck · lint · **772 vitest** (+9 új), commitok `2b8bc13` +
+`80475fd`.
+
+**Megépült `tools/catalog-watch/render.ts`:** lusta indítású Playwright-
+Chromium fallback — ha egy termék MINDHÁROM méret-mezője hiányzik a sima
+HTML-ből, a `crawl.ts` egyszer újralekéri az oldalt renderelve, és a JS
+lefutása UTÁNI, EMBERI szemnek szánt szöveget (`document.body.innerText`)
+adja a MEGLÉVŐ címke-alapú parsernek. **Nem** Scrapling/Python — a
+Playwright már meglévő TS/Node-natív devDependency (`npm run e2e`), így
+nem kellett új nyelvi stack. A `catalog-watch.yml` heti cron is kapott
+`playwright install --with-deps chromium` lépést.
+
+**Első hiba a bevetéskor, azonnal javítva:** a `waitUntil: "networkidle"`
+megbízhatóan időtúllépett háttér-widgetes (chat, analitika) oldalakon,
+amik sosem engedik nyugalmi állapotba a hálózatot — `domcontentloaded` +
+1500ms várakozásra cserélve (commit `80475fd`).
+
+**Eredmény a 8 hiányos deszkán:** 2 (Blue Lagoon Lite, Pink Coral Lite)
+TELJES adatot kapott (305/86/15 cm, a korábban csak hüvelykben publikált
+méretből átváltva — ehhez a `parseTripleDimensionCm` bővült inch-only
+formátumra is, "120 x 34 x 6 Inches"). A maradék 6-nál (Mammoth, Orange/
+Mint Carbon Premium, Rogue/Sprint Performance Touring, New Lite Carbon
+Premium) a render sem hozott eredményt — Playwright-tal manuálisan
+megnézve kiderült: ott a "Board Specs" egy **fül-navigáció mögött** van
+(What's In The Box / Accessory Specs / Material fülekkel egy sorban), a
+tartalom csak KATTINTÁS UTÁN jelenik meg a látható szövegben.
+
+**Tudatos megállás itt:** a fül-kattintás-szimuláció egy továbbival
+bolt-specifikusabb, törékenyebb réteg lenne (nem "várd meg a renderelést",
+hanem "találd meg és kattints a megfelelő UI-elemre") — ez már nem éri meg
+az erőfeszítést a jelenlegi haszonért. **Végállapot: 9/15 Bluefin-deszka
+teljes adattal** (a Cruise-család 6 + Tandem + a két "Lite" most javítva),
+6-nál a szélesség/vastagság/néhol teherbírás null marad — dokumentált,
+szándékos hiány, nem hiba.
 
 **HÁTRA (felhasználói lépés — admin-bejelentkezés kell):**
 - A maradék 10 Bluefin-jelölt átnézése és jóváhagyása/elutasítása a
