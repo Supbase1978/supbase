@@ -53,7 +53,13 @@ export function createRenderFetcher(): RenderFetcher {
         const browser = await getBrowser();
         const page = await browser.newPage();
         try {
-          await page.goto(url, { waitUntil: "networkidle", timeout: 20_000 });
+          // "networkidle" SZÁNDÉKOSAN kerülve: élesben mért hiba — a modern
+          // oldalak háttér-widgetei (chat, analitika) sosem engedik el a
+          // hálózatot nyugalmi állapotba, ezért ez a stratégia megbízhatóan
+          // időtúllépést adna. "domcontentloaded" + rövid várakozás elég a
+          // kliens-oldali (Liquid/JS) tartalom kirenderelődéséhez.
+          await page.goto(url, { waitUntil: "domcontentloaded", timeout: 20_000 });
+          await page.waitForTimeout(1500);
           const text = await page.evaluate(() => document.body.innerText);
           return typeof text === "string" && text.length > 0 ? text : null;
         } finally {
