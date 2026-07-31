@@ -20,7 +20,7 @@
 | F1.11 Folyó-vízállás (5.1/6) | ✅ kész + élesítve (2026-07-27) | vizugy.hu (OVF) REST API, HIVATALOS árvízvédelmi készültségi küszöbökkel; a fix −1 folyó-büntetés helyett fokozat-alapú index-plafon. Élesben verifikálva, cron írja. + F1.11b: póráz-figyelmeztetés folyóvízre |
 | F1.12 Analitika (süti-mentes) | ✅ kész + élesítve (2026-07-28) | `analytics_events` + definer-RPC + `/admin/analitika`. Nincs süti/IP/azonosító → nincs egyéni tölcsér, csak darabszám. Robot/DNT/dev nem számol |
 | F2.2 Visszajelzés-csatorna | ✅ kész + élesítve (2026-07-29) | `/visszajelzes` (hiba · hiányzó bolt · hiányzó modell) + `/admin/visszajelzesek`. Migráció éles push (2026-07-29), REST-tel verifikálva (RLS zár). HÁTRA: böngésző-verifikáció, `RESEND_API_KEY` ha kell e-mail-értesítés |
-| F2.1 catalog-watch piacfigyelő | ✅ kód kész (2026-07-28) | crawler + CLI + `/admin/katalogus` moderáció + heti GH Actions cron. HÁTRA: valós HU források bekötése és az első éles crawl (felhasználói döntés) |
+| F2.1 catalog-watch piacfigyelő | ✅ ELSŐ ÉLES FORRÁS FUT (2026-07-31) | Bluefin (gyártói D2C oldal, `brand_site`) bekötve, valós crawl lefutott: **15 jelölt vár moderációra** a `/admin/katalogus`-on. HÁTRA: a jelöltek jóváhagyása (felhasználói döntés) + GH Actions secretek ellenőrzése a heti cronhoz |
 | F2.3 Felszerelés (kiegészítők), 1–3. szakasz | ✅ kész + élesítve (2026-07-29) | 1.: `/felszereles` útmutató-oldalak. 2.: `kind`/`would_recommend` migráció (élesítve, REST-tel verifikálva) + `kind='board'` szűrő mindenhol + `/felszereles/:kategoria/:slug` termékadatlap. 3.: catalog-watch `classifyProduct` (evező/mentőmellény/pumpa jelöltté válik) + admin deszka/kiegészítő kapcsoló. HÁTRA: valós forrás-bekötés (ugyanaz a lépés, mint F2.1) |
 | F2.4 Direkt bolti ár eltávolítása | ✅ kész (2026-07-30) | A deszka- és kiegészítő-adatlapról (fejléc-ár + „Hol kapható" blokk + JSON-LD `offers`) eltávolítva — felhasználói döntés, ld. F2.4-szakasz. A `board_prices` gyűjtés (catalog-watch) VÁLTOZATLAN, a Deszkaválasztó budget-szűrője/eredmény-ára is VÁLTOZATLAN (felhasználói döntés szerint) |
 | F1.10 Záró audit + élesítés | ✅ audit **26/26** (2026-07-27) | **`docs/AUDIT_F1.md`**: az audit két mérés-jellegű hiánya pótolva (vizuális regresszió 07-26, teljesítmény-budget 07-27). HÁTRA az F1 lezárásához a publikussá tétel — a lépések a `RUNBOOK.md` **élesítési checklistjében** (domain → Resend-SMTP → Turnstile → cégadatok → `SITE_PUBLIC=true`), mind felhasználói döntés/adat |
@@ -35,9 +35,14 @@ jelszó-kapu mögött. Azóta három továbbfejlesztés ment ki élesbe: folyó-
 futás még nem volt) és az **F2.2 visszajelzés-csatorna**. 2026-07-29: elkészült
 az **F2.3 Felszerelés** mind a 3 szakasza (útmutató · `kind`-diszkriminátor +
 termékadatlap · catalog-watch besorolás), és **mindhárom nyitott migráció
-(feedback + a két F2.3-migráció) éles push-olva + REST-tel verifikálva**. Az
-egyetlen hátralévő lépés a katalógus-oldalon: valós HU-forrás bekötése
-(felhasználói döntés, ld. lent).
+(feedback + a két F2.3-migráció) éles push-olva + REST-tel verifikálva**.
+2026-07-30: **F2.4** — direkt bolti ár eltávolítva az adatlapokról
+(felhasználói döntés: az ár sosem friss, a részleges bolt-lefedettség
+igazságtalan, az ár/érték ítélet a közösségi reviewé). 2026-07-31: **az első
+éles catalog-watch forrás lefutott** — Bluefin (gyártói D2C oldal) bekötve,
+**15 jelölt vár moderációra** a `/admin/katalogus`-on (F2.1-utó szakasz).
+Két valós hibát fogott a próbafutás (nyelvi URL-duplikáció, hibás
+márkanév-adat a forrás oldalán) — mindkettő javítva, kapuk zöldek.
 
 **A PUBLIKUSSÁ TÉTEL a felhasználón múlik** — a lépések sorrendben a
 `docs/RUNBOOK.md` „Élesítési checklist" szakaszában:
@@ -55,11 +60,11 @@ felhasználó a HydroInfo-t választotta, majd az analitikát):
    hátra van, az nem fejlesztés: valós HU-forrás bekötése úgy, hogy evező/
    mentőmellény/pumpa jelöltek is érkezzenek — ez ugyanaz a lépés, mint a
    2. pont.
-2. ~~**catalog-watch piacfigyelő pipeline** (F2)~~ — **KÉSZ + ÉLESÍTVE
-   (F2.1+F2.3, 2026-07-29)**. Ami hátra van, az nem fejlesztés: valós HU
-   források bekötése (`add-source`, lásd a boltkutatás-jegyzet a memóriában),
-   első `crawl --dry-run`, majd moderáció a `/admin/katalogus`-on (deszka ÉS a
-   3 követett felszerelés-kategória). Ez tölti fel a katalógust (most 20
+2. ~~**catalog-watch piacfigyelő pipeline** (F2)~~ — **ELSŐ ÉLES FORRÁS FUT
+   (2026-07-31)**: Bluefin bekötve, 15 jelölt vár a `/admin/katalogus`-on.
+   Ami hátra van, az nem fejlesztés: **a jelöltek jóváhagyása** (admin-
+   bejelentkezés kell) + GitHub-secretek ellenőrzése a heti cronhoz (részletek
+   az F2.1-utó szakaszban). Ez tölti fel a katalógust (most 20
    deszka + 0 kiegészítő), ami EGYBEN előfeltétele az advisor ár-padló
    tételének (20 elemen az eloszlás-alapú küszöb zajos).
 3. **Capacitor natív build** (F2 nyitása) — a `build:native` SPA-mód megvan,
@@ -160,12 +165,75 @@ először az árnyékolásra gyanakodj — a gépen több változó is idegen fi
   (anon REST → `[]`, tehát létezik és az RLS zár).
 - `/admin/katalogus` kijelentkezve → **302** a belépőre (guard áll).
 
-**HÁTRA (felhasználói döntés):**
-- **Valós HU források bekötése** (`add-source`) és az első `crawl --dry-run` —
-  ez már élő oldalak lekérése, ezért jóváhagyással.
-- **Az admin felület böngésző-verifikációja** moderátor-sessionnel (jelölt-
-  kártya renderelése, jóváhagyás→új deszka). Ehhez admin-belépés kell.
-- **GitHub-secretek** a cronhoz: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`.
+**HÁTRA (ekkor még nyitva, lásd lent az F2.1-utó szakaszt):** valós forrás
+bekötése, admin böngésző-verifikáció, GitHub-secretek.
+
+### F2.1-utó — az első éles forrás: Bluefin (2026-07-31)
+
+Terv: `~/.claude/plans/crystalline-wobbling-aho.md` (Plan mode-ban jóváhagyva).
+A forrás-stratégia (megbeszélve, `ar-megjelenites-politika` memóriához
+kapcsolódóan): mivel az ár nem cél (F2.4), a **gyártói/márka-saját oldalak**
+(`kind: "brand_site"`) az ELSŐDLEGES forrás — kanonikus modell-adat, ár
+nélkül is teljes értékű. Bolt-források (SUPshop.hu, GONG Galaxy) EBBŐL A
+KÖRBŐL KIMARADTAK — ld. a terv „Kifejezetten NEM része" szakaszát.
+
+**Próbázás (`cli.ts probe`, adatbázis nélkül) három jelölten:**
+
+| Forrás | Eredmény |
+|---|---|
+| **Bluefin** (bluefinsupboards.eu) | ✅ 8/8 mintán JSON-LD, helyes `DESZKA`-besorolás |
+| GONG Galaxy | ⚠️ Kevert fólia/szárny/szörf/SUP kínálat, nem tiszta minta — kimaradt |
+| SUPshop.hu | ❌ Nincs JSON-LD egyetlen `/termek/`-oldalon sem — a mai crawler nem tudja olvasni, kimaradt |
+
+**Bluefin bekötve és lefuttatva élesben:**
+- `add-source --kind brand_site --pattern paddleboard --pattern paddle-board`.
+- **Dry-run két hibát fogott, mielőtt bármi éles írás történt volna:**
+  1. A sitemap 5 nyelvi verziót ad ugyanarra a termékre (`/de/`, `/es/`,
+     `/fr/`, `/it/`, `/nl/`) → 42 „új" jelölt jött ki 15 valós deszkából
+     (kb. 3x duplikáció). Javítva: `excludeUrlPatterns` a `catalog_sources`
+     sorban (a CLI-nek nincs `edit-source` parancsa, ezért egyszeri
+     karbantartó szkripttel, a meglévő `resolveSupabaseTarget`/
+     `createServiceClient` függvényeken át — ugyanaz a védett env-feloldás,
+     mint a CLI-ben). Újra-dry-run: **15 tiszta jelölt, duplikáció nélkül**.
+  2. A valós crawl után kiderült: a Bluefin JSON-LD-je a 15 termék nagy
+     részén **„Bluefin-testing"** márkanevet ad (a bolt oldalán maradt
+     teszt-adat) — enélkül egy hibás „Bluefin-testing" nevű márka jött volna
+     létre jóváhagyáskor. Javítva a `BRAND_ALIASES`-ban (`normalize.ts`,
+     ugyanaz a minta, mint „Gladiator SUP" → „Gladiator"), teszttel fedve,
+     kapuk zöldek (761 vitest), commitolva + pusholva. Újra-crawl frissítette
+     a már bent lévő 15 pending jelöltet a helyes márkanévvel (REST-tel
+     ellenőrizve: mind a 15 sor `brandName: "Bluefin"`).
+- **Eredmény: 15 pending jelölt a `catalog_candidates`-ben**, moderációra
+  vár a `/admin/katalogus`-on. Ez a katalógus ELSŐ valós bővülési lehetősége
+  a piacfigyelő-pipeline-on át.
+
+**Szolgáltatói kulcs pótolva a `.env`-ben** (a legacy JWT `service_role`
+kulcs, NEM az újabb `sb_secret_...`, mert az `env.ts` ref-ellenőrzése csak
+JWT-nél működik) — Supabase Management API-ból (`projects api-keys`) kérve
+le a `scripts/sb.sh` wrapperen át, a titok SOSEM jelent meg terminál-
+kimenetben (fájlba írva egy Node-szkripttel, ami csak a kulcs prefixét/hash-
+csonkját írta ki visszaigazolásként). `.env` gitignore-olt, nincs a git
+státuszban.
+
+**Megjegyzés — a Supabase MCP a ROSSZ fiókhoz kapcsolódik** (`Viz-Monitor`/
+`inlight` projekteket lát, a `pycsqnthxaytwaptbiph` „Supbase"-t nem) —
+pontosan a memóriában dokumentált idegen-fiók csapda. NEM használt sem
+olvasásra, sem írásra; helyette a catalog-watch saját, bevált env-feloldása
+szolgálta ki az egyszeri karbantartó műveletet is.
+
+**HÁTRA (felhasználói lépés — admin-bejelentkezés kell):**
+- A 15 Bluefin-jelölt átnézése és jóváhagyása/elutasítása a
+  `/admin/katalogus`-on (`endre.sztellik@gmail.com`) — óvatosan, nem tömeges
+  jóváhagyással, a `board_type`-ot a moderátor választja.
+- Böngésző-verifikáció: a jóváhagyott deszka megjelenik-e a `/deszkak`
+  listán/adatlapon (ár NÉLKÜL, F2.4 szerint).
+- **GitHub Actions secretek** (`SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`) a
+  heti cronhoz — ellenőrzés/beállítás a repo Settings → Secrets and
+  variables → Actions alatt. Ezt nem lehet automatizálni innen (a jelenlegi
+  GitHub PAT 403-at ad a secrets API-ra, és titkot amúgy sem kezelnénk
+  MCP-n át).
+- Ha ez a ciklus jól záródik: természetes következő lépés további gyártói
+  oldalak keresése/bekötése (GONG Galaxy más mintával, vagy új márkák).
 
 ## F2.2 — Visszajelzés-csatorna a fejlesztőnek (2026-07-28)
 
