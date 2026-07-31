@@ -253,34 +253,47 @@ feloldás/service-client, mint a többi egyszeri karbantartó művelethez):
 |---|---|---|---|
 | Cruise Blue | 325 / 82 / 16 ✅ teljes | 9.1 | 150 |
 | Cruise Volt Limited Edition Premium | 325 / 82 / 16 ✅ teljes | 9.1 | 150 |
+| Cruise Rush Limited Edition Premium | 325 / 82 / 16 ✅ teljes (7. hiba: a régi hibás 210-es adat maradt a jóváhagyáskor, utólag javítva) | 9.1 | 150 |
+| Tandem | 457 / 89 / 15 ✅ teljes | 14.2 | — |
 | Mammoth | 549 / — / — | 40.3 | — |
+| Orange Carbon Premium | 366 / — / — | 11.15 | — |
+| Mint Carbon Premium | 366 / — / — | 11.15 | — |
+| Rogue Performance Touring | 381 / — / — | 10.3 | — |
+| New Lite Carbon Premium | 345 / — / — | 8.9 | 120 |
+| Sprint High Performance Touring | — / — / — | 11.2 | — |
 | Blue Lagoon Lite | — / — / — | 9.5 | 120 |
 | Pink Coral Lite | — / — / — | 9.5 | 120 |
 
-**Ismert, MEGMARADÓ hiányosság (nem hiba, hanem valós korlát):** a "Lite"
-termékvonalon (Blue Lagoon Lite, Pink Coral Lite) a méret-adat a Bluefin
-oldalán KIZÁRÓLAG egy `window.productShopStape.metafields[...]`
-JavaScript-változóban van, nem a látható HTML-ben — a crawler szándékosan
-nem parse-ol script-tartalmat (kockázatos/törékeny lenne). A Mammoth
-csomag-oldalán hasonlóan hiányzik a látható HTML-ből a szélesség/vastagság/
-teherbírás. Ezekben az esetekben a mező **null marad** (a tool filozófiája:
-„inkább hiányozzon, mint tévedjen") — a moderátor kézzel pótolhatja, ha
-fontos. **Nem javasolt megoldás most:** böngésző-automatizált fetch
-(Playwright/Scrapling) bevezetése — a Playwright már a repóban van (e2e-
-tesztekhez), tehát Python nélkül is elérhető lenne, de egy szűk, 2/5 arányú
-esetért nem éri meg a crawl jelentős lassulását/bonyolítását. Ha a minta
-több forrásnál is visszatérne, ez legyen az első szóba jövő megoldás.
+**Teljes körű ellenőrzés (2026-07-31, mind a 15 jóváhagyott deszkára):** a
+felhasználó jelezte, hogy a jóváhagyás után is szükség lesz a helyes
+alapadatokra — emiatt mind a 15 board élő oldalát újra lekértük és
+újra-kinyertük a javított parserrel. **7/15 deszkánál hiányzik a
+szélesség/vastagság** (nem 2/15, ahogy elsőre tűnt) — ez tehát NEM egy
+elszigetelt termékvonal sajátossága, hanem a Bluefin oldal TÖBB
+sablonjában visszatérő minta: a méret-adat KIZÁRÓLAG egy
+`window.productShopStape.metafields[...]` JavaScript-változóban van, nem a
+látható HTML-ben — a crawler szándékosan nem parse-ol script-tartalmat
+(kockázatos/törékeny lenne). Ezekben az esetekben a mező **null marad** (a
+tool filozófiája: „inkább hiányozzon, mint tévedjen") — a moderátor kézzel
+pótolhatja, ha fontos.
+
+**Ez módosítja a korábbi mérlegelést:** mivel a minta a FORRÁSON BELÜL is
+gyakori (közel a felén), nem csak több forrás között, egy böngésző-
+automatizált fetch (JS lefuttatása, majd a renderelt DOM olvasása) most már
+inkább indokolt lehetne, HA a Bluefin továbbra is fontos marad — ez egy
+NYITOTT, felhasználói döntést igénylő tétel, NEM valósult meg.
 
 **A Scrapling GitHub-repó (D4Vinci/Scrapling, 72k csillag) átnézve** —
 érdemi funkciók: `ShopifySpider` (a bolt hivatalos `/products.json` API-ját
-hívja, nem HTML-t scrape-el), adaptív CSS/XPath-szelektorok (JS-renderelt
-oldalakhoz), stealth/anti-bot-bypass (Cloudflare Turnstile). **Döntés:
-egyelőre NEM vezetjük be** — Python lenne, külön stack; a Playwright-tal
-(már meglévő TS/Node-natív függőség) ugyanaz a JS-renderelési képesség
-elérhető lenne, ha valaha szükség lenne rá, második nyelv nélkül. A
-stealth/anti-bot-bypass funkciókat elvi okból sem használnánk (a platform
-"udvarias crawl" filozófiája: ha egy oldal blokkolni akar, azt tiszteletben
-tartjuk).
+hívja, nem HTML-t scrape-el — de a metafieldeket ez sem adná, azok
+Storefront API-tokent igényelnének, amink nincs), adaptív CSS/XPath-
+szelektorok (JS-renderelt oldalakhoz), stealth/anti-bot-bypass (Cloudflare
+Turnstile). **Döntés: egyelőre NEM vezetjük be** — Python lenne, külön
+stack; a Playwright-tal (már meglévő TS/Node-natív függőség, `npm run e2e`)
+ugyanaz a JS-renderelési képesség elérhető lenne, ha valaha szükség lenne
+rá, második nyelv nélkül. A stealth/anti-bot-bypass funkciókat elvi okból
+sem használnánk (a platform "udvarias crawl" filozófiája: ha egy oldal
+blokkolni akar, azt tiszteletben tartjuk).
 
 **HÁTRA (felhasználói lépés — admin-bejelentkezés kell):**
 - A maradék 10 Bluefin-jelölt átnézése és jóváhagyása/elutasítása a
