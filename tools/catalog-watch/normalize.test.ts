@@ -25,6 +25,9 @@ describe("normalizeBrandName", () => {
     ["Ismeretlen Márka", "Ismeretlen Márka"],
     // Élesben mért: a bolt „Gladiator SUP"-ot ír oda, ahol a katalógus „Gladiator".
     ["Gladiator SUP", "Gladiator"],
+    // Élesben mért (2026-07-31): a bluefinsupboards.eu JSON-LD-je sok terméken
+    // "Bluefin-testing"-et ad (a bolt oldalán maradt teszt-adat).
+    ["Bluefin-testing", "Bluefin"],
   ])("%s → %s", (input, expected) => {
     expect(normalizeBrandName(input)).toBe(expected);
   });

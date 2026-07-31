@@ -34,6 +34,11 @@ export const BRAND_ALIASES: Record<string, string> = {
   spinera: "Spinera",
   "bluefin sup": "Bluefin",
   bluefin: "Bluefin",
+  // Élesben mért eset (2026-07-31): a bluefinsupboards.eu JSON-LD-je a
+  // termékek nagy részén "Bluefin-testing" márkanevet ad (a bolt oldalán
+  // maradt teszt-adat) — enélkül egy "Bluefin-testing" nevű márka jönne
+  // létre jóváhagyáskor.
+  "bluefin-testing": "Bluefin",
   "itiwit / decathlon": "Itiwit",
   itiwit: "Itiwit",
 };
