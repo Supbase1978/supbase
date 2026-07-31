@@ -20,7 +20,7 @@
 | F1.11 Folyó-vízállás (5.1/6) | ✅ kész + élesítve (2026-07-27) | vizugy.hu (OVF) REST API, HIVATALOS árvízvédelmi készültségi küszöbökkel; a fix −1 folyó-büntetés helyett fokozat-alapú index-plafon. Élesben verifikálva, cron írja. + F1.11b: póráz-figyelmeztetés folyóvízre |
 | F1.12 Analitika (süti-mentes) | ✅ kész + élesítve (2026-07-28) | `analytics_events` + definer-RPC + `/admin/analitika`. Nincs süti/IP/azonosító → nincs egyéni tölcsér, csak darabszám. Robot/DNT/dev nem számol |
 | F2.2 Visszajelzés-csatorna | ✅ kész + élesítve (2026-07-29) | `/visszajelzes` (hiba · hiányzó bolt · hiányzó modell) + `/admin/visszajelzesek`. Migráció éles push (2026-07-29), REST-tel verifikálva (RLS zár). HÁTRA: böngésző-verifikáció, `RESEND_API_KEY` ha kell e-mail-értesítés |
-| F2.1 catalog-watch piacfigyelő | ✅ ELSŐ ÉLES FORRÁS FUT (2026-07-31) | Bluefin (gyártói D2C oldal, `brand_site`) bekötve, valós crawl lefutott: **15 jelölt vár moderációra** a `/admin/katalogus`-on. HÁTRA: a jelöltek jóváhagyása (felhasználói döntés) + GH Actions secretek ellenőrzése a heti cronhoz |
+| F2.1 catalog-watch piacfigyelő | ✅ ÉLESBEN MŰKÖDIK (2026-07-31) | 3 forrás bekötve: Bluefin (15 jelölt, MIND jóváhagyva), Aqua Marina Hungary + sup-deszka.hu (2 HU-viszonteladó, **168 jelölt pending**). Útközben 2 valós hiba javítva (gzip-sitemap, magyar "Mérete" címke). HÁTRA: a 168 pending jelölt moderációja + GH Actions secretek |
 | F2.3 Felszerelés (kiegészítők), 1–3. szakasz | ✅ kész + élesítve (2026-07-29) | 1.: `/felszereles` útmutató-oldalak. 2.: `kind`/`would_recommend` migráció (élesítve, REST-tel verifikálva) + `kind='board'` szűrő mindenhol + `/felszereles/:kategoria/:slug` termékadatlap. 3.: catalog-watch `classifyProduct` (evező/mentőmellény/pumpa jelöltté válik) + admin deszka/kiegészítő kapcsoló. HÁTRA: valós forrás-bekötés (ugyanaz a lépés, mint F2.1) |
 | F2.4 Direkt bolti ár eltávolítása | ✅ kész (2026-07-30) | A deszka- és kiegészítő-adatlapról (fejléc-ár + „Hol kapható" blokk + JSON-LD `offers`) eltávolítva — felhasználói döntés, ld. F2.4-szakasz. A `board_prices` gyűjtés (catalog-watch) VÁLTOZATLAN, a Deszkaválasztó budget-szűrője/eredmény-ára is VÁLTOZATLAN (felhasználói döntés szerint) |
 | F1.10 Záró audit + élesítés | ✅ audit **26/26** (2026-07-27) | **`docs/AUDIT_F1.md`**: az audit két mérés-jellegű hiánya pótolva (vizuális regresszió 07-26, teljesítmény-budget 07-27). HÁTRA az F1 lezárásához a publikussá tétel — a lépések a `RUNBOOK.md` **élesítési checklistjében** (domain → Resend-SMTP → Turnstile → cégadatok → `SITE_PUBLIC=true`), mind felhasználói döntés/adat |
@@ -330,6 +330,61 @@ szándékos hiány, nem hiba.
   MCP-n át).
 - Ha ez a ciklus jól záródik: természetes következő lépés további gyártói
   oldalak keresése/bekötése (GONG Galaxy más mintával, vagy új márkák).
+
+### F2.1-utó-4 — magyar piaci HU-források (2026-07-31)
+
+A felhasználó a magyar piacon népszerű márkákra (Aqua Marina, Jobe,
+Gladiator, WattSUP) kérte a következő kört. Eredmény: **egyik hivatalos
+gyártói oldal sem használható** (Aqua Marina globális, Jobe, WattSUP: nincs
+Product JSON-LD; Gladiator: a domain az OROSZ piaci oldalra mutat) — de a
+felhasználó két HU-viszonteladót adott meg, amik igen:
+
+| Forrás | Kind | Eredmény |
+|---|---|---|
+| **aquamarinahungary.com** (Sportstore.hu Kft) | `shop` | ✅ 9/10 JSON-LD, valós HUF-ár |
+| **sup-deszka.hu** | `shop` | ✅ 8/8 JSON-LD, több márka (Aqua Marina, TooMuch, Coasto, Flowa) |
+
+**Etikai megállás a Gladiatornál:** a robots.txt explicit AI-ellenes
+`Content-Signal: ai-train=no` szabályt tartalmaz, néhány AI-bot (ClaudeBot,
+GPTBot) név szerint tiltva. A `SuptimeCatalogBot` nincs név szerint tiltva
+(általános `Allow: /`), és a cél termék-katalogizálás (nem AI-tanítás) —
+felhasználói jóváhagyással folytattuk a próbázást, de végül a domain
+technikai okból (orosz piac, nincs JSON-LD) úgyis kiesett.
+
+**Két valós hiba a bevetéskor, javítva (commit `07e59bf`):**
+1. **Gzippelt sitemap** (aquamarinahungary.com): a sitemap-lánc gyereke
+   `.xml.gz`-ként, `content-type: application/x-gzip` fejléccel érkezett,
+   `Content-Encoding` NÉLKÜL — a `fetch()` automata kicsomagolása nem
+   futott le. A `cli.ts` `realFetch`-e mostantól kézzel kicsomagolja
+   (`node:zlib gunzipSync`), hibatűrő visszaeséssel.
+2. **Magyar "Mérete" címke** (nem csak "Méretek") felvéve az összevont
+   dimenzió-parse címke-listájára.
+
+**Mennyiségi szűrés (felhasználói döntés — „csak SUP legyen"):** a
+sup-deszka.hu multi-márka bolt kajakokat/csónakokat/kenukat is árul — a
+`excludeUrlPatterns: ["kajak", "csonak", "transom", "kenu"]` beállítással
+kiszűrve a forrás `crawl_config`-jában (a CLI-nek nincs `edit-source`
+parancsa, ezért a Bluefin-nél már bevált egyszeri karbantartó szkript-
+mintával).
+
+**Éles crawl mindkét forráson (felhasználói jóváhagyással):**
+- Aqua Marina Hungary: **63 új jelölt** (111 termékoldalból 48 kiegészítő/
+  ruházat). Zaj: néhány uszony és ruházati cikk (rövidnadrág, felső) is
+  bejelöltként került be — a moderátor triviálisan elutasítja.
+- sup-deszka.hu: **105 új jelölt** (170 URL, 6 átmeneti hálózati hiba
+  hibatűrően kihagyva). Zaj: 2 kajak-termék (URL-jükben nincs "kajak" szó,
+  ezért a kizárás nem fogta meg), a kenuk/csónakok/nagyobb kajak-kör már
+  kiszűrve.
+
+**Végállapot: 183 jelölt/deszka összesen a `catalog_candidates`-ben**
+(15 Bluefin, MÁR JÓVÁHAGYVA + 63 Aqua Marina Hungary + 105 sup-deszka.hu,
+MINDKETTŐ `pending`, moderációra vár).
+
+**HÁTRA (felhasználói lépés — admin-bejelentkezés kell):**
+- **168 pending jelölt** átnézése a `/admin/katalogus`-on — jelentős
+  moderációs munka, a zaj (ruházat, uszony, néhány kajak) egyszerű
+  elutasítással kezelhető.
+- GitHub Actions secretek (változatlanul nyitva, ld. fent).
 
 ## F2.2 — Visszajelzés-csatorna a fejlesztőnek (2026-07-28)
 
