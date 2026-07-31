@@ -221,12 +221,74 @@ pontosan a memóriában dokumentált idegen-fiók csapda. NEM használt sem
 olvasásra, sem írásra; helyette a catalog-watch saját, bevált env-feloldása
 szolgálta ki az egyszeri karbantartó műveletet is.
 
+**Moderáció folyamatban (a felhasználó böngészőben):** 5 Bluefin-jelölt már
+jóváhagyva (Cruise Blue, Blue Lagoon Lite, Pink Coral Lite, Mammoth, Cruise
+Volt Limited Edition Premium) — **valódi katalógus-sorok**, nem teszt-adat.
+
+### F2.1-utó-2 — spec-parse hibák, élesben talált (2026-07-31)
+
+A felhasználó jelezte: a jóváhagyott deszkák specifikációja nem egyezett a
+valós termékoldallal (rossz hossz, hiányzó szélesség/vastagság/teherbírás).
+Három valós hiba, mindegyik javítva a `tools/catalog-watch/normalize.ts`-ben
+(commit `62c2496`, 7 új teszt, kapuk zöldek — 767 vitest):
+
+1. **"Paddle Length" ütközés**: a bare `length` címke a deszka+evező
+   csomag-oldalon az EVEZŐ saját "Paddle Length" sorára illeszkedett, és
+   annak számát (210cm) írta a deszka hosszaként a valós 325cm helyett.
+   Javítva: `valueAfterLabel` most `excludePrecededBy` paraméterrel a
+   "paddle" előzményű találatot kihagyja, és a KÖVETKEZŐ előfordulást
+   keresi (nem csak az elsőt nézte eddig).
+2. **"Max User Weight" nem illeszkedett** a `maxLoadKg` címke-listára (csak
+   "max weight" volt benne, "max user weight" nem részstringje). Felvéve.
+3. **Összevont "Dimensions: 325 x 82 x16cm" formátum** — a Bluefin nem
+   külön "Szélesség"/"Vastagság" címkével adja meg ezeket, hanem egy sorban.
+   Új `parseTripleDimensionCm` szétbontja, csak a KÜLÖN címkével meg nem
+   talált mezőket tölti ki (a specifikusabb címke elsőbbséget élvez).
+
+**A már jóváhagyott 5 deszka specifikációja utólag kijavítva** (közvetlen
+`boards`-frissítés a helyes, újra-kinyert adatokkal — ugyanaz az env-
+feloldás/service-client, mint a többi egyszeri karbantartó művelethez):
+
+| Deszka | Hossz/Szél/Vast (cm) | Súly (kg) | Teherbírás (kg) |
+|---|---|---|---|
+| Cruise Blue | 325 / 82 / 16 ✅ teljes | 9.1 | 150 |
+| Cruise Volt Limited Edition Premium | 325 / 82 / 16 ✅ teljes | 9.1 | 150 |
+| Mammoth | 549 / — / — | 40.3 | — |
+| Blue Lagoon Lite | — / — / — | 9.5 | 120 |
+| Pink Coral Lite | — / — / — | 9.5 | 120 |
+
+**Ismert, MEGMARADÓ hiányosság (nem hiba, hanem valós korlát):** a "Lite"
+termékvonalon (Blue Lagoon Lite, Pink Coral Lite) a méret-adat a Bluefin
+oldalán KIZÁRÓLAG egy `window.productShopStape.metafields[...]`
+JavaScript-változóban van, nem a látható HTML-ben — a crawler szándékosan
+nem parse-ol script-tartalmat (kockázatos/törékeny lenne). A Mammoth
+csomag-oldalán hasonlóan hiányzik a látható HTML-ből a szélesség/vastagság/
+teherbírás. Ezekben az esetekben a mező **null marad** (a tool filozófiája:
+„inkább hiányozzon, mint tévedjen") — a moderátor kézzel pótolhatja, ha
+fontos. **Nem javasolt megoldás most:** böngésző-automatizált fetch
+(Playwright/Scrapling) bevezetése — a Playwright már a repóban van (e2e-
+tesztekhez), tehát Python nélkül is elérhető lenne, de egy szűk, 2/5 arányú
+esetért nem éri meg a crawl jelentős lassulását/bonyolítását. Ha a minta
+több forrásnál is visszatérne, ez legyen az első szóba jövő megoldás.
+
+**A Scrapling GitHub-repó (D4Vinci/Scrapling, 72k csillag) átnézve** —
+érdemi funkciók: `ShopifySpider` (a bolt hivatalos `/products.json` API-ját
+hívja, nem HTML-t scrape-el), adaptív CSS/XPath-szelektorok (JS-renderelt
+oldalakhoz), stealth/anti-bot-bypass (Cloudflare Turnstile). **Döntés:
+egyelőre NEM vezetjük be** — Python lenne, külön stack; a Playwright-tal
+(már meglévő TS/Node-natív függőség) ugyanaz a JS-renderelési képesség
+elérhető lenne, ha valaha szükség lenne rá, második nyelv nélkül. A
+stealth/anti-bot-bypass funkciókat elvi okból sem használnánk (a platform
+"udvarias crawl" filozófiája: ha egy oldal blokkolni akar, azt tiszteletben
+tartjuk).
+
 **HÁTRA (felhasználói lépés — admin-bejelentkezés kell):**
-- A 15 Bluefin-jelölt átnézése és jóváhagyása/elutasítása a
-  `/admin/katalogus`-on (`endre.sztellik@gmail.com`) — óvatosan, nem tömeges
-  jóváhagyással, a `board_type`-ot a moderátor választja.
-- Böngésző-verifikáció: a jóváhagyott deszka megjelenik-e a `/deszkak`
-  listán/adatlapon (ár NÉLKÜL, F2.4 szerint).
+- A maradék 10 Bluefin-jelölt átnézése és jóváhagyása/elutasítása a
+  `/admin/katalogus`-on — színváltozatoknál **Összefésülés** a kanonikus
+  színre (ld. `szinvaltozat-lista-terv` memória — a `boards.colors` mező
+  KÜLÖN fejlesztési kör, most halasztva).
+- Böngésző-verifikáció: a jóváhagyott deszkák megjelennek-e a `/deszkak`
+  listán/adatlapon a helyes specifikációval, ár NÉLKÜL (F2.4 szerint).
 - **GitHub Actions secretek** (`SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`) a
   heti cronhoz — ellenőrzés/beállítás a repo Settings → Secrets and
   variables → Actions alatt. Ezt nem lehet automatizálni innen (a jelenlegi
