@@ -289,6 +289,94 @@ describe("crawlSource — teljes menet", () => {
   });
 });
 
+describe("crawlSource — böngésző-renderelt fallback (F2.1-utó-3)", () => {
+  /**
+   * Cím MÉRET-JELÖLÉS nélkül (nincs "12'6" jellegű minta a title-fallbacknek),
+   * de a "SUP Board" szó garantálja a deszka-besorolást a `classifyProduct`
+   * kulcsszó-ágán, FÜGGETLENÜL attól, hogy a fallback sikerül-e — így a
+   * teszt kifejezetten a fallback-viselkedésre koncentrálhat.
+   */
+  function productPageNoDimensions(name: string, brand: string, price: string): string {
+    return `<html><head><script type="application/ld+json">
+      {"@type":"Product","name":${JSON.stringify(name)},
+       "brand":{"@type":"Brand","name":${JSON.stringify(brand)}},
+       "offers":{"@type":"Offer","price":${JSON.stringify(price)},"priceCurrency":"HUF"}}
+    </script></head><body></body></html>`;
+  }
+
+  const NO_DIM_NETWORK = {
+    ...HAPPY_NETWORK,
+    [`${ORIGIN}/termek/gladiator-origin`]: {
+      text: productPageNoDimensions("Gladiator Origin Pro SUP Board", "Gladiator", "249000"),
+    },
+  };
+
+  it("lefut, ha mindhárom méret hiányzik a sima HTML-ből, és a jelölt frissül", async () => {
+    const network = makeNetwork(NO_DIM_NETWORK);
+    const { store, candidates } = makeStore();
+    const renderCalls: string[] = [];
+
+    await crawlSource(SOURCE, {
+      fetchText: network.fetchText,
+      store,
+      renderText: async (url) => {
+        renderCalls.push(url);
+        return "Dimensions: 320 x 80 x 15cm";
+      },
+    });
+
+    expect(renderCalls).toEqual([`${ORIGIN}/termek/gladiator-origin`]);
+    expect(candidates[0]?.extracted.specs).toMatchObject({
+      lengthCm: 320,
+      widthCm: 80,
+      thicknessCm: 15,
+    });
+  });
+
+  it("NEM fut, ha legalább egy méret már megvan a sima HTML-ből", async () => {
+    // A HAPPY_NETWORK gladiator-oldalának címe "12'6" — a title-fallback ebből
+    // már kitölti a hosszt, tehát a MINDHÁROM-hiányzik feltétel nem teljesül.
+    const network = makeNetwork(HAPPY_NETWORK);
+    const { store } = makeStore();
+    let called = false;
+
+    await crawlSource(SOURCE, {
+      fetchText: network.fetchText,
+      store,
+      renderText: async () => {
+        called = true;
+        return "Dimensions: 999 x 999 x 999cm";
+      },
+    });
+
+    expect(called).toBe(false);
+  });
+
+  it("a fallback null-eredménye (renderelési hiba) nem dönti el a crawlot", async () => {
+    const network = makeNetwork(NO_DIM_NETWORK);
+    const { store, candidates } = makeStore();
+
+    const summary = await crawlSource(SOURCE, {
+      fetchText: network.fetchText,
+      store,
+      renderText: async () => null,
+    });
+
+    expect(summary.errors).toEqual([]);
+    expect(candidates[0]?.extracted.specs.lengthCm).toBeNull();
+  });
+
+  it("deps.renderText hiányában is végigfut, fallback nélkül (visszafelé kompatibilis)", async () => {
+    const network = makeNetwork(NO_DIM_NETWORK);
+    const { store, candidates } = makeStore();
+
+    const summary = await crawlSource(SOURCE, { fetchText: network.fetchText, store });
+
+    expect(summary.errors).toEqual([]);
+    expect(candidates[0]?.extracted.specs.lengthCm).toBeNull();
+  });
+});
+
 describe("crawlAll", () => {
   it("kihagyja az inaktív forrásokat, és összegzést ad", async () => {
     const network = makeNetwork(HAPPY_NETWORK);

@@ -273,23 +273,28 @@ function valueAfterLabel(
 }
 
 /**
- * "325 x 82 x 16cm" jellegű, EGY sorba írt hossz×szélesség×vastagság minta —
- * a boltok gyakran nem külön "Hosszúság"/"Szélesség"/"Vastagság" címkével,
- * hanem egyetlen "Dimensions:" sorral adják meg. `×` és `x` is elfogadott,
- * a szóköz a szám és az `x`/`cm` között opcionális (élesben látott: "82 x16cm").
+ * "325 x 82 x 16cm" VAGY "120 x 34 x 6 Inches" jellegű, EGY sorba írt
+ * hossz×szélesség×vastagság minta — a boltok gyakran nem külön "Hosszúság"/
+ * "Szélesség"/"Vastagság" címkével, hanem egyetlen "Dimensions:" sorral adják
+ * meg, néha KIZÁRÓLAG hüvelykben (élesben mért eset: bluefinsupboards.eu
+ * "Lite" termékvonala csak "Inches"-t ad, cm-et nem). `×` és `x` is
+ * elfogadott, a szóköz a szám és az `x`/mértékegység között opcionális
+ * (élesben látott: "82 x16cm").
  */
 function parseTripleDimensionCm(
   text: string,
 ): { lengthCm: number; widthCm: number; thicknessCm: number } | null {
   const match = text.match(
-    /(\d+(?:[.,]\d+)?)\s*[x×]\s*(\d+(?:[.,]\d+)?)\s*[x×]\s*(\d+(?:[.,]\d+)?)\s*cm\b/i,
+    /(\d+(?:[.,]\d+)?)\s*[x×]\s*(\d+(?:[.,]\d+)?)\s*[x×]\s*(\d+(?:[.,]\d+)?)\s*(cm|inch(?:es)?|in)\b/i,
   );
   if (!match) return null;
-  const lengthCm = toNumber(match[1] ?? "");
-  const widthCm = toNumber(match[2] ?? "");
-  const thicknessCm = toNumber(match[3] ?? "");
-  if (lengthCm === null || widthCm === null || thicknessCm === null) return null;
-  return { lengthCm: round1(lengthCm), widthCm: round1(widthCm), thicknessCm: round1(thicknessCm) };
+  const length = toNumber(match[1] ?? "");
+  const width = toNumber(match[2] ?? "");
+  const thickness = toNumber(match[3] ?? "");
+  if (length === null || width === null || thickness === null) return null;
+  const isInches = /^in/i.test(match[4] ?? "");
+  const toCm = (v: number) => round1(isInches ? v * CM_PER_INCH : v);
+  return { lengthCm: toCm(length), widthCm: toCm(width), thicknessCm: toCm(thickness) };
 }
 
 /**

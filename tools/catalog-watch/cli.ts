@@ -23,6 +23,7 @@ import { resolveSupabaseTarget } from "./env.ts";
 import { findDiscontinuedCandidates, DEFAULT_UNSEEN_DAYS } from "./lifecycle.ts";
 import type { ProductClassification } from "./normalize.ts";
 import { probeSource } from "./probe.ts";
+import { createRenderFetcher } from "./render.ts";
 import { CRAWLER_USER_AGENT } from "./robots.ts";
 import {
   createDryRunStore,
@@ -224,18 +225,28 @@ async function commandCrawl(args: Args): Promise<void> {
   }
 
   const dry = dryRun ? createDryRunStore(client) : null;
+  // Lusta indítású böngésző-fallback (render.ts, F2.1-utó-3) — csak akkor
+  // indul el ténylegesen, ha egy termék MINDHÁROM méret-mezője hiányzik a
+  // sima HTML-ből. `finally`-ben mindig lezárjuk, ha valaha elindult.
+  const renderFetcher = createRenderFetcher();
   const deps: CrawlDeps = {
     fetchText: realFetch,
     store: dry ? dry.store : createSupabaseStore(client),
     sleep,
     log: (message) => console.log(message),
+    renderText: (url) => renderFetcher.renderText(url),
   };
 
   console.log(
     `${dryRun ? "[DRY-RUN] " : ""}${sources.length} forrás, ` +
       `alap-szünet ${DEFAULT_MIN_DELAY_MS} ms…`,
   );
-  const summary = await crawlAll(sources, deps, { dryRun });
+  let summary: Awaited<ReturnType<typeof crawlAll>>;
+  try {
+    summary = await crawlAll(sources, deps, { dryRun });
+  } finally {
+    await renderFetcher.close();
+  }
 
   for (const source of summary.sources) {
     console.log(

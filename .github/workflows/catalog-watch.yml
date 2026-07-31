@@ -41,6 +41,11 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      # A böngésző-renderelt fallback (render.ts, F2.1-utó-3) csak akkor
+      # indul el, ha egy termék MINDHÁROM méret-mezője hiányzik a sima
+      # HTML-ből — a Chromium-telepítés így is kell előre, hogy legyen mit
+      # elindítani, ha a crawl közben szükség lesz rá.
+      - run: npx playwright install --with-deps chromium
 
       - name: Crawl
         env:

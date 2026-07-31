@@ -83,6 +83,13 @@ export interface CrawlDeps {
   sleep?: (ms: number) => Promise<void>;
   now?: () => Date;
   log?: (message: string) => void;
+  /**
+   * OPCIONÁLIS böngésző-renderelt szöveg FALLBACKKÉNT (F2.1-utó-3): ha a sima
+   * HTML-ből egyetlen méret sem jött ki (`render.ts` — a méret néhány bolton
+   * csak JS-futás után jelenik meg). Hiányában (pl. tesztben) a fallback
+   * egyszerűen kimarad, a crawl a sima HTTP-eredménnyel dolgozik tovább.
+   */
+  renderText?: (url: string) => Promise<string | null>;
 }
 
 function emptySummary(source: CatalogSourceRow): SourceCrawlSummary {
@@ -281,9 +288,27 @@ export async function crawlSource(
       const node = pickPrimaryProduct(findProductNodes(page.text));
       if (!node) continue; // nem termékoldal — csendben tovább
 
-      const product = extractProduct(node, url, htmlToText(page.text));
+      let product = extractProduct(node, url, htmlToText(page.text));
       if (!product) continue;
       summary.productsExtracted += 1;
+
+      // Böngésző-renderelt fallback (F2.1-utó-3): csak akkor, ha a sima
+      // HTML-ből a méret MINDHÁROM mezője hiányzott — ez a jele annak, hogy a
+      // bolt a méretet csak JS-futás után írja a látható szövegbe. Drága
+      // művelet, ezért szűk feltétellel hívjuk, és hibatűrő (sosem dob).
+      const missingAllDimensions =
+        deps.renderText &&
+        product.specs.lengthCm === null &&
+        product.specs.widthCm === null &&
+        product.specs.thicknessCm === null;
+      if (missingAllDimensions) {
+        await sleep(delayMs);
+        const renderedText = await deps.renderText!(url);
+        if (renderedText !== null) {
+          const rerendered = extractProduct(node, url, renderedText);
+          if (rerendered) product = rerendered;
+        }
+      }
 
       const match = matchCandidate(product, boards);
       const seenAt = now().toISOString();

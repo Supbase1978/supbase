@@ -69,6 +69,7 @@ indítás (`workflow_dispatch`, van `dry_run` kapcsolója).
 | `normalize.ts` | márka-alias, modellnév-tisztítás, spec/ár/elérhetőség parse |
 | `match.ts` | `pg_trgm`-kompatibilis trigram-egyezés → ismert / bizonytalan / új |
 | `crawl.ts` | orchestrátor (injektált I/O, hibatűrő, udvarias) |
+| `render.ts` | böngésző-renderelt szöveg FALLBACKKÉNT (Playwright), csak ha a sima HTML-ből mindhárom méret hiányzik |
 | `lifecycle.ts` | futás-specifikus döntések; a kifutás-szabály a catalog modulban él |
 | `store.ts` | az EGYETLEN adatbázist író fájl (service-role) |
 | `env.ts` | cél-projekt feloldás + kulcs-projekt egyeztetés |
@@ -78,12 +79,26 @@ Minden döntés tiszta függvény, az I/O injektált (az Edge Functionök `_shar
 mintája) — a teljes futás hálózat és adatbázis nélkül tesztelhető:
 `npx vitest run tools`.
 
+## Böngésző-renderelt fallback (F2.1-utó-3, 2026-07-31)
+
+Élesben mért eset: néhány bolt (bluefinsupboards.eu több termékvonala) a
+méret-adatot egy JS-változóból tölti a látható szövegbe KIZÁRÓLAG a
+böngészőben — a nyers szerver-HTML-ben nincs ott. Ha egy termék MINDHÁROM
+méret-mezője (hossz/szélesség/vastagság) hiányzik a sima HTML-ből, a
+`crawl.ts` egyszer újralekéri az oldalt Playwright-tal (`render.ts`), és a
+JS lefutása UTÁNI, EMBERI szemnek szánt szöveget (`document.body.innerText`)
+adja a MEGLÉVŐ címke-alapú parsernek — nem egyedi, bolt-specifikus JS-
+változót olvasunk ki. Drága művelet, ezért csak fallbackként, ritkán fut.
+A CI-ban (`catalog-watch.yml`) ehhez kell a `playwright install --with-deps
+chromium` lépés is.
+
 ## Korlátok (F2-ben tudatosan nyitva)
 
 - **LLM-fallback nincs bekötve.** A terv a spec-táblázatokhoz Claude API-s
   kinyerést irányoz elő ott, ahol a JSON-LD kevés. Ez API-kulcsot és költség-
-  döntést igényel; addig a címkézett szöveg-parse dolgozik, és amit nem talál,
-  az a moderátorra marad (inkább hiányozzon, mint tévedjen).
+  döntést igényel; addig a címkézett szöveg-parse dolgozik (a böngésző-
+  fallback után is), és amit nem talál, az a moderátorra marad (inkább
+  hiányozzon, mint tévedjen).
 - **Automatikus forrás-felderítés nincs.** A források kézzel jönnek
   (`add-source`) — a terv szerint is ez az elsőrangú út.
 - **Ártörténet csak árváltozáskor** íródik (a heti azonos ár nem termel sort).

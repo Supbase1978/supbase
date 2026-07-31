@@ -164,6 +164,15 @@ describe("parseSpecsFromText", () => {
     expect(specs.thicknessCm).toBe(16);
   });
 
+  it("összevont 'Dimensions: L x W x H Inches' (csak hüvelyk, cm nélkül) is felismeri", () => {
+    // Élesben mért eset: bluefinsupboards.eu "Lite" termékvonala csak
+    // hüvelyket ad, cm-et nem.
+    const specs = parseSpecsFromText("Dimensions: 120 x 34 x 6 Inches");
+    expect(specs.lengthCm).toBeCloseTo(304.8, 1);
+    expect(specs.widthCm).toBeCloseTo(86.4, 1);
+    expect(specs.thicknessCm).toBeCloseTo(15.2, 1);
+  });
+
   it("valós Bluefin-oldal szövege — mindhárom méret + súly + teherbírás helyesen jön ki", () => {
     // Élesben letöltött oldal (2026-07-31) tömörített szövege, a releváns rész.
     const text =
