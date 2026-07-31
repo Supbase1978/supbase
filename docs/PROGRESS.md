@@ -19,7 +19,7 @@
 | F1.9 Push + viharjelzés | ✅ kész (2026-07-25) | teljes web push-pipeline (VAPID + RFC 8291 natív Web Cryptóval, npm nélkül), storm-alert push-ág, feliratkozó-UI, m4 `observed_at`. Élesítve (5 migráció + secretek + deploy) és **böngészőben végponttól végpontig verifikálva: a viharjelzés-push megérkezett**. Részletek lent |
 | F1.11 Folyó-vízállás (5.1/6) | ✅ kész + élesítve (2026-07-27) | vizugy.hu (OVF) REST API, HIVATALOS árvízvédelmi készültségi küszöbökkel; a fix −1 folyó-büntetés helyett fokozat-alapú index-plafon. Élesben verifikálva, cron írja. + F1.11b: póráz-figyelmeztetés folyóvízre |
 | F1.12 Analitika (süti-mentes) | ✅ kész + élesítve (2026-07-28) | `analytics_events` + definer-RPC + `/admin/analitika`. Nincs süti/IP/azonosító → nincs egyéni tölcsér, csak darabszám. Robot/DNT/dev nem számol |
-| F2.2 Visszajelzés-csatorna | ✅ kész + élesítve (2026-07-29) | `/visszajelzes` (hiba · hiányzó bolt · hiányzó modell) + `/admin/visszajelzesek`. Migráció éles push (2026-07-29), REST-tel verifikálva (RLS zár). HÁTRA: böngésző-verifikáció, `RESEND_API_KEY` ha kell e-mail-értesítés |
+| F2.2 Visszajelzés-csatorna | ✅ kész + ÉLESBEN BÖNGÉSZŐBEN VERIFIKÁLVA (2026-07-31) | `/visszajelzes` (hiba · hiányzó bolt · hiányzó modell) + `/admin/visszajelzesek`. Teljes kör próbálva: beküldés → admin-listában megjelenés → állapotváltás+jegyzet mentése, mind sikeres. HÁTRA: `RESEND_API_KEY` ha kell e-mail-értesítés (opcionális) |
 | F2.1 catalog-watch piacfigyelő | ✅ ÉLESBEN MŰKÖDIK (2026-07-31) | 3 forrás bekötve: Bluefin (15 jelölt, MIND jóváhagyva), Aqua Marina Hungary + sup-deszka.hu (2 HU-viszonteladó, **168 jelölt pending**). Útközben 2 valós hiba javítva (gzip-sitemap, magyar "Mérete" címke). HÁTRA: a 168 pending jelölt moderációja + GH Actions secretek |
 | F2.3 Felszerelés (kiegészítők), 1–3. szakasz | ✅ kész + élesítve (2026-07-29) | 1.: `/felszereles` útmutató-oldalak. 2.: `kind`/`would_recommend` migráció (élesítve, REST-tel verifikálva) + `kind='board'` szűrő mindenhol + `/felszereles/:kategoria/:slug` termékadatlap. 3.: catalog-watch `classifyProduct` (evező/mentőmellény/pumpa jelöltté válik) + admin deszka/kiegészítő kapcsoló. Valós forrás-adat MEGÉRKEZETT (2026-07-31, ld. F2.1) — evező/mentőmellény/pumpa jelöltek a 168 pendingben, moderációra várnak |
 | F2.4 Direkt bolti ár eltávolítása | ✅ kész (2026-07-30) | A deszka- és kiegészítő-adatlapról (fejléc-ár + „Hol kapható" blokk + JSON-LD `offers`) eltávolítva — felhasználói döntés, ld. F2.4-szakasz. A `board_prices` gyűjtés (catalog-watch) VÁLTOZATLAN, a Deszkaválasztó budget-szűrője/eredmény-ára is VÁLTOZATLAN (felhasználói döntés szerint) |
@@ -432,9 +432,17 @@ javítva.
 **Élesítve (2026-07-29):** a migráció kitolva (`npm run sb -- db push
 --include-all`, a két F2.3-migrációval együtt); REST-tel verifikálva: anon
 SELECT `[]` (RLS admin-only olvasás áll), anon INSERT `401` (bejelentkezés
-kell). **HÁTRA:** a beküldés böngésző-verifikációja bejelentkezett fiókkal ·
-`RESEND_API_KEY` + `FEEDBACK_TO_EMAIL` beállítása, ha kell e-mail-értesítés
-(addig a DB + admin felület a csatorna).
+kell).
+
+**Böngésző-verifikáció (2026-07-31, Playwright, admin-session):** teljes kör
+kipróbálva — `/visszajelzes` űrlap kitöltve (`Ötlet, javaslat` + leírás) →
+„Köszönjük! Megkaptuk a visszajelzést." → a bejegyzés megjelent a
+`/admin/visszajelzesek`-en helyes címkével/időbélyeggel → állapot `Elvetve`-re
+állítva + jegyzet mentve, „Mentve." visszaigazolás. A teszt-bejegyzés
+szándékosan `[TESZT]`-jelölt és `Elvetve` állapotban maradt (nem törölve, a
+csatorna napló-jellege szerint). **HÁTRA:** `RESEND_API_KEY` +
+`FEEDBACK_TO_EMAIL` beállítása, ha kell e-mail-értesítés (opcionális, addig a
+DB + admin felület a csatorna).
 
 ## F2.3 — Felszerelés (kiegészítők) — 1. szakasz: útmutató (2026-07-28)
 
