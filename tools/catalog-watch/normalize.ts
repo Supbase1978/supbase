@@ -285,13 +285,10 @@ function valueAfterLabel(
  * elfogadott, a szóköz a szám és az `x`/mértékegység között opcionális
  * (élesben látott: "82 x16cm").
  */
-function parseTripleDimensionCm(
-  text: string,
-): { lengthCm: number; widthCm: number; thicknessCm: number } | null {
-  const match = text.match(
-    /(\d+(?:[.,]\d+)?)\s*[x×]\s*(\d+(?:[.,]\d+)?)\s*[x×]\s*(\d+(?:[.,]\d+)?)\s*(cm|inch(?:es)?|in)\b/i,
-  );
-  if (!match) return null;
+const TRIPLE_DIMENSION_RE =
+  /(\d+(?:[.,]\d+)?)\s*[x×]\s*(\d+(?:[.,]\d+)?)\s*[x×]\s*(\d+(?:[.,]\d+)?)\s*(cm|inch(?:es)?|in)\b/gi;
+
+function tripleFromMatch(match: RegExpMatchArray): { lengthCm: number; widthCm: number; thicknessCm: number } | null {
   const length = toNumber(match[1] ?? "");
   const width = toNumber(match[2] ?? "");
   const thickness = toNumber(match[3] ?? "");
@@ -299,6 +296,37 @@ function parseTripleDimensionCm(
   const isInches = /^in/i.test(match[4] ?? "");
   const toCm = (v: number) => round1(isInches ? v * CM_PER_INCH : v);
   return { lengthCm: toCm(length), widthCm: toCm(width), thicknessCm: toCm(thickness) };
+}
+
+function parseTripleDimensionCm(
+  text: string,
+): { lengthCm: number; widthCm: number; thicknessCm: number } | null {
+  const match = text.match(new RegExp(TRIPLE_DIMENSION_RE.source, "i"));
+  return match ? tripleFromMatch(match) : null;
+}
+
+/**
+ * Mint `parseTripleDimensionCm`, de a TELJES szövegben keres (nem csak egy
+ * címke utáni ablakban), ezért a találat POZÍCIÓJA előtti ~20 karaktert is
+ * megnézi: ha ott kizáró szó áll (pl. "Bag Dimensions: 90 x 40 x20cm"), a
+ * találatot átugorja és a KÖVETKEZŐ előfordulást keresi — ugyanaz a védelem,
+ * mint a `valueAfterLabel` `excludePrecededBy`-ánál, csak találat-relatív.
+ */
+function findBareTripleDimension(
+  text: string,
+  excludePrecededBy: readonly string[],
+): { lengthCm: number; widthCm: number; thicknessCm: number } | null {
+  const folded = foldText(text);
+  const re = new RegExp(TRIPLE_DIMENSION_RE.source, "gi");
+  for (const match of text.matchAll(re)) {
+    const index = match.index ?? 0;
+    const before = folded.slice(Math.max(0, index - 20), index);
+    const excluded = excludePrecededBy.some((word) => before.includes(foldText(word)));
+    if (excluded) continue;
+    const triple = tripleFromMatch(match);
+    if (triple !== null) return triple;
+  }
+  return null;
 }
 
 /**
@@ -323,6 +351,22 @@ export function parseSpecsFromText(text: string): BoardSpecs {
       if (specs.lengthCm === null) specs.lengthCm = triple.lengthCm;
       if (specs.widthCm === null) specs.widthCm = triple.widthCm;
       if (specs.thicknessCm === null) specs.thicknessCm = triple.thicknessCm;
+    }
+  }
+
+  // Utolsó fallback: CÍMKE NÉLKÜLI "366x84x15 cm" a szabad szövegben —
+  // élesben mért eset (aquamarinahungary.com): a "Mérete" címke UTÁN álló
+  // szám elgépelt "m" mértékegységet visel ("Mérete (366m x 84x 15m)"),
+  // miközben a leírás korábbi mondatában a HELYES "cm" egységgel, címke
+  // nélkül is szerepel ugyanez a hármas ("...Aqua Marina, 366x84x15 cm").
+  // A minta ön-leíró (explicit cm/inch egység kell hozzá), ezért a teljes
+  // szövegben keresve is alacsony a téves találat kockázata.
+  if (specs.lengthCm === null || specs.widthCm === null || specs.thicknessCm === null) {
+    const bareTriple = findBareTripleDimension(text, ["bag", "package", "táska", "csomag"]);
+    if (bareTriple !== null) {
+      if (specs.lengthCm === null) specs.lengthCm = bareTriple.lengthCm;
+      if (specs.widthCm === null) specs.widthCm = bareTriple.widthCm;
+      if (specs.thicknessCm === null) specs.thicknessCm = bareTriple.thicknessCm;
     }
   }
 
@@ -428,6 +472,12 @@ const MISC_NON_BOARD_KEYWORDS = [
   "matrica",
   "ajandekutalvany",
   "utalvany",
+  // Élesben mért esetek: a "board" szótő ruházati/alkatrész-termékekben is
+  // előfordul (nem a BOARD_NOUNS-listás "board" főnévi jelentésben), ezért
+  // ELŐBB kell kizárni, mint hogy a `hasBoardNoun` ág elérje.
+  "boardshorts",
+  "board shorts",
+  "handle",
 ];
 
 /** A deszka-mivolt pozitív jelei a névben/leírásban. */
@@ -666,7 +716,14 @@ export function extractProduct(
   }
 
   const modelName = cleanModelName(rawTitle, brandName);
-  const boardType = guessBoardType(haystack);
+  // SZÁNDÉKOSAN NEM a teljes `haystack` (cím+leírás+oldalszöveg): élesben mért
+  // hiba (aquamarinahungary.com) — a `pageText` a navigáció/kategória-menüt is
+  // tartalmazza, ami MINDEN oldalon (ruházaton is) ott van, ha a bolt navja
+  // "Touring"/"Race"/"Yoga" szót ír. Emiatt a `hasSup && boardType !== null`
+  // besorolási ág gyakorlatilag bármit deszkának vett, ami "SUP"-ot említ. A
+  // spec-parse (fent) ettől függetlenül a teljes szöveget nézi — az OTT talált
+  // címkézett érték helyhez kötött, nem szennyeződik a menütől.
+  const boardType = guessBoardType(`${rawTitle}\n${description}`);
   // A besorolás itt is lefut (nem csak a crawl.ts vezérlésében), hogy a
   // moderációs UI a kategória-legördülőt a figyelő tippjével előválaszthassa —
   // ugyanaz a minta, mint a `boardType` tippnél (a moderátor felülbírálhatja).

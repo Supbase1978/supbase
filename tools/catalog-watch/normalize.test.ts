@@ -173,6 +173,26 @@ describe("parseSpecsFromText", () => {
     expect(specs.weightKg).toBe(10.5);
   });
 
+  it("CÍMKE NÉLKÜLI 'NNNxNNxNN cm' hármast is felismeri, ha a címkézett próbálkozás elgépelt egységgel elhasal", () => {
+    // Élesben mért eset (aquamarinahungary.com): a "Mérete" címke UTÁN elgépelt
+    // "m" egység áll ("Mérete (366m x 84x 15m)", parseolhatatlan), de a leírás
+    // korábbi mondatában UGYANEZ a hármas helyes "cm" egységgel, címke nélkül
+    // is szerepel — ez a fallback ezt találja meg.
+    const specs = parseSpecsFromText(
+      "AZ új MONSTER ISUP, Aqua Marina, 366x84x15 cm\nMérete (366m x 84x 15m)\nNettó súly 10.5kg",
+    );
+    expect(specs.lengthCm).toBe(366);
+    expect(specs.widthCm).toBe(84);
+    expect(specs.thicknessCm).toBe(15);
+  });
+
+  it("a címke nélküli fallback SEM keveri össze a Bag Dimensionst a deszkával", () => {
+    const specs = parseSpecsFromText("Board Weight: 9.1kg\nBag Dimensions: 90 x 40 x20cm");
+    expect(specs.lengthCm).toBeNull();
+    expect(specs.widthCm).toBeNull();
+    expect(specs.thicknessCm).toBeNull();
+  });
+
   it("összevont 'Dimensions: L x W x H Inches' (csak hüvelyk, cm nélkül) is felismeri", () => {
     // Élesben mért eset: bluefinsupboards.eu "Lite" termékvonala csak
     // hüvelyket ad, cm-et nem.
@@ -343,6 +363,10 @@ describe("classifyProduct", () => {
     // `ignore` (nem `board`, nem hamis jelölt).
     ["11'6 Touring Board Bag", null, { kind: "ignore" }],
     ["12'6 Board Bag", null, { kind: "ignore" }],
+    // Ugyanaz a "board"-szótő-csapda, más termékkategóriában.
+    ["Férfi rövidnadrág Maui Férfi Boardshorts SUP", null, { kind: "ignore" }],
+    ["Race Board Handle (1 pcs)", null, { kind: "ignore" }],
+    ["Foil Board Nose Handle (1 pcs)", null, { kind: "ignore" }],
   ])("%s → %o", (rawTitle, boardType, expected) => {
     expect(
       classifyProduct({ rawTitle, modelName: rawTitle, boardType, specs: NO_SPECS }),
@@ -429,5 +453,30 @@ describe("extractProduct", () => {
   it("defaultBrandName nélkül (és JSON-LD brand nélkül) a márka null marad", () => {
     const noBrand = { ...NODE, brand: undefined };
     expect(extractProduct(noBrand, "https://bolt.hu/x")?.brandName).toBeNull();
+  });
+
+  it("a navigációs menü szövege (pageText) NEM szennyezheti a boardType-ot", () => {
+    // Élesben mért eset (aquamarinahungary.com): a bolt navigációja minden
+    // oldalon (ruházaton is) tartalmazza a "Touring"/"Race"/"Yoga" kategória-
+    // neveket — ha a boardType-tippet a TELJES oldalszövegből számolnánk,
+    // ez BÁRMELY "SUP"-ot említő terméket (pl. ruhát) deszkává minősítené a
+    // `hasSup && boardType !== null` ágon át.
+    const shortsNode = {
+      "@type": "Product",
+      name: "Aqua Marina Női SUP rövidnadrág ILLUSION PINK",
+      description: "Gyorsan száradó SUP rövidnadrág.",
+    };
+    const navChrome =
+      "Kezdőlap Touring SUP Race SUP Yoga SUP Allround SUP Kosár Kapcsolat";
+    const product = extractProduct(shortsNode, "https://bolt.hu/x", navChrome);
+    expect(product?.boardType).toBeNull();
+    expect(
+      classifyProduct({
+        rawTitle: product!.rawTitle,
+        modelName: product!.modelName,
+        boardType: product!.boardType,
+        specs: product!.specs,
+      }),
+    ).toEqual({ kind: "ignore" });
   });
 });
