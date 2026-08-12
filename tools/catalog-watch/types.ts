@@ -38,6 +38,13 @@ export interface CrawlConfig {
   maxProducts?: number;
   /** Kérések közti minimum szünet ms-ban (a robots Crawl-delay felülírhatja). */
   minDelayMs?: number;
+  /**
+   * Fallback márkanév, ha egy termékoldal JSON-LD-je nem ad `brand`/`manufacturer`
+   * mezőt (pl. egymárkás gyártói bolt, ahol ez magától értetődő, ezért ki sem
+   * írják). Csak akkor él, ha a JSON-LD hallgat — a saját mezője mindig elsőbbséget
+   * élvez.
+   */
+  defaultBrandName?: string;
   /** Szabad szöveges megjegyzés az adminnak. */
   notes?: string;
 }

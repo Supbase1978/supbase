@@ -288,7 +288,7 @@ export async function crawlSource(
       const node = pickPrimaryProduct(findProductNodes(page.text));
       if (!node) continue; // nem termékoldal — csendben tovább
 
-      let product = extractProduct(node, url, htmlToText(page.text));
+      let product = extractProduct(node, url, htmlToText(page.text), config.defaultBrandName ?? null);
       if (!product) continue;
       summary.productsExtracted += 1;
 
@@ -305,7 +305,7 @@ export async function crawlSource(
         await sleep(delayMs);
         const renderedText = await deps.renderText!(url);
         if (renderedText !== null) {
-          const rerendered = extractProduct(node, url, renderedText);
+          const rerendered = extractProduct(node, url, renderedText, config.defaultBrandName ?? null);
           if (rerendered) product = rerendered;
         }
       }

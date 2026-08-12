@@ -45,11 +45,14 @@ Parancsok:
   probe --url U                    Forrás-felderítés ADATBÁZIS NÉLKÜL: van-e
       [--name N] [--pattern RÉSZLET]... [--exclude RÉSZLET]...
       [--sitemap URL] [--samples N]     sitemap, JSON-LD, ár — és milyen
-                                        kapcsolókkal érdemes felvenni
+      [--default-brand NÉV]              kapcsolókkal érdemes felvenni
   list-sources                     A figyelt források listája
   add-source --name N --url U      Új forrás felvétele
       [--kind shop|brand_site|feed] [--sitemap URL] [--pattern RÉSZLET]...
-      [--exclude RÉSZLET]... [--max N] [--delay MS] [--country HU] [--notes SZÖVEG]
+      [--exclude RÉSZLET]... [--max N] [--delay MS] [--country HU]
+      [--default-brand NÉV] [--notes SZÖVEG]
+      --default-brand: fallback márkanév, ha a JSON-LD nem ad brand/manufacturer
+      mezőt (egymárkás gyártói bolt esetén gyakori)
   crawl [--source NÉV|ID] [--dry-run] [--max N]
                                    Crawl az aktív forrásokból
   lifecycle [--days N]             Kifutás-jelöltek listája (csak jelentés)
@@ -213,6 +216,8 @@ async function commandAddSource(args: Args): Promise<void> {
   if (max !== undefined) crawlConfig.maxProducts = max;
   const delay = flagNumber(args, "delay");
   if (delay !== undefined) crawlConfig.minDelayMs = delay;
+  const defaultBrand = flag(args, "default-brand");
+  if (defaultBrand) crawlConfig.defaultBrandName = defaultBrand;
   const notes = flag(args, "notes");
   if (notes) crawlConfig.notes = notes;
 
@@ -324,6 +329,7 @@ async function commandProbe(args: Args): Promise<void> {
       excludeUrlPatterns: flagList(args, "exclude"),
       sitemapUrl: flag(args, "sitemap"),
       samples: flagNumber(args, "samples"),
+      defaultBrandName: flag(args, "default-brand"),
     },
     { fetchText: realFetch, sleep },
   );

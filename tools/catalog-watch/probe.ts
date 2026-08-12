@@ -57,6 +57,8 @@ export interface ProbeOptions {
   sitemapUrl?: string;
   /** Hány termékoldalt nézzünk meg mintaként (default 3). */
   samples?: number;
+  /** ld. `CrawlConfig.defaultBrandName`. */
+  defaultBrandName?: string;
 }
 
 function shellQuote(value: string): string {
@@ -117,6 +119,7 @@ export async function probeSource(
       productUrlPatterns: options.productUrlPatterns,
       excludeUrlPatterns: options.excludeUrlPatterns,
       maxProducts: 5000,
+      defaultBrandName: options.defaultBrandName,
     },
     active: true,
     last_crawled_at: null,
@@ -163,7 +166,9 @@ export async function probeSource(
       const page = await deps.fetchText(url);
       const nodes = page.status >= 400 ? [] : findProductNodes(page.text);
       const node = pickPrimaryProduct(nodes);
-      const extracted = node ? extractProduct(node, url, htmlToText(page.text)) : null;
+      const extracted = node
+        ? extractProduct(node, url, htmlToText(page.text), options.defaultBrandName ?? null)
+        : null;
       samples.push({
         url,
         status: page.status,

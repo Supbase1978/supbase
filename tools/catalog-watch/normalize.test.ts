@@ -337,6 +337,12 @@ describe("classifyProduct", () => {
     ["Vízhatlan táska 20 l", null, { kind: "ignore" }],
     ["SUP póráz derékon hordható", null, { kind: "ignore" }],
     ["Valami ismeretlen termék", null, { kind: "ignore" }],
+    // Élesben mért eset (Indiana Paddle & Surf): a hordtáska nevében a "board"
+    // szó a BOARD_NOUNS-on át DESZKÁVÁ minősítette volna, mert a "taska"
+    // kategória csak magyar kulcsszavakat ismert. Táska ma nem KÖVETETT →
+    // `ignore` (nem `board`, nem hamis jelölt).
+    ["11'6 Touring Board Bag", null, { kind: "ignore" }],
+    ["12'6 Board Bag", null, { kind: "ignore" }],
   ])("%s → %o", (rawTitle, boardType, expected) => {
     expect(
       classifyProduct({ rawTitle, modelName: rawTitle, boardType, specs: NO_SPECS }),
@@ -407,5 +413,21 @@ describe("extractProduct", () => {
 
   it("név nélküli node → null (nem gyártunk névtelen jelöltet)", () => {
     expect(extractProduct({ "@type": "Product" }, "https://bolt.hu/x")).toBeNull();
+  });
+
+  it("brand/manufacturer nélküli JSON-LD-nél a defaultBrandName pótolja a márkát", () => {
+    const noBrand = { ...NODE, brand: undefined };
+    const product = extractProduct(noBrand, "https://indiana-paddlesurf.com/x", "", "Indiana");
+    expect(product?.brandName).toBe("Indiana");
+  });
+
+  it("a JSON-LD saját brand mezője ELSŐBBSÉGET élvez a defaultBrandName-nél", () => {
+    const product = extractProduct(NODE, "https://bolt.hu/x", "", "Fallback Brand");
+    expect(product?.brandName).toBe("Aqua Marina");
+  });
+
+  it("defaultBrandName nélkül (és JSON-LD brand nélkül) a márka null marad", () => {
+    const noBrand = { ...NODE, brand: undefined };
+    expect(extractProduct(noBrand, "https://bolt.hu/x")?.brandName).toBeNull();
   });
 });

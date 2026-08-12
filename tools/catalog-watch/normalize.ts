@@ -394,7 +394,7 @@ const ACCESSORY_CATEGORY_RULES: [GearCategory, string[]][] = [
   // Bare "paddle" szándékosan hiányzik: az beleillene a "paddleboard"/"paddle
   // board" BOARD_NOUNS-szóba is — csak az egyértelmű "evező"/"paddle blade" számít.
   ["evezo", ["evezo", "paddle blade"]],
-  ["taska", ["hatizsak", "taska", "backpack"]],
+  ["taska", ["hatizsak", "taska", "backpack", "board bag", "carry bag"]],
   ["ules", ["ules", "kayak seat", "seat"]],
 ];
 
@@ -637,16 +637,24 @@ export function parseAvailability(offers: unknown): boolean | null {
  * A `pageText` (a termékoldal láthatóra tisztított szövege) opcionális: a
  * spec-táblázatok ritkán vannak a JSON-LD-ben, ezért a méreteket onnan
  * pótoljuk. A címből SOSEM következtetünk teherbírásra.
+ *
+ * A `defaultBrandName` (a forrás `crawl_config.defaultBrandName`-je) csak
+ * akkor él, ha a JSON-LD sem `brand`-et, sem `manufacturer`-t nem ad — egy
+ * saját gyártói boltnál ez gyakori, mert a bolt magától értetődőnek veszi a
+ * márkát. A JSON-LD saját mezője mindig elsőbbséget élvez.
  */
 export function extractProduct(
   node: Record<string, unknown>,
   sourceUrl: string,
   pageText = "",
+  defaultBrandName: string | null = null,
 ): ExtractedProduct | null {
   const rawTitle = firstString(node.name)?.replace(/\s+/g, " ").trim() ?? "";
   if (rawTitle === "") return null;
 
-  const brandName = normalizeBrandName(firstString(node.brand ?? node.manufacturer));
+  const brandName =
+    normalizeBrandName(firstString(node.brand ?? node.manufacturer)) ??
+    normalizeBrandName(defaultBrandName);
   const description = firstString(node.description) ?? "";
   const haystack = `${rawTitle}\n${description}\n${pageText}`;
 
