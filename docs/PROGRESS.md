@@ -20,7 +20,7 @@
 | F1.11 Folyó-vízállás (5.1/6) | ✅ kész + élesítve (2026-07-27) | vizugy.hu (OVF) REST API, HIVATALOS árvízvédelmi készültségi küszöbökkel; a fix −1 folyó-büntetés helyett fokozat-alapú index-plafon. Élesben verifikálva, cron írja. + F1.11b: póráz-figyelmeztetés folyóvízre |
 | F1.12 Analitika (süti-mentes) | ✅ kész + élesítve (2026-07-28) | `analytics_events` + definer-RPC + `/admin/analitika`. Nincs süti/IP/azonosító → nincs egyéni tölcsér, csak darabszám. Robot/DNT/dev nem számol |
 | F2.2 Visszajelzés-csatorna | ✅ kész + ÉLESBEN BÖNGÉSZŐBEN VERIFIKÁLVA (2026-07-31) | `/visszajelzes` (hiba · hiányzó bolt · hiányzó modell) + `/admin/visszajelzesek`. Teljes kör próbálva: beküldés → admin-listában megjelenés → állapotváltás+jegyzet mentése, mind sikeres. HÁTRA: `RESEND_API_KEY` ha kell e-mail-értesítés (opcionális) |
-| F2.1 catalog-watch piacfigyelő | ✅ ÉLESBEN MŰKÖDIK (2026-07-31) | 3 forrás bekötve: Bluefin (15 jelölt, MIND jóváhagyva), Aqua Marina Hungary + sup-deszka.hu (2 HU-viszonteladó, **168 jelölt pending**). Útközben 2 valós hiba javítva (gzip-sitemap, magyar "Mérete" címke). HÁTRA: a 168 pending jelölt moderációja + GH Actions secretek |
+| F2.1 catalog-watch piacfigyelő | ✅ ÉLESBEN MŰKÖDIK (2026-08-12) | 4 forrás bekötve: Bluefin (15 jelölt, MIND jóváhagyva), Aqua Marina Hungary + sup-deszka.hu + Indiana Paddle & Surf (**185 jelölt pending**). Útközben 4 valós hiba javítva (gzip-sitemap, magyar "Mérete" címke, hiányzó-márka fallback, angol "Board Bag" félreosztályozás). HÁTRA: a 185 pending jelölt moderációja + GH Actions secretek |
 | F2.3 Felszerelés (kiegészítők), 1–3. szakasz | ✅ kész + élesítve (2026-07-29) | 1.: `/felszereles` útmutató-oldalak. 2.: `kind`/`would_recommend` migráció (élesítve, REST-tel verifikálva) + `kind='board'` szűrő mindenhol + `/felszereles/:kategoria/:slug` termékadatlap. 3.: catalog-watch `classifyProduct` (evező/mentőmellény/pumpa jelöltté válik) + admin deszka/kiegészítő kapcsoló. Valós forrás-adat MEGÉRKEZETT (2026-07-31, ld. F2.1) — evező/mentőmellény/pumpa jelöltek a 168 pendingben, moderációra várnak |
 | F2.4 Direkt bolti ár eltávolítása | ✅ kész (2026-07-30) | A deszka- és kiegészítő-adatlapról (fejléc-ár + „Hol kapható" blokk + JSON-LD `offers`) eltávolítva — felhasználói döntés, ld. F2.4-szakasz. A `board_prices` gyűjtés (catalog-watch) VÁLTOZATLAN, a Deszkaválasztó budget-szűrője/eredmény-ára is VÁLTOZATLAN (felhasználói döntés szerint) |
 | F1.10 Záró audit + élesítés | ✅ audit **26/26** (2026-07-27) | **`docs/AUDIT_F1.md`**: az audit két mérés-jellegű hiánya pótolva (vizuális regresszió 07-26, teljesítmény-budget 07-27). HÁTRA az F1 lezárásához a publikussá tétel — a lépések a `RUNBOOK.md` **élesítési checklistjében** (domain → Resend-SMTP → Turnstile → cégadatok → `SITE_PUBLIC=true`), mind felhasználói döntés/adat |
@@ -385,6 +385,71 @@ MINDKETTŐ `pending`, moderációra vár).
   moderációs munka, a zaj (ruházat, uszony, néhány kajak) egyszerű
   elutasítással kezelhető.
 - GitHub Actions secretek (változatlanul nyitva, ld. fent).
+
+### F2.1-utó-5 — Indiana Paddle & Surf + defaultBrandName + osztályozási hiba (2026-08-12)
+
+Az SSD-megszakadás utáni újraindítás után a felhasználó a folytatást kérte:
+vagy fejlesztés, vagy — mivel ez is a munka része — további katalógus-forrás
+keresése a 168 pending mellé. A user a forráskeresést választotta. Kapuk
+zöldek: typecheck · lint · **776 vitest** (+6 új), commit `f65da4e`.
+
+**Kutatás (RRD, Zray, F2 Boards, Indiana):** csak az **Indiana Paddle &
+Surf** (indiana-paddlesurf.com, svájci gyártó) bizonyult használhatónak.
+Zray-nek nincs JSON-LD-je (mint korábban SUPshopnak), F2 Boardsnak sincs
+(Magento-alapú, JS-renderelt), RRD-nek VAN JSON-LD-je, de a méret-tábla
+láb/hüvelyk formátumban, TÖBB méretvariánst egyetlen JSON-LD `Product`
+alá sűrítve — ez a mai parserünkkel nem bontható szét megbízhatóan, ezért
+kimaradt (nem hiba, tudatos megállás, mint korábban a Bluefin fül-mögötti
+specifikációknál).
+
+**Indiana erőssége:** tiszta `Product` JSON-LD + a statikus HTML-ben
+CÍMKÉZETT, METRIKUS spec-tábla (`Length CM:`, `Width CM:`, `Thickness/
+Height CM:`, `Volume L:`, `Product weight:`, `Rec. rider weight (kg):`) —
+pontosan a meglévő `SPEC_LABELS`/`toNumber` (vesszős tizedesjel is kezelt)
+mintájába illik, ÚJ parser-kód nem kellett hozzá. Az ár CHF (nem HUF) —
+a meglévő `parsePriceHuf` ezt helyesen null-ra hagyja (F2.4-nek amúgy sem
+kell ár).
+
+**Valós hiba #1 — hiányzó márka (JAVÍTVA, `crawl_config.defaultBrandName`):**
+Indiana JSON-LD-je EGYETLEN mintán sem ad `brand`/`manufacturer` mezőt (a
+saját gyártói bolt magától értetődőnek veszi) — enélkül
+`approveCandidate` mindenhol `admin.error.noBrand`-ot adott volna. Új,
+OPCIONÁLIS `CrawlConfig.defaultBrandName` mező (+ CLI `--default-brand`)
+— csak akkor él, ha a JSON-LD hallgat, a saját mezője mindig elsőbbséget
+élvez. 3 új teszt (`normalize.test.ts`), élesben verifikálva: mind a 17
+Indiana-jelölt helyes „Indiana" márkanévvel érkezett.
+
+**Valós hiba #2 — angol „Board Bag" deszkának minősült (JAVÍTVA):** a
+`taska` kiegészítő-kategória kulcsszólistája csak magyart ismert
+(`taska`, `hatizsak`, `backpack`) — egy angol „11'6 Touring Board Bag"
+termék a `BOARD_NOUNS` „board" szaván át DESZKÁVÁ minősült (az első
+próbafutásban a 9 jelöltből 5 hordtáska volt). Felvéve: `"board bag"`,
+`"carry bag"`. 2 új táblázatos teszt reprodukálja az esetet. A javítás
+UTÁN a 200-mintás dry-run 168/183 terméket helyesen `ignore`-olt (168
+kiegészítő/ruházat/nem-SUP, korábban csak 51 volt ugyanezen minta egy
+részén — a hordtáskák eltűntek a hamis jelöltek közül).
+
+**Ismert, tudatosan NEM javított apróság:** egyetlen „Race Board Handle"
+(hordófül) ugyanígy „board"-ként minősül (a `taska`-listához hasonló
+angol kulcsszó hiányzik a „handle"-höz) — de ez a 200 mintából 1 eset,
+a moderátor egy kattintással elutasítja; a jelenség ÁLTALÁNOSABB
+korlátja (bármilyen „X Board Y" elnevezésű nem-deszka termék) nem éri
+meg a további parser-bővítést ennyi haszonért.
+
+**Éles crawl (felhasználói jóváhagyással, `max 200` a 425 URL-ből):**
+**17 új jelölt** (10 deszka + 7 kiegészítő/pumpa), mind „Indiana"
+márkanévvel. Köztük egy **bizonytalan egyezés** egy meglévő deszkával
+(„12'6 Touring" — moderációkor érdemes megnézni, összefésülés-e vagy
+valódi új modell). Két „Surf Hardboard" (5'8/5'10) valószínűleg NEM
+SUP-deszka (sima szörfdeszka, a „board" szó miatt került be) — moderátor
+dolga eldönteni.
+
+**Végállapot: 185 jelölt/deszka a `catalog_candidates`-ben** (168 korábbi
++ 17 Indiana, mind `pending`).
+
+**HÁTRA (felhasználói lépés — admin-bejelentkezés kell):** a 185 pending
+jelölt moderációja (változatlanul a fő nyitott tétel) + GitHub Actions
+secretek (változatlanul nyitva).
 
 ## F2.2 — Visszajelzés-csatorna a fejlesztőnek (2026-07-28)
 
