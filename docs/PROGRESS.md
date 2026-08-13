@@ -24,6 +24,7 @@
 | F2.3 Felszerelés (kiegészítők), 1–3. szakasz | ✅ kész + élesítve (2026-07-29) | 1.: `/felszereles` útmutató-oldalak. 2.: `kind`/`would_recommend` migráció (élesítve, REST-tel verifikálva) + `kind='board'` szűrő mindenhol + `/felszereles/:kategoria/:slug` termékadatlap. 3.: catalog-watch `classifyProduct` (evező/mentőmellény/pumpa jelöltté válik) + admin deszka/kiegészítő kapcsoló. Valós forrás-adat MEGÉRKEZETT (2026-07-31, ld. F2.1) — evező/mentőmellény/pumpa jelöltek a 168 pendingben, moderációra várnak |
 | F2.4 Direkt bolti ár eltávolítása | ✅ kész (2026-07-30) | A deszka- és kiegészítő-adatlapról (fejléc-ár + „Hol kapható" blokk + JSON-LD `offers`) eltávolítva — felhasználói döntés, ld. F2.4-szakasz. A `board_prices` gyűjtés (catalog-watch) VÁLTOZATLAN, a Deszkaválasztó budget-szűrője/eredmény-ára is VÁLTOZATLAN (felhasználói döntés szerint) |
 | F1.10 Záró audit + élesítés | ✅ audit **26/26** (2026-07-27) | **`docs/AUDIT_F1.md`**: az audit két mérés-jellegű hiánya pótolva (vizuális regresszió 07-26, teljesítmény-budget 07-27). HÁTRA az F1 lezárásához a publikussá tétel — a lépések a `RUNBOOK.md` **élesítési checklistjében** (domain → Resend-SMTP → Turnstile → cégadatok → `SITE_PUBLIC=true`), mind felhasználói döntés/adat |
+| F2.5 Alapvető információk | ✅ kész (2026-08-13) | Statikus SUP-szabály/biztonság/gyakorlati-infó oldalak 4 vízre (Balaton, Tisza-tó, Duna, Tisza) a Spotok modulban, `/alapinfo` + `/alapinfo/:viz`. Kétkörös forráskutatás (5+ forrás, jogszabály-hivatkozásokkal); bizonytalan tények (alkoholhatár, Tiszabecs-mérce száma) szándékosan kihagyva/óvatosan fogalmazva. hu/en kulcs-paritás ellenőrizve |
 
 ## ITINER a következő sessionnek (2026-07-28-i állapot)
 
@@ -509,6 +510,129 @@ SKU (más méret ugyanabból a modellcsaládból, pl. "HYPER 350cm" vs
 deszka. Márka nélküli sor: 8 (a 65-ből maradt, kézi döntést igénylő
 eset — 4 kajak, 2 kombi-evező, 1 forrás-oldali félrecímkézés [horgászbot
 "SUP Deszka" néven sup-deszka.hu-n], 1 mentőmellény anomális JSON-LD-vel).
+
+### F2.1-utó-7 — felhasználói adatgyűjtés egyeztetve + 1 újabb valós hiba (2026-08-13)
+
+A felhasználó saját kézzel gyűjtött SUP-adatokat (`Kezdők_tanácsok/SUP
+adatok.docx`, 75 tétel, vegyes formátum) állított össze a moderáció
+közben — ezt egy fork egyeztette a `catalog_candidates`/`boards`
+táblákkal, párhuzamosan az F2.5 vízismereti munkával. Kapuk zöldek:
+typecheck · lint · **789 vitest**, commitok `a0af362` (parser-fix).
+
+**Egyeztetés eredménye:** 75 doksisor → 56 tisztított rekord (irodalmi
+duplikátumok összevonva, multi-variáns sorok szétbontva, a felhasználó
+saját "nem SUP"/"már szerepelt" jelölései változtatás nélkül elfogadva).
+**19 pending jelölt frissítve** hiányzó specifikáció-mezőkkel (Too Much,
+Indiana, Aqua Marina). Élő deszkán 0 javasolt frissítés (nincs egyezés).
+**27 mezőütközés SZÁNDÉKOSAN nem írva felül** (DB és doksi ellentmond) —
+emberi döntésre vár. 3 hamis egyezést a fork kézzel kizárt (túl megengedő
+név-alapú párosítás lett volna). 4 genuinely új tétel nincs sehol a
+rendszerben (TooMuch Element/Nimbus Navigator/Wave Explorer, Flowa Akahi).
+
+**Valós hiba #9 (JAVÍTVA, `a0af362`):** az egyeztetés közben kiderült,
+hogy 4 Indiana jelölt `widthCm`-je képtelen szám (850–2286 cm) — a
+`parseDimensionCm` a dupla-aposztrófos hüvelyk-jelet (`32''`, gyakori
+ASCII-helyettesítő) LÁB-jelként olvasta (a második aposztróf "elveszett"
+karakterré vált), 32 hüvelyk (81,3cm) helyett 32 LÁBBÁ (975cm) alakítva.
+Ráadásul a hibás láb-találat MEGELŐZTE a szövegben korábban álló, helyes
+cm-értéket is (a feetInches-ellenőrzés minden más előtt fut). Javítás:
+`(?!')` védelem — 2 új teszt. **Indiana forrás újra-crawlolva a javítással**
+a 4 érintett jelölt frissítésére.
+
+**Külön hiba, amit a fork talált, de NEM javított (kívül esett a
+feladatán):** néhány sup-deszka.hu-s Aqua Marina jelöltnél (Monster,
+Alani, Fusion, Vibrant) a hossz/szélesség/vastagság mezők egy pozícióval
+csúsznak (pl. "Monster 12'0"" DB-ben `lengthCm=84`) — nyitva maradt.
+
+**Felhasználói hiba korrigálva:** a korábbi (F2.1-utó-6) automata
+elavult-jelölt-takarítás **tévesen elutasította** az „Aqua Marina SUP
+MEGA 18'1"" jelöltet (550cm-es óriás többszemélyes deszka) — a mai
+osztályozó a hossz-küszöb (240–520cm) fölé esik és nincs "board"/"deszka"
+szó a rövid nevében, ezért `ignore`-nak minősült, holott VALÓS termék (a
+felhasználó doksija teljes, hiteles specifikációval hozta: 550×152×20cm,
+650kg teherbírás). **Kézzel visszaállítva `pending`-re**, a doksi teljes
+specifikációjával feltöltve. Tanulság: a hossz-küszöb + "board"-szó
+heurisztika nem tökéletes a szokatlanul nagy, több fős deszkákra — egyedi
+eset, nem indokol küszöb-változtatást.
+
+**HÁTRA:** a 27 mezőütközés és a 4 új tétel átnézése (emberi döntés), a
+sup-deszka.hu mező-csúszás hiba kivizsgálása, a pending jelöltek
+moderációja (változatlanul a fő nyitott tétel).
+
+## F2.5 — Alapvető információk: vízenkénti SUP-szabályok (2026-08-13)
+
+Felhasználói kérés a katalógus-moderáció közben: egy „Tudod-e?"/„Alapvető
+információk" menü a legfontosabb vizekhez (Balaton, Tisza-tó, Duna,
+Tisza) — hajózási/használati szabályok, biztonsági tudnivalók, gyakorlati
+infó (kifejezetten NEM könnyed érdekesség-tartalom). Kiosztás: karmester
+(fork). Kapuk zöldek: typecheck · lint · **789 vitest**, commit `f81f520`.
+
+**Kétkörös forráskutatás, mert biztonsági/jogi tartalomról van szó:**
+1. kör (fork): Balaton, Tisza-tó, Duna, Tisza szabályai — a fő találat:
+   a SUP jogi besorolása vizenként ELTÉR (Balaton/Velencei-tó =
+   „fürdőeszköz", mellény nem kötelező; Duna/Tisza/Tisza-tó = „vízi
+   sporteszköz", mellény kötelező) — de csak 3 másodlagos forrásból, nem
+   elsődleges jogforrásból.
+2. kör (a felhasználó 4 további linket adott: viziturazz.hu/vizitura-kresz,
+   suplife.hu, supshop.hu, supbazis.hu): **konkrét jogszabály-hivatkozást**
+   hozott (2000. évi XLII. törvény 87. § 43. pont, 57/2011 NFM rendelet,
+   46/2001 BM rendelet) — a Tisza-tavi SUP Bázis (helyi üzemeltető) SAJÁT
+   oldala paragrafus-pontosan idézi ugyanazt a mentőmellény-vagy-póráz
+   szabályt, amit a viziturazz.hu is ír, feloldva egy korábbi forrás-
+   ütközést. A tervezet 5→3 nyitott pontra csökkent (csak az alkoholhatár,
+   a Tiszabecs-mérce száma, és az "érdemes elsődleges jogforrást is
+   átfutni" maradt).
+
+**Tartalom-tervezet átnézésre:** Artifact (2 revízióval, a 2. kör után
+frissítve) — a végleges HTML forrás
+`tools`-on kívül, a fork a Write-tal írt fájlból dolgozott tovább.
+
+**Szerkezeti döntés (felhasználói jóváhagyással):** a Spotok modulhoz
+kötve, STATIKUS i18n-tartalomként (nem új DB-tábla) — ugyanaz a minta,
+mint a catalog modul `/felszereles` útmutató-oldalai.
+
+**Elkészült:**
+- `src/modules/spots/waterinfo.ts`: zárt 4-elemű vízlista
+  (`WATER_INFO_SLUGS`), `isWaterInfoSlug` őr, `WATER_INFO_COUNTS`
+  (vizenként eltérő lista-hosszak, mert a `t()` nem ad típusbiztos
+  tömböt — számozott i18n-kulcsokkal olvassuk be), és
+  `waterInfoSlugForSpot` — egy spot a saját vizéhez (Balaton/Tisza-tó a
+  `storm_warning_region` mezőből, Duna/Tisza a spot NEVÉBŐL, mert
+  folyóknál a storm-region mindig null).
+- `app/routes/alapinfo.tsx` (áttekintő) + `app/routes/alapinfo.$viz.tsx`
+  (vízenkénti oldal: szabályok + jogszabály-hivatkozások, biztonsági
+  blokk `SafetyNote`-tal — Balaton/Tisza-tónál a viharjelző-táblázattal —,
+  gyakorlati infó, kapcsolódó linkek `/felszereles/poraz`,
+  `/felszereles/mentomelleny`, `/spotok`), ismeretlen vízre 404
+  (`isWaterInfoSlug` őr, a `felszereles.$kategoria.tsx` mintája).
+  **Tudatos döntés**: a `SafetyNote` itt semleges (`sand`) kiemeléssel
+  fut, NEM a védett `--safe`/`--caution`/`--danger` biztonsági
+  tokenekkel — azok élő állapotjelzésre vannak fenntartva (CLAUDE.md),
+  ez statikus referencia-tartalom.
+- `src/modules/spots/module.ts`: `alapinfo`/`alapinfo/:viz` route +
+  `nav.spots` mögé `order: 21`-es nav-bejegyzés.
+- `app/routes/spotok.$slug.tsx`: link a spot saját vízének infó-oldalára,
+  ha az a 4 ismert víz egyike.
+- `src/core/seo/sitemap.ts`: `/alapinfo` + a 4 vízoldal felvéve.
+- i18n: `spots` namespace `waterInfo.*` fája hu+en, **kulcs-paritás
+  ellenőrizve szkripttel (82=82, nincs eltérés)**.
+
+**Tartalmi óvatosság (safety-token szemlélet, statikus tartalomra
+alkalmazva):** a bizonytalan tények KIMARADTAK vagy puhítva kerültek be
+— nincs konkrét Balatoni alkoholhatár-szám, nincs konkrét Tiszabecs-
+mérce-tartomány (helyette élő vízállás-forrásra mutató link és
+minőségi — nem számszerű — veszély-leírás). Minden vízoldal alján
+„utoljára ellenőrizve" jelölés.
+
+**Munkamenet-jegyzet:** a fork, ami ezt építette, a végén (kapuk
+futtatása/commit előtt) 600 másodpercre elakadt és leállt — a
+karmester vette át onnan: átnézte a már elkészült fájlokat (minőség
+rendben, hu/en paritás igazolva), lefuttatta a 3 kaput, és commitolt.
+
+**HÁTRA (felhasználói döntés, nem fejlesztői feladat):** ha a felhasználó
+később szeretné, az elsődleges jogforrás (net.jogtar.hu) közvetlen
+átfutása a mentőmellény-szabályra, mielőtt a `SITE_PUBLIC` élesítéskor
+ez az oldal is nyilvánossá válik.
 
 ## F2.2 — Visszajelzés-csatorna a fejlesztőnek (2026-07-28)
 
