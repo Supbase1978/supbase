@@ -61,6 +61,12 @@ export const STATIC_SITEMAP_PATHS: readonly string[] = [
   "/felszereles/ules",
   "/felszereles/uszony",
   "/felszereles/taska",
+  "/alapinfo",
+  // Alapvető információk — vizenkénti SUP-szabályok (F2-utó, statikus tartalom).
+  "/alapinfo/balaton",
+  "/alapinfo/tisza-to",
+  "/alapinfo/duna",
+  "/alapinfo/tisza",
   "/aszf",
   "/adatvedelem",
 ];

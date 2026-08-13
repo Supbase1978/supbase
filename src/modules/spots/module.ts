@@ -22,8 +22,15 @@ export const spotsModule: ModuleManifest = {
   routes: [
     { path: "spotok", file: "routes/spotok.tsx" },
     { path: "spotok/:slug", file: "routes/spotok.$slug.tsx" },
+    // "Alapvető információk" — statikus SUP-szabály/biztonság/gyakorlati-infó
+    // oldalak vizenként (Balaton/Tisza-tó/Duna/Tisza), ld. ./waterinfo.ts.
+    { path: "alapinfo", file: "routes/alapinfo.tsx" },
+    { path: "alapinfo/:viz", file: "routes/alapinfo.$viz.tsx" },
   ],
-  nav: [{ labelKey: "nav.spots", path: "/spotok", placement: "primary", order: 20 }],
+  nav: [
+    { labelKey: "nav.spots", path: "/spotok", placement: "primary", order: 20 },
+    { labelKey: "waterInfo.nav", path: "/alapinfo", placement: "primary", order: 21 },
+  ],
   i18nNamespace: "spots",
 };
 

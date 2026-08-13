@@ -136,5 +136,137 @@
     "callRescue": "Call water rescue",
     "source": "Source",
     "updated": "Updated"
+  },
+  "waterInfo": {
+    "nav": "Basic info",
+    "spotLink": "Navigation rules and safety notes — {{water}}",
+    "seo": {
+      "list": {
+        "title": "Basic info — SUP rules by water | Suptime",
+        "description": "Navigation and usage rules, safety notes and practical info for SUP paddlers on Lake Balaton, Lake Tisza, the Danube and the Tisza river."
+      },
+      "detail": {
+        "title": "{{water}} — SUP rules and safety | Suptime",
+        "description": "{{water}}: navigation and usage rules, safety notes and practical info for SUP paddlers."
+      }
+    },
+    "list": {
+      "title": "Basic info",
+      "lead": "What's allowed, what isn't, and what to watch for — navigation rules, safety notes and practical info for the four most popular Hungarian waters. This isn't playful trivia — it's what you need to know before you launch."
+    },
+    "detail": {
+      "backToList": "Back to Basic info",
+      "rulesTitle": "Navigation & usage rules",
+      "safetyTitle": "Safety notes",
+      "practicalTitle": "Practical info",
+      "legalBasisTitle": "Legal basis",
+      "lastVerified": "Last verified: 2026-08-13. Rules change from time to time — if in doubt, check the current notice from the local authority or operator.",
+      "relatedTitle": "Don't forget",
+      "relatedLeash": "Leash — what it's for and which type you need",
+      "relatedPfd": "Life vest — when you can't skip it",
+      "relatedSpots": "Check out our spots"
+    },
+    "stormTable": {
+      "header": { "level": "Level", "signal": "Signal", "action": "What to do" },
+      "none": { "level": "No warning", "signal": "not flashing", "action": "—" },
+      "level1": {
+        "level": "Level I",
+        "signal": "about 45 flashes/minute · gusts of 40–60 km/h expected, signals at least 30 minutes before the wind arrives",
+        "action": "stay within 500 m of the shore"
+      },
+      "level2": {
+        "level": "Level II",
+        "signal": "about 90 flashes/minute · gusts over 60 km/h",
+        "action": "launching and staying on the water is strictly forbidden"
+      }
+    },
+    "legalBasis": {
+      "0": "Act XLII of 2000, Section 87 § point 43 — on water transport",
+      "1": "Decree 57/2011 (XI. 22.) NFM — Navigation Regulations",
+      "2": "Decree 46/2001 (XII. 27.) BM — basic rules for being on open water"
+    },
+    "waters": {
+      "balaton": {
+        "title": "Lake Balaton",
+        "tag": "Classified as bathing equipment · storm warning system active",
+        "rules": {
+          "0": "On Lake Balaton, a SUP is legally classified as \"bathing equipment\" — it may only be used where swimming is also permitted.",
+          "1": "As a result, wearing a life vest is not a legal requirement here — the rule differs on the Danube, the Tisza and Lake Tisza, where a life vest or safety ankle leash is mandatory (see below). Wearing one is still strongly recommended here too.",
+          "2": "Distance from shore: up to 1000 m on the Somogy (southern) shore, up to 500 m on the Veszprém/Zala (northern) shore — which means the lake cannot be crossed at the Tihany strait.",
+          "3": "Launching is forbidden in shipping lanes, near harbours and docks, near navigation buoys, in designated windsurfing, kayaking and wakeboarding zones, near bridges (e.g. the Tihany strait), anywhere marked with a prohibition sign, and in protected nature areas.",
+          "4": "Wearing a life vest is always mandatory for anyone under 14 and for non-swimmers."
+        },
+        "safetyIntro": "Lake Balaton's storm warning system runs from April to October — flashing yellow signals at fixed shore stations and on mobile beach lamps.",
+        "safetyNotes": {
+          "0": "Lake Balaton is known for storms that form very quickly — this is the single most important safety message for this lake.",
+          "1": "Water rescue hotline: 1817, general emergency number: 112."
+        },
+        "practical": {
+          "0": "The storm warning system only operates between April 1 and October 31 — outside that window there is no light-signal warning at all, so pay extra attention on your own.",
+          "1": "Check out our Lake Balaton spots for current wind and water data."
+        }
+      },
+      "tisza-to": {
+        "title": "Lake Tisza",
+        "tag": "Kisköre reservoir · classified as water sports equipment",
+        "rules": {
+          "0": "Here a SUP is legally classified as \"water sports equipment\" — unlike Lake Balaton and Lake Velence. For a swimmer aged 14 or over doing normal paddling, wearing a life vest OR a safety ankle leash is enough; the local operator (SUP Bázis) cites this directly, with a precise legal reference.",
+          "1": "Wearing a life vest is always mandatory for anyone under 14, for non-swimmers, and for everyone while fishing or using a boat hook.",
+          "2": "Distance from shore without escort: up to 500 m.",
+          "3": "Motor-restricted nature reserve zones — Porong-tava, Ispán-tava, Hód, Gaznyilas, Partos-fenék, Óhalászi-holtág — allow paddling/SUP and electric motors but not combustion engines: these are, somewhat counterintuitively, the quieter, calmer stretches for paddlers, not no-go zones.",
+          "4": "Southwest of route 33, combustion engines are capped at 4 kW.",
+          "5": "Right of way on the water: large vessels first, then sailboats, then paddlers/SUP, and only then motorboats — motorised rental boats must give way to paddlers."
+        },
+        "safetyIntro": "The same storm warning system operates here as on Lake Balaton.",
+        "safetyNotes": {
+          "0": "The table below uses the same level logic as Lake Balaton.",
+          "1": "If you're unsure about local wind conditions, ask the shore operators — they know the day-to-day situation best."
+        },
+        "practical": {
+          "0": "Main launch points: Poroszló (Albatrosz Harbour) and Tiszafüred.",
+          "1": "Local rental/instruction operators (e.g. SUP Bázis in Poroszló) can give you a fresh, local briefing before you launch."
+        }
+      },
+      "duna": {
+        "title": "Danube",
+        "tag": "Budapest stretch · classified as water sports equipment",
+        "rules": {
+          "0": "Here a SUP is legally classified as \"water sports equipment\" — wearing a life vest or safety ankle leash is mandatory, and the water police enforce it.",
+          "1": "Staying inside the marked shipping lane (between red and green buoys) is forbidden; if you need to cross it, do so as quickly as possible.",
+          "2": "A 100 m exclusion zone applies around navigation buoys, large vessels and floating work equipment.",
+          "3": "A 300 m exclusion zone applies around locks and hydraulic structures; 100 m around bridges, water intakes and ferry crossings.",
+          "4": "Night paddling is forbidden; so is staying in ports, mooring areas, and designated water-ski/jet-ski lanes.",
+          "5": "Group or organised SUP events need prior coordination with the navigation authority — a formal navigation closure has already been issued for one such event on the Budapest stretch.",
+          "6": "During icy periods the authority can impose a full navigation ban on small craft and water sports equipment — always check current notices in winter."
+        },
+        "safetyNotes": {
+          "0": "Expect commercial ship traffic and wake, strong eddies and suction near hydraulic structures, hypothermia risk, and drowning risk at night or in poor visibility.",
+          "1": "The Danube's current can be significant even on stretches that look calm — if you're unsure, stay close to shore and avoid the main channel."
+        },
+        "practical": {
+          "0": "Known Budapest launch points: Római-part (Béke boathouse), Csepel (Kolonics György Water Sports Centre), the Ráckeve branch of the Danube (BEAC), the Pesterzsébet SUP base, and local rental operators around Szentendre and Göd.",
+          "1": "Check out our Budapest spots for current water conditions."
+        }
+      },
+      "tisza": {
+        "title": "Tisza river",
+        "tag": "River · water level is the main safety factor",
+        "rules": {
+          "0": "A SUP is presumably classified as \"water sports equipment\" here too, as on the Danube — we couldn't find a Tisza-specific legal citation, but the same life-vest-or-leash rule is likely under the general framework of the Navigation Regulations. Ask local tour operators if you're unsure.",
+          "1": "On some river sections, commercial tour operators ask for a registration form before you set off — that's operator policy, not a legal requirement."
+        },
+        "safetyNotes": {
+          "0": "Water level is the main danger here: at low water, exposed rocks and gravel bars are a hazard; at high water, the current runs well above normal and low banks can become impossible to land on safely. Always check the current water level before you go.",
+          "1": "Never attempt to cross a weir or dam without using the marked lock or bypass channel — doing so can be fatal. Only the marked lock/channel is safe for kayaks, canoes and SUPs (e.g. at the Kisköre and Tiszalök dams).",
+          "2": "On the upper Tisza, near Visó, there's also a submerged-rock hazard — this mostly matters for multi-day kayak/canoe tours rather than local SUP paddling.",
+          "3": "If you're unsure about the water level, ask local tour operators or check the live water level forecast (see below)."
+        },
+        "practical": {
+          "0": "A popular section for beginners and intermediates: Tiszabecs → Szatmárcseke on the upper river — a comfortable pace is around 15–25 km/day.",
+          "1": "Live water level forecast: eveznijo.hu's \"Vízállás előrejelzés\" — check it before you go.",
+          "2": "Backwaters — the oxbow lakes along the river — offer calmer, more predictable water than the Tisza's main channel, a good choice for beginners or a calmer day."
+        }
+      }
+    }
   }
 }

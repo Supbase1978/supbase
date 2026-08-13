@@ -136,5 +136,137 @@
     "callRescue": "Vízimentők hívása",
     "source": "Forrás",
     "updated": "Frissítve"
+  },
+  "waterInfo": {
+    "nav": "Alapvető információk",
+    "spotLink": "Hajózási szabályok és biztonsági tudnivalók — {{water}}",
+    "seo": {
+      "list": {
+        "title": "Alapvető információk — SUP-szabályok vizenként | Suptime",
+        "description": "Hajózási és használati szabályok, biztonsági tudnivalók és gyakorlati infók SUP-osoknak a Balatonon, a Tisza-tavon, a Dunán és a Tiszán."
+      },
+      "detail": {
+        "title": "{{water}} — SUP-szabályok és biztonság | Suptime",
+        "description": "{{water}}: hajózási és használati szabályok, biztonsági tudnivalók és gyakorlati infók SUP-osoknak."
+      }
+    },
+    "list": {
+      "title": "Alapvető információk",
+      "lead": "Mit szabad, mit nem, mire figyelj — hajózási szabályok, biztonsági tudnivalók és gyakorlati infók a négy legnépszerűbb magyar vízen. Ez nem játékos „tudod-e”-rovat, hanem tényleges vízre szállás előtti alapismeret."
+    },
+    "detail": {
+      "backToList": "Vissza az Alapvető információkhoz",
+      "rulesTitle": "Hajózási és használati szabályok",
+      "safetyTitle": "Biztonsági tudnivalók",
+      "practicalTitle": "Gyakorlati infók",
+      "legalBasisTitle": "Jogi alap",
+      "lastVerified": "Utoljára ellenőrizve: 2026-08-13. A szabályok időnként változnak — bizonytalanság esetén nézd meg a helyi hatóság vagy üzemeltető aktuális tájékoztatóját.",
+      "relatedTitle": "Ne felejtsd el",
+      "relatedLeash": "Póráz — mire való és melyik típus kell",
+      "relatedPfd": "Mentőmellény — mikor nem hagyható el",
+      "relatedSpots": "Nézd meg a spotjainkat"
+    },
+    "stormTable": {
+      "header": { "level": "Fokozat", "signal": "Jelzés", "action": "Teendő" },
+      "none": { "level": "Nincs jelzés", "signal": "nem villog", "action": "—" },
+      "level1": {
+        "level": "I. fokú",
+        "signal": "kb. 45 villanás percenként · 40–60 km/h széllökés várható, a szél becsapódása előtt legalább 30 perccel jelez",
+        "action": "maradj a parttól 500 méteren belül"
+      },
+      "level2": {
+        "level": "II. fokú",
+        "signal": "kb. 90 villanás percenként · 60 km/h feletti széllökés",
+        "action": "vízre szállás és vízen tartózkodás szigorúan tilos"
+      }
+    },
+    "legalBasis": {
+      "0": "2000. évi XLII. törvény 87. § 43. pont — a víziközlekedésről",
+      "1": "57/2011. (XI. 22.) NFM rendelet — Hajózási Szabályzat",
+      "2": "46/2001. (XII. 27.) BM rendelet — a szabad vízen tartózkodás alapvető szabályairól"
+    },
+    "waters": {
+      "balaton": {
+        "title": "Balaton",
+        "tag": "Fürdőeszköz-besorolás · viharjelző rendszer működik",
+        "rules": {
+          "0": "A SUP jogi besorolása a Balatonon „fürdőeszköz” — csak olyan vízen használható, ahol a fürdés is engedélyezett.",
+          "1": "Ebből következik, hogy mentőmellény itt nem jogilag kötelező — a Duna, a Tisza és a Tisza-tó szabálya ettől eltér, ott mentőmellény vagy biztonsági bokapánt kötelező (lásd lent). Erősen ajánlott itt is viselni.",
+          "2": "Parttávolság: legfeljebb 1000 méter a somogyi (déli) parton, legfeljebb 500 méter a Veszprém és Zala megyei (északi) oldalon — emiatt a tavat a Tihanyi-szorosnál nem lehet átszelni.",
+          "3": "Tilos vízre szállni hajóutakon, kikötők és stégek közelében, hajózási bóják mellett, kijelölt windsurf-, kajak- és wakeboard-zónákban, hidak térségében (pl. a Tihanyi-szorosban), tiltó táblával jelzett helyeken és védett természeti területeken.",
+          "4": "14 éven aluliaknak és nem úszóknak mindig kötelező a mentőmellény viselése."
+        },
+        "safetyIntro": "Áprilistól októberig működik a Balaton viharjelző rendszere — villogó sárga fényjelzéssel fix parti állomásokon és mobil lámpákon.",
+        "safetyNotes": {
+          "0": "A Balaton híres a hirtelen kialakuló viharokról — ez a legfontosabb biztonsági üzenet erre a vízre.",
+          "1": "Vízimentő segélyhívó: 1817, általános segélyhívó: 112."
+        },
+        "practical": {
+          "0": "A viharjelző rendszer csak április 1. és október 31. között üzemel — ezen az időszakon kívül nincs fényjelzéses figyelmeztetés, fokozott saját figyelem kell.",
+          "1": "Nézd meg Balaton-parti spotjainkat aktuális szél- és vízadatokkal."
+        }
+      },
+      "tisza-to": {
+        "title": "Tisza-tó",
+        "tag": "Kisköre-tározó · vízi sporteszköz-besorolás",
+        "rules": {
+          "0": "A SUP jogi besorolása itt „vízi sporteszköz” — a Balatontól és a Velencei-tótól eltérően. 14 éven felüli, úszni tudó SUP-osnak szokásos evezés közben mentőmellény VAGY biztonsági bokapánt (leash) viselése elég; ezt a helyi üzemeltető (SUP Bázis) is idézi, pontos jogszabályi hivatkozással.",
+          "1": "14 éven aluliaknak, nem úszóknak, valamint horgászás vagy csáklyázás közben mindenkinek a mentőmellény viselése mindenképp kötelező.",
+          "2": "Parttávolság kíséret nélkül: legfeljebb 500 méter.",
+          "3": "Motorral korlátozott természetvédelmi zónák — Porong-tava, Ispán-tava, Hód, Gaznyilas, Partos-fenék, Óhalászi-holtág —, ahol evezős/SUP és elektromos motor engedett, robbanómotor nem: ezek paradox módon csendesebb, nyugodtabb szakaszok evezősöknek, nem tiltott területek.",
+          "4": "A 33-as úttól délnyugatra a robbanómotorok teljesítménye legfeljebb 4 kW lehet.",
+          "5": "Elsőbbségi sorrend a vízen: nagyhajó, majd vitorlás, majd evezős/SUP, és csak utána a motoros — a motoros bérlőknek ki kell térniük az evezősök elől."
+        },
+        "safetyIntro": "Ugyanaz a viharjelző rendszer üzemel itt is, mint a Balatonon.",
+        "safetyNotes": {
+          "0": "A táblázat lent ugyanazt a fokozat-logikát mutatja, mint a Balatonnál.",
+          "1": "Ha bizonytalan vagy a helyi szélviszonyokban, kérdezd a parti üzemeltetőket — ők ismerik legjobban a napi helyzetet."
+        },
+        "practical": {
+          "0": "Fő vízre szállási pontok: Poroszló (Albatrosz Kikötő) és Tiszafüred.",
+          "1": "Helyi bérlő- és oktató-üzemeltetők (pl. SUP Bázis, Poroszló) friss, helyi tájékoztatást adnak indulás előtt."
+        }
+      },
+      "duna": {
+        "title": "Duna",
+        "tag": "Fővárosi szakasz · vízi sporteszköz-besorolás",
+        "rules": {
+          "0": "A SUP jogi besorolása itt „vízi sporteszköz” — mentőmellény vagy biztonsági bokapánt viselése kötelező, ezt a vízirendészet ellenőrzi.",
+          "1": "Tilos a kijelölt hajóútban (piros és zöld bóják között) tartózkodni; ha át kell rajta kelni, azt a lehető leggyorsabban kell megtenni.",
+          "2": "100 méteres kizárási körzet hajózási bóják, nagyhajók és úszó munkaeszközök körül.",
+          "3": "300 méteres kizárási körzet zsilipek és vízi műtárgyak körül; 100 méteres hidak, vízkivételek és kompátkelők körül.",
+          "4": "Éjszakai közlekedés tilos; tilos kikötőkben, veszteglőhelyeken és a kijelölt vízisí- és jetski-sávokban tartózkodni.",
+          "5": "Csoportos vagy szervezett SUP-eseményhez előzetes egyeztetés kell a hajózási hatósággal — volt már erre kiadott hajózási zárlat a budapesti szakaszon.",
+          "6": "Jeges időszakban a hatóság teljes hajózási tilalmat rendelhet el kishajókra és vízi sporteszközökre — ilyenkor mindig nézd meg az aktuális közleményeket."
+        },
+        "safetyNotes": {
+          "0": "Számíts kereskedelmi hajóforgalomra és hullámkeltésre, erős örvénylésre és szívóhatásra a vízkormányzási műtárgyak közelében, valamint a kihűlés és az éjszakai/rossz látási vízbefulladás kockázatára.",
+          "1": "A Duna sodrása nyugodtnak tűnő szakaszokon is jelentős lehet — ha nem vagy biztos benne, evezz közel a parthoz és kerüld a főmedret."
+        },
+        "practical": {
+          "0": "Ismert budapesti vízre szállási pontok: Római-part (Béke csónakház), Csepel (Kolonics György Vízisport Központ), a Ráckevei-Duna-ág (BEAC), a Pesterzsébeti SUP-bázis, illetve Szentendre és Göd térségében a helyi bérlők.",
+          "1": "Nézd meg budapesti spotjainkat aktuális vízi körülményekkel."
+        }
+      },
+      "tisza": {
+        "title": "Tisza",
+        "tag": "Folyó · a vízállás a fő biztonsági tényező",
+        "rules": {
+          "0": "A SUP jogi besorolása feltehetően itt is „vízi sporteszköz”, mint a Dunán — Tisza-specifikus jogszabályi hivatkozást nem találtunk, de a Hajózási Szabályzat általános kerete alapján ugyanaz a mentőmellény-vagy-bokapánt szabály valószínűsíthető. Bizonytalanság esetén kérdezd a helyi túraüzemeltetőket.",
+          "1": "Néhány folyószakaszon a kereskedelmi túraüzemeltetők jelentkezési lapot kérnek indulás előtt — ez üzemeltetői gyakorlat, nem jogszabályi kötelezettség."
+        },
+        "safetyNotes": {
+          "0": "A vízállás a fő veszélytényező: alacsony vízen kilátszó kövek és kavicszátonyok (gázlók) jelentenek veszélyt, magas vízen a sodrás jóval erősebb a szokásosnál, és az alacsony partok partra szállásra alkalmatlanná válhatnak. Indulás előtt mindig nézd meg a friss vízállást.",
+          "1": "Duzzasztógátnál vagy hídvezetésnél SOHA ne próbálj engedély nélkül átkelni a gáton — potenciálisan halálos. Kizárólag a jelzett zsilip vagy áteresz biztonságos kajaknak, kenunak és SUP-nak (pl. Kisköre és Tiszalök gátjainál).",
+          "2": "A Felső-Tiszán, Visó térségében vízalatti sziklaveszély is előfordul — ez elsősorban a többnapos kajak- és kenutúrázóknak fontos, helyi SUP-túrázás esetén ritkábban releváns.",
+          "3": "Bizonytalan vízállásnál kérdezd a helyi túraüzemeltetőket, vagy nézd meg élőben a friss vízállás-előrejelzést (lásd lent)."
+        },
+        "practical": {
+          "0": "Népszerű szakasz kezdőknek és középhaladóknak: Tiszabecs → Szatmárcseke a felső folyáson — általános tempó napi 15–25 km, kényelmesen.",
+          "1": "Élő vízállás-előrejelzés: eveznijo.hu „Vízállás előrejelzés” — nézd meg indulás előtt.",
+          "2": "A holtágak — a folyó mentén futó oxbow-tavak — nyugodtabb, kiszámíthatóbb vizet adnak, mint a Tisza főmedre — jó választás kezdőknek vagy nyugodtabb napra."
+        }
+      }
+    }
   }
 }

@@ -42,6 +42,7 @@ import {
   type SpotStatus,
   type WeatherSnapshotRow,
 } from "@modules/spots/types";
+import { waterInfoSlugForSpot } from "@modules/spots/waterinfo";
 import type { SupIndexConfig } from "@modules/weather/sup-index/config";
 import { loadSupIndexConfig } from "@modules/weather/sup-index/config.server";
 import { evaluateSnapshot } from "@modules/weather/sup-index/reading";
@@ -161,6 +162,11 @@ export async function loader({ request, params }: Route.LoaderArgs) {
       waterType: spotRow.water_type,
       difficulty: spotRow.difficulty,
       stormWarningRegion: spotRow.storm_warning_region,
+      waterInfoSlug: waterInfoSlugForSpot({
+        waterType: spotRow.water_type,
+        stormWarningRegion: spotRow.storm_warning_region,
+        name: spotRow.name,
+      }),
       seasonInfo: pickTranslated(spotRow.season_info, locale) || null,
       accessInfo: pickTranslated(spotRow.access_info, locale) || null,
       safetyNotes: pickTranslated(spotRow.safety_notes, locale) || null,
@@ -472,6 +478,19 @@ export default function SpotDetailRoute({ loaderData, actionData }: Route.Compon
             </Link>
           </p>
         </SafetyNote>
+      ) : null}
+
+      {/* Vízenkénti SUP-szabályok/biztonság/gyakorlati infó — csak a 4 ismert
+          vízhez (Balaton/Tisza-tó/Duna/Tisza) van tartalom, ld. waterinfo.ts. */}
+      {spot.waterInfoSlug ? (
+        <p className="text-sm">
+          <Link
+            to={`/alapinfo/${spot.waterInfoSlug}`}
+            className="font-semibold text-petrol-text underline"
+          >
+            {t("waterInfo.spotLink", { water: t(`waterInfo.waters.${spot.waterInfoSlug}.title`) })}
+          </Link>
+        </p>
       ) : null}
 
       {spot.protectedAreaName ? (
