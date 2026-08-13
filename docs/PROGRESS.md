@@ -20,7 +20,7 @@
 | F1.11 Folyó-vízállás (5.1/6) | ✅ kész + élesítve (2026-07-27) | vizugy.hu (OVF) REST API, HIVATALOS árvízvédelmi készültségi küszöbökkel; a fix −1 folyó-büntetés helyett fokozat-alapú index-plafon. Élesben verifikálva, cron írja. + F1.11b: póráz-figyelmeztetés folyóvízre |
 | F1.12 Analitika (süti-mentes) | ✅ kész + élesítve (2026-07-28) | `analytics_events` + definer-RPC + `/admin/analitika`. Nincs süti/IP/azonosító → nincs egyéni tölcsér, csak darabszám. Robot/DNT/dev nem számol |
 | F2.2 Visszajelzés-csatorna | ✅ kész + ÉLESBEN BÖNGÉSZŐBEN VERIFIKÁLVA (2026-07-31) | `/visszajelzes` (hiba · hiányzó bolt · hiányzó modell) + `/admin/visszajelzesek`. Teljes kör próbálva: beküldés → admin-listában megjelenés → állapotváltás+jegyzet mentése, mind sikeres. HÁTRA: `RESEND_API_KEY` ha kell e-mail-értesítés (opcionális) |
-| F2.1 catalog-watch piacfigyelő | ✅ ÉLESBEN MŰKÖDIK (2026-08-12) | 4 forrás bekötve: Bluefin (15 jelölt, MIND jóváhagyva), Aqua Marina Hungary + sup-deszka.hu + Indiana Paddle & Surf (**185 jelölt pending**). Útközben 4 valós hiba javítva (gzip-sitemap, magyar "Mérete" címke, hiányzó-márka fallback, angol "Board Bag" félreosztályozás). HÁTRA: a 185 pending jelölt moderációja + GH Actions secretek |
+| F2.1 catalog-watch piacfigyelő | ✅ ÉLESBEN MŰKÖDIK (2026-08-13) | 4 forrás bekötve: Bluefin (15 jelölt, MIND jóváhagyva), Aqua Marina Hungary + sup-deszka.hu + Indiana Paddle & Surf (**170 jelölt pending**, 15 elavult takarítva). Útközben 8 valós hiba javítva (gzip-sitemap, magyar "Mérete" címke, hiányzó-márka fallback, angol "Board Bag" félreosztályozás, címkézetlen méret-hármas, navigációs-menü-szennyezés, "Boardshorts"/"Board Handle"). HÁTRA: a pending jelöltek moderációja + GH Actions secretek |
 | F2.3 Felszerelés (kiegészítők), 1–3. szakasz | ✅ kész + élesítve (2026-07-29) | 1.: `/felszereles` útmutató-oldalak. 2.: `kind`/`would_recommend` migráció (élesítve, REST-tel verifikálva) + `kind='board'` szűrő mindenhol + `/felszereles/:kategoria/:slug` termékadatlap. 3.: catalog-watch `classifyProduct` (evező/mentőmellény/pumpa jelöltté válik) + admin deszka/kiegészítő kapcsoló. Valós forrás-adat MEGÉRKEZETT (2026-07-31, ld. F2.1) — evező/mentőmellény/pumpa jelöltek a 168 pendingben, moderációra várnak |
 | F2.4 Direkt bolti ár eltávolítása | ✅ kész (2026-07-30) | A deszka- és kiegészítő-adatlapról (fejléc-ár + „Hol kapható" blokk + JSON-LD `offers`) eltávolítva — felhasználói döntés, ld. F2.4-szakasz. A `board_prices` gyűjtés (catalog-watch) VÁLTOZATLAN, a Deszkaválasztó budget-szűrője/eredmény-ára is VÁLTOZATLAN (felhasználói döntés szerint) |
 | F1.10 Záró audit + élesítés | ✅ audit **26/26** (2026-07-27) | **`docs/AUDIT_F1.md`**: az audit két mérés-jellegű hiánya pótolva (vizuális regresszió 07-26, teljesítmény-budget 07-27). HÁTRA az F1 lezárásához a publikussá tétel — a lépések a `RUNBOOK.md` **élesítési checklistjében** (domain → Resend-SMTP → Turnstile → cégadatok → `SITE_PUBLIC=true`), mind felhasználói döntés/adat |
@@ -447,9 +447,68 @@ dolga eldönteni.
 **Végállapot: 185 jelölt/deszka a `catalog_candidates`-ben** (168 korábbi
 + 17 Indiana, mind `pending`).
 
-**HÁTRA (felhasználói lépés — admin-bejelentkezés kell):** a 185 pending
-jelölt moderációja (változatlanul a fő nyitott tétel) + GitHub Actions
+**HÁTRA (felhasználói lépés — admin-bejelentkezés kell):** a pending
+jelöltek moderációja (változatlanul a fő nyitott tétel) + GitHub Actions
 secretek (változatlanul nyitva).
+
+### F2.1-utó-6 — moderáció közben talált hibák + adattakarítás (2026-08-13)
+
+A felhasználó éles moderációt kezdett a 185 pendingen, és zajt/hibát jelzett
+("sok duplikáció van és hiba benne... hiányosak az adatok"). Kapuk zöldek:
+typecheck · lint · **784 vitest** (+10 új), commitok `f65da4e` (Indiana-kör
+lezárása) és `d03a448`.
+
+**A "duplikáció" gyanú vizsgálata:** azonos forráson belüli pontos
+márka+modell egyezésre kerestem — 5 találat, de mindegyik VALÓDI külön
+SKU (más méret ugyanabból a modellcsaládból, pl. "HYPER 350cm" vs
+"HYPER 381cm"), nem hibás duplikátum. A tényleges probléma máshol volt.
+
+**4 valós hiba, mindegyik javítva:**
+1. **Az Aqua Marina Hungary forrás MIND A 63 jelöltje `brandName: null`-lal
+   érkezett** (2026-07-31 óta) — a JSON-LD nem ad `brand` mezőt. Emiatt
+   EGYIK sem volt jóváhagyható (`approveCandidate` `admin.error.noBrand`-ot
+   ad hiányzó márkánál) — ez volt a moderáció fő blokkolója. Javítás:
+   `crawl_config.defaultBrandName: "Aqua Marina"` a forráson (egyszeri
+   karbantartó szkripttel, mint korábban az `excludeUrlPatterns`-nél).
+2. **Címkézetlen "NNNxNNxNN cm" méret-hármas** felismerése új fallbackként
+   (`findBareTripleDimension`, pozíció-alapú táska/csomag-kizárással) —
+   aquamarinahungary.com a "Mérete" címke UTÁN elgépelt "m" egységet ír
+   ("Mérete (366m x 84x 15m)"), miközben a helyes "cm"-es forma címke
+   nélkül, korábban a szövegben is szerepel.
+3. **Rendszerszintű osztályozási hiba**: a `guessBoardType` a TELJES
+   oldalszöveget nézte (`pageText`), ami a navigációs menüt is
+   tartalmazza — egy "Touring SUP / Race SUP / Yoga SUP" kategória-menüvel
+   rendelkező bolton ez GYAKORLATILAG BÁRMIT (ruházatot is) deszkának
+   minősített a `hasSup && boardType !== null` ágon át. Javítva: mostantól
+   csak cím+leírás alapján dönt.
+4. **"board"-szótő ruházatban/tartozékban** ("Boardshorts", "Board
+   Handle", "Board Nose Handle") — felvéve a `MISC_NON_BOARD_KEYWORDS`-be.
+
+**Adattakarítás (felhasználói jóváhagyással):**
+- Aqua Marina Hungary forrás **újra-crawlolva** a javított kóddal — a
+  meglévő pending sorok a `saveCandidate` update-ágán frissültek (a
+  `catalog_candidates` már NEM újra-teremt sort ismert URL-re, hanem
+  felülírja az `extracted` mezőt). Első próbálkozás hálózati hibába
+  futott (0 siker, "fetch failed" mindenhol) — a második futás tiszta
+  volt. Eredmény: a márka nélküli sorok száma **65-ről 8-ra csökkent**.
+- **15, a MAI kóddal már `ignore` lenne stale jelölt** (9 ruházat, 1 túl
+  nagy — 550cm — deszka, 1 biztonsági zsinór, 1 elektromos SUP-motor
+  kiegészítő, 2 Indiana "Board Handle") egyszeri szkripttel `rejected`
+  állapotba állítva. **Fontos korlát dokumentálva**: az újra-crawl
+  ÖNMAGÁBAN nem takarítja ezeket — ha egy URL ma `ignore`-ra minősül, a
+  crawl csendben kihagyja, de a régi, hibásan `pending` sort NEM törli/
+  módosítja. Ehhez a külön takarító-lépés kellett.
+- **Tudatosan NEM auto-szűrve**: 4 tiszta kajak-jelölt (Aqua Marina Hungary,
+  a `kajak` URL-minta a JÖVŐBELI crawlokat már kizárja, de a meglévő
+  sorokat nem érinti) + 2 SUP/kajak KOMBI evező, ami VALÓS SUP-kiegészítő
+  lehet — a "kajak" szó önmagában nem elég megbízható jel az
+  automatizáláshoz (lenne belőle hamis negatív is), ezért ez a 6 sor
+  marad kézi moderátori döntésre.
+
+**Végállapot:** 170 pending (185 − 15 takarítva), 15 approved, 35 élő
+deszka. Márka nélküli sor: 8 (a 65-ből maradt, kézi döntést igénylő
+eset — 4 kajak, 2 kombi-evező, 1 forrás-oldali félrecímkézés [horgászbot
+"SUP Deszka" néven sup-deszka.hu-n], 1 mentőmellény anomális JSON-LD-vel).
 
 ## F2.2 — Visszajelzés-csatorna a fejlesztőnek (2026-07-28)
 
