@@ -167,7 +167,13 @@ function toNumber(raw: string): number | null {
  * Egyik sem illeszkedik → null (nem találgatunk mértékegység nélküli számból).
  */
 export function parseDimensionCm(text: string): number | null {
-  const feetInches = text.match(/(\d+)\s*'\s*(\d+(?:[.,]\d+)?)?\s*(?:''|"|”|’’)?/);
+  // A `(?!')` védi ki, hogy egy dupla-aposztróffal írt hüvelyk-jel (`32''`,
+  // gyakori ASCII-helyettesítő a valódi ″ karakterre — élesben mért eset,
+  // indiana-paddlesurf.com "Width Foot/Inch: 32''") ne illeszkedjen láb-
+  // jelként (az első `'`-t követő MÁSODIK `'` enélkül "elveszett" karakterré
+  // vált volna, a 32-t pedig lábnak olvastuk volna hüvelyk helyett — 32 láb =
+  // 975 cm a valós 81,3 cm helyett).
+  const feetInches = text.match(/(\d+)\s*'(?!')\s*(\d+(?:[.,]\d+)?)?\s*(?:''|"|”|’’)?/);
   if (feetInches) {
     const feet = toNumber(feetInches[1] ?? "");
     const inches = feetInches[2] ? toNumber(feetInches[2]) : 0;

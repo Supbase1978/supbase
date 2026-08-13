@@ -75,8 +75,23 @@ describe("parseDimensionCm", () => {
     ["32 coll", 81.3],
     ["150 mm", 15],
     ["nincs benne mérték", null],
+    // Élesben mért hiba (2026-08-13, Indiana Paddle & Surf pending jelöltek):
+    // dupla-aposztróffal írt hüvelyk-jel NEM láb-jel — a "32''" korábban
+    // 32 lábként (975,4cm) parse-olódott 81,3cm helyett.
+    ["32''", 81.3],
+    [`10'6''`, 320],
   ])("%s → %s cm", (text, expected) => {
     expect(parseDimensionCm(text)).toBe(expected);
+  });
+
+  it("a dupla-aposztróf hüvelyk-hiba miatt korábban elveszett, KORÁBBAN álló cm-érték most helyesen elsőbbséget élvez", () => {
+    // Élesben mért teljes szövegkörnyezet (indiana-paddlesurf.com): a "width"
+    // címke UTÁNI ablak MINDKÉT alakot tartalmazza — a helyes "81,3 cm" előbb
+    // áll, a hibásan lábként olvasott "32''" később. A régi kód a "32''"-t
+    // találta meg előbb (bárhol a szövegben feet-mintát keresett), a 32
+    // lábként (975,4cm) parse-olva. A javítás után a "32''" NEM illeszkedik
+    // láb-mintaként, így a cm-ellenőrzés a korábbi, helyes értéket adja.
+    expect(parseDimensionCm(" CM: 81,3 cm Width Foot/Inch: 32''")).toBe(81.3);
   });
 });
 
