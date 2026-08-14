@@ -634,6 +634,61 @@ később szeretné, az elsődleges jogforrás (net.jogtar.hu) közvetlen
 átfutása a mentőmellény-szabályra, mielőtt a `SITE_PUBLIC` élesítéskor
 ez az oldal is nyilvánossá válik.
 
+### F2.1-utó-8 — jelölt↔jelölt duplikátum-gyanú az admin-moderációban (2026-08-14)
+
+A felhasználó a docx-egyeztetés közben észrevette: "ezek jórésze szerepel
+[a dokumentumban], így nem lehet 172 függő deszka" — helyes megérzés.
+Kiosztás: karmester (fork). Kapuk zöldek: typecheck · lint · **795
+vitest** (+6), commit `706f4be`.
+
+**Mennyiségi visszaigazolás** (a `tools/catalog-watch/match.ts` meglévő
+trigram-pontozójával, páronként az összes pending jelöltre): az Aqua
+Marina Hungary és a sup-deszka.hu forrás NAGYRÉSZT UGYANAZT az Aqua
+Marina-katalógust árulja — deszka-szinten **65 forrásközi pár ≥0,45**
+pontszámmal, ebből ~25-30 a ≥0,5 tartományban (Fusion, Beast, Super
+Trip, Vapor, Monster, Hyper, Breeze, Island, Coral, Rapid, Atlas — mind
+mindkét forrásból, csak eltérő megfogalmazással: BT-kód vs méret+súly).
+**Becslés: a 172 pendingből valószínűleg csak 60-90 az EGYEDI termék.**
+A kiegészítőknél (evező/pumpa) még súlyosabb az átfedés, de ott a
+tranzitív klaszterezés (union-find) hamis pozitívokat termelt (17 elemű
+"evező" blob — különböző konkrét evező-modellek estek egybe a közös
+"evező"/"Aqua Marina" szavak miatt), ezért ott NEM klasztereztem, csak
+páronkénti pontozás maradt.
+
+**A gyökér-ok:** a `matchCandidate` (crawl-idejű) csak jelölt↔ÉLŐ-deszka
+egyezést keres — jelölt↔jelölt között sosem volt ellenőrzés. Két,
+ugyanazt a terméket fedő pending sor egyaránt jóváhagyható lett volna,
+valódi duplikátumot hozva a `boards` táblába.
+
+**Megoldás — TARTÓS funkció, nem egyszeri takarítás:**
+- Modul-szerződés-refaktor: a `trigrams`/`similarity` primitív a
+  `tools/catalog-watch/match.ts`-ből `src/core/text/similarity.ts`-be
+  költözött (a `slugify` mintája, F2.1 óta ismert minta közös igényre) —
+  a catalog modul nem importálhat `tools/`-ból. A `match.ts` RELATÍV
+  (nem `@core/*` alias) importtal veszi át, mert sima `node`-dal fut a
+  CLI-n/cronon, nem a Vite-bundleren át. Viselkedés-megőrzés igazolva: a
+  181 catalog-watch teszt változatlanul zöld a mozgatás után.
+- ÚJ `src/modules/catalog/data/duplicate-hints.ts`: `findDuplicateHints`
+  (tiszta függvény), `DUPLICATE_HINT_THRESHOLD = 0.5` (a mai mintavételből
+  kalibrálva, kommentben dokumentálva miért pont ennyi). Ugyanazokat a
+  súlyokat tükrözi, mint a `match.ts` `scorePair`-je (modul-határ miatt
+  nem importálható, szándékos duplikáció, kommentezve).
+- `/admin/katalogus`: a jelölt-kártyán, ha van elég erős gyanú, egy sor
+  jelzi ("Lehet, hogy ugyanaz a termék, mint »X« (forrás) — Y% egyezés")
+  — CSAK jelzés, a jóváhagyás/elutasítás/összefésülés gombok viselkedése
+  változatlan, a moderátor dönt (a figyelő „soha nem dönt magától"
+  szemlélete admin-oldalra is érvényes).
+- 6 új teszt: valódi élesben mért pár felismerve, azonos forrás sosem
+  párosul, deszka sosem párosul kiegészítővel, eltérő kiegészítő-
+  kategória sosem párosul, zajos hasonlóság kiszűrve, 3+ forrásból a
+  legerősebb pár választva.
+
+**HÁTRA:** a kiegészítő-kategória (evező/pumpa) duplikátum-gyanúja még
+nyitott — a mai `findDuplicateHints` MŰKÖDIK rájuk is (páronkénti, nem
+klaszterezett pontozással), csak a pontos küszöb ott még nincs annyira
+mintavételezve, mint a deszkáknál; ha a moderáció során sok hamis
+pozitív/negatív derül ki, érdemes külön kalibrálni.
+
 ## F2.2 — Visszajelzés-csatorna a fejlesztőnek (2026-07-28)
 
 Felhasználói kérés a katalógus-források felderítése közben: kelljen egy felület,
