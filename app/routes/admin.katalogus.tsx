@@ -28,6 +28,7 @@ import {
   rejectCandidate,
   setBoardDiscontinued,
 } from "@modules/catalog/data/candidates.server";
+import { findDuplicateHints } from "@modules/catalog/data/duplicate-hints";
 import { GEAR_CATEGORIES, isGearCategory, type GearCategory } from "@modules/catalog/gear";
 import { DEFAULT_UNSEEN_DAYS, findDiscontinuedCandidates } from "@modules/catalog/lifecycle";
 import { BOARD_TYPES, type BoardType } from "@modules/catalog/types";
@@ -45,16 +46,50 @@ export async function loader({ request }: Route.LoaderArgs) {
     listBoardsForLifecycle(supabase),
   ]);
 
-  return {
-    candidates: candidates.map(({ candidate, sourceName, matchedBoardLabel }) => ({
+  // Jelölt↔jelölt duplikátum-gyanú (F2.1-utó-8): a `matchedBoardLabel` csak
+  // ÉLŐ deszkával veti össze a jelöltet — ez itt a MÁSIK, még el nem bírált
+  // pending jelöltek közti átfedést jelzi (pl. ugyanaz a termék két forrásból).
+  const hintInputs = candidates
+    .filter(({ candidate }) => candidate.extracted !== null)
+    .map(({ candidate }) => ({
       id: candidate.id,
-      url: candidate.url,
-      sourceName,
-      matchedBoardId: candidate.matched_board_id,
-      matchedBoardLabel,
-      confidence: candidate.match_confidence,
-      extracted: candidate.extracted,
-    })),
+      sourceId: candidate.source_id,
+      brandName: candidate.extracted!.brandName,
+      modelName: candidate.extracted!.modelName,
+      modelYear: candidate.extracted!.modelYear,
+      accessoryType: candidate.extracted!.accessoryType,
+    }));
+  const duplicateHints = findDuplicateHints(hintInputs);
+  const titleById = new Map(
+    candidates.map(({ candidate }) => [
+      candidate.id,
+      [candidate.extracted?.brandName, candidate.extracted?.modelName]
+        .filter(Boolean)
+        .join(" ") || (candidate.extracted?.rawTitle ?? ""),
+    ]),
+  );
+  const sourceNameById = new Map(candidates.map(({ candidate, sourceName }) => [candidate.id, sourceName]));
+
+  return {
+    candidates: candidates.map(({ candidate, sourceName, matchedBoardLabel }) => {
+      const hint = duplicateHints.get(candidate.id);
+      return {
+        id: candidate.id,
+        url: candidate.url,
+        sourceName,
+        matchedBoardId: candidate.matched_board_id,
+        matchedBoardLabel,
+        confidence: candidate.match_confidence,
+        extracted: candidate.extracted,
+        duplicateHint: hint
+          ? {
+              title: titleById.get(hint.candidateId) ?? "",
+              sourceName: sourceNameById.get(hint.candidateId) ?? null,
+              score: hint.score,
+            }
+          : null,
+      };
+    }),
     boardChoices,
     accessoryChoicesByCategory,
     unseen: findDiscontinuedCandidates(boards),
@@ -274,6 +309,19 @@ function CandidateCard({
           ? ` · ${t("admin.suggestedMatch")}: ${candidate.matchedBoardLabel}`
           : ""}
       </p>
+
+      {/* Jelölt↔jelölt duplikátum-gyanú (F2.1-utó-8) — CSAK jelzés, a
+          moderátor dönt: elutasítja az egyiket, vagy jóváhagyja mindkettőt,
+          ha mégis két külön termék. */}
+      {candidate.duplicateHint ? (
+        <p className="mt-1 text-xs text-caution-text">
+          {t("admin.duplicateHint", {
+            title: candidate.duplicateHint.title,
+            source: candidate.duplicateHint.sourceName ?? "—",
+            percent: Math.round(candidate.duplicateHint.score * 100),
+          })}
+        </p>
+      ) : null}
 
       {candidate.url ? (
         <p className="mt-1 text-xs">

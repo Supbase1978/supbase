@@ -2,9 +2,15 @@
  * catalog-watch — egyezés-keresés és dedup (terv 3. pont, „az admin-jóváhagyás
  * magja").
  *
- * A hasonlóság a PostgreSQL `pg_trgm`-jével AZONOS algoritmus, JS-ben: a
- * szavakat két szóközzel elöl és eggyel hátul kipárnázva trigramokra bontjuk,
- * és a halmazok Jaccard-hányadosát vesszük. Miért nem a DB-ben?
+ * A hasonlóság a PostgreSQL `pg_trgm`-jével AZONOS algoritmus, JS-ben — a
+ * `trigrams`/`similarity` primitíveket a `@core/text/similarity` adja
+ * (F2.1-utó-8: az admin duplikátum-gyanú funkciónak is kellett, a
+ * modul-szerződés szerint a közös igény a core-ba került, ugyanaz a minta,
+ * mint a `slugify`-nál, ld. `src/core/text/slug.ts`). **Relatív import, NEM
+ * a `@core/*` alias** — ez a fájl sima `node`-dal fut (a CLI-n és a heti
+ * cronon át), nem a Vite-bundleren keresztül, ahol az alias feloldódna.
+ *
+ * Miért nem a DB-ben dől el a hasonlóság?
  *   * a döntés így TISZTA függvény → táblázatos határeset-tesztekkel védhető,
  *   * a katalógus mérete (száz nagyságrend) mellett a teljes lista beolvasása
  *     olcsóbb, mint jelöltenként egy RPC-kör.
@@ -16,7 +22,9 @@
  * védelem az admin-jóváhagyás — a figyelő soha nem publikál magától.
  */
 import type { BoardForMatch, ExtractedProduct, MatchResult } from "./types.ts";
-import { foldText } from "./normalize.ts";
+import { similarity, trigrams } from "../../src/core/text/similarity.ts";
+
+export { similarity, trigrams };
 
 /** Efölött ismertnek vesszük a deszkát: ársor + last_seen_at, jelölt nélkül. */
 export const KNOWN_THRESHOLD = 0.8;
@@ -30,39 +38,6 @@ const MODEL_WEIGHT = 0.65;
 const BRAND_WEIGHT = 0.35;
 /** Eltérő évjárat: ugyanaz a modell, de másik verzió — enyhe rontás. */
 const YEAR_MISMATCH_FACTOR = 0.9;
-
-/**
- * `pg_trgm`-kompatibilis trigram-halmaz: kisbetűs, ékezet-hajtott szavak,
- * szavanként `"  szó "` párnázással.
- */
-export function trigrams(text: string): Set<string> {
-  const set = new Set<string>();
-  const words = foldText(text)
-    .replace(/[^a-z0-9]+/g, " ")
-    .trim()
-    .split(/\s+/)
-    .filter((word) => word !== "");
-
-  for (const word of words) {
-    const padded = `  ${word} `;
-    for (let i = 0; i + 3 <= padded.length; i += 1) {
-      set.add(padded.slice(i, i + 3));
-    }
-  }
-  return set;
-}
-
-/** Jaccard-hasonlóság két trigram-halmazon (0–1). Üres bemenet → 0. */
-export function similarity(a: string, b: string): number {
-  const setA = trigrams(a);
-  const setB = trigrams(b);
-  if (setA.size === 0 || setB.size === 0) return 0;
-
-  let shared = 0;
-  for (const gram of setA) if (setB.has(gram)) shared += 1;
-  const union = setA.size + setB.size - shared;
-  return union === 0 ? 0 : round3(shared / union);
-}
 
 function round3(value: number): number {
   return Math.round(value * 1000) / 1000;

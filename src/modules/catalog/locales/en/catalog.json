@@ -55,6 +55,7 @@
     "source": "Source",
     "confidence": "Match",
     "suggestedMatch": "Suggested pair",
+    "duplicateHint": "Might be the same product as \"{{title}}\" ({{source}}) — {{percent}}% match",
     "openSource": "Open product page",
     "noPrice": "no price",
     "kindLabel": "What is this?",

@@ -55,6 +55,7 @@
     "source": "Forrás",
     "confidence": "Egyezés",
     "suggestedMatch": "Javasolt pár",
+    "duplicateHint": "Lehet, hogy ugyanaz a termék, mint „{{title}}” ({{source}}) — {{percent}}% egyezés",
     "openSource": "Termékoldal megnyitása",
     "noPrice": "nincs ár",
     "kindLabel": "Mi ez?",
