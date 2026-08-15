@@ -34,6 +34,18 @@ select lives_ok($$ insert into public.catalog_candidates (source_id, url, status
 select cmp_ok((select count(*)::int from public.catalog_sources),    '>=', 1, 'catalog_sources: moderator olvas');
 select cmp_ok((select count(*)::int from public.catalog_candidates), '>=', 1, 'catalog_candidates: moderator olvas');
 
+-- --- locked_fields / data_verified_at (F2.1-utó-10) --------------------------
+select is((select locked_fields from public.catalog_candidates where url='https://x.dev/board'), '{}'::text[],
+  'catalog_candidates.locked_fields default üres tömb');
+select ok((select data_verified_at from public.catalog_candidates where url='https://x.dev/board') is null,
+  'catalog_candidates.data_verified_at default NULL');
+select lives_ok($$ update public.catalog_candidates
+                    set locked_fields = array['specs.lengthCm','brandName'], data_verified_at = now()
+                    where url = 'https://x.dev/board' $$,
+  'catalog_candidates: moderator beállíthatja a locked_fields/data_verified_at mezőket');
+select is((select locked_fields from public.catalog_candidates where url='https://x.dev/board'),
+  array['specs.lengthCm','brandName'], 'locked_fields tetszőleges string-tömb elfogadott');
+
 -- --- Sima user: NEM olvas (RLS → 0 sor) és NEM ír (42501) --------------------
 set local role authenticated;
 select set_config('request.jwt.claims','{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}', true);

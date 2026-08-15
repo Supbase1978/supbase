@@ -14,7 +14,8 @@ import type { CandidateInput, CrawlStore } from "./crawl.ts";
 import type { SupabaseTarget } from "./env.ts";
 import { shouldRecordPrice } from "./lifecycle.ts";
 import type { BoardForLifecycle } from "./lifecycle.ts";
-import type { BoardForMatch, CatalogSourceRow } from "./types.ts";
+import { applyFieldLocks } from "./lock.ts";
+import type { BoardForMatch, CatalogSourceRow, ExtractedProduct } from "./types.ts";
 
 /**
  * Service-role kliens a FELOLDOTT célra (lásd `env.ts`: a repo .env-je az
@@ -146,12 +147,46 @@ export function createSupabaseStore(client: SupabaseClient): CrawlStore {
     async saveCandidate(input: CandidateInput): Promise<boolean> {
       const { data, error } = await client
         .from("catalog_candidates")
-        .select("id, status")
+        .select("id, status, extracted, locked_fields")
         .eq("url", input.url)
         .limit(1);
       fail("catalog_candidates olvasás", error);
 
-      const existing = data?.[0] as { id: string; status: string } | undefined;
+      const existing = data?.[0] as
+        | { id: string; status: string; extracted: ExtractedProduct | null; locked_fields: string[] | null }
+        | undefined;
+
+      if (existing) {
+        // Az ELBÍRÁLT URL-t nem támasztjuk fel: ha az admin elutasította vagy
+        // már összefésülte, a következő crawl nem hozhatja vissza a sorba.
+        if (existing.status !== "pending") return false;
+
+        // Mezőnkénti zár (F2.1-utó-10): ha egy admin/karmester kézzel
+        // ellenőrzött és lezárt egy mezőt (`locked_fields`), a frissen
+        // crawlolt érték NEM írhatja felül — az existing.extracted-ből
+        // visszamásolva megy a mentésbe. Zárolt mező hiányában (üres lista,
+        // vagy még nincs korábbi extracted) ez a korábbi, teljes felülírás.
+        const lockedFields = existing.locked_fields ?? [];
+        const extracted =
+          lockedFields.length > 0 && existing.extracted
+            ? applyFieldLocks(existing.extracted, input.extracted, lockedFields)
+            : input.extracted;
+
+        const { error: updateError } = await client
+          .from("catalog_candidates")
+          .update({
+            source_id: input.sourceId,
+            url: input.url,
+            raw: input.raw,
+            extracted,
+            matched_board_id: input.matchedBoardId,
+            match_confidence: input.confidence,
+          })
+          .eq("id", existing.id);
+        fail("catalog_candidates update", updateError);
+        return false;
+      }
+
       const payload = {
         source_id: input.sourceId,
         url: input.url,
@@ -160,18 +195,6 @@ export function createSupabaseStore(client: SupabaseClient): CrawlStore {
         matched_board_id: input.matchedBoardId,
         match_confidence: input.confidence,
       };
-
-      if (existing) {
-        // Az ELBÍRÁLT URL-t nem támasztjuk fel: ha az admin elutasította vagy
-        // már összefésülte, a következő crawl nem hozhatja vissza a sorba.
-        if (existing.status !== "pending") return false;
-        const { error: updateError } = await client
-          .from("catalog_candidates")
-          .update(payload)
-          .eq("id", existing.id);
-        fail("catalog_candidates update", updateError);
-        return false;
-      }
 
       const { error: insertError } = await client
         .from("catalog_candidates")
