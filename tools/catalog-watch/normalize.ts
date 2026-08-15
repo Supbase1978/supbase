@@ -256,6 +256,17 @@ const DIMENSIONS_LABELS = ["méret", "dimensions"];
  * `excludePrecededBy`: ha a címke-találat közvetlenül egy tiltott szó után
  * áll (pl. "Paddle Length", "Bag Dimensions"), a találatot ÁTUGORJA és a
  * SZÖVEGBEN KÉSŐBBI előfordulást keresi tovább — nem csak az elsőt nézi.
+ *
+ * A címke UTÁN álló karaktert is ellenőrizzük: ha kisbetű, a találat egy
+ * RAGOZOTT ALAK (pl. "hosszúságával", "szélességével" egy leíró mondatban:
+ * "366 cm hosszúságával, 84 cm szélességével és 15 cm vastagságával") — a
+ * magyar agglutináló ragozás miatt ez a bare címkeszóval KEZDŐDIK, tehát
+ * substring-illesztéssel hamisan találatot ad, és a mondatban közeli, de
+ * ROSSZ dimenzió számát szedi fel (élesben mért hiba, 2026-08-13:
+ * sup-deszka.hu "MONSTER 12'0" — a leírás ragozott mondata miatt a hossz
+ * mezőbe a szélesség értéke, a szélesség mezőbe a vastagság értéke került).
+ * Ilyenkor is ÁTUGORJUK és a szövegben KÉSŐBBI (jellemzően a tiszta
+ * táblázatos) előfordulást keressük.
  */
 function valueAfterLabel(
   text: string,
@@ -274,6 +285,9 @@ function valueAfterLabel(
       const before = folded.slice(Math.max(0, index - 15), index).trimEnd();
       const excluded = excludePrecededBy.some((word) => before.endsWith(foldText(word)));
       if (excluded) continue;
+
+      const afterChar = folded[index + needle.length];
+      if (afterChar !== undefined && /[a-z]/.test(afterChar)) continue;
 
       const window = text.slice(index + label.length, index + label.length + 40);
       if (/\d/.test(window)) return window;

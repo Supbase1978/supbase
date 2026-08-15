@@ -179,6 +179,23 @@ describe("parseSpecsFromText", () => {
     expect(specs.thicknessCm).toBe(16);
   });
 
+  it("ragozott alak (leíró mondatban) NEM keveredik a tiszta táblázatos értékkel", () => {
+    // Élesben mért hiba (2026-08-13, sup-deszka.hu "MONSTER 12'0""): a
+    // leírás "366 cm hosszúságával, 84 cm szélességével és 15 cm
+    // vastagságával" mondata a bare "hosszúság"/"szélesség" címkével
+    // KEZDŐDŐ ragozott alakok miatt hamisan illeszkedett — a hossz mezőbe a
+    // szélesség (84), a szélesség mezőbe a vastagság (15) értéke került.
+    const specs = parseSpecsFromText(
+      "Ezt a modellt kifejezetten a családoknak terveztek. " +
+        "366 cm hosszúságával, 84 cm szélességével és 15 cm vastagságával " +
+        "támogatja a stabilitást.\n" +
+        "Hosszúság 366 cm \n Szélesség 84 cm \n Vastagság 15 cm",
+    );
+    expect(specs.lengthCm).toBe(366);
+    expect(specs.widthCm).toBe(84);
+    expect(specs.thicknessCm).toBe(15);
+  });
+
   it("magyar 'Mérete (L x W x H cm)' címke is felismert (nem csak 'Méretek')", () => {
     // Élesben mért: aquamarinahungary.com a "Mérete" (nem "Méretek") szót írja.
     const specs = parseSpecsFromText("Mérete (366 x 84 x 15 cm)\nNettó súly 10.5kg");
