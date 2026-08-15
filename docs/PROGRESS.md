@@ -20,7 +20,7 @@
 | F1.11 Folyó-vízállás (5.1/6) | ✅ kész + élesítve (2026-07-27) | vizugy.hu (OVF) REST API, HIVATALOS árvízvédelmi készültségi küszöbökkel; a fix −1 folyó-büntetés helyett fokozat-alapú index-plafon. Élesben verifikálva, cron írja. + F1.11b: póráz-figyelmeztetés folyóvízre |
 | F1.12 Analitika (süti-mentes) | ✅ kész + élesítve (2026-07-28) | `analytics_events` + definer-RPC + `/admin/analitika`. Nincs süti/IP/azonosító → nincs egyéni tölcsér, csak darabszám. Robot/DNT/dev nem számol |
 | F2.2 Visszajelzés-csatorna | ✅ kész + ÉLESBEN BÖNGÉSZŐBEN VERIFIKÁLVA (2026-07-31) | `/visszajelzes` (hiba · hiányzó bolt · hiányzó modell) + `/admin/visszajelzesek`. Teljes kör próbálva: beküldés → admin-listában megjelenés → állapotváltás+jegyzet mentése, mind sikeres. HÁTRA: `RESEND_API_KEY` ha kell e-mail-értesítés (opcionális) |
-| F2.1 catalog-watch piacfigyelő | ✅ ÉLESBEN MŰKÖDIK (2026-08-13) | 4 forrás bekötve: Bluefin (15 jelölt, MIND jóváhagyva), Aqua Marina Hungary + sup-deszka.hu + Indiana Paddle & Surf (**170 jelölt pending**, 15 elavult takarítva). Útközben 8 valós hiba javítva (gzip-sitemap, magyar "Mérete" címke, hiányzó-márka fallback, angol "Board Bag" félreosztályozás, címkézetlen méret-hármas, navigációs-menü-szennyezés, "Boardshorts"/"Board Handle"). HÁTRA: a pending jelöltek moderációja + GH Actions secretek |
+| F2.1 catalog-watch piacfigyelő | ✅ ÉLESBEN MŰKÖDIK (2026-08-15) | 4 forrás bekötve: Bluefin, Aqua Marina Hungary, sup-deszka.hu, Indiana Paddle & Surf (**172 jelölt pending**). Útközben 11 valós hiba javítva. **Munkafolyamat-váltás (F2.1-utó-10):** fél-automata — a crawler felfedez, a hiányzó specifikációt a felhasználó gyártói forrásból gyűjti, `verify-specs`-szel épül be és ZÁROLÓDIK (a crawler többé nem írja felül); `list-incomplete` a heti munkalista. Migráció (`locked_fields`/`data_verified_at`) MÉG NEM éles. HÁTRA: migráció kitolása + a pending jelöltek moderációja + GH Actions secretek |
 | F2.3 Felszerelés (kiegészítők), 1–3. szakasz | ✅ kész + élesítve (2026-07-29) | 1.: `/felszereles` útmutató-oldalak. 2.: `kind`/`would_recommend` migráció (élesítve, REST-tel verifikálva) + `kind='board'` szűrő mindenhol + `/felszereles/:kategoria/:slug` termékadatlap. 3.: catalog-watch `classifyProduct` (evező/mentőmellény/pumpa jelöltté válik) + admin deszka/kiegészítő kapcsoló. Valós forrás-adat MEGÉRKEZETT (2026-07-31, ld. F2.1) — evező/mentőmellény/pumpa jelöltek a 168 pendingben, moderációra várnak |
 | F2.4 Direkt bolti ár eltávolítása | ✅ kész (2026-07-30) | A deszka- és kiegészítő-adatlapról (fejléc-ár + „Hol kapható" blokk + JSON-LD `offers`) eltávolítva — felhasználói döntés, ld. F2.4-szakasz. A `board_prices` gyűjtés (catalog-watch) VÁLTOZATLAN, a Deszkaválasztó budget-szűrője/eredmény-ára is VÁLTOZATLAN (felhasználói döntés szerint) |
 | F1.10 Záró audit + élesítés | ✅ audit **26/26** (2026-07-27) | **`docs/AUDIT_F1.md`**: az audit két mérés-jellegű hiánya pótolva (vizuális regresszió 07-26, teljesítmény-budget 07-27). HÁTRA az F1 lezárásához a publikussá tétel — a lépések a `RUNBOOK.md` **élesítési checklistjében** (domain → Resend-SMTP → Turnstile → cégadatok → `SITE_PUBLIC=true`), mind felhasználói döntés/adat |
@@ -737,6 +737,67 @@ egy soros javítás.
 TOURING 10'0"" és „WIKIWIKI 10'10"" (sup-deszka.hu) — ugyanaz a fordított
 próza-hiba érinti, de a doksiban nem szerepelnek, így nincs megbízható
 adat a közvetlen felülíráshoz.
+
+### F2.1-utó-10 — fél-automata munkafolyamat: mezőnkénti adatzár (2026-08-15)
+
+A felhasználó a mai hibavadászat-sorozat után ("hagyd jóvá, mielőtt
+elveszne" → "lehet, hogy máshogy kellene hozzáállni") egy STRUKTURÁLIS
+váltást kért: a rendszer maradjon csak FÉLIG automatizált — a crawler
+felfedez és a lehető legtöbb adatot kinyeri magától, de a hiányzó
+specifikációt a felhasználó GYÁRTÓI/kereskedői forrásból gyűjti kézzel,
+és ami egyszer emberi kézzel bekerült, azt a crawler TÖBBÉ NE ÍRJA
+FELÜL. Terv (Plan mode, kétkörös egyeztetéssel): `~/.claude/plans/
+viszont-akkor-lehet-hogy-fancy-origami.md`. Kapuk zöldek: typecheck ·
+lint · **808 vitest** (+13), commit `57b903a`.
+
+**A közvetlen kiváltó ok:** a "SUP MEGA 18'1"" jelölt kézzel visszaállított
+specifikációja egy KÖZBENSŐ crawl miatt újra nullázódott — a
+`saveCandidate` egy ismert `pending` URL-re MINDIG felülírta a teljes
+`extracted` payloadot, függetlenül attól, hogy valaki már javított rajta.
+
+**Két KÜLÖN mechanizmus, két új oszlop** (`catalog_candidates.
+locked_fields text[]` + `data_verified_at timestamptz`, migráció:
+`20260717092400_catalog_candidates_locked_fields.sql`, MÉG NEM TOLVA KI
+élesre):
+- `locked_fields`: MEZŐNKÉNTI védelem — melyik `extracted`-mezőt ne írja
+  felül többé a crawler. `tools/catalog-watch/lock.ts` `applyFieldLocks`
+  (tiszta függvény, 4 teszt) — a `saveCandidate` ezt hívja update előtt.
+- `data_verified_at`: JELÖLT-SZINTŰ "kész" jelölés — mikor nyilvánította
+  valaki lezártnak az adatgyűjtést, AKKOR IS, ha objektíven nem tölthető
+  ki minden mező (egy bolt egyszerűen nem publikálja a súlyt). Amíg
+  `null`, a jelölt a hiányos-listán marad.
+
+**Két új CLI-parancs** (`tools/catalog-watch/cli.ts`), amik felváltják az
+ezidáig használt ad-hoc, egyszer-használatos scratch-szkript mintát:
+- `verify-specs --set path=érték... (--url/--candidate | --board)
+  [--done] [--reopen]` — kézi adat beépítése. Pending jelöltnél
+  (`--url`/`--candidate`) a beírt mezőt zárolja is; élő boardnál
+  (`--board <slug>`) közvetlenül a `boards` snake_case oszlopát írja
+  (nincs zár-mechanizmus, mert élő boardot a crawler eleve nem ír felül
+  teljesen). `--done`/`--reopen` a "kész" állapotot állítja/törli.
+- `list-incomplete [--source NÉV]` — a mai `hianyos-deszkak.md` tartós,
+  parancsosított verziója, KÉT szakaszban: pending jelöltek (`data_
+  verified_at IS NULL` ÉS van hiányzó mező) és MÁR ÉLŐ boardok hiányzó
+  mezővel. `tools/catalog-watch/report.ts` `formatIncompleteReport` +
+  `missingSpecLabels` (tiszta függvények, 5 teszt).
+
+**Második brainstorming-kör (ugyanaznap) pontosította a modellt:**
+1. Hiányos adattal is SZABAD publikálni — a felhasználó döntése: jobb, ha
+   a nyilvános lista minél teljesebb és véleményezhető, a hiányt pedig a
+   `list-incomplete` ÉLŐ-board-szakasza teszi láthatóvá, nem a jóváhagyás
+   blokkolása.
+2. Egyéni dokumentumok (PDF/DOCX/Excel) kezelése NEM igényel új kódot — a
+   felhasználó megerősítette: marad a szabad-formátumú minta (Claude
+   olvassa/értelmezi bármilyen dokumentumot, `verify-specs`-szel építi be).
+3. Mindkét mechanizmus UTÓLAG korrigálható — nincs "lezárt, nem javítható"
+   állapot.
+
+**HÁTRA (felhasználói jóváhagyás kell):**
+- A migráció kitolása élesre (`npm run sb -- db push --include-all`).
+- Admin UI jelzés a zárolt/hiányos mezőkön — tudatosan KIHAGYVA ebben a
+  körben, a `list-incomplete` parancs kimenete egyelőre elég visszajelzés.
+- Visszamenőleges zárolás a meglévő 172 jelöltre — a felhasználó
+  kifejezetten csak az EZUTÁN gyűjtött adatokra kérte.
 
 ## F2.2 — Visszajelzés-csatorna a fejlesztőnek (2026-07-28)
 
