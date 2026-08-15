@@ -196,6 +196,42 @@ describe("parseSpecsFromText", () => {
     expect(specs.thicknessCm).toBe(15);
   });
 
+  it("a 'méret' címke birtokos alakjai (mérete/méretei) TOVÁBBRA IS illeszkednek", () => {
+    // A ragozott-alak-védelem SZŰK (csak instrumentális -val/-vel), nem
+    // zárhatja ki a "méret" tő birtokos ragozásait — ezek a szokásos
+    // címke-forma sok boltnál (élesben mért: aquamarinahungary.com).
+    expect(parseSpecsFromText("Mérete: 320 x 81 x 15 cm").lengthCm).toBe(320);
+    const specs = parseSpecsFromText("Méretei: 381 x 79 cm\nVastagság 15 cm");
+    expect(specs.lengthCm).toBe(381);
+    expect(specs.widthCm).toBe(79);
+    expect(specs.thicknessCm).toBe(15);
+  });
+
+  it("csak hossz×szélesség PÁR (vastagság nélkül) a 'méretei' címke alatt is kitölti a hosszt/szélességet", () => {
+    // Élesben mért eset (2026-08-15, aquamarinahungary.com HYPER 381cm): a
+    // "paddleboard méretei: 381 x 79 cm" csak 2 számot ad (a vastagság
+    // KÜLÖN "deszka vastagság" címkével jön) — a 3-számos parseTripleDimensionCm
+    // ilyenkor hallgat, a pár-fallback tölti ki a hosszt/szélességet.
+    const specs = parseSpecsFromText(
+      "paddleboard méretei: 381 x 79 cm \n deszka vastagság: 15 cm",
+    );
+    expect(specs.lengthCm).toBe(381);
+    expect(specs.widthCm).toBe(79);
+    expect(specs.thicknessCm).toBe(15);
+  });
+
+  it("a szállítási/csomagolási méret (NEM a deszka mérete) kizárva a hármas- és a pár-fallbackből is", () => {
+    // Élesben mért hiba (2026-08-15, aquamarinahungary.com HYPER 381cm): a
+    // "szállítási méretei: 38x20x85 cm" (dobozméret) korábban tévesen a
+    // deszka méretének minősült, mert a "szállítás" szó nem volt kizárva.
+    const specs = parseSpecsFromText(
+      "paddleboard szállítási méretei: 38x20x85 cm \n leírás vége",
+    );
+    expect(specs.lengthCm).toBeNull();
+    expect(specs.widthCm).toBeNull();
+    expect(specs.thicknessCm).toBeNull();
+  });
+
   it("magyar 'Mérete (L x W x H cm)' címke is felismert (nem csak 'Méretek')", () => {
     // Élesben mért: aquamarinahungary.com a "Mérete" (nem "Méretek") szót írja.
     const specs = parseSpecsFromText("Mérete (366 x 84 x 15 cm)\nNettó súly 10.5kg");

@@ -257,16 +257,17 @@ const DIMENSIONS_LABELS = ["méret", "dimensions"];
  * áll (pl. "Paddle Length", "Bag Dimensions"), a találatot ÁTUGORJA és a
  * SZÖVEGBEN KÉSŐBBI előfordulást keresi tovább — nem csak az elsőt nézi.
  *
- * A címke UTÁN álló karaktert is ellenőrizzük: ha kisbetű, a találat egy
- * RAGOZOTT ALAK (pl. "hosszúságával", "szélességével" egy leíró mondatban:
- * "366 cm hosszúságával, 84 cm szélességével és 15 cm vastagságával") — a
- * magyar agglutináló ragozás miatt ez a bare címkeszóval KEZDŐDIK, tehát
- * substring-illesztéssel hamisan találatot ad, és a mondatban közeli, de
- * ROSSZ dimenzió számát szedi fel (élesben mért hiba, 2026-08-13:
- * sup-deszka.hu "MONSTER 12'0" — a leírás ragozott mondata miatt a hossz
- * mezőbe a szélesség értéke, a szélesség mezőbe a vastagság értéke került).
- * Ilyenkor is ÁTUGORJUK és a szövegben KÉSŐBBI (jellemzően a tiszta
- * táblázatos) előfordulást keressük.
+ * A címke UTÁN álló szótöredéket is ellenőrizzük: a magyar INSTRUMENTÁLIS
+ * rag (birtokos + "-val/-vel", pl. "hosszúság**ával**", "szélesség**ével**"
+ * egy leíró mondatban: "366 cm hosszúságával, 84 cm szélességével és 15 cm
+ * vastagságával") a bare címkeszóval KEZDŐDIK, tehát substring-illesztéssel
+ * hamisan találatot ad, és a mondatban közeli, de ROSSZ dimenzió számát
+ * szedi fel (élesben mért hiba, 2026-08-13: sup-deszka.hu "MONSTER 12'0" —
+ * a leírás ragozott mondata miatt a hossz mezőbe a szélesség értéke, a
+ * szélesség mezőbe a vastagság értéke került). SZŰKEN csak ezt a mintát
+ * (`[ae]v[ae]l`, pl. "aval"/"evel") zárjuk ki, NEM minden utána álló
+ * kisbetűt — a "méret" címkének a birtokos alakjaira ("mérete", "méretei")
+ * továbbra is illeszkednie KELL, ezek nem instrumentálisok.
  */
 function valueAfterLabel(
   text: string,
@@ -282,12 +283,15 @@ function valueAfterLabel(
       if (index < 0) break;
       searchFrom = index + needle.length;
 
-      const before = folded.slice(Math.max(0, index - 15), index).trimEnd();
-      const excluded = excludePrecededBy.some((word) => before.endsWith(foldText(word)));
+      // `includes`, nem szigorú `endsWith` — a magyar toldalékolás miatt
+      // (pl. "szállítási" a "szállítás" kizáró szóhoz képest "-i" végű
+      // melléknévi alak) egy pontos végződés-egyezés túl törékeny lenne.
+      const before = folded.slice(Math.max(0, index - 20), index);
+      const excluded = excludePrecededBy.some((word) => before.includes(foldText(word)));
       if (excluded) continue;
 
-      const afterChar = folded[index + needle.length];
-      if (afterChar !== undefined && /[a-z]/.test(afterChar)) continue;
+      const after = folded.slice(index + needle.length, index + needle.length + 4);
+      if (/^[ae]v[ae]l/.test(after)) continue;
 
       const window = text.slice(index + label.length, index + label.length + 40);
       if (/\d/.test(window)) return window;
@@ -350,6 +354,27 @@ function findBareTripleDimension(
 }
 
 /**
+ * "381 x 79 cm" jellegű, csak hossz×szélesség PÁR — élesben mért eset
+ * (aquamarinahungary.com): néhány oldal a "méretei" címke alatt csak a
+ * hosszt és szélességet adja együtt, a vastagságot KÜLÖN "deszka vastagság"
+ * címkével — a `parseTripleDimensionCm` (3 szám kell) ilyenkor hallgat.
+ * Csak akkor hívjuk, ha a triple-próbálkozás már hallgatott ugyanezen az
+ * ablakon — a `parseSpecsFromText` sorrendje ezt garantálja.
+ */
+const PAIR_DIMENSION_RE = /(\d+(?:[.,]\d+)?)\s*[x×]\s*(\d+(?:[.,]\d+)?)\s*(cm|inch(?:es)?|in)\b/i;
+
+function parsePairDimensionCm(text: string): { lengthCm: number; widthCm: number } | null {
+  const match = text.match(PAIR_DIMENSION_RE);
+  if (!match) return null;
+  const length = toNumber(match[1] ?? "");
+  const width = toNumber(match[2] ?? "");
+  if (length === null || width === null) return null;
+  const isInches = /^in/i.test(match[3] ?? "");
+  const toCm = (v: number) => round1(isInches ? v * CM_PER_INCH : v);
+  return { lengthCm: toCm(length), widthCm: toCm(width) };
+}
+
+/**
  * Spec-táblázat (vagy termékleírás) → `BoardSpecs`. Csak címkézett értéket
  * fogadunk el; a súly/teherbírás kg-ban, a térfogat literben.
  */
@@ -365,12 +390,21 @@ export function parseSpecsFromText(text: string): BoardSpecs {
   // ÖSSZEVONT "Dimensions: 325 x 82 x 16cm" formát — csak a hiányzó mezőket
   // töltjük ki belőle, a már megtalált (specifikusabb címkéjű) érték marad.
   if (specs.lengthCm === null || specs.widthCm === null || specs.thicknessCm === null) {
-    const dimensionsWindow = valueAfterLabel(text, DIMENSIONS_LABELS, ["bag", "package", "táska", "csomag"]);
+    const dimensionsWindow = valueAfterLabel(text, DIMENSIONS_LABELS, ["bag", "package", "táska", "csomag", "szállítás", "shipping"]);
     const triple = dimensionsWindow !== null ? parseTripleDimensionCm(dimensionsWindow) : null;
     if (triple !== null) {
       if (specs.lengthCm === null) specs.lengthCm = triple.lengthCm;
       if (specs.widthCm === null) specs.widthCm = triple.widthCm;
       if (specs.thicknessCm === null) specs.thicknessCm = triple.thicknessCm;
+    } else if (specs.lengthCm === null && specs.widthCm === null && dimensionsWindow !== null) {
+      // A hármas nem illeszkedett (pl. "méretei: 381 x 79 cm" — csak PÁR, a
+      // vastagság külön címkével jön) — próbáljuk a pár-mintát ugyanazon az
+      // ablakon.
+      const pair = parsePairDimensionCm(dimensionsWindow);
+      if (pair !== null) {
+        specs.lengthCm = pair.lengthCm;
+        specs.widthCm = pair.widthCm;
+      }
     }
   }
 
@@ -382,7 +416,7 @@ export function parseSpecsFromText(text: string): BoardSpecs {
   // A minta ön-leíró (explicit cm/inch egység kell hozzá), ezért a teljes
   // szövegben keresve is alacsony a téves találat kockázata.
   if (specs.lengthCm === null || specs.widthCm === null || specs.thicknessCm === null) {
-    const bareTriple = findBareTripleDimension(text, ["bag", "package", "táska", "csomag"]);
+    const bareTriple = findBareTripleDimension(text, ["bag", "package", "táska", "csomag", "szállítás", "shipping"]);
     if (bareTriple !== null) {
       if (specs.lengthCm === null) specs.lengthCm = bareTriple.lengthCm;
       if (specs.widthCm === null) specs.widthCm = bareTriple.widthCm;
