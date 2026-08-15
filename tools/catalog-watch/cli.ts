@@ -414,15 +414,19 @@ async function commandVerifySpecs(args: Args): Promise<void> {
     const patch: Record<string, unknown> = {};
     for (const { path, value } of assignments) patch[path] = value;
 
+    // A `boards.slug` FORDÍTHATÓ jsonb ({"hu": ..., "en": ...}) — a projekt
+    // szabálya szerint minden fordítható tartalmi mező jsonb (CLAUDE.md).
+    // A magyar (`hu`) alszlug az elsődleges referencia a CLI-ben.
     const { data, error } = await client
       .from("boards")
       .update(patch)
-      .eq("slug", boardSlug)
+      .eq("slug->>hu", boardSlug)
       .select("id, slug, model_name, length_cm, width_cm, thickness_cm, weight_kg, max_load_kg")
       .maybeSingle();
     if (error) throw new Error(`boards update: ${error.message}`);
-    if (!data) throw new Error(`Nincs ilyen board-slug: ${boardSlug}`);
-    console.log(`Frissítve (élő board): ${data.model_name as string} (${data.slug as string})`);
+    if (!data) throw new Error(`Nincs ilyen board-slug (hu): ${boardSlug}`);
+    const slug = data.slug as { hu?: string; en?: string } | null;
+    console.log(`Frissítve (élő board): ${data.model_name as string} (${slug?.hu ?? boardSlug})`);
     console.log(JSON.stringify(data, null, 2));
     return;
   }
@@ -540,7 +544,15 @@ async function commandListIncomplete(args: Args): Promise<void> {
       maxLoadKg: row.max_load_kg as number | null,
     });
     if (missing.length === 0) continue;
-    live.push({ source: brandName, model: row.model_name as string, missing, ref: row.slug as string });
+    // `boards.slug` fordítható jsonb ({"hu": ..., "en": ...}) — ld. a
+    // `verify-specs --board` hasonló megjegyzését.
+    const slug = row.slug as { hu?: string; en?: string } | null;
+    live.push({
+      source: brandName,
+      model: row.model_name as string,
+      missing,
+      ref: slug?.hu ?? slug?.en ?? "(nincs slug)",
+    });
   }
 
   console.log(formatIncompleteReport(pending, live));
