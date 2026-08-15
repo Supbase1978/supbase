@@ -689,6 +689,55 @@ klaszterezett pontozással), csak a pontos küszöb ott még nincs annyira
 mintavételezve, mint a deszkáknál; ha a moderáció során sok hamis
 pozitív/negatív derül ki, érdemes külön kalibrálni.
 
+### F2.1-utó-9 — a felhasználó rákérdezett: tényleg bekerültek a paraméterek? (2026-08-15)
+
+Direkt kérdés: "az eszközök listája bővült a megfelelő paraméterekkel...
+ezek beépültek?" Őszinte válasz: RÉSZBEN — a kérdés maga 2 további valós,
+élesben aktív hibát fogott ki. Kapuk zöldek: typecheck · lint · **799
+vitest** (+5 új), commit `cff7431`.
+
+**2 újabb valós hiba a `parseSpecsFromText`-ben, mindkettő javítva:**
+1. **Szállítási/csomagolási méret a deszka méretének véve** — az
+   aquamarinahungary.com egyes oldalain "paddleboard szállítási méretei:
+   38x20x85 cm" (DOBOZMÉRET, nem a deszkáé!) a "szállítás" szó hiánya
+   miatt tévesen bekerült — 4 candidate-en (HYPER×2, BEAST, FLOW YOGA)
+   AZONOS hibás 38×20×15 érték volt, ami önmagában is gyanús jel volt.
+   Emellett a tegnapi ragozott-alak-védelem (ld. utó-7) túl szigorúnak
+   bizonyult: a "méret" címke birtokos alakjait (mérete/méretei) is
+   kizárta, pedig ezek szokásos formák — szűkítve csak az instrumentális
+   `-val/-vel` (aval/evel) mintára. Új PÁR-fallback
+   (`parsePairDimensionCm`): ha a "méretei" alatt csak hossz×szélesség áll
+   (a vastagság külön címkével jön), azt is felismeri.
+2. **Fordított próza-sorrend** ("320 cm hosszúság, 84 cm szélesség és 15
+   cm vastagság" — a szám a címke ELŐTT áll) — próbáltam egy általános
+   javítást (ha a címkét szám előzi meg, ugorja át), de ez ÚJ
+   regressziót okozott (jó, listaszerű adatokat is kizárt, pl. "381 x 79
+   cm\nVastagság 15 cm"-nél a vastagságot). **Visszavonva** — a
+   felhasználó eközben egyértelművé tette: a doksijából származó adatok
+   gyártói/bolti forrásúak, nem szorulnak további "ellenőrzésre", hanem
+   közvetlenül be kell épüljenek. Ennek megfelelően az érintett
+   konkrét tételeket (Wave Explorer, Nimbus Navigator, Yoga Dock×2,
+   ALANI — mind a doksiban szerepelt pontos adattal) EGYENESEN a doksi
+   értékeivel patch-eltem, a hibás parser-kimenetet felülírva — nem
+   várva egy általánosabb parser-javításra.
+3. Emellett 3 evező súlyadat is pótolva a doksiból, ami korábban kimaradt
+   a nagy egyeztető körből (Ace Kids 0.54kg, Carbon X 0.55kg, Carbon Pro
+   0.75kg).
+
+**Tanulság a jövőre:** a `parseSpecsFromText` heurisztikái (címke UTÁN
+keres) törékenyek a magyar próza szabad szórendjével szemben — minden
+újabb élesben talált minta egy újabb speciális esetet ad hozzá. Ha ez a
+minta tovább szaporodik, érdemes lehet egy MÁSFAJTA, robusztusabb
+megközelítést fontolóra venni (pl. LLM-alapú kinyerés a szabad szöveges
+leírásokra), ahelyett hogy minden egyes új prózaformát külön regex-
+szabállyal kergetnénk — de ez jelentős architektúraváltás lenne, nem
+egy soros javítás.
+
+**Még nyitva (nincs doksi-forrás hozzá, JOB nem javítva):** „VIBRANT
+TOURING 10'0"" és „WIKIWIKI 10'10"" (sup-deszka.hu) — ugyanaz a fordított
+próza-hiba érinti, de a doksiban nem szerepelnek, így nincs megbízható
+adat a közvetlen felülíráshoz.
+
 ## F2.2 — Visszajelzés-csatorna a fejlesztőnek (2026-07-28)
 
 Felhasználói kérés a katalógus-források felderítése közben: kelljen egy felület,
