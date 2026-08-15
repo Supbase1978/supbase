@@ -20,7 +20,7 @@
 | F1.11 Folyó-vízállás (5.1/6) | ✅ kész + élesítve (2026-07-27) | vizugy.hu (OVF) REST API, HIVATALOS árvízvédelmi készültségi küszöbökkel; a fix −1 folyó-büntetés helyett fokozat-alapú index-plafon. Élesben verifikálva, cron írja. + F1.11b: póráz-figyelmeztetés folyóvízre |
 | F1.12 Analitika (süti-mentes) | ✅ kész + élesítve (2026-07-28) | `analytics_events` + definer-RPC + `/admin/analitika`. Nincs süti/IP/azonosító → nincs egyéni tölcsér, csak darabszám. Robot/DNT/dev nem számol |
 | F2.2 Visszajelzés-csatorna | ✅ kész + ÉLESBEN BÖNGÉSZŐBEN VERIFIKÁLVA (2026-07-31) | `/visszajelzes` (hiba · hiányzó bolt · hiányzó modell) + `/admin/visszajelzesek`. Teljes kör próbálva: beküldés → admin-listában megjelenés → állapotváltás+jegyzet mentése, mind sikeres. HÁTRA: `RESEND_API_KEY` ha kell e-mail-értesítés (opcionális) |
-| F2.1 catalog-watch piacfigyelő | ✅ ÉLESBEN MŰKÖDIK (2026-08-15) | 4 forrás bekötve: Bluefin, Aqua Marina Hungary, sup-deszka.hu, Indiana Paddle & Surf (**172 jelölt pending**). Útközben 11 valós hiba javítva. **Munkafolyamat-váltás (F2.1-utó-10):** fél-automata — a crawler felfedez, a hiányzó specifikációt a felhasználó gyártói forrásból gyűjti, `verify-specs`-szel épül be és ZÁROLÓDIK (a crawler többé nem írja felül); `list-incomplete` a heti munkalista. Migráció (`locked_fields`/`data_verified_at`) MÉG NEM éles. HÁTRA: migráció kitolása + a pending jelöltek moderációja + GH Actions secretek |
+| F2.1 catalog-watch piacfigyelő | ✅ ÉLESBEN MŰKÖDIK (2026-08-15) | 4 forrás bekötve: Bluefin, Aqua Marina Hungary, sup-deszka.hu, Indiana Paddle & Surf (**172 jelölt pending**). Útközben 12 valós hiba javítva. **Munkafolyamat-váltás (F2.1-utó-10), ÉLESÍTVE + végponttól-végpontig verifikálva:** fél-automata — a crawler felfedez, a hiányzó specifikációt a felhasználó gyártói forrásból gyűjti, `verify-specs`-szel épül be és ZÁROLÓDIK (a crawler többé nem írja felül, élesben igazolva egy valós újra-crawllal); `list-incomplete` a heti munkalista (pending + élő board szakasz). HÁTRA: a pending jelöltek moderációja + GH Actions secretek |
 | F2.3 Felszerelés (kiegészítők), 1–3. szakasz | ✅ kész + élesítve (2026-07-29) | 1.: `/felszereles` útmutató-oldalak. 2.: `kind`/`would_recommend` migráció (élesítve, REST-tel verifikálva) + `kind='board'` szűrő mindenhol + `/felszereles/:kategoria/:slug` termékadatlap. 3.: catalog-watch `classifyProduct` (evező/mentőmellény/pumpa jelöltté válik) + admin deszka/kiegészítő kapcsoló. Valós forrás-adat MEGÉRKEZETT (2026-07-31, ld. F2.1) — evező/mentőmellény/pumpa jelöltek a 168 pendingben, moderációra várnak |
 | F2.4 Direkt bolti ár eltávolítása | ✅ kész (2026-07-30) | A deszka- és kiegészítő-adatlapról (fejléc-ár + „Hol kapható" blokk + JSON-LD `offers`) eltávolítva — felhasználói döntés, ld. F2.4-szakasz. A `board_prices` gyűjtés (catalog-watch) VÁLTOZATLAN, a Deszkaválasztó budget-szűrője/eredmény-ára is VÁLTOZATLAN (felhasználói döntés szerint) |
 | F1.10 Záró audit + élesítés | ✅ audit **26/26** (2026-07-27) | **`docs/AUDIT_F1.md`**: az audit két mérés-jellegű hiánya pótolva (vizuális regresszió 07-26, teljesítmény-budget 07-27). HÁTRA az F1 lezárásához a publikussá tétel — a lépések a `RUNBOOK.md` **élesítési checklistjében** (domain → Resend-SMTP → Turnstile → cégadatok → `SITE_PUBLIC=true`), mind felhasználói döntés/adat |
@@ -792,8 +792,27 @@ ezidáig használt ad-hoc, egyszer-használatos scratch-szkript mintát:
 3. Mindkét mechanizmus UTÓLAG korrigálható — nincs "lezárt, nem javítható"
    állapot.
 
-**HÁTRA (felhasználói jóváhagyás kell):**
-- A migráció kitolása élesre (`npm run sb -- db push --include-all`).
+**ÉLESÍTVE ÉS VÉGPONTTÓL-VÉGPONTIG VERIFIKÁLVA (2026-08-15, felhasználói
+jóváhagyással):** a migráció kitolva (`npm run sb -- db push
+--include-all`). Élő próba a "SUP MEGA 18'1"" jelölten:
+1. `verify-specs --candidate <id> --set specs.lengthCm=550 ...` — 4 mező
+   beírva és zárolva.
+2. **Valós `crawl --source "Aqua Marina Hungary"` UTÁN a 4 mező
+   VÁLTOZATLAN maradt** (a `locked_fields` a válaszban is látszott) — ez
+   pontosan az eredeti hiba (a mai nap elején elveszett kézi javítás)
+   ellenpróbája, sikeresen.
+3. `verify-specs --board bluefin-tandem --set max_load_kg=999` majd
+   `=null` — a `--board` ág is működik, a `list-incomplete`-ről el is
+   tűnt/vissza is került a teszt közben (érték visszaállítva, nincs kitalált
+   adat az élő katalógusban).
+4. `--done`/`--reopen` is kipróbálva és helyesen viselkedett.
+5. **Útközben talált és javított hiba:** a `boards.slug` FORDÍTHATÓ jsonb
+   (`{"hu":..., "en":...}`), nem sima szöveg — a `verify-specs --board` és
+   a `list-incomplete` élő-szakasza ezt eredetileg simán stringként
+   kezelte (`[object Object]` jelent meg a riportban). Javítva: `hu`
+   alszlug az elsődleges CLI-referencia.
+
+**HÁTRA (nem blokkoló, később):**
 - Admin UI jelzés a zárolt/hiányos mezőkön — tudatosan KIHAGYVA ebben a
   körben, a `list-incomplete` parancs kimenete egyelőre elég visszajelzés.
 - Visszamenőleges zárolás a meglévő 172 jelöltre — a felhasználó
