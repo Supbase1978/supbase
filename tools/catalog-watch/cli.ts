@@ -13,8 +13,8 @@
  * A cél-projektet minden futás kiírja, a kulcsot viszont SOHA — a részletes
  * indoklás (shell-árnyékolás elleni védelem) az `env.ts` fejlécében.
  */
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { dirname, resolve } from "node:path";
 import { gunzipSync } from "node:zlib";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -26,7 +26,13 @@ import { setFieldValue } from "./lock.ts";
 import type { ProductClassification } from "./normalize.ts";
 import { probeSource } from "./probe.ts";
 import { createRenderFetcher } from "./render.ts";
-import { formatIncompleteReport, missingSpecLabels, type IncompleteRow } from "./report.ts";
+import {
+  formatIncompleteReport,
+  formatIncompleteReportHtml,
+  looksLikeNonBoardModel,
+  missingSpecLabels,
+  type IncompleteRow,
+} from "./report.ts";
 import { CRAWLER_USER_AGENT } from "./robots.ts";
 import {
   createDryRunStore,
@@ -59,8 +65,13 @@ Parancsok:
                                    Crawl az aktív forrásokból
   lifecycle [--days N]             Kifutás-jelöltek listája (csak jelentés)
   list-incomplete [--source NÉV]   Hiányos adatú deszkák (pending jelölt ÉS
-                                    élő board) — a heti kézi adatgyűjtés
-                                    munkalistája (F2.1-utó-10)
+      [--html [ÚTVONAL]]            élő board) — a heti kézi adatgyűjtés
+                                    munkalistája (F2.1-utó-10). --html:
+                                    böngészőben megnyitható riport,
+                                    alapértelmezetten "for_validate/<ma>-
+                                    validalando-deszkak.html" (checkbox-okkal,
+                                    csak saját munkaközbeni jegyzet — a
+                                    mérvadó állapotot a verify-specs adja)
   verify-specs --set PATH=ÉRTÉK... Kézi/gyártói adat beépítése — az EGYETLEN
       (--url U | --candidate ID)    támogatott mód erre. Pending jelöltnél
       | --board SLUG                 (--url/--candidate) camelCase jsonb-
@@ -509,6 +520,7 @@ async function commandListIncomplete(args: Args): Promise<void> {
   if (pendingError) throw new Error(`catalog_candidates olvasás: ${pendingError.message}`);
 
   const pending: IncompleteRow[] = [];
+  const skipped: IncompleteRow[] = [];
   for (const row of pendingRows ?? []) {
     const extracted = row.extracted as ExtractedProduct | null;
     if (!extracted || extracted.accessoryType !== null) continue; // csak deszka
@@ -516,12 +528,12 @@ async function commandListIncomplete(args: Args): Promise<void> {
     if (sourceFilter && !sourceName.toLowerCase().includes(sourceFilter)) continue;
     const missing = missingSpecLabels(extracted.specs);
     if (missing.length === 0) continue;
-    pending.push({
-      source: sourceName,
-      model: [extracted.brandName, extracted.modelName].filter(Boolean).join(" ") || extracted.rawTitle,
-      missing,
-      ref: (row.url as string | null) ?? "(nincs URL)",
-    });
+    const model = [extracted.brandName, extracted.modelName].filter(Boolean).join(" ") || extracted.rawTitle;
+    const entry: IncompleteRow = { source: sourceName, model, missing, ref: (row.url as string | null) ?? "(nincs URL)" };
+    // Nem valódi deszka (kajak/kötél/fin/stb.) — moderátori döntés kell,
+    // NEM adatgyűjtés, ezért külön szakaszba kerül (F2.1-utó-6/9 minta).
+    if (looksLikeNonBoardModel(model)) skipped.push(entry);
+    else pending.push(entry);
   }
 
   const { data: liveRows, error: liveError } = await client
@@ -555,7 +567,28 @@ async function commandListIncomplete(args: Args): Promise<void> {
     });
   }
 
-  console.log(formatIncompleteReport(pending, live));
+  const htmlFlag = flag(args, "html");
+  if (htmlFlag !== undefined) {
+    // A felhasználó kérése (2026-08-16): böngészőben megnyitható, dátumozott
+    // fájl a "for_validate/" mappában — sokkal áttekinthetőbb, mint a
+    // terminál-kimenet. `--html` üresen (nincs útvonal) → alapértelmezett
+    // "for_validate/<ma>-validalando-deszkak.html". A checkbox-ok localStorage-
+    // ban perzisztálnak (csak SAJÁT munkaközbeni jegyzet — a mérvadó "kész"
+    // állapotot a `verify-specs` adja, ld. a `report.ts` doc-kommentjét).
+    const today = new Date().toISOString().slice(0, 10);
+    const outPath =
+      htmlFlag === "true"
+        ? resolve(process.cwd(), "for_validate", `${today}-validalando-deszkak.html`)
+        : resolve(process.cwd(), htmlFlag);
+    const html = formatIncompleteReportHtml(pending, live, skipped, { generatedAt: today });
+    mkdirSync(dirname(outPath), { recursive: true });
+    writeFileSync(outPath, html, "utf8");
+    console.log(`HTML riport írva: ${outPath}`);
+    console.log(`  pending: ${pending.length} · élő board: ${live.length} · kihagyva: ${skipped.length}`);
+    return;
+  }
+
+  console.log(formatIncompleteReport(pending, live, skipped));
 }
 
 async function commandLifecycle(args: Args): Promise<void> {
