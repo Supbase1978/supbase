@@ -1,4 +1,4 @@
-# catalog-watch — heti piacfigyelő futás (docs/CATALOG_WATCH_TERV.md).
+# catalog-watch — havi piacfigyelő futás (docs/CATALOG_WATCH_TERV.md).
 #
 # Mit csinál: bejárja az aktív forrásokat, ismert deszkára ársort/„láttuk"
 # jelzést ír, ismeretlenre JELÖLTET készít a moderációs sorba
@@ -10,8 +10,12 @@ name: catalog-watch
 
 on:
   schedule:
-    # Hétfő hajnal (UTC) — a boltok forgalmán kívül, udvarias crawl.
-    - cron: "17 3 * * 1"
+    # Minden hónap 5. napja, hajnal (UTC) — a boltok forgalmán kívül,
+    # udvarias crawl. Havi ritmus szándékosan: a gyártók szezonálisan
+    # adnak ki új modellt, a locked_fields/data_verified_at (F2.1-utó-10)
+    # pedig már véd a köztes felülírástól, tehát a gyakoriságot nem a
+    # kockázat, hanem a kényelmesen ütemezhető moderációs munka szabja.
+    - cron: "17 3 5 * *"
   workflow_dispatch:
     inputs:
       dry_run:

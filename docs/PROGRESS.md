@@ -20,7 +20,7 @@
 | F1.11 Folyó-vízállás (5.1/6) | ✅ kész + élesítve (2026-07-27) | vizugy.hu (OVF) REST API, HIVATALOS árvízvédelmi készültségi küszöbökkel; a fix −1 folyó-büntetés helyett fokozat-alapú index-plafon. Élesben verifikálva, cron írja. + F1.11b: póráz-figyelmeztetés folyóvízre |
 | F1.12 Analitika (süti-mentes) | ✅ kész + élesítve (2026-07-28) | `analytics_events` + definer-RPC + `/admin/analitika`. Nincs süti/IP/azonosító → nincs egyéni tölcsér, csak darabszám. Robot/DNT/dev nem számol |
 | F2.2 Visszajelzés-csatorna | ✅ kész + ÉLESBEN BÖNGÉSZŐBEN VERIFIKÁLVA (2026-07-31) | `/visszajelzes` (hiba · hiányzó bolt · hiányzó modell) + `/admin/visszajelzesek`. Teljes kör próbálva: beküldés → admin-listában megjelenés → állapotváltás+jegyzet mentése, mind sikeres. HÁTRA: `RESEND_API_KEY` ha kell e-mail-értesítés (opcionális) |
-| F2.1 catalog-watch piacfigyelő | ✅ ÉLESBEN MŰKÖDIK (2026-08-15) | 4 forrás bekötve: Bluefin, Aqua Marina Hungary, sup-deszka.hu, Indiana Paddle & Surf (**172 jelölt pending**). Útközben 12 valós hiba javítva. **Munkafolyamat-váltás (F2.1-utó-10), ÉLESÍTVE + végponttól-végpontig verifikálva:** fél-automata — a crawler felfedez, a hiányzó specifikációt a felhasználó gyártói forrásból gyűjti, `verify-specs`-szel épül be és ZÁROLÓDIK (a crawler többé nem írja felül, élesben igazolva egy valós újra-crawllal); `list-incomplete` a heti munkalista (pending + élő board szakasz). HÁTRA: a pending jelöltek moderációja + GH Actions secretek |
+| F2.1 catalog-watch piacfigyelő | ✅ ÉLESBEN MŰKÖDIK (2026-08-15) | 4 forrás bekötve: Bluefin, Aqua Marina Hungary, sup-deszka.hu, Indiana Paddle & Surf (**172 jelölt pending**). Útközben 12 valós hiba javítva. **Munkafolyamat-váltás (F2.1-utó-10), ÉLESÍTVE + végponttól-végpontig verifikálva:** fél-automata — a crawler felfedez, a hiányzó specifikációt a felhasználó gyártói forrásból gyűjti, `verify-specs`-szel épül be és ZÁROLÓDIK (a crawler többé nem írja felül, élesben igazolva egy valós újra-crawllal); `list-incomplete` a havi munkalista (pending + élő board szakasz); a cron havi ritmusra állítva (minden hó 5.), ld. F2.1-utó-11. HÁTRA: a pending jelöltek moderációja + GH Actions secretek |
 | F2.3 Felszerelés (kiegészítők), 1–3. szakasz | ✅ kész + élesítve (2026-07-29) | 1.: `/felszereles` útmutató-oldalak. 2.: `kind`/`would_recommend` migráció (élesítve, REST-tel verifikálva) + `kind='board'` szűrő mindenhol + `/felszereles/:kategoria/:slug` termékadatlap. 3.: catalog-watch `classifyProduct` (evező/mentőmellény/pumpa jelöltté válik) + admin deszka/kiegészítő kapcsoló. Valós forrás-adat MEGÉRKEZETT (2026-07-31, ld. F2.1) — evező/mentőmellény/pumpa jelöltek a 168 pendingben, moderációra várnak |
 | F2.4 Direkt bolti ár eltávolítása | ✅ kész (2026-07-30) | A deszka- és kiegészítő-adatlapról (fejléc-ár + „Hol kapható" blokk + JSON-LD `offers`) eltávolítva — felhasználói döntés, ld. F2.4-szakasz. A `board_prices` gyűjtés (catalog-watch) VÁLTOZATLAN, a Deszkaválasztó budget-szűrője/eredmény-ára is VÁLTOZATLAN (felhasználói döntés szerint) |
 | F1.10 Záró audit + élesítés | ✅ audit **26/26** (2026-07-27) | **`docs/AUDIT_F1.md`**: az audit két mérés-jellegű hiánya pótolva (vizuális regresszió 07-26, teljesítmény-budget 07-27). HÁTRA az F1 lezárásához a publikussá tétel — a lépések a `RUNBOOK.md` **élesítési checklistjében** (domain → Resend-SMTP → Turnstile → cégadatok → `SITE_PUBLIC=true`), mind felhasználói döntés/adat |
@@ -844,6 +844,14 @@ keverednek a valódi hiányos deszkákkal.
 **Élesben generálva és elküldve:** 41 pending + 7 élő board a
 `for_validate/2026-08-16-validalando-deszkak.html`-ban (22 nem-deszka
 tétel külön szakaszban).
+
+**Cron heti → havi (2026-08-16):** `.github/workflows/catalog-watch.yml`
+`"17 3 * * 1"` (hétfőnként) helyett `"17 3 5 * *"` (minden hó 5.). Indok:
+a gyártók szezonálisan adnak ki új modellt, nem hetente; az ár amúgy sem
+jelenik meg végfelhasználónak (F2.4); a `locked_fields`/`data_verified_at`
+(F2.1-utó-10) már véd a köztes felülírástól, tehát a gyakoriság nem
+kockázat kérdése többé, hanem tisztán a moderációs munka üteme — a
+felhasználó explicit kérése egy fix, jól ütemezhető havi nap (a hónap 5.).
 
 ## F2.2 — Visszajelzés-csatorna a fejlesztőnek (2026-07-28)
 

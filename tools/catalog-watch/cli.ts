@@ -65,7 +65,7 @@ Parancsok:
                                    Crawl az aktív forrásokból
   lifecycle [--days N]             Kifutás-jelöltek listája (csak jelentés)
   list-incomplete [--source NÉV]   Hiányos adatú deszkák (pending jelölt ÉS
-      [--html [ÚTVONAL]]            élő board) — a heti kézi adatgyűjtés
+      [--html [ÚTVONAL]]            élő board) — a havi kézi adatgyűjtés
                                     munkalistája (F2.1-utó-10). --html:
                                     böngészőben megnyitható riport,
                                     alapértelmezetten "for_validate/<ma>-
@@ -498,7 +498,7 @@ async function commandVerifySpecs(args: Args): Promise<void> {
 /**
  * Hiányos adatú deszkák riportja — PENDING jelöltek (aktívan gyűjtés alatt,
  * `data_verified_at IS NULL`) ÉS MÁR ÉLŐ, jóváhagyott boardok, amelyeknél
- * hiányzik legalább egy mérőszám. A felhasználó heti munkalistája
+ * hiányzik legalább egy mérőszám. A felhasználó havi munkalistája
  * (F2.1-utó-10) — ő gyűjti be a hiányzó adatot, a karmester a `verify-specs`
  * paranccsal építi be.
  */
