@@ -818,6 +818,33 @@ jóváhagyással):** a migráció kitolva (`npm run sb -- db push
 - Visszamenőleges zárolás a meglévő 172 jelöltre — a felhasználó
   kifejezetten csak az EZUTÁN gyűjtött adatokra kérte.
 
+### F2.1-utó-11 — böngészős HTML-riport a for_validate/ munkafolyamathoz (2026-08-16)
+
+A felhasználó kérése: a terminál-kimenet helyett sima böngészőben
+megnyitható, checkbox-os HTML legyen, dátumozott fájlnévvel egy ÚJ
+`for_validate/` mappában (repo gyökér, git-követés NÉLKÜL — személyes
+munkafájl, mint a `Kezdők_tanácsok/`-beli doksik). Kapuk zöldek:
+typecheck · lint · **823 vitest** (+8), commit `6138a96`.
+
+**`list-incomplete --html [ÚTVONAL]`**: alapértelmezetten
+`for_validate/<ma>-validalando-deszkak.html`-t ír (`report.ts`
+`formatIncompleteReportHtml`, önálló fájl, nincs külső erőforrás).
+Minden sorhoz checkbox — localStorage-ban perzisztál, DE csak SAJÁT
+munkaközbeni jegyzetként: a mérvadó "kész" állapotot a `verify-specs`
+adja. Ha egy kör félbemarad, a KÖVETKEZŐ, újabb dátumú riport a még
+hiányos tételeket úgyis újra tartalmazza (checkbox-állapottól
+függetlenül) — pontosan a felhasználó kérése szerint.
+
+**Melléktermékként javítva:** a nem valódi deszka jelöltek (kajak, kötél,
+fin, lapát, hordozópánt, horgászbot — `looksLikeNonBoardModel`,
+korábban ad-hoc szkriptben élt) mostantól a SIMA szöveges
+`list-incomplete` kimenetben is külön "KIHAGYVA" szakaszba kerülnek, nem
+keverednek a valódi hiányos deszkákkal.
+
+**Élesben generálva és elküldve:** 41 pending + 7 élő board a
+`for_validate/2026-08-16-validalando-deszkak.html`-ban (22 nem-deszka
+tétel külön szakaszban).
+
 ## F2.2 — Visszajelzés-csatorna a fejlesztőnek (2026-07-28)
 
 Felhasználói kérés a katalógus-források felderítése közben: kelljen egy felület,
