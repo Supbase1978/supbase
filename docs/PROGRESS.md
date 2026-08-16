@@ -853,6 +853,29 @@ jelenik meg végfelhasználónak (F2.4); a `locked_fields`/`data_verified_at`
 kockázat kérdése többé, hanem tisztán a moderációs munka üteme — a
 felhasználó explicit kérése egy fix, jól ütemezhető havi nap (a hónap 5.).
 
+### F2.1-utó-12 — élő Bluefin-boardok hiányzó specifikációi beépítve (2026-08-16)
+
+A felhasználó a `2026-08-16-validalando-deszkak.html` munkalista mind a 7
+"élő board" sorát begyűjtötte a Bluefin gyártói oldaláról
+(`Kezdők_tanácsok/SUP adatok_élő.docx`) és átadta beépítésre. Mind a 7
+tétel `verify-specs --board <slug> --set ...`-tal frissítve
+(`width_cm`/`thickness_cm`/`max_load_kg`, a Sprint Touringnál
+`length_cm` is):
+
+- `bluefin-new-lite-carbon-premium`: szélesség 76cm, vastagság 15cm
+- `bluefin-orange-carbon-premium`: szélesség 81cm, vastagság 15cm, teherbírás 175kg
+- `bluefin-mint-carbon-premium`: szélesség 81cm, vastagság 15cm, teherbírás 175kg
+- `bluefin-sprint-high-performance-touring`: hossz 430cm, szélesség 76cm, vastagság 16cm, teherbírás 190kg
+- `bluefin-mammoth`: szélesség 153cm, vastagság 20cm, teherbírás 500kg
+- `bluefin-tandem`: teherbírás 240kg
+- `bluefin-rogue-performance-touring`: szélesség 76cm, vastagság 16cm, teherbírás 170kg
+
+A már meglévő mezők (hossz, súly) minden sorban egyeztek a docx-ben
+szereplő gyártói adattal — eltérés nem volt. Verifikálva: `list-incomplete
+--source bluefin` a frissítés után **0 pending + 0 élő boardot** mutat.
+A pending jelöltek (41 db, más forrásokból) érintetlenek, azok
+moderációja külön tétel.
+
 ## F2.2 — Visszajelzés-csatorna a fejlesztőnek (2026-07-28)
 
 Felhasználói kérés a katalógus-források felderítése közben: kelljen egy felület,
