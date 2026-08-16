@@ -20,3 +20,14 @@ _design-source/
 
 # VAPID kulcspár (F1.9 web push) — a PRIVÁT kulcs TITOK, sosem kerül a repóba
 .vapid.json
+
+# catalog-watch havi validálási munkalista (list-incomplete --html) — személyes
+# munkafájl, dátumozott, a mérvadó állapotot a verify-specs adja az adatbázisba (F2.1-utó-11)
+for_validate/
+
+# Word megnyitott-fájl lock/temp fájlok (~$*.docx) — gépfüggő, nem verziózzuk
+~$*.doc*
+
+# Munkaközbeni jegyzet-docx-ek (személyes, átláthatóság kedvéért, nem tartalom)
+Kezdők_tanácsok/SUP adatok.docx
+Kezdők_tanácsok/SUP adatok_élő.docx
