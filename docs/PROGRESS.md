@@ -908,8 +908,20 @@ Hardboard 75kg, 5'8 Surf Hardboard 75kg, 12'6 Touring 110kg, 11'5 Heavy
 Duty 120kg) — **KÖZELÍTÉS**, nem hivatalos gyártói "max load" címke, ha
 később előkerül pontosabb szám, felülírandó.
 
-**Nyitva maradt, felhasználói döntés/további adat kell (3 pending +
-3 moderálandó):**
+**3 nem-deszka tétel elutasítva (2026-08-17, ugyanaznap):** a docx explicit
+kérte a kivételüket (a `looksLikeNonBoardModel` szűrő nem kapta el, mert a
+névben nincs kulcsszó). Admin-felület helyett — a Chrome-bővítmény ebben a
+munkamenetben nem volt elérhető, a felhasználó a közvetlen scriptes utat
+választotta — pontosan a `candidates.server.ts` `rejectCandidate()`
+logikájával (`catalog_candidates.status='rejected'`,
+`reviewed_by=<admin profil id>`, csak `status='pending'` sorra):
+`Aqua Marina ISLAND` (felfújható platform, url `AQUA-MARINA-ISLAND-2020`),
+`Aqua Marina Motion BT 88821` (gumicsónak, url `aqua-marina-motion-255-cm-bt-88821`),
+`Aqua Marina COIL V2 B0303930` (biztonsági kötél/leash, url
+`aqua-marina-coil-10-7mm-v2-b0303930`). `list-incomplete` ezután egyiket sem
+mutatja (sem hiányzóként, sem kihagyottként).
+
+**Nyitva maradt, felhasználói döntés/további adat kell (9 pending):**
 1. **3 Indiana-tétel adat nélkül**: 5'10 Emilien Badoux Shortboard, 11'6
    Touring Lite, 10'6 Allround Carbon Rental — a docx nem nevesíti őket
    külön (a Rental esetében van egy bizonytalan névegyezés-jelölt, ld. 2.).
@@ -917,16 +929,19 @@ később előkerül pontosabb szám, felülírandó.
    Station"**: szélesség+vastagság egyezik (81,3×12,7cm), de a név és a
    hossz (320 vs 322,6cm) eltér — bizonytalan, hogy ugyanaz a termék-e, nem
    lett automatikusan összepárosítva.
-3. **3 tétel valójában NEM deszka** (a `looksLikeNonBoardModel` szűrő nem
-   kapta el, mert a névben nincs kulcsszó) — a docx explicit kéri a
-   kivételüket, de ez moderátori döntés (`/admin/katalogus`), nem
-   `verify-specs`: `Aqua Marina ISLAND` (felfújható platform),
-   `Aqua Marina Motion BT 88821` (gumicsónak), `Aqua Marina COIL V2`
-   (biztonsági kötél/leash).
-4. **Nincs adat a docx-ben**: AMH ATLAS (szélesség), Coral Raspberry
-   (teherbírás), AMH CORAL Stand up (teherbírás), AMH Super Trip 12'2 (4
-   mező), AMH Super Trip Family 12'6 (4 mező) — a docx csak megemlíti,
-   hogy „korábban már szerepelt", számot nem ad.
+3. **1 tétel a docx-ben nem szerepelt**: `Aqua Marina HYPER 11'6"` — a
+   sup-deszka.hu cím már tartalmazza a "150kg ig" adatot, de ez a mai körben
+   szándékosan nem lett belefoglalva (a felhasználó mai adatgyűjtése nem
+   erről szólt) — később simán `verify-specs`-szel lezárható a címből.
+4. **5 tétel a felhasználó szerint DUPLIKÁTUM, nem hiányzó adat** (a
+   felhasználó megerősítése, 2026-08-17): AMH ATLAS (szélesség), Coral
+   Raspberry (teherbírás), AMH CORAL Stand up (teherbírás), AMH Super Trip
+   12'2 (4 mező), AMH Super Trip Family 12'6 (4 mező) — ezek valószínűleg
+   MÁR SZEREPELNEK a katalógusban más néven/forrásból (az Aqua Marina
+   Hungary és sup-deszka.hu gyakran duplikálja ugyanazt a modellt), ezért a
+   docx nem adott rájuk külön számot. A helyes kezelés NEM adatgyűjtés,
+   hanem **moderálás közbeni összefésülés/elutasítás**, amint a duplikátum-
+   pár azonosítható (`/admin/katalogus` "Összefésülés" funkciója).
 5. **Adatminőségi mellékleletek** (nem blokkoló, csak jelezve): több Aqua
    Marina Hungary jelöltnél `lengthCm` gyanúsan azonos (210 vagy 381) több,
    egyébként különböző terméknél — feltehetően crawler-parszolási hiba,
