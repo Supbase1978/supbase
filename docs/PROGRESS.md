@@ -921,7 +921,41 @@ logikájával (`catalog_candidates.status='rejected'`,
 `aqua-marina-coil-10-7mm-v2-b0303930`). `list-incomplete` ezután egyiket sem
 mutatja (sem hiányzóként, sem kihagyottként).
 
-**Nyitva maradt, felhasználói döntés/további adat kell (9 pending):**
+**Az 5 "duplikátum" tétel közül 2 lezárva hivatalos gyártói forrással
+(2026-08-17, ugyanaznap):** a felhasználó kereszt-hivatkozás helyett a
+hivatalos `aquamarina.com` termékoldalakat nézte meg — pontosabb, mint a
+pending-pending párosítás:
+- **ATLAS**: az AMH jelöltnek hiányzó szélessége (86cm) előbb a sup-deszka
+  ikerpárból (`Atlas 12'0" BT-23ATP`, azonos vastagság+teherbírás) került
+  átvételre, majd a hivatalos `aquamarina.com/products/advanced-all-around/atlas/`
+  oldal FÜGGETLENÜL megerősítette (366×86×15cm, 11,8kg, 180kg, BT-23ATP) —
+  a kereszt-hivatkozás helyesnek bizonyult.
+- **Coral Raspberry (BT-23COPR)**: a hivatalos `aquamarina.com/products/
+  advanced-all-around/coral/` oldal a Raspberry változatra PONTOSAN a
+  pending jelölttel egyező méretet ad (310×78×12cm, 9,0kg) — a hiányzó
+  teherbírás (105kg) közvetlen gyártói adat, nem következtetés.
+
+**A teljes hivatalos katalógus (`aquamarina.com/sup/`) átnézve — még 1
+tétel lezárva, 2 nyitva:**
+- **AMH "Super Trip Family 12'6"** (836b3476): a hivatalos oldal szerint
+  a "Family Series" a **kategórianév**, nem külön SKU — a jelenlegi
+  kínálatban EGYETLEN 12'6"-os Super Trip van (`BT-24ST01`,
+  `aquamarina.com/products/family/supertrip`: 381×86×15cm, 220kg max),
+  ami pontosan egyezik a sup-deszka BT24ST01-es, már korábban lezárt
+  jelölttel is. Hossz/szélesség/vastagság/teherbírás beírva (381/86/15/220);
+  a súlyt (12,5kg a DB-ben, 11,6kg hivatalosan) NEM írtam felül, mert az
+  nem szerepelt hiányzóként.
+- **AMH "CORAL Stand up"** (87a721e2): súlya (8,6kg) NEM egyezik a
+  Raspberry hivatalos 9,0kg-jával — a hivatalos katalógus szerint két
+  CORAL 10'2" színváltozat van, `Raspberry (BT-23COPR)` ÉS
+  `Night Fade (BT-23COPN)` (`aquamarina.com/products/advanced-all-around/
+  coral-ns`) — utóbbi specifikációját még nem néztük meg. Nyitva.
+- **AMH "Super Trip 12'2"** (8f082d57, 370cm): a hivatalos kínálatban
+  NINCS 12'2"-es Super Trip (csak View 11'2"/340cm, 12'6"/381cm és
+  Tandem 14'0"/427cm létezik) — nem párosítható megbízhatóan egyikkel
+  sem. Nyitva.
+
+**Egyéb nyitott tételek:**
 1. **3 Indiana-tétel adat nélkül**: 5'10 Emilien Badoux Shortboard, 11'6
    Touring Lite, 10'6 Allround Carbon Rental — a docx nem nevesíti őket
    külön (a Rental esetében van egy bizonytalan névegyezés-jelölt, ld. 2.).
@@ -933,20 +967,12 @@ mutatja (sem hiányzóként, sem kihagyottként).
    sup-deszka.hu cím már tartalmazza a "150kg ig" adatot, de ez a mai körben
    szándékosan nem lett belefoglalva (a felhasználó mai adatgyűjtése nem
    erről szólt) — később simán `verify-specs`-szel lezárható a címből.
-4. **5 tétel a felhasználó szerint DUPLIKÁTUM, nem hiányzó adat** (a
-   felhasználó megerősítése, 2026-08-17): AMH ATLAS (szélesség), Coral
-   Raspberry (teherbírás), AMH CORAL Stand up (teherbírás), AMH Super Trip
-   12'2 (4 mező), AMH Super Trip Family 12'6 (4 mező) — ezek valószínűleg
-   MÁR SZEREPELNEK a katalógusban más néven/forrásból (az Aqua Marina
-   Hungary és sup-deszka.hu gyakran duplikálja ugyanazt a modellt), ezért a
-   docx nem adott rájuk külön számot. A helyes kezelés NEM adatgyűjtés,
-   hanem **moderálás közbeni összefésülés/elutasítás**, amint a duplikátum-
-   pár azonosítható (`/admin/katalogus` "Összefésülés" funkciója).
-5. **Adatminőségi mellékleletek** (nem blokkoló, csak jelezve): több Aqua
-   Marina Hungary jelöltnél `lengthCm` gyanúsan azonos (210 vagy 381) több,
-   egyébként különböző terméknél — feltehetően crawler-parszolási hiba,
-   nem ebben a körben javítva, mert a `lengthCm` ezeknél nem szerepelt a
-   „hiányzik" listán (tehát a report nem jelezte).
+4. **Adatminőségi mellékleletek** (nem blokkoló, csak jelezve): több Aqua
+   Marina Hungary jelöltnél `lengthCm`/`weightKg` gyanúsan azonos (pl.
+   L=210 vagy 381, Wt=12,5) több, egyébként különböző terméknél —
+   feltehetően crawler-parszolási hiba, nem ebben a körben javítva, mert
+   a `lengthCm` ezeknél nem szerepelt a „hiányzik" listán (tehát a report
+   nem jelezte).
 
 ## F2.2 — Visszajelzés-csatorna a fejlesztőnek (2026-07-28)
 
