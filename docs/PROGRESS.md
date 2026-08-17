@@ -876,6 +876,52 @@ szereplő gyártói adattal — eltérés nem volt. Verifikálva: `list-incomple
 A pending jelöltek (41 db, más forrásokból) érintetlenek, azok
 moderációja külön tétel.
 
+### F2.1-utó-13 — pending Aqua Marina/Indiana jelöltek adatai (2026-08-17)
+
+A felhasználó a `Kezdők_tanácsok/SUP adatok_2.docx`-ben 33 tételben (több
+alváltozattal) gyűjtötte be a hiányzó Aqua Marina- és Indiana-specifikációkat
+gyártói forrásból. A pending jelöltek 41 hiányos tételéből **23 candidate**
+`verify-specs --candidate <id> --set specs.<mező>=<érték>`-tal lezárva (a
+docx táblázatai/számai a meglévő DB-adattal — hossz/szélesség/vastagság/súly
+— kereszt-ellenőrizve, csak egyértelmű egyezésnél töltve):
+
+- **Aqua Marina** (teherbírás, néhol szélesség/vastagság/hossz/súly is):
+  RAY LED, Atlas BT23ATP, Magma, Monster (mindhárom pending példány),
+  Breeze, Beast, Super Trip Tandem (2 pending példány), Super Trip 12'6,
+  Stand up RACE (mindkét pending példány, súly), Racing Airship (súly),
+  Fusion 10'10", MEGA, Vibrant Touring, Turbo AMGO 366PFS, Blade WindSUP
+  (hossz is), Glow, Vapor 10'4", NUTS RENTAL, Too Much WIKIWIKI.
+- **Indiana Paddle & Surf** (csak súly/hossz — a teherbírás náluk nyitva
+  maradt, ld. lent): 8'6 és 8'1 Wave Carbon, 5'10 és 5'8 Surf Hardboard
+  (előbbinél hossz is), 12'6 Touring, 11'5 Heavy Duty Rent & Station.
+
+**Nyitva maradt, felhasználói döntés/további adat kell (18 pending +
+3 moderálandó):**
+1. **Indiana teherbírás — elvi kérdés**: a docx nem ad explicit
+   "max load"-ot, csak "Rec. rider weight" TARTOMÁNYT (pl. 70-90 kg) — nem
+   egyértelmű, hogy ez ugyanaz-e, mint a `maxLoadKg` (ami a SUP-index/
+   Deszkaválasztó algoritmusba megy). Érintett: mind a 6 fent frissített
+   Indiana-tétel + 3 további (5'10 Emilien Badoux Shortboard, 11'6 Touring
+   Lite, 10'6 Allround Carbon Rental — ezeknél a súly is hiányzik még).
+2. **Indiana 10'6 Allround Carbon Rental ⟷ docx "10'7 Heavy Duty Rent &
+   Station"**: szélesség+vastagság egyezik (81,3×12,7cm), de a név és a
+   hossz (320 vs 322,6cm) eltér — bizonytalan, hogy ugyanaz a termék-e.
+3. **3 tétel valójában NEM deszka** (a `looksLikeNonBoardModel` szűrő nem
+   kapta el, mert a névben nincs kulcsszó) — a docx explicit kéri a
+   kivételüket, de ez moderátori döntés (`/admin/katalogus`), nem
+   `verify-specs`: `Aqua Marina ISLAND` (felfújható platform),
+   `Aqua Marina Motion BT 88821` (gumicsónak), `Aqua Marina COIL V2`
+   (biztonsági kötél/leash).
+4. **Nincs adat a docx-ben**: AMH ATLAS (szélesség), Coral Raspberry
+   (teherbírás), AMH CORAL Stand up (teherbírás), AMH Super Trip 12'2 (4
+   mező), AMH Super Trip Family 12'6 (4 mező) — a docx csak megemlíti,
+   hogy „korábban már szerepelt", számot nem ad.
+5. **Adatminőségi mellékleletek** (nem blokkoló, csak jelezve): több Aqua
+   Marina Hungary jelöltnél `lengthCm` gyanúsan azonos (210 vagy 381) több,
+   egyébként különböző terméknél — feltehetően crawler-parszolási hiba,
+   nem ebben a körben javítva, mert a `lengthCm` ezeknél nem szerepelt a
+   „hiányzik" listán (tehát a report nem jelezte).
+
 ## F2.2 — Visszajelzés-csatorna a fejlesztőnek (2026-07-28)
 
 Felhasználói kérés a katalógus-források felderítése közben: kelljen egy felület,

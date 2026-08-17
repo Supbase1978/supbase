@@ -28,6 +28,6 @@ for_validate/
 # Word megnyitott-fájl lock/temp fájlok (~$*.docx) — gépfüggő, nem verziózzuk
 ~$*.doc*
 
-# Munkaközbeni jegyzet-docx-ek (személyes, átláthatóság kedvéért, nem tartalom)
-Kezdők_tanácsok/SUP adatok.docx
-Kezdők_tanácsok/SUP adatok_élő.docx
+# Munkaközbeni jegyzet-docx-ek (személyes, átláthatóság kedvéért, nem tartalom,
+# a catalog-watch havi validálási körökhöz — SUP adatok.docx, _élő.docx, _2.docx stb.)
+Kezdők_tanácsok/SUP adatok*.docx
