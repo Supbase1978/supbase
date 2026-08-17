@@ -891,21 +891,32 @@ docx táblázatai/számai a meglévő DB-adattal — hossz/szélesség/vastagsá
   Stand up RACE (mindkét pending példány, súly), Racing Airship (súly),
   Fusion 10'10", MEGA, Vibrant Touring, Turbo AMGO 366PFS, Blade WindSUP
   (hossz is), Glow, Vapor 10'4", NUTS RENTAL, Too Much WIKIWIKI.
-- **Indiana Paddle & Surf** (csak súly/hossz — a teherbírás náluk nyitva
-  maradt, ld. lent): 8'6 és 8'1 Wave Carbon, 5'10 és 5'8 Surf Hardboard
-  (előbbinél hossz is), 12'6 Touring, 11'5 Heavy Duty Rent & Station.
+- **Indiana Paddle & Surf** (súly, néhol hossz is): 8'6 és 8'1 Wave Carbon,
+  5'10 és 5'8 Surf Hardboard (előbbinél hossz is), 12'6 Touring, 11'5 Heavy
+  Duty Rent & Station.
 
-**Nyitva maradt, felhasználói döntés/további adat kell (18 pending +
+**Indiana teherbírás — utólag lezárva (2026-08-17, ugyanaznap):** a docx nem
+adott explicit "max load"-ot, csak "Rec. rider weight" TARTOMÁNYT (pl.
+70-90 kg). A felhasználó megnézett egy Indiana 2020-as árlista-PDF-et
+(supkultur.de) egy külön "max load" mező reményében — az kizárólag
+méret/térfogat/ár adatot tartalmaz, teherbírást SEMMILYEN formában nem ad.
+Nincs jobb forrás, ezért a felhasználó explicit döntése alapján (2026-08-17:
+„a rec jelentése: recommended rider weight, tehát lehet ez a max load")
+a **tartomány felső határa került a `maxLoadKg`-ba** a 6 fent frissített
+Indiana-tételnél (8'6 Wave Carbon 90kg, 8'1 Wave Carbon 80kg, 5'10 Surf
+Hardboard 75kg, 5'8 Surf Hardboard 75kg, 12'6 Touring 110kg, 11'5 Heavy
+Duty 120kg) — **KÖZELÍTÉS**, nem hivatalos gyártói "max load" címke, ha
+később előkerül pontosabb szám, felülírandó.
+
+**Nyitva maradt, felhasználói döntés/további adat kell (3 pending +
 3 moderálandó):**
-1. **Indiana teherbírás — elvi kérdés**: a docx nem ad explicit
-   "max load"-ot, csak "Rec. rider weight" TARTOMÁNYT (pl. 70-90 kg) — nem
-   egyértelmű, hogy ez ugyanaz-e, mint a `maxLoadKg` (ami a SUP-index/
-   Deszkaválasztó algoritmusba megy). Érintett: mind a 6 fent frissített
-   Indiana-tétel + 3 további (5'10 Emilien Badoux Shortboard, 11'6 Touring
-   Lite, 10'6 Allround Carbon Rental — ezeknél a súly is hiányzik még).
+1. **3 Indiana-tétel adat nélkül**: 5'10 Emilien Badoux Shortboard, 11'6
+   Touring Lite, 10'6 Allround Carbon Rental — a docx nem nevesíti őket
+   külön (a Rental esetében van egy bizonytalan névegyezés-jelölt, ld. 2.).
 2. **Indiana 10'6 Allround Carbon Rental ⟷ docx "10'7 Heavy Duty Rent &
    Station"**: szélesség+vastagság egyezik (81,3×12,7cm), de a név és a
-   hossz (320 vs 322,6cm) eltér — bizonytalan, hogy ugyanaz a termék-e.
+   hossz (320 vs 322,6cm) eltér — bizonytalan, hogy ugyanaz a termék-e, nem
+   lett automatikusan összepárosítva.
 3. **3 tétel valójában NEM deszka** (a `looksLikeNonBoardModel` szűrő nem
    kapta el, mert a névben nincs kulcsszó) — a docx explicit kéri a
    kivételüket, de ez moderátori döntés (`/admin/katalogus`), nem
