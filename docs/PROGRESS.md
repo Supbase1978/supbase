@@ -945,28 +945,38 @@ tétel lezárva, 2 nyitva:**
   jelölttel is. Hossz/szélesség/vastagság/teherbírás beírva (381/86/15/220);
   a súlyt (12,5kg a DB-ben, 11,6kg hivatalosan) NEM írtam felül, mert az
   nem szerepelt hiányzóként.
-- **AMH "CORAL Stand up"** (87a721e2): súlya (8,6kg) NEM egyezik a
-  Raspberry hivatalos 9,0kg-jával — a hivatalos katalógus szerint két
-  CORAL 10'2" színváltozat van, `Raspberry (BT-23COPR)` ÉS
-  `Night Fade (BT-23COPN)` (`aquamarina.com/products/advanced-all-around/
-  coral-ns`) — utóbbi specifikációját még nem néztük meg. Nyitva.
-- **AMH "Super Trip 12'2"** (8f082d57, 370cm): a hivatalos kínálatban
-  NINCS 12'2"-es Super Trip (csak View 11'2"/340cm, 12'6"/381cm és
-  Tandem 14'0"/427cm létezik) — nem párosítható megbízhatóan egyikkel
-  sem. Nyitva.
+- **AMH "CORAL Stand up"** (87a721e2) — **LEZÁRVA**: a hivatalos
+  `coral-ns` (Night Fade, BT-23COPN) oldal ellenőrzésekor kiderült, hogy a
+  Night Fade specifikációja PONTOSAN megegyezik a Raspberryével (310×78×12cm,
+  9,0kg, 105kg max) — színtől függetlenül azonos érték, tehát a 105kg
+  teherbírás biztonsággal beírható volt akármelyik színváltozatról legyen
+  is szó (a jelölt saját 8,6kg súlya változatlan maradt, csak a teherbírás
+  íródott be).
+- **AMH "Super Trip 12'2"** (8f082d57, 370cm) — **NYITVA**: a hivatalos
+  kínálatban NINCS 12'2"-es Super Trip (csak View 11'2"/340cm, 12'6"/381cm
+  és Tandem 14'0"/427cm létezik) — nem párosítható megbízhatóan egyikkel
+  sem, lehet kifutott/régebbi modell.
 
-**Egyéb nyitott tételek:**
+**`Aqua Marina HYPER 11'6"` — LEZÁRVA**: a jelölt saját `rawTitle`-je
+("Aqua Marina HYPER 11'6" 3.5 m, 150kg-ig teherbírás") tartalmazta az
+adatot — beírva.
+
+**Indiana oldalak közvetlen ellenőrzése — blokkolva (2026-08-17)**: a
+`indiana-paddlesurf.com` a 3 maradék tételre (5'10 Emilien Badoux
+Shortboard, 11'6 Touring Lite, 10'6 Allround Carbon Rental) HTTP 403-mal
+válaszolt a `WebFetch`-re (bot-védelem) — ez valószínűleg ugyanaz az ok,
+ami miatt eredetileg is kézi gyűjtés kellett hozzájuk. Nyitva maradtak,
+csak kézi/gyártói forrásból zárhatók.
+
+**Nyitva maradt tételek (5):**
 1. **3 Indiana-tétel adat nélkül**: 5'10 Emilien Badoux Shortboard, 11'6
-   Touring Lite, 10'6 Allround Carbon Rental — a docx nem nevesíti őket
-   külön (a Rental esetében van egy bizonytalan névegyezés-jelölt, ld. 2.).
+   Touring Lite, 10'6 Allround Carbon Rental.
 2. **Indiana 10'6 Allround Carbon Rental ⟷ docx "10'7 Heavy Duty Rent &
    Station"**: szélesség+vastagság egyezik (81,3×12,7cm), de a név és a
    hossz (320 vs 322,6cm) eltér — bizonytalan, hogy ugyanaz a termék-e, nem
    lett automatikusan összepárosítva.
-3. **1 tétel a docx-ben nem szerepelt**: `Aqua Marina HYPER 11'6"` — a
-   sup-deszka.hu cím már tartalmazza a "150kg ig" adatot, de ez a mai körben
-   szándékosan nem lett belefoglalva (a felhasználó mai adatgyűjtése nem
-   erről szólt) — később simán `verify-specs`-szel lezárható a címből.
+3. **AMH "Super Trip 12'2"** — ld. fent, nincs ilyen a hivatalos
+   kínálatban.
 4. **Adatminőségi mellékleletek** (nem blokkoló, csak jelezve): több Aqua
    Marina Hungary jelöltnél `lengthCm`/`weightKg` gyanúsan azonos (pl.
    L=210 vagy 381, Wt=12,5) több, egyébként különböző terméknél —
