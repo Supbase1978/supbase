@@ -984,6 +984,112 @@ csak kézi/gyártói forrásból zárhatók.
    a `lengthCm` ezeknél nem szerepelt a „hiányzik" listán (tehát a report
    nem jelezte).
 
+**A fennmaradó 4 tétel lezárva (2026-08-18) — a `list-incomplete` most 0
+pending jelöltet mutat.** A `indiana-paddlesurf.com` élő oldala továbbra is
+403-mal blokkolja a lekérést (Cloudflare bot-védelem, `WebFetch`-csel is),
+de a **Wayback Machine**-en (`web.archive.org`) korábbi, sikeres crawl-ok
+találhatók pontosan ugyanahhoz az SKU-hoz, mint a candidate URL-je —
+ez lett az elsődleges forrás (nem a docx, amely ezt a 3 Indiana terméket
+NEM tartalmazza, ellenőrizve grep-pel a `SUP adatok_2.docx`-ön: a docx
+csak rokon, de más SKU-jú "Surf Hardboard"/"Touring Inflatable"/"Heavy
+Duty" modelleket sorol, eltérő méretekkel — ezért NEM cserélhetők be):
+- **Aqua Marina Super Trip 12'2** (8f082d57, 370cm): a candidate saját
+  forrás-oldala (`aquamarinahungary.com`, ugyanaz az URL, amit a crawler
+  már látott) NYERS HTML-jében (nem csak AI-összefoglalóban, `curl`-lal
+  kikeresztezve) benne volt a korábban hiányzónak jelzett méret+teherbírás:
+  „Mérete (370m x 82x 15m) Max. 210kg" — a JSON-LD leírás SKU-ja `BT-21ST01`,
+  tehát ez egy valódi, önálló modell (nem hiba/duplikátum), csak a crawler
+  parszolása hagyta ki eredetileg. Beírva: hossz 370, szélesség 82,
+  vastagság 15, teherbírás 210 kg (súly 12,5 kg már megvolt).
+- **Indiana 5'10 Emilien Badoux Shortboard** (3ae7603d, SKU 3130SL): Wayback
+  2025-05-19-i mentés — „Weight: 2,5 kg Recommended Rider Weight: 50-80 kg".
+  Beírva: súly 2,5 kg, teherbírás 80 kg (a 2026-08-17-i Indiana-döntés
+  szerint: rec. rider weight felső határa = max load közelítés).
+- **Indiana 11'6 Touring Lite** (3ec73f6e, SKU 1004SQ): a candidate saját
+  SKU-ja (`1004sq`) nem archiválva, DE a DB-ben már rögzített méretek
+  (350,5×76,2×12 cm, 243 L) BETŰRE egyeznek a testvér-SKU `1004SL` Wayback-
+  mentésével (2025-04-28: „Weight: 8,3 kg Recommended Rider Weight:
+  50-90 kg") — ez ugyanaz a fizikai deszka, csak színváltozat (a candidate
+  saját `rawTitle`-je is „…Inflatable", a `1004SL` oldal `<title>`-je
+  szó szerint egyezik). **Fontos: ez NEM ugyanaz, mint a docx „Indiana
+  11'6 Touring Inflatable" tétele** (78,7×15 cm, 9,9 kg, 70-100 kg) — az
+  a "Lite" jelző nélküli, nehezebb testvérmodell, más méretekkel, ezért
+  a docx-adat itt tudatosan NEM lett felhasználva. Beírva: súly 8,3 kg,
+  teherbírás 90 kg.
+- **Indiana 10'6 Allround Carbon Rental** (82b6ff0c, SKU 2052SN): Wayback
+  2025-07-12-i mentés (a legfrissebb, 2025-11-i mentés már csak a
+  Cloudflare „Please wait…" közbenső oldalt őrizte) — „Weight: 12 kg
+  Recommended Rider Weight: 50-90 kg", szélesség+vastagság (81,3×12,7 cm)
+  egyezik a DB-vel. A korábban feltételezett docx-párosítás („10'7 Heavy
+  Duty Rent & Station", 13 kg, 50-90 kg) **feleslegessé vált** — a saját
+  SKU közvetlen forrása pontosabb, a bizonytalan kereszt-párosítást nem
+  kellett felhasználni. Beírva: súly 12 kg, teherbírás 90 kg.
+
+**Módszertani tanulság:** ha egy forrás élőben bot-védelemmel blokkol, a
+Wayback Machine CDX API-ja (`web.archive.org/cdx/search/cdx?url=...`)
+gyakran talál korábbi, tiszta HTML-mentést UGYANAHHOZ a termék-URL-hez —
+érdemes ezt megnézni a kereszt-hivatkozásos párosítás/docx-hiányra
+hagyatkozás ELŐTT, mert pontosabb (közvetlen gyártói adat, nem
+következtetés).
+
+Ezzel az F2.1-utó-13 kör lezárva: a `list-incomplete` 0 pending jelöltet és
+0 hiányos élő boardot mutat.
+
+**A 22 „kihagyva" tétel elutasítva (2026-08-18, felhasználói jóváhagyással).**
+Kajak (6), vízi platform (3), uszony/fin (6), biztonsági kötél/pánt (4),
+evező (1), horgászbot (1), bokapánt (1) — egyik sem SUP-deszka. Az elutasítás
+pontosan a `candidates.server.ts` `rejectCandidate()` szemantikájával ment
+(`status='rejected'`, `reviewed_by=b57fc05b…` = a Sztellik_78 admin profil,
+`.eq("status","pending")` őrfeltétellel), eldobható scriptből, amely a
+`commandListIncomplete` szűrőjét (accessoryType===null + hiányzó mérőszám +
+`looksLikeNonBoardModel`) reprodukálta — előbb DRY RUN-nal ellenőrizve, hogy
+pontosan a listázott 22 sort érinti. Eredmény: 22/22, a `list-incomplete`
+mindhárom szakasza üres.
+
+### F2.1-utó-14 — forrás-felderítés a gyártói anyag alapján (2026-08-18)
+
+A felhasználó összeállította a `Kezdők_tanácsok/nepszeru_sup_markak_es_
+forgalmazok.md`-t (12 népszerű márka + hazai forgalmazóik), azzal a céllal,
+hogy a deszka-lista sok új modellel bővüljön. Mind a 12 márkaoldal és 6 hazai
+forgalmazó **végigprobe-olva** (`probe`, DB-érintés nélkül). Az eredmény
+lényege: **a jelenlegi, tudatosan LLM-mentes pipeline-nal szinte egyik új
+forrás sem használható**, mert nincs rajtuk Product JSON-LD:
+
+| Forrás | Termék-URL | Eredmény |
+|---|---|---|
+| star-board.com | 445 | JSON-LD ✓, de spec **renderelés után SINCS** |
+| funwaterboard.com | 715 | JSON-LD ✓, de **rossz márkanév** minden terméken |
+| gladiatorsup.com | 154 | nincs JSON-LD |
+| zraysports.com | 154 | nincs JSON-LD |
+| wakeshop.hu | 1991 | nincs JSON-LD; ténylegesen 1 db SUP a kínálatban |
+| jobesports.com | 5000 | nincs JSON-LD a mintákon, több oldal 403 |
+| redpaddleco.com · redpaddle.hu | 0 | nincs termék-sitemap (404) |
+| duotonesports.com · bestwaycorp.com · decathlon.hu | 0 | nincs termék-sitemap |
+| aquatoneair.com · jobe.hu · szorfcenter.hu | — | robots.txt nem elérhető |
+| **supcenter.hu** | — | **robots.txt: `Disallow: /`** — tiltott, nem crawlolható |
+
+Két megállapítás, amit érdemes megjegyezni:
+- **A Starboard a legcsalódtatóbb**: 445 termékoldal, mind deszka, szabályos
+  JSON-LD-vel és (az ár-politikának megfelelően) ár NÉLKÜL — de a méret-adat
+  sem a nyers HTML-ben, sem a **Playwright-renderelt** szövegben nincs ott
+  (ellenőrizve az `F2.1-utó-3` render-fallback tényleges meghívásával két
+  terméken: `parseSpecsFromText` mind az 5 mérőszámra `null`-t adott). A
+  specifikáció méret-variánsonkénti aloldalon/JS-tabban él. Felvéve 445 üres
+  jelöltet gyártana — pont azt a validálási hátralékot, amit most ürítettünk ki.
+- **supcenter.hu-t a robots.txt kizárja** (`Disallow: /`), tehát a
+  dokumentumban több márkánál is szereplő legfontosabb hazai bolt
+  **nem crawlolható** — ezt tiszteletben tartjuk.
+
+**Ami viszont kiderült — a bővítés nagy része MÁR MEGVAN, csak jóváhagyásra
+vár:** a `catalog_candidates`-ben **153 pending** sor áll, ebből
+**96 deszka-jelölt, MIND az 5 mérőszámmal együtt** (a most lezárt validálási
+kör eredménye), plusz 57 kiegészítő (27 pumpa, 25 evező, 5 mentőmellény).
+Élő boardból viszont csak **35** van. Tehát a katalógus közel
+megnégyszerezhető ÚJ crawl nélkül, pusztán moderálással (`/admin/katalogus`).
+Márka szerint a 153: Aqua Marina 110, Indiana 16, Too Much 7, TooMuch 6,
+Flowa 4, Coasto 4, PoolStar 2, INTEX 1, márka nélkül 3. (A „Too Much"/
+„TooMuch" kettősség márka-összevonást igényel a moderálásnál.)
+
 ## F2.2 — Visszajelzés-csatorna a fejlesztőnek (2026-07-28)
 
 Felhasználói kérés a katalógus-források felderítése közben: kelljen egy felület,
