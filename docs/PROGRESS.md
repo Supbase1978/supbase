@@ -1090,6 +1090,56 @@ Márka szerint a 153: Aqua Marina 110, Indiana 16, Too Much 7, TooMuch 6,
 Flowa 4, Coasto 4, PoolStar 2, INTEX 1, márka nélkül 3. (A „Too Much"/
 „TooMuch" kettősség márka-összevonást igényel a moderálásnál.)
 
+### F2.1-utó-15 — Shopify-adapter + a Starboard-katalógus behozása (2026-08-19)
+
+**Megépült a Shopify-ág** (`tools/catalog-watch/shopify.ts`, kapuk zöldek:
+typecheck · lint · **850 vitest**, +27 új). A részletes indoklás és a
+használat a `tools/catalog-watch/README.md` „Shopify-mód" szakaszában;
+a lényeg: a Shopify-boltok `/products.json` végpontja strukturáltan adja a
+katalógust (`vendor`, `product_type`, `variants[]`), miközben a termékoldal
+HTML-jében nincs méret. 445 oldalletöltés helyett 2 lapozott kérés.
+
+Két tervezési döntés, ami a SUP-specifikumból jön:
+- **Méretenként külön jelölt**, mert a méret maga a termék (a Deszkaválasztó
+  hossz/szélesség alapján pontoz). A KIVITELI változatok (Carbon Reflex /
+  Xtec / Rhino) viszont ÖSSZEFÉSÜLŐDNEK — ugyanaz az elv, mint a
+  színváltozatoknál. Azonos dimenzió eltérő ŰRTARTALOMMAL két külön deszka.
+- **A modellnév a HIVATALOS gyártói név** (felhasználói döntés, 2026-08-19):
+  a kereskedői oldalak átnevezik a terméket („ISUP", „2024", csomagajánlat),
+  amitől ugyanaz a deszka több néven kerülne be.
+
+**A hiányzó specifikációk vadászata — végigjárva, eredménytelenül.** A
+`/products.json` hosszt/szélességet/űrtartalmat ad, de vastagságot, súlyt és
+**teherbírást** nem. Amit megnéztem:
+- **A gyártó saját oldala**: 0 spec-táblázat a HTML-ben; a Shopify Section
+  Rendering API-val előhúzott SPECIFICATIONS fül tartalma a GO-nál szó
+  szerint kitöltetlen („Lorem ipsum"). Playwright-renderelés után sem jön
+  elő semmi (ellenőrizve két terméken, mind az 5 mérőszám `null`).
+- **Európai kereskedők** (felhasználói kérésre): 4 elérhető Shopify-bolt
+  (thesupco UK, zzsurf IT, thesupstore UK, pooleharbour UK; a Nootica 403).
+  Együtt is csak **40 Starboard-terméket** árulnak a gyártó 97 modelljéhez
+  képest, és ebből **mindössze 4** ad BIZTONSÁGOSAN kinyerhető teherbírást.
+  A többinél egyetlen leírás 3-5 méretet fed le („Rider Weight Up to 120kg
+  Up to 100kg Up to 85kg"), ahol az automata parse az első értéket az
+  ÖSSZES méretre ráírná — ez hibás adat lenne, ezért NEM építettem meg.
+  Az elv itt kötelező: **inkább hiányozzon, mint tévedjen**.
+
+**Miért nem „fél adattal is jó" (fontos):** a `passesHardFilter`
+(`select.ts:143`) KÖTELEZŐ biztonsági mezőként kezeli a teherbírást —
+`maxLoadKg === null` esetén a deszka kiesik a kemény szűrőn, tehát **soha
+nem kerülhet ajánlásba**. Teherbírás nélkül a Starboard-tételek csak a
+listákban látszanának.
+
+**Behozva a bevált „for_validate" úton (felhasználói döntés):** a crawl
+lefutott élesben — 97 termék → 284 méret-variáns → **277 új jelölt** (7 már
+ismert deszkára illeszkedett). A munkalista generálva:
+`for_validate/2026-08-19-validalando-deszkak.html` (276 tétel, checkboxokkal;
+a mappa gitignore-olt). Hiányzik: 268-nál vastagság+súly+teherbírás, 8-nál
+ezeken felül a szélesség is. A kitöltés ugyanaz a menet, ami az Aqua
+Marina/Indiana körben bevált: a felhasználó gyártói forrásból gyűjti,
+a karmester `verify-specs --candidate <id> --set specs.<mező>=<érték>`
+paranccsal építi be, és a beírt mezők zárolódnak.
+
 ## F2.2 — Visszajelzés-csatorna a fejlesztőnek (2026-07-28)
 
 Felhasználói kérés a katalógus-források felderítése közben: kelljen egy felület,
