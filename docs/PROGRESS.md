@@ -3229,4 +3229,16 @@ Elsőbbségi sor a besorolásnál, a legerősebbtől:
 3. a gyártó használat-értékelése (százalékos sávok),
 4. a gyártó leírásában nevesített kategória.
 
-**A katalógus 180 deszka; a gyártói forrásokból NEM maradt eldöntetlen tétel.**
+**Utólagos megerősítés (ugyanaznap):** a felhasználó megtalálta a Revolution
+hivatalos kampányanyagát — a szlogen „wonder is **all-around**", a leírás
+pedig „wide and ultra stable board series… **Perfect for beginners to
+intermediate paddlers**". A rögzített `allround` besorolás tehát gyártói
+adattal is alátámasztott.
+
+Megjegyzés a mintához: a szlogenben szereplő „all-around" ÖNMAGÁBAN nem
+aktiválja a `boardTypeFromDescription`-t, mert hiányzik utána a kötelező
+„board" — ez helyes viselkedés, egy kampány-szlogen nem kategória-állítás.
+Ezért volt szükség a kézi rögzítésre.
+
+**A katalógus 180 deszka (163 ajánlásképes); a gyártói forrásokból NEM
+maradt eldöntetlen tétel.**
