@@ -2860,3 +2860,56 @@ Munkalista: `for_validate/2026-08-19-validalando-deszkak.html` (144 tétel).
 **Következő lépés (nyitott):** az `aquamarina.com` felvétele forrásként, hogy
 a 110 kereskedői Aqua Marina jelölt hiányzó mezői is gyártói adatból
 töltődjenek.
+
+### F2.1-utó-17 — kivitel-bontás + JSON-LD nélküli gyártói oldalak (2026-08-19)
+
+**1. A kiviteli változatok KÜLÖN deszkák (felhasználói döntés).** Eddig a
+Deluxe / Deluxe Lite / Carbon Reflex / Xtec egy jelöltté olvadt össze, ezért a
+súlyt üresen kellett hagyni (két érték egy cellában), a teherbírást pedig a
+szigorúbb értékre húzni. A felhasználó döntése: külön modellek — „a gyártó
+okkal ad meg külön modelleket", és az évjáratok között a különbség nagyobb is
+lehet. Élesben ez igazolta magát; ezek az értékek eddig MIND elvesztek:
+
+| Deszka | Súly | Teherbírás |
+|---|---|---|
+| All Star 14'0" X 26" **Deluxe** | 10,5 kg | 105 kg |
+| All Star 14'0" X 26" **Deluxe Lite** | 9,6 kg | 85 kg |
+| TallTwin 9'5" X 29.75" **Carbon Reflex** | 7,39 kg | 100 kg |
+| TallTwin 9'5" X 29.75" **Xtec Carbon** | 8,94 kg | 100 kg |
+
+- `shopify.ts`: a variáns-kulcs és a modellnév is tartalmazza a kivitelt.
+- `spec-table.ts` → `cellForConstruction()`: egy cella több kivitel adatát is
+  hordozhatja (`„Deluxe: 60-105 kgDeluxe Lite: 50-85 kg"`), a jelölt a SAJÁT
+  szeletét kapja. **A címke nagybetűre horgonyzott**, mert a gyártó elválasztó
+  nélkül fűzi össze a szegmenseket (`kgDeluxe`) — kisbetűt is engedve a minta
+  a „kg"-ot hinné a következő címke elejének, és levágná az előző érték
+  mértékegységét. A `Deluxe` vs `Deluxe Lite` csapdát (a rövidebb név a
+  hosszabb ELEJE) teljes egyezés, majd leghosszabb-előtag oldja meg.
+- Ezzel a korábbi „szigorúbb érték" szabály már csak végszükség-tartalék
+  (ismeretlen kivitelnél).
+
+Starboard újrafuttatva: **97 termék → 455 variáns** (a 284 helyett), +178 új
+jelölt.
+
+**2. JSON-LD nélküli gyártói oldalak (`htmlOnly`).** Az `aquamarina.com`
+termékoldalain 0 JSON-LD van, a specifikáció viszont címkézett szövegként ott
+áll (`NET WEIGHT`, `MAX. PAYLOAD`), amit a `parseSpecsFromText` amúgy is olvas.
+Új `extractProductFromPage()` a `<title>` + oldalszöveg alapján, `crawl_config.
+htmlOnly` kapcsolóval (CLI: `--html-only`).
+
+**Szemét elleni védelem:** csak akkor ad jelöltet, ha a HOSSZ tényleg kijött.
+A sitemap blogot és kategóriaoldalt is tartalmaz — enélkül azok is bekerülnének.
+Dry-run 12 URL-en: 8 teljes adatú jelölt, a 4 kategóriaoldal helyesen kimaradt.
+Az Atlas értékei (366×86×15, 180 kg) egyeznek az F2.1-utó-13-ban kézzel
+ellenőrzöttekkel — független megerősítés a parse helyességére.
+
+**Új forrás:** `Aqua Marina (gyártói)` — `aquamarina.com`, 79 termék-URL,
+`--html-only`, sitemap a `wp-sitemap-posts-page-1.xml`.
+
+**Megnézve, de NEM kötve be: ZRay** (`zraysports.com`). A termékoldal nyers
+HTML-je 705 bájt (JS-es SPA), renderelve viszont tiszta címkézett szöveg
+(`Length: 10'6" / 320 cm … Capacity: up to 152 kg/335 lb`). Bekötéséhez a
+render-fallbacket a `htmlOnly` ágba is be kellene húzni (ma csak akkor fut, ha
+MÁR van kinyert termék). Egy próbafutás ráadásul RÉSZLEGES renderelést adott
+(`volumeL: 7` a valós 337 helyett), tehát a fix 1500 ms várakozás ehhez az
+oldalhoz kevés — előbb a várakozási feltételt kellene tartalomhoz kötni.
