@@ -58,6 +58,14 @@ export interface CrawlConfig {
      * olcsóbb már itt szűrni.
      */
     productTypes?: string[];
+    /**
+     * Kollekció-slug → deszkatípus, a GYÁRTÓ saját besorolása alapján
+     * (`race-paddleboards`: race, `surf-paddleboards`: …). Ez ÜT a névből
+     * tippelt típuson. A SORREND SZÁMÍT: ha egy termék több kollekcióban is
+     * szerepel (élesben: a Whopper „all-round / wave" ÉS „surf" is), az ELSŐ
+     * egyezés nyer — a fősodratú kategóriát kell előre venni.
+     */
+    collectionTypes?: Record<string, BoardType>;
   };
   /**
    * JSON-LD NÉLKÜLI oldalak feldolgozása (F2.1-utó-17): ha a forrás nem tesz ki

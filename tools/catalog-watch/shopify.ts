@@ -36,7 +36,7 @@ import {
   parseDimensionCm,
 } from "./normalize.ts";
 import { htmlToText } from "./html.ts";
-import { EMPTY_SPECS, type BoardSpecs, type ExtractedProduct } from "./types.ts";
+import { EMPTY_SPECS, type BoardSpecs, type BoardType, type ExtractedProduct } from "./types.ts";
 
 /** Egy `/products.json` lapon legfeljebb ennyi termék kérhető (Shopify-korlát). */
 export const SHOPIFY_PAGE_LIMIT = 250;
@@ -212,6 +212,12 @@ export function expandShopifyProduct(
   product: ShopifyProduct,
   baseUrl: string,
   defaultBrandName: string | null = null,
+  /**
+   * A GYÁRTÓ saját besorolása kollekció-tagság alapján
+   * (`fetchShopifyCollectionTypes`). Ha van, ez ÜT a névből tippelt típuson —
+   * a gyártó jobban tudja, mire való a deszkája.
+   */
+  boardTypeOverride: BoardType | null = null,
 ): ExpandedVariant[] {
   const rawTitle = (product.title ?? "").replace(/\s+/g, " ").trim();
   const handle = product.handle ?? "";
@@ -228,9 +234,9 @@ export function expandShopifyProduct(
   const typeHintText = `${rawTitle}\n${product.product_type ?? ""}\n${descriptionText}`;
   // A `handle` a termék URL-slugja (`2026-touring-inflatable-board-with-paddle`)
   // — a gyártó saját besorolása gyakran csak ebben látszik.
-  const boardType = guessBoardType(
-    `${rawTitle}\n${product.product_type ?? ""}\n${handle.replace(/[-_]+/g, " ")}`,
-  );
+  const boardType =
+    boardTypeOverride ??
+    guessBoardType(`${rawTitle}\n${product.product_type ?? ""}\n${handle.replace(/[-_]+/g, " ")}`);
   const inflatable = detectInflatable(typeHintText);
   const modelYear = extractModelYear(`${rawTitle} ${handle}`);
 
@@ -319,6 +325,67 @@ export function expandShopifyProduct(
     }
   }
   return results;
+}
+
+/**
+ * KOLLEKCIÓ-ALAPÚ KATEGÓRIA (F2.1-utó-19, 2026-08-19).
+ *
+ * A Shopify-boltok kollekciókba rendezik a termékeket, és a GYÁRTÓI boltnál ez
+ * a saját, hivatalos besorolás — pontosabb minden szöveg-heurisztikánál.
+ * Élesben (star-board.com): `race-paddleboards`, `expedition-paddleboards`,
+ * `all-round-wave-paddleboards`, `surf-paddleboards`.
+ *
+ * Miért fontos: a modellnevekben NINCS kategória-szó (Spice, Whopper, Wedge),
+ * a találgatás pedig félrevisz. Élesben mérve a Whopper és a GO Surf EGYSZERRE
+ * szerepel az „all-round / wave" és a „surf" kollekcióban — a gyártó tehát
+ * mindkét használatra ajánlja őket —, a Wedge viszont CSAK szörf, pedig a neve
+ * alapján allroundnak tűnne.
+ *
+ * A leképezés a forrás `crawl_config`-jában él (nem a kódban), mert
+ * boltonként más a kollekciók neve.
+ */
+export async function fetchShopifyCollectionTypes(
+  baseUrl: string,
+  fetchJson: FetchJson,
+  collectionTypes: Readonly<Record<string, BoardType>>,
+  options: { sleep?: (ms: number) => Promise<void>; delayMs?: number } = {},
+): Promise<{ byProductId: Map<string, BoardType>; errors: string[] }> {
+  const base = baseUrl.replace(/\/+$/, "");
+  const sleep = options.sleep ?? (() => Promise.resolve());
+  const delayMs = options.delayMs ?? 0;
+  const byProductId = new Map<string, BoardType>();
+  const errors: string[] = [];
+
+  // A felsorolás sorrendje SZÁMÍT: ha egy termék több kollekcióban is benne
+  // van (Whopper: all-round ÉS surf), az ELSŐ egyezés nyer. A konfigban
+  // ezért a „fősodratú" kategóriákat kell előre venni.
+  for (const [handle, boardType] of Object.entries(collectionTypes)) {
+    await sleep(delayMs);
+    let response: { status: number; text: string };
+    try {
+      response = await fetchJson(`${base}/collections/${handle}/products.json?limit=250`);
+    } catch (error) {
+      errors.push(`${handle}: ${error instanceof Error ? error.message : String(error)}`);
+      continue;
+    }
+    if (response.status >= 400) {
+      errors.push(`${handle}: HTTP ${response.status}`);
+      continue;
+    }
+    let parsed: { products?: { id?: number | string }[] };
+    try {
+      parsed = JSON.parse(response.text) as { products?: { id?: number | string }[] };
+    } catch {
+      errors.push(`${handle}: érvénytelen JSON`);
+      continue;
+    }
+    for (const product of parsed.products ?? []) {
+      const id = product.id === undefined ? null : String(product.id);
+      if (id !== null && !byProductId.has(id)) byProductId.set(id, boardType);
+    }
+  }
+
+  return { byProductId, errors };
 }
 
 /** A `fetchShopifyCatalog` hálózati függősége — tesztben injektálható. */

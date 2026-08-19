@@ -30,10 +30,14 @@ import {
   parseRobotsTxt,
   type RobotsTxt,
 } from "./robots.ts";
-import { expandShopifyProduct, fetchShopifyCatalog } from "./shopify.ts";
+import {
+  expandShopifyProduct,
+  fetchShopifyCatalog,
+  fetchShopifyCollectionTypes,
+} from "./shopify.ts";
 import { parseSitemap, selectProductUrls } from "./sitemap.ts";
 import { mergeSpecTables, normalizeSizeKey } from "./spec-table.ts";
-import type { BoardSpecs } from "./types.ts";
+import type { BoardSpecs, BoardType } from "./types.ts";
 
 /** Forrásonkénti felső korlát egy futásra (a `crawl_config` felülírhatja). */
 export const DEFAULT_MAX_PRODUCTS = 200;
@@ -360,6 +364,21 @@ async function crawlShopifySource(
   });
   for (const error of errors) addError(summary, error);
 
+  // A GYÁRTÓ saját kategóriái (kollekció-tagság) — ez üt a névből tippelt
+  // típuson. Néhány extra kérés, terméktől függetlenül fix darabszám.
+  let typeByProductId = new Map<string, BoardType>();
+  if (shopify.collectionTypes && Object.keys(shopify.collectionTypes).length > 0) {
+    const collections = await fetchShopifyCollectionTypes(
+      origin,
+      deps.fetchText,
+      shopify.collectionTypes,
+      { sleep, delayMs },
+    );
+    for (const error of collections.errors) addError(summary, error);
+    typeByProductId = collections.byProductId;
+    log(`[${source.name}] gyártói kategóriák: ${typeByProductId.size} termék`);
+  }
+
   const boards = await deps.store.listBoardsForMatch();
   const seenAt = now().toISOString();
 
@@ -367,7 +386,12 @@ async function crawlShopifySource(
   // `urlsConsidered` mezője ezért a variánsokat számolja, nem a lekért lapokat.
   let considered = 0;
   for (const shopifyProduct of products) {
-    let expanded = expandShopifyProduct(shopifyProduct, origin, config.defaultBrandName ?? null);
+    let expanded = expandShopifyProduct(
+      shopifyProduct,
+      origin,
+      config.defaultBrandName ?? null,
+      typeByProductId.get(String(shopifyProduct.id)) ?? null,
+    );
     considered += expanded.length;
 
     // GYÁRTÓI SPEC-TÁBLA (F2.1-utó-16): a `/products.json` nem ad vastagságot,

@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   expandShopifyProduct as expandRaw,
   fetchShopifyCatalog,
+  fetchShopifyCollectionTypes,
   parseVariantSize,
   type ShopifyProduct,
 } from "./shopify.ts";
@@ -258,5 +259,68 @@ describe("expandShopifyProduct — űrtartalom-variánsok", () => {
       expect(product.modelName).toContain(`9'0" X 27.5"`);
       expect(product.modelName).not.toContain("145 L");
     }
+  });
+});
+
+/**
+ * KOLLEKCIÓ-ALAPÚ KATEGÓRIA (F2.1-utó-19). A gyártói bolt kollekciói a
+ * HIVATALOS besorolás — a modellnevekben nincs kategória-szó (Spice, Whopper,
+ * Wedge), a találgatás pedig félrevisz. Élesben mérve (star-board.com) a
+ * Whopper és a GO Surf EGYSZERRE szerepel az „all-round / wave" és a „surf"
+ * kollekcióban, a Wedge viszont CSAK szörf — pedig a neve alapján allroundnak
+ * tűnne.
+ */
+describe("fetchShopifyCollectionTypes", () => {
+  function collection(ids: number[]): { status: number; text: string } {
+    return { status: 200, text: JSON.stringify({ products: ids.map((id) => ({ id })) }) };
+  }
+
+  it("termék-azonosítóhoz rendeli a gyártó saját kategóriáját", async () => {
+    const result = await fetchShopifyCollectionTypes(
+      "https://star-board.com",
+      async (url) =>
+        url.includes("race-paddleboards") ? collection([1, 2]) : collection([3]),
+      { "race-paddleboards": "race", "surf-paddleboards": "touring" },
+    );
+    expect(result.byProductId.get("1")).toBe("race");
+    expect(result.byProductId.get("3")).toBe("touring");
+    expect(result.errors).toEqual([]);
+  });
+
+  it("több kollekcióban szereplő terméknél az ELSŐ nyer (sorrend számít)", async () => {
+    // A Whopper mindkettőben benne van; a konfigban az all-round van elöl.
+    const result = await fetchShopifyCollectionTypes(
+      "https://star-board.com",
+      async () => collection([42]),
+      { "all-round-wave-paddleboards": "allround", "surf-paddleboards": "race" },
+    );
+    expect(result.byProductId.get("42")).toBe("allround");
+  });
+
+  it("hibás kollekciót kihagy, a többit feldolgozza", async () => {
+    const result = await fetchShopifyCollectionTypes(
+      "https://star-board.com",
+      async (url) => (url.includes("nincs") ? { status: 404, text: "" } : collection([7])),
+      { nincs: "race", "race-paddleboards": "race" },
+    );
+    expect(result.byProductId.get("7")).toBe("race");
+    expect(result.errors[0]).toContain("404");
+  });
+});
+
+describe("expandShopifyProduct — gyártói kategória felülírása", () => {
+  it("a kollekcióból jövő típus ÜT a névből tippelten", () => {
+    const wedge: ShopifyProduct = {
+      id: 5,
+      title: "Wedge Paddleboard",
+      handle: "wedge-paddleboard",
+      vendor: "Starboard SUP",
+      product_type: "SUP Hardboard",
+      variants: [{ id: 50, title: `10'2" X 32"` }],
+    };
+    const guessed = expandRaw(wedge, "https://star-board.com")[0]?.product.boardType;
+    const official = expandRaw(wedge, "https://star-board.com", null, "touring")[0]?.product.boardType;
+    expect(official).toBe("touring");
+    expect(official).not.toBe(guessed);
   });
 });
