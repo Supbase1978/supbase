@@ -10,6 +10,7 @@
  */
 import type { GearCategory } from "../../src/modules/catalog/gear.ts";
 import { decodeEntities, htmlToText } from "./html.ts";
+import { boardTypeFromUsage } from "./usage-rating.ts";
 import type { BoardSpecs, BoardType, ExtractedProduct } from "./types.ts";
 import { EMPTY_SPECS } from "./types.ts";
 
@@ -1014,6 +1015,13 @@ export function extractProductFromPage(
   const modelName = cleanModelName(rawTitle, brandName);
   if (modelName === "") return null;
 
+  // A gyártó használat-értékelése. Ha a SZÖRF vezet, a terméket NEM gyűjtjük
+  // (2026-08-19-i döntés: „a surf egy teljesen más dolog, mi a SUP-okra
+  // fókuszálunk") — ez a szörf-kizárás gyártói adatból, nem névlistából.
+  const usage = boardTypeFromUsage(html);
+  if (usage === "surf") return null;
+  const usageType = usage;
+
   const extracted: ExtractedProduct = {
     sourceUrl,
     brandName,
@@ -1029,7 +1037,13 @@ export function extractProductFromPage(
     // tehát pontosabb, mint bármilyen szöveg-heurisztika. A teljes
     // oldalszöveget SZÁNDÉKOSAN nem használjuk: a navigáció minden oldalon
     // felsorol minden kategóriát (ld. az `extractProduct` doc-kommentjét).
-    boardType: guessBoardType(`${rawTitle} ${urlCategoryHint(sourceUrl)}`),
+    // A kategória forrásai, ELSŐBBSÉGI sorrendben:
+    //  1. a terméknév + az URL kategória-szegmense (a gyártó termékvonala),
+    //  2. a gyártó SAJÁT használat-értékelése (`usage-rating.ts`).
+    // A második azért kell, mert a marketing-kategóriák (`/products/glowing/`,
+    // `/products/family/`) nem mondanak semmit a HASZNÁLATRÓL — a százalékos
+    // sávok viszont igen.
+    boardType: guessBoardType(`${rawTitle} ${urlCategoryHint(sourceUrl)}`) ?? usageType,
     specs,
     accessoryType: null,
   };
