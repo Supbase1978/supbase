@@ -3199,3 +3199,34 @@ Jelöltek: 158 jóváhagyott · 104 összevont · 209 elutasított · 240 pendin
 (ebből 58 kiegészítő, ~63 hiányzó biztonsági mezővel, a többi bolti forrásból —
 azok a következő crawlnál a meglévő deszkákra illeszkednek majd ár- és
 elérhetőség-frissítésként).
+
+### F2.1-utó-23 — a maradék két deszka, gyártói szövegből (2026-08-19)
+
+A NUTS és a Revolution oldala más értékelés-készletet mutat
+(`TRACKING / MANEUVERABILITY / STABILITY / SPEED`), tehát a használat-sávok
+nem adtak kategóriát. A felhasználó bemásolta a hivatalos gyártói leírásokat,
+és ez két KÜLÖNBÖZŐ megoldást igényelt:
+
+**NUTS — a leírás kimondja.** „Our NUTS board is the perfect **all-around
+board** for first-time paddlers…". Új `boardTypeFromDescription()`: ha a
+gyártó prózája nevesíti a kategóriát, azt vesszük.
+
+**SZIGORÚ MINTA:** a kategória-szó után KÖTELEZŐ a „board"/„sup"/„isup".
+Enélkül a navigáció kategória-menüje („ALL-AROUND", „RACE") MINDEN oldalon
+hamis találatot adna — ugyanaz a csapda, ami a kajak-szűrésnél is előjött.
+Több, eltérő kategória említésénél nem tippelünk.
+
+**Revolution — a leírás csak körülír.** „Designed to be stable enough for a
+first-time experience but with a shape to entertain the expert paddler with
+performance" — általános célú deszka, de kategória-szó nélkül. Ide új
+`crawl_config.boardTypeByUrl` (URL-részlet → típus): a **moderátori döntés a
+forrás konfigjában marad meg**, tehát a következő gyűjtésnél már nem kérdés
+(a felhasználó kifejezett kérése).
+
+Elsőbbségi sor a besorolásnál, a legerősebbtől:
+1. `boardTypeByUrl` — moderátori rögzítés,
+2. terméknév + URL kategória-szegmens,
+3. a gyártó használat-értékelése (százalékos sávok),
+4. a gyártó leírásában nevesített kategória.
+
+**A katalógus 180 deszka; a gyártói forrásokból NEM maradt eldöntetlen tétel.**

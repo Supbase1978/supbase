@@ -10,7 +10,7 @@
  */
 import type { GearCategory } from "../../src/modules/catalog/gear.ts";
 import { decodeEntities, htmlToText } from "./html.ts";
-import { boardTypeFromUsage } from "./usage-rating.ts";
+import { boardTypeFromDescription, boardTypeFromUsage } from "./usage-rating.ts";
 import type { BoardSpecs, BoardType, ExtractedProduct } from "./types.ts";
 import { EMPTY_SPECS } from "./types.ts";
 
@@ -995,6 +995,11 @@ export function extractProductFromPage(
   html: string,
   sourceUrl: string,
   defaultBrandName: string | null = null,
+  /**
+   * Kézi kategória-rögzítés (`crawl_config.boardTypeByUrl`): URL-részlet →
+   * típus. Ez ÜT minden automatikus tippen, mert moderátori döntés.
+   */
+  boardTypeByUrl: Readonly<Record<string, BoardType>> = {},
 ): ExtractedProduct | null {
   const titleMatch = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
   const rawTitle = htmlToText(titleMatch?.[1] ?? "")
@@ -1022,6 +1027,10 @@ export function extractProductFromPage(
   if (usage === "surf") return null;
   const usageType = usage;
 
+  // Moderátori rögzítés (a legerősebb jel): URL-részlet szerint.
+  const pinnedType =
+    Object.entries(boardTypeByUrl).find(([needle]) => sourceUrl.includes(needle))?.[1] ?? null;
+
   const extracted: ExtractedProduct = {
     sourceUrl,
     brandName,
@@ -1043,7 +1052,13 @@ export function extractProductFromPage(
     // A második azért kell, mert a marketing-kategóriák (`/products/glowing/`,
     // `/products/family/`) nem mondanak semmit a HASZNÁLATRÓL — a százalékos
     // sávok viszont igen.
-    boardType: guessBoardType(`${rawTitle} ${urlCategoryHint(sourceUrl)}`) ?? usageType,
+    //  3. a gyártó saját LEÍRÁSA („the perfect all-around board for…"), ha a
+    //     használat-sávok más készletet mutatnak (NUTS: TRACKING/STABILITY).
+    boardType:
+      pinnedType ??
+      guessBoardType(`${rawTitle} ${urlCategoryHint(sourceUrl)}`) ??
+      usageType ??
+      boardTypeFromDescription(pageText),
     specs,
     accessoryType: null,
   };

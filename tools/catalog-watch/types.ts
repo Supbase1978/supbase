@@ -86,6 +86,18 @@ export interface CrawlConfig {
    * megy. Csak explicit kapcsolóra, mert lazább, mint a JSON-LD út.
    */
   htmlOnly?: boolean;
+  /**
+   * KÉZI kategória-rögzítés URL-részlet szerint, azokra a termékekre, ahol a
+   * gyártó sehol nem mondja ki a besorolást — sem a kategória-URL-ben, sem a
+   * használat-sávokban, sem a leírásban.
+   *
+   * Élesben mért eset: az Aqua Marina `Revolution` leírása körülír
+   * („stable enough for a first-time experience but with a shape to entertain
+   * the expert paddler"), de kategória-szót nem használ. A moderátori döntés
+   * ITT marad meg, hogy a KÖVETKEZŐ gyűjtésnél már ne kérdés legyen
+   * (felhasználói kérés, 2026-08-19).
+   */
+  boardTypeByUrl?: Record<string, BoardType>;
   /** Szabad szöveges megjegyzés az adminnak. */
   notes?: string;
 }

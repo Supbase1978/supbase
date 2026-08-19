@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { boardTypeFromUsage, parseUsageRatings } from "./usage-rating.ts";
+import { boardTypeFromDescription, boardTypeFromUsage, parseUsageRatings } from "./usage-rating.ts";
 
 /**
  * ÉLESBEN MÉRT alakok (aquamarina.com, 2026-08-19). A gyártó minden deszkát
@@ -76,5 +76,44 @@ describe("boardTypeFromUsage", () => {
 
   it("értékelés nélküli oldalra null", () => {
     expect(boardTypeFromUsage("<html><body>semmi</body></html>")).toBeNull();
+  });
+});
+
+/**
+ * A gyártó SAJÁT LEÍRÁSA (F2.1-utó-23). A NUTS-nál a használat-sávok más
+ * készletet mutatnak (TRACKING/STABILITY), a próza viszont kimondja:
+ * „Our NUTS board is the perfect all-around board for first-time paddlers".
+ */
+describe("boardTypeFromDescription", () => {
+  it("a NUTS valódi leírásából allroundot ad", () => {
+    const nuts =
+      "Our NUTS board is the perfect all-around board for first-time paddlers who want " +
+      "less fuss and more enjoyable water fun anywhere with their family, friends or pets.";
+    expect(boardTypeFromDescription(nuts)).toBe("allround");
+  });
+
+  it("a `board` szó KÖTELEZŐ — a puszta kategória-menü nem elég", () => {
+    // A navigáció minden oldalon felsorolja a kategóriákat; e nélkül a
+    // szigorítás nélkül minden oldal hamis találatot adna.
+    expect(boardTypeFromDescription("ALL-AROUND / ENTRY GLIDE / EXPLORE RACE / TRAINING")).toBeNull();
+  });
+
+  it("túra- és versenydeszkát is felismer", () => {
+    expect(boardTypeFromDescription("A fast touring board for long distances.")).toBe("touring");
+    expect(boardTypeFromDescription("Our race board wins championships.")).toBe("race");
+  });
+
+  it("TÖBB, eltérő kategória említésénél nem tippel", () => {
+    expect(
+      boardTypeFromDescription("Both an all-around board and a race board in one."),
+    ).toBeNull();
+  });
+
+  it("kategória-kifejezés nélküli leírásra null", () => {
+    // A Revolution valódi leírása: körülír, de nem mond kategóriát.
+    const revolution =
+      "Designed to be stable enough for a first-time experience but with a shape to " +
+      "entertain the expert paddler with performance.";
+    expect(boardTypeFromDescription(revolution)).toBeNull();
   });
 });

@@ -77,3 +77,33 @@ export function boardTypeFromUsage(html: string): BoardType | "surf" | null {
   if (distinct.size !== 1) return null;
   return leaders[0]?.type ?? null;
 }
+
+/**
+ * Kategória a gyártó SAJÁT LEÍRÁSÁBÓL — ha kimondja, mi a deszka.
+ *
+ * Élesben mért (aquamarina.com/products/nuts/): „Our NUTS board is the perfect
+ * **all-around board** for first-time paddlers…". Az ilyen deszkáknál a
+ * használat-értékelés más készletet mutat (TRACKING/STABILITY), tehát a sávok
+ * nem segítenek — a próza viszont egyértelmű.
+ *
+ * SZIGORÚ MINTA: a kategória-szó után KÖTELEZŐ a „board"/„sup"/„isup" —
+ * enélkül a navigáció kategória-menüje („ALL-AROUND", „RACE") minden oldalon
+ * hamis találatot adna. Élesben mérve ez a különbség dönt.
+ *
+ * Több, ELTÉRŐ kategória említésénél `null` — nem tippelünk.
+ */
+export function boardTypeFromDescription(text: string): BoardType | null {
+  const rules: [RegExp, BoardType][] = [
+    [/\ball[\s-]*(?:a|)round\s+(?:i?sup\s+)?board\b/i, "allround"],
+    [/\btouring\s+(?:i?sup\s+)?board\b/i, "touring"],
+    [/\brace\s+(?:i?sup\s+)?board\b/i, "race"],
+    [/\b(?:yoga|fitness)\s+(?:i?sup\s+)?board\b/i, "yoga"],
+    [/\bfishing\s+(?:i?sup\s+)?board\b/i, "fishing"],
+    [/\b(?:river|whitewater)\s+(?:i?sup\s+)?board\b/i, "river"],
+  ];
+  const found = new Set<BoardType>();
+  for (const [pattern, type] of rules) {
+    if (pattern.test(text)) found.add(type);
+  }
+  return found.size === 1 ? [...found][0]! : null;
+}
