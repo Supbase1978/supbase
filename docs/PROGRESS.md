@@ -1130,6 +1130,20 @@ Két tervezési döntés, ami a SUP-specifikumból jön:
 nem kerülhet ajánlásba**. Teherbírás nélkül a Starboard-tételek csak a
 listákban látszanának.
 
+**KORREKCIÓ (2026-08-19, ugyanaznap) — a fenti „nem szerezhető meg"
+következtetés TÉVES volt.** A felhasználó megmutatta, hogy az iCON
+termékoldalán a SPECIFICATIONS fül alatt ott a teljes táblázat. A hibám:
+a **GO** terméket vizsgáltam, ahol a fül tényleg kitöltetlen („Lorem ipsum"),
+és egyetlen mintából általánosítottam az egész katalógusra.
+
+A tábla egy külső Shopify-app (TablePress, `tablepress.identixweb.com`)
+JS-sel betöltött eleme: a nyers HTML-ben 0 `<table>` van, és a Shopify
+Section Rendering API sem adja vissza — **böngésző-rendereléssel viszont
+pontosan kiolvasható**, méret-oszloponként. Ezért megépült a
+`spec-table.ts` (ld. a következő szakaszt), és a hiányzó mezők NAGY RÉSZE
+automatikusan kitöltődött. A kereskedői utat tehát végül nem is kellett
+használni.
+
 **Behozva a bevált „for_validate" úton (felhasználói döntés):** a crawl
 lefutott élesben — 97 termék → 284 méret-variáns → **277 új jelölt** (7 már
 ismert deszkára illeszkedett). A munkalista generálva:
@@ -2783,3 +2797,66 @@ a runbook (a `docs/PROGRESS.md` ezen szakasza).
 **Megjegyzés a nyelvhez:** a push-szöveg magyarul, a `_shared/push-notify.ts`-ben
 épül (az Edge Function nem éri el az i18next namespace-eket, és F1-ben csak a
 `hu` locale él). Több nyelvnél a feliratkozás locale-ját is tárolni kell (F2).
+
+### F2.1-utó-16 — gyártói spec-tábla beolvasása (2026-08-19)
+
+A hiányzó vastagság/súly/**teherbírás** megszerzése — utóbbi azért kritikus,
+mert a `passesHardFilter` (`select.ts`) KÖTELEZŐ biztonsági mezőként kezeli:
+`maxLoadKg === null` esetén a deszka kiesik a kemény szűrőn, tehát sosem kerül
+ajánlásba. Kapuk zöldek: typecheck · lint · **875 vitest** (+25 új).
+
+**Elkészült:**
+- `spec-table.ts` — TISZTA parse: a gyártói tábla méret-OSZLOPONKÉNT egy
+  deszka, soronként egy tulajdonság. A méret-kulcs (`normalizeSizeKey`)
+  szándékosan ugyanaz az alak, amit a `shopify.ts` variáns-címkéje ad — ez
+  köti össze a katalógus-sort a spec-táblával.
+- `render.ts` → `renderTables()`: csak BEOLVAS (sor/cella mátrix), nem
+  értelmez. A tábla külső appból jön, ezért nem fix várakozás van, hanem
+  `waitForFunction` az első kitöltött sorra.
+- `crawl.ts`: **TERMÉKENKÉNT EGY renderelés** tölti fel az ÖSSZES méretét
+  (nem méretenként!) — ezért fér bele a költség. Csak a HIÁNYZÓ mezőket írja:
+  amit a `/products.json` már adott, azt nem bántja.
+- A dry-run mostantól KIÍRJA a specifikációkat — írás előtti ellenőrzésre.
+
+**Két élesben mért hiba, amit a dry-run ellenőrzése fogott meg** (mindkettőre
+teszt készült; ezek nélkül HIBÁS adat került volna be):
+1. **`Gross Load Weight | 130 kg`** (Roamer) a deszka SÚLYÁBA került a
+   „weight" részstring miatt — 130 kg-os deszkát írt volna be a valódi
+   13,93 kg helyett, és a teherbírás üresen maradt volna. Javítva: a
+   „load"/„payload"/„capacity" kizáró szó a `weightKg`-nál, és külön
+   címkék a `maxLoadKg`-nál.
+2. **`308 lbs / 140 kg`** — a font-értéket vette teherbírásnak. Javítva: a
+   `kg`-hoz TAPADÓ szám élvez elsőbbséget.
+   Ugyanez a szigorítás oldotta meg a `Xtec Carbon D2: 13.93 kg` esetét is,
+   ahol a kivitel nevében lévő számjegy („D2") miatt a cella tévesen
+   több-értékűnek látszott.
+
+**Eredmény a Starboardon (97 termékből 90-nél sikerült a spec-tábla):**
+
+| | spec-tábla ELŐTT | UTÁN |
+|---|---|---|
+| hiányos jelölt | 276 | **144** |
+| csak a súly hiányzik | 0 | 109 |
+| **teherbírás hiányzik** | 276 | **34** |
+
+A 277 Starboard-jelöltből **243-nak van teherbírása**, és 228-nak MIND az öt
+mérőszáma megvan. A maradék 109-nél csak a SÚLY hiányzik — ott a gyártó
+kivitelenként sorolja fel (`Blue Carbon: 10.4 kg…Starlite: 11.2 kg…`), amiből
+tudatosan NEM tippelünk. A súly nem szerepel a kemény szűrőben, tehát ezek a
+deszkák így is ajánlásképesek.
+
+**Aqua Marina — ugyanez a minta, egyszerűbben.** A hivatalos `aquamarina.com`
+Elementor-widgetekben, címke–érték párokban közli a specifikációt, SIMA
+SZÖVEGKÉNT (nem képen) — a meglévő `parseSpecsFromText` a hosszt/szélességet/
+vastagságot/űrtartalmat már vitte, csak két címke hiányzott: `NET WEIGHT`
+(deszka súlya) és `MAX. PAYLOAD` (teherbírás). Bekötve, ellenőrizve a
+BLAZE 10'4"-en: 315 cm / 79 cm / 15 cm / 315 L / 9,3 kg / **140 kg** — mind
+egyezik a gyártói adatlappal.
+
+**Jelenlegi összkép a moderációs sorban:** 430 pending jelölt (277 Starboard +
+153 korábbi), ebből **338-nak van teherbírása** és 228-nak teljes az adata.
+Munkalista: `for_validate/2026-08-19-validalando-deszkak.html` (144 tétel).
+
+**Következő lépés (nyitott):** az `aquamarina.com` felvétele forrásként, hogy
+a 110 kereskedői Aqua Marina jelölt hiányzó mezői is gyártói adatból
+töltődjenek.
