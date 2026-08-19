@@ -2913,3 +2913,41 @@ render-fallbacket a `htmlOnly` ágba is be kellene húzni (ma csak akkor fut, ha
 MÁR van kinyert termék). Egy próbafutás ráadásul RÉSZLEGES renderelést adott
 (`volumeL: 7` a valós 337 helyett), tehát a fix 1500 ms várakozás ehhez az
 oldalhoz kevés — előbb a várakozási feltételt kellene tartalomhoz kötni.
+
+**Kajak-szűrés — élesben mért hiba, javítva (2026-08-19).** Az Aqua Marina
+gyártói katalógusából KAJAKOK kerültek be deszka-jelöltként (Halve, Laxo,
+Memba, Betta, Steam, Tomahawk Air K/C, Caliber, Ripple) — ugyanazok a
+termékek, amiket korábban kézzel kellett elutasítani a bolti forrásokból.
+Oka: a `classifyProduct` ELSŐ szabálya rövidre zár („deszka-tartományú hossz
++ teherbírás → deszka"), márpedig egy kajak pontosan ilyen.
+
+- `NEVER_BOARD_KEYWORDS` (kajak/kayak/kenu/canoe/csónak/equipment) MINDEN más
+  szabály ELŐTT dönt.
+- `classifyProduct` opcionális `classificationHint`-et kap; a
+  `extractProductFromPage` az URL útvonalát ÉS a spec-blokk előtti **szűk,
+  140 karakteres fejléc-ablakot** adja jelként.
+- **Miért szűk az ablak:** a teljes oldalszöveg használhatatlan — a navigáció
+  minden oldalon felsorolja a „Kayak" kategóriát, ezért élesben mérve a
+  Blaze DESZKA oldalán is 31 „kayak" szó van. A gyártó viszont a termék fölé
+  írja a saját kategóriáját: „LAXO RECREATIONAL KAYAK", „RIPPLE RECREATIONAL
+  CANOE" vs. „BLAZE glowing series".
+
+Ellenőrizve 7 valódi oldalon (5 kajak kizárva, 2 deszka átengedve); a 10 már
+bekerült tétel elutasítva.
+
+**Állapot a kör végén (2026-08-19):**
+
+| | |
+|---|---|
+| deszka-jelölt (pending) | **586** |
+| ebből teherbírással (ajánlásképes) | **535** |
+| ebből teljes adatú (mind az 5 mérőszám) | **493** |
+| munkalista (`list-incomplete`) | **93** |
+
+Márkánként: Starboard 454 · Aqua Marina 105 · Indiana 9 · Too Much 10 ·
+Flowa 4 · Coasto 4. (A „Too Much"/„TooMuch" kettősség márka-összevonást
+igényel a moderálásnál.)
+
+Összevetésül: a kör elején 35 élő deszka és 153 pending jelölt volt, amiből
+96 volt teljes adatú. A munkalista 276-ról 93-ra csökkent úgy, hogy közben
+a jelöltek száma a négyszeresére nőtt.
