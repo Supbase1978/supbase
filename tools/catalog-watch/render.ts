@@ -28,6 +28,15 @@ export interface RenderFetcher {
    * SOHA nem dob, a hívó a sima HTTP-eredménnyel folytatja).
    */
   renderText(url: string): Promise<string | null>;
+  /**
+   * Egy termékoldal SPEC-TÁBLÁZATAI sor/cella mátrixként (F2.1-utó-16), vagy
+   * `null`, ha egy sem jelent meg. Élesben mért igény: a star-board.com a
+   * specifikációt egy külső Shopify-app (TablePress) táblájában közli, amit
+   * JS tölt be — a nyers HTML-ben 0 `<table>` van, és a Shopify Section
+   * Rendering API sem adja vissza. A tábla értelmezése NEM itt történik: ez a
+   * réteg csak beolvas, a jelentést a tiszta `spec-table.ts` adja.
+   */
+  renderTables(url: string): Promise<string[][][] | null>;
   /** Böngésző-erőforrás felszabadítása a crawl végén. */
   close(): Promise<void>;
 }
@@ -67,6 +76,37 @@ export function createRenderFetcher(): RenderFetcher {
         }
       } catch {
         // Fail-safe: a hívó a sima HTTP-fetch eredményével folytatja.
+        return null;
+      }
+    },
+    async renderTables(url: string): Promise<string[][][] | null> {
+      try {
+        const browser = await getBrowser();
+        const page = await browser.newPage();
+        try {
+          await page.goto(url, { waitUntil: "domcontentloaded", timeout: 30_000 });
+          // A táblákat külső app tölti be, ezért NEM elég a fix várakozás:
+          // megvárjuk, míg legalább egy tábla ténylegesen sorokat kap. Ha nem
+          // jön meg, a `catch` üres/null eredményt ad — sosem dobunk.
+          await page
+            .waitForFunction(() => document.querySelectorAll("table tr").length > 0, {
+              timeout: 25_000,
+            })
+            .catch(() => {});
+          const tables = await page.evaluate(() =>
+            Array.from(document.querySelectorAll("table")).map((table) =>
+              Array.from(table.querySelectorAll("tr")).map((row) =>
+                Array.from(row.querySelectorAll("th,td")).map((cell) =>
+                  (cell.textContent ?? "").replace(/\s+/g, " ").trim(),
+                ),
+              ),
+            ),
+          );
+          return tables.length > 0 ? tables : null;
+        } finally {
+          await page.close();
+        }
+      } catch {
         return null;
       }
     },

@@ -149,6 +149,12 @@ export interface SourceCrawlSummary {
   pricesRecorded: number;
   /** robots.txt által tiltott, ezért ki NEM kért URL-ek. */
   robotsBlocked: number;
+  /**
+   * Hány TERMÉKNÉL sikerült a gyártói spec-táblából kiegészíteni a hiányzó
+   * mezőket (F2.1-utó-16, Shopify-ág). Ez a szám mutatja, mennyire éri meg a
+   * — költséges — böngésző-renderelés.
+   */
+  specTablesUsed: number;
   errors: string[];
 }
 

@@ -32,6 +32,8 @@ import {
 } from "./robots.ts";
 import { expandShopifyProduct, fetchShopifyCatalog } from "./shopify.ts";
 import { parseSitemap, selectProductUrls } from "./sitemap.ts";
+import { mergeSpecTables, normalizeSizeKey } from "./spec-table.ts";
+import type { BoardSpecs } from "./types.ts";
 
 /** Forrásonkénti felső korlát egy futásra (a `crawl_config` felülírhatja). */
 export const DEFAULT_MAX_PRODUCTS = 200;
@@ -91,6 +93,42 @@ export interface CrawlDeps {
    * egyszerűen kimarad, a crawl a sima HTTP-eredménnyel dolgozik tovább.
    */
   renderText?: (url: string) => Promise<string | null>;
+  /**
+   * OPCIONÁLIS gyártói SPEC-TÁBLA beolvasás (F2.1-utó-16), a Shopify-ághoz:
+   * a `/products.json` nem ad teherbírást, a gyártó viszont a termékoldalon
+   * közli, JS-sel betöltött táblában. Hiányában (pl. tesztben) az ág kimarad.
+   */
+  renderTables?: (url: string) => Promise<string[][][] | null>;
+}
+
+/**
+ * A gyártói spec-tábla ráolvasása egy méret-jelöltre. CSAK a HIÁNYZÓ mezőket
+ * tölti: amit a `/products.json` már adott (hossz/szélesség a variáns-címből),
+ * azt nem írja felül — az a konkrét variánsra vonatkozik, a tábla oszlopa
+ * pedig illesztés eredménye.
+ */
+function applySpecTable(
+  product: ExtractedProduct,
+  bySize: ReadonlyMap<string, BoardSpecs>,
+): ExtractedProduct {
+  // A modellnév végén álló méret-címke a kulcs (`shopify.ts` írta oda).
+  const sizeLabel = product.modelName.match(/(\d{1,2}'\s*\d{0,2}"?\s*[xX×]\s*\d{1,3}(?:\.\d+)?"?)\s*$/);
+  if (!sizeLabel) return product;
+  const specs = bySize.get(normalizeSizeKey(sizeLabel[1] ?? ""));
+  if (!specs) return product;
+
+  return {
+    ...product,
+    specs: {
+      ...product.specs,
+      lengthCm: product.specs.lengthCm ?? specs.lengthCm,
+      widthCm: product.specs.widthCm ?? specs.widthCm,
+      thicknessCm: product.specs.thicknessCm ?? specs.thicknessCm,
+      volumeL: product.specs.volumeL ?? specs.volumeL,
+      weightKg: product.specs.weightKg ?? specs.weightKg,
+      maxLoadKg: product.specs.maxLoadKg ?? specs.maxLoadKg,
+    },
+  };
 }
 
 function emptySummary(source: CatalogSourceRow): SourceCrawlSummary {
@@ -104,6 +142,7 @@ function emptySummary(source: CatalogSourceRow): SourceCrawlSummary {
     candidatesCreated: 0,
     pricesRecorded: 0,
     robotsBlocked: 0,
+    specTablesUsed: 0,
     errors: [],
   };
 }
@@ -329,8 +368,34 @@ async function crawlShopifySource(
   // `urlsConsidered` mezője ezért a variánsokat számolja, nem a lekért lapokat.
   let considered = 0;
   for (const shopifyProduct of products) {
-    const expanded = expandShopifyProduct(shopifyProduct, origin, config.defaultBrandName ?? null);
+    let expanded = expandShopifyProduct(shopifyProduct, origin, config.defaultBrandName ?? null);
     considered += expanded.length;
+
+    // GYÁRTÓI SPEC-TÁBLA (F2.1-utó-16): a `/products.json` nem ad vastagságot,
+    // súlyt és TEHERBÍRÁST — utóbbi viszont kötelező biztonsági mező a
+    // Deszkaválasztóban, nélküle a deszka sosem kerül ajánlásba. A gyártó a
+    // termékoldalon közli, JS-sel betöltött táblában. TERMÉKENKÉNT EGY
+    // renderelés tölti fel az ÖSSZES méretét, ezért az ára elfogadható.
+    const needsSpecs = expanded.some(
+      (product) =>
+        product.accessoryType === null &&
+        (product.specs.maxLoadKg === null ||
+          product.specs.weightKg === null ||
+          product.specs.thicknessCm === null),
+    );
+    if (needsSpecs && deps.renderTables && shopifyProduct.handle) {
+      const productUrl = `${origin.replace(/\/+$/, "")}/products/${shopifyProduct.handle}`;
+      await sleep(delayMs);
+      const tables = await deps.renderTables(productUrl);
+      if (tables) {
+        const bySize = mergeSpecTables(tables);
+        if (bySize.size > 0) {
+          expanded = expanded.map((product) => applySpecTable(product, bySize));
+          summary.specTablesUsed += 1;
+        }
+      }
+    }
+
     for (const product of expanded) {
       summary.productsExtracted += 1;
       try {

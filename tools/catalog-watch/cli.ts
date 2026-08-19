@@ -308,6 +308,7 @@ async function commandCrawl(args: Args): Promise<void> {
     sleep,
     log: (message) => console.log(message),
     renderText: (url) => renderFetcher.renderText(url),
+    renderTables: (url) => renderFetcher.renderTables(url),
   };
 
   console.log(
@@ -327,7 +328,8 @@ async function commandCrawl(args: Args): Promise<void> {
         `${source.productsExtracted} termék · ${source.skippedNonBoard} kiegészítő · ` +
         `${source.matchedKnown} ismert · ` +
         `${source.candidatesCreated} új jelölt · ${source.pricesRecorded} ársor · ` +
-        `${source.robotsBlocked} robots-tiltás`,
+        `${source.robotsBlocked} robots-tiltás` +
+        (source.specTablesUsed > 0 ? ` · ${source.specTablesUsed} gyártói spec-tábla` : ""),
     );
     for (const error of source.errors) console.log(`    hiba: ${error}`);
   }
@@ -341,7 +343,21 @@ async function commandCrawl(args: Args): Promise<void> {
       const pair = candidate.matchedBoardId
         ? `bizonytalan egyezés: ${candidate.matchedBoardId}`
         : "új típus";
-      console.log(`  jelölt: ${candidate.modelName} (${pair}) — ${candidate.url}`);
+      // A specifikáció kiírása a dry-run LÉNYEGE: írás előtt látni kell,
+      // mit tenne be — különösen a teherbírást, ami kötelező biztonsági mező.
+      const s = candidate.specs;
+      const specs = [
+        s.lengthCm === null ? null : `H${s.lengthCm}`,
+        s.widthCm === null ? null : `Sz${s.widthCm}`,
+        s.thicknessCm === null ? null : `V${s.thicknessCm}`,
+        s.volumeL === null ? null : `${s.volumeL}L`,
+        s.weightKg === null ? null : `${s.weightKg}kg`,
+        s.maxLoadKg === null ? null : `teher:${s.maxLoadKg}kg`,
+      ]
+        .filter((part) => part !== null)
+        .join(" ");
+      console.log(`  jelölt: ${candidate.modelName} (${pair}) [${specs || "NINCS ADAT"}]`);
+      console.log(`     ${candidate.url}`);
     }
     console.log("  (semmi nem íródott az adatbázisba)");
   }

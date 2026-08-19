@@ -15,7 +15,7 @@ import type { SupabaseTarget } from "./env.ts";
 import { shouldRecordPrice } from "./lifecycle.ts";
 import type { BoardForLifecycle } from "./lifecycle.ts";
 import { applyFieldLocks } from "./lock.ts";
-import type { BoardForMatch, CatalogSourceRow, ExtractedProduct } from "./types.ts";
+import type { BoardForMatch, BoardSpecs, CatalogSourceRow, ExtractedProduct } from "./types.ts";
 
 /**
  * Service-role kliens a FELOLDOTT célra (lásd `env.ts`: a repo .env-je az
@@ -217,7 +217,13 @@ export function createSupabaseStore(client: SupabaseClient): CrawlStore {
 export interface DryRunLog {
   prices: { boardId: string; shopName: string; priceHuf: number }[];
   seen: { boardId: string; inStock: boolean | null }[];
-  candidates: { url: string; modelName: string; matchedBoardId: string | null }[];
+  candidates: {
+    url: string;
+    modelName: string;
+    matchedBoardId: string | null;
+    /** A jelölt specifikációja — a dry-run ELLENŐRZÉS lényege: mit írna be. */
+    specs: BoardSpecs;
+  }[];
 }
 
 /**
@@ -251,6 +257,7 @@ export function createDryRunStore(client: SupabaseClient): {
           url: input.url,
           modelName: input.extracted.modelName,
           matchedBoardId: input.matchedBoardId,
+          specs: input.extracted.specs,
         });
         return true;
       },
