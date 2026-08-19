@@ -1,11 +1,19 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  expandShopifyProduct,
+  expandShopifyProduct as expandRaw,
   fetchShopifyCatalog,
   parseVariantSize,
   type ShopifyProduct,
 } from "./shopify.ts";
+
+/**
+ * A tesztek zöme csak a JELÖLTEKRE kíváncsi, a spec-tábla illesztéséhez
+ * használt kulcsokra nem — ez a burkoló azokat hámozza le.
+ */
+function expandShopifyProduct(...args: Parameters<typeof expandRaw>) {
+  return expandRaw(...args).map((item) => item.product);
+}
 
 /**
  * A minták ÉLESBEN MÉRT star-board.com `/products.json` válaszból valók
@@ -77,13 +85,14 @@ const GO_BOARD: ShopifyProduct = {
 };
 
 describe("expandShopifyProduct", () => {
-  it("méretenként EGY jelöltet ad, a konstrukciós változatokat összefésüli", () => {
+  it("variánsonként külön jelölt — a KIVITEL is megkülönböztet (2026-08-19)", () => {
     const products = expandShopifyProduct(GO_BOARD, "https://star-board.com");
-    // 3 variáns, de csak 2 KÜLÖNBÖZŐ méret (11'2"x32" kétszer szerepel).
-    expect(products).toHaveLength(2);
-    const sizes = products.map((p) => p.modelName).sort();
-    expect(sizes[0]).toContain(`11'2"`);
-    expect(sizes[1]).toContain(`12'0"`);
+    // 3 variáns → 3 jelölt: a 11'2"x32" KÉT kivitelben (Lite Tech Wave és
+    // Rhino) két külön deszka, mert a gyártó adatai is eltérhetnek.
+    expect(products).toHaveLength(3);
+    const names = products.map((p) => p.modelName);
+    expect(names.some((n) => n.includes("Lite Tech Wave"))).toBe(true);
+    expect(names.filter((n) => n.includes("Rhino"))).toHaveLength(2);
   });
 
   it("a méret a modellnév része lesz (a Shopify terméknév méret nélküli)", () => {
@@ -104,11 +113,14 @@ describe("expandShopifyProduct", () => {
     expect(second.map((p) => p.sourceUrl)).toEqual(urls);
   });
 
-  it("azonos méret két konstrukciójából a KISEBB variáns-id URL-je marad (stabil)", () => {
+  it("az azonos méret két kivitele KÜLÖN URL-t és külön nevet kap", () => {
     const products = expandShopifyProduct(GO_BOARD, "https://star-board.com");
-    const short = products.find((p) => p.modelName.includes(`11'2"`));
-    // 47603090000000 < 47603090325799 → a Rhino példány nyer.
-    expect(short?.sourceUrl).toContain("variant=47603090000000");
+    const short = products.filter((p) => p.modelName.includes(`11'2" X 32"`));
+    expect(short).toHaveLength(2);
+    // Két különböző variáns-URL — a jelöltek egyediség-kulcsa az url.
+    expect(new Set(short.map((p) => p.sourceUrl)).size).toBe(2);
+    // A név is megkülönbözteti őket, különben a moderátor nem tudná, melyik melyik.
+    expect(new Set(short.map((p) => p.modelName)).size).toBe(2);
   });
 
   it("a gyártói `vendor` adja a márkanevet, és beírja a méreteket", () => {
@@ -237,14 +249,14 @@ describe("expandShopifyProduct — űrtartalom-variánsok", () => {
       ],
     };
     const products = expandShopifyProduct(talltwin, "https://star-board.com");
-    // 108 L és 94 L = két deszka; a két KIVITEL (Carbon Reflex / Xtec) egy.
-    expect(products).toHaveLength(2);
+    // 3 variáns → 3 jelölt: az űrtartalom ÉS a kivitel is megkülönböztet.
+    expect(products).toHaveLength(3);
     const volumes = products.map((p) => p.specs.volumeL).sort((a, b) => (a ?? 0) - (b ?? 0));
-    expect(volumes).toEqual([94, 108]);
-    // A név mindkettőnél a tiszta dimenzió — az űrtartalom nem duplázódik bele.
+    expect(volumes).toEqual([94, 108, 108]);
+    // A névben a dimenzió + kivitel szerepel, az űrtartalom NEM (az a specs-ben).
     for (const product of products) {
       expect(product.modelName).toContain(`9'0" X 27.5"`);
-      expect(product.modelName).not.toContain("L");
+      expect(product.modelName).not.toContain("145 L");
     }
   });
 });

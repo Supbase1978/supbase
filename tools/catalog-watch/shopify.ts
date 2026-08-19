@@ -79,6 +79,17 @@ export interface VariantSize {
    * kétszer), a többi szegmens pedig kivitel-megnevezés, nem méret.
    */
   label: string;
+  /**
+   * A KIVITEL (anyag/konstrukció): `Deluxe Lite`, `Rhino`, `Xtec Carbon D2`.
+   *
+   * Felhasználói döntés (2026-08-19): a kiviteli változatok KÜLÖN deszkák,
+   * nem fésüljük össze őket. Két indok: a gyártó okkal ad meg külön modellt,
+   * és az évjáratok között a különbség jóval nagyobb is lehet, mint a mostani
+   * (All Star 14'0" x 26": Deluxe 10,5 kg / 105 kg vs. Deluxe Lite 9,6 kg /
+   * 85 kg). Összevonva a súlyt üresen kellett hagyni, a teherbírást pedig a
+   * szigorúbb értékre húzni — külön tartva mindkettő PONTOS.
+   */
+  construction: string | null;
   lengthCm: number | null;
   widthCm: number | null;
   volumeL: number | null;
@@ -110,9 +121,11 @@ export function parseVariantSize(variantTitle: string | null | undefined): Varia
   const normalized = normalizeQuotes(variantTitle).trim();
   if (normalized === "" || /^default title$/i.test(normalized)) return null;
 
-  // A konstrukció-rész levágása (az ELSŐ " / "-nál — a konstrukciónév maga is
+  // A méret és a KIVITEL szétválasztása az ELSŐ " / "-nál (a kivitelnév maga is
   // tartalmazhat perjelet, a méret viszont sosem).
-  const sizePart = (normalized.split(/\s\/\s/)[0] ?? "").trim();
+  const slashParts = normalized.split(/\s\/\s/);
+  const sizePart = (slashParts[0] ?? "").trim();
+  const construction = slashParts.slice(1).join(" / ").trim() || null;
   if (sizePart === "") return null;
 
   // Az űrtartalom külön szegmensben jön: `9'8" X 30.5" | 145 L`.
@@ -135,19 +148,22 @@ export function parseVariantSize(variantTitle: string | null | undefined): Varia
   // Ha SEMMI értelmezhető nem jött ki, ez nem méret-variáns (pl. „Blue", „S").
   if (lengthCm === null && widthCm === null && volumeL === null) return null;
 
-  return { label: dimensionText.trim(), lengthCm, widthCm, volumeL };
+  return { label: dimensionText.trim(), construction, lengthCm, widthCm, volumeL };
 }
 
 /**
- * A méret-variánsok azonosító kulcsa. A konstrukció már le van vágva, tehát a
- * `12'0" X 34" / Rhino` és a `12'0" X 34" / Lite Tech Wave` UGYANAZT a kulcsot
- * adja — egy jelölt lesz belőlük, nem kettő.
+ * A variánsok azonosító kulcsa: méret + űrtartalom + KIVITEL.
+ *
+ * A kivitel a kulcs része (felhasználói döntés, 2026-08-19), tehát a
+ * `12'0" X 34" / Rhino` és a `12'0" X 34" / Lite Tech Wave` KÉT külön jelölt.
+ * Az űrtartalom is számít: ugyanaz a hossz×szélesség két különböző térfogattal
+ * (eltérő vastagság/alak) szintén két deszka.
  */
-function sizeKey(size: VariantSize): string {
+function variantKey(size: VariantSize): string {
   const label = size.label.toLowerCase().replace(/\s+/g, "");
-  // Az űrtartalom is a kulcs része: ugyanaz a hossz×szélesség két különböző
-  // térfogattal (eltérő vastagság/alak) KÉT deszka, nem egy.
-  return size.volumeL === null ? label : `${label}|${size.volumeL}`;
+  const volume = size.volumeL === null ? "" : `|${size.volumeL}`;
+  const construction = size.construction === null ? "" : `|${size.construction.toLowerCase()}`;
+  return `${label}${volume}${construction}`;
 }
 
 /**
@@ -166,13 +182,27 @@ function firstImage(product: ShopifyProduct): string | null {
   return src.startsWith("//") ? `https:${src}` : src;
 }
 
+/** Egy kibontott variáns + a spec-tábla illesztéséhez szükséges kulcsok. */
+export interface ExpandedVariant {
+  product: ExtractedProduct;
+  /** Méret-kulcs a gyártói spec-tábla oszlopához (`spec-table.ts` alakja). */
+  sizeLabel: string;
+  /** Kivitel, ha a variáns megadta — a spec-tábla cellái ez szerint bontanak. */
+  construction: string | null;
+}
+
 /**
- * Egy Shopify-termék szétbontása méretenkénti jelöltekre.
+ * Egy Shopify-termék szétbontása VARIÁNSONKÉNTI jelöltekre.
  *
- * Termékenként TÖBB jelölt keletkezik (méretenként egy), mert a SUP-nál a
- * méret nem árnyalat, hanem maga a termék: egy 10'8"-os és egy 12'0"-os GO
- * más deszka, a Deszkaválasztó is a hossz/szélesség alapján pontoz. A
- * konstrukciós változatok (carbon/standard) viszont ÖSSZEFÉSÜLŐDNEK.
+ * Termékenként TÖBB jelölt keletkezik, mert a SUP-nál sem a méret, sem a
+ * kivitel nem árnyalat:
+ *  - a MÉRET maga a termék (egy 10'8"-os és egy 12'0"-os GO más deszka, a
+ *    Deszkaválasztó a hossz/szélesség alapján pontoz);
+ *  - a KIVITEL (Deluxe / Deluxe Lite / Rhino…) külön modell a gyártónál is,
+ *    és érdemben eltérhet — az All Star 14'0" x 26"-nál a Deluxe 10,5 kg és
+ *    105 kg-ig terhelhető, a Deluxe Lite 9,6 kg és csak 85 kg-ig. Összevonva
+ *    a súlyt üresen kellene hagyni, a teherbírást pedig a szigorúbb értékre
+ *    húzni; külön tartva mindkettő PONTOS (felhasználói döntés, 2026-08-19).
  *
  * Méret-variáns nélküli termék (`Default Title`) egyetlen jelöltet ad, méret
  * nélkül — a nevéből még kijöhet a hossz (`cleanModelName`/`parseDimensionCm`
@@ -182,7 +212,7 @@ export function expandShopifyProduct(
   product: ShopifyProduct,
   baseUrl: string,
   defaultBrandName: string | null = null,
-): ExtractedProduct[] {
+): ExpandedVariant[] {
   const rawTitle = (product.title ?? "").replace(/\s+/g, " ").trim();
   const handle = product.handle ?? "";
   if (rawTitle === "" || handle === "") return [];
@@ -200,14 +230,16 @@ export function expandShopifyProduct(
   const inflatable = detectInflatable(typeHintText);
   const modelYear = extractModelYear(`${rawTitle} ${handle}`);
 
-  // Méretenként az ELSŐ variáns a képviselő. A `variants` sorrendje a Shopify
-  // válaszában stabil, de a biztonság kedvéért a legkisebb id-t választjuk:
-  // így egy átrendezés nem ad új URL-t (és nem duplikálja a jelöltet).
+  // Variánsonként (méret + űrtartalom + kivitel) az ELSŐ példány a képviselő.
+  // A `variants` sorrendje a Shopify válaszában stabil, de a biztonság
+  // kedvéért a legkisebb id-t választjuk: így egy átrendezés nem ad új URL-t
+  // (és nem duplikálja a jelöltet). Azonos kulcsra több variáns akkor eshet,
+  // ha a bolt SZÍNT is variánsként kezel — a szín nem külön deszka.
   const bySize = new Map<string, { size: VariantSize; variant: ShopifyVariant }>();
   for (const variant of variants) {
     const size = parseVariantSize(variant.title);
     if (!size) continue;
-    const key = sizeKey(size);
+    const key = variantKey(size);
     const existing = bySize.get(key);
     if (!existing || String(variant.id) < String(existing.variant.id)) {
       bySize.set(key, { size, variant });
@@ -263,18 +295,24 @@ export function expandShopifyProduct(
       {},
       variants[0] ?? null,
     );
-    return single ? [single] : [];
+    return single ? [{ product: single, sizeLabel: "", construction: null }] : [];
   }
 
-  const results: ExtractedProduct[] = [];
+  const results: ExpandedVariant[] = [];
   for (const { size, variant } of bySize.values()) {
+    // A KIVITEL is a modellnév része lesz („All Star 14'0\" X 26\" Deluxe Lite"),
+    // különben két jelölt viselné ugyanazt a nevet, és a moderátor nem tudná
+    // megkülönböztetni őket.
+    const suffix = size.construction ? `${size.label} ${size.construction}` : size.label;
     const built = buildProduct(
       variantUrl(baseUrl, handle, variant.id),
-      size.label,
+      suffix,
       { lengthCm: size.lengthCm, widthCm: size.widthCm, volumeL: size.volumeL },
       variant,
     );
-    if (built) results.push(built);
+    if (built) {
+      results.push({ product: built, sizeLabel: size.label, construction: size.construction });
+    }
   }
   return results;
 }

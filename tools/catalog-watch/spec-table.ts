@@ -175,6 +175,64 @@ export function parseRiderWeightKg(cell: string): number | null {
   return Math.max(...bare);
 }
 
+/**
+ * Egy cella KIVITEL szerinti szűkítése.
+ *
+ * A gyártó néha egyetlen cellába zsúfolja több kivitel adatát — élesben mért
+ * (All Star 14'0" x 26"): `„Deluxe: 60-105 kgDeluxe Lite: 50-85 kg"`. Mivel a
+ * jelöltek kivitelenként külön sorok (`shopify.ts`), a cellából a SAJÁT
+ * kivitelünkhöz tartozó szeletet kell kivágni.
+ *
+ * A szeletelés a `Címke:` mintára megy. FIGYELEM a `Deluxe` vs `Deluxe Lite`
+ * csapdára: a rövidebb név a hosszabb ELEJE, ezért nem részstringet keresünk,
+ * hanem a szegmens-címkét TELJES EGYEZÉSSEL azonosítjuk.
+ *
+ * Ha a cella nem bont kivitelre (`„11.2 kg"`), változatlanul visszaadjuk —
+ * az érték mindegyik kivitelre érvényes.
+ */
+export function cellForConstruction(cell: string, construction: string | null): string {
+  // Szegmens-határok: „Valami:" alakú címkék. A címke NAGYBETŰVEL kezdődik —
+  // ez a horgony, mert a gyártó gyakran elválasztó nélkül fűzi össze a
+  // szegmenseket: „60-105 kgDeluxe Lite: 50-85 kg". Kisbetűt is megengedve a
+  // minta a „kg"-ot is a következő címke elejének hinné, és levágná az
+  // előző érték mértékegységét.
+  const labelPattern = /([A-ZÀ-Þ][A-Za-zÀ-ÿ.+-]*(?:[ \t]+[A-Za-zÀ-ÿ.+-]+)*)[ \t]*:[ \t]*/g;
+  const matches = [...cell.matchAll(labelPattern)];
+  if (matches.length === 0) return cell;
+
+  const segments: { label: string; value: string }[] = [];
+  for (let i = 0; i < matches.length; i += 1) {
+    const current = matches[i];
+    if (!current) continue;
+    const start = (current.index ?? 0) + current[0].length;
+    const next = matches[i + 1];
+    const end = next?.index ?? cell.length;
+    segments.push({ label: (current[1] ?? "").trim(), value: cell.slice(start, end).trim() });
+  }
+  if (segments.length === 0) return cell;
+
+  if (construction === null) {
+    // Nincs mihez illeszteni: a cella több kivitelt sorol fel, közülük nem
+    // választunk — a hívó parse-olói így „több érték"-ként fogják kezelni.
+    return cell;
+  }
+
+  const wanted = construction.toLowerCase().replace(/\s+/g, " ").trim();
+  // 1) teljes egyezés, 2) a kivitel-név ELEJE (a tábla rövidíthet: a
+  //    „Deluxe Airline" variánshoz a tábla „Deluxe" szegmense tartozhat).
+  const exact = segments.find((s) => s.label.toLowerCase().replace(/\s+/g, " ") === wanted);
+  if (exact) return exact.value;
+  const prefix = segments
+    .filter((s) => wanted.startsWith(s.label.toLowerCase().replace(/\s+/g, " ")))
+    // A LEGHOSSZABB illeszkedő címke nyer: „Deluxe Lite" verjen a „Deluxe"-t.
+    .sort((a, b) => b.label.length - a.label.length)[0];
+  if (prefix) return prefix.value;
+
+  // Ismeretlen kivitel: nem tippelünk, a teljes cellát adjuk vissza (a
+  // parse-olók több-értékűként elutasítják).
+  return cell;
+}
+
 /** Melyik spec-mezőhöz tartozik ez a sor-címke? */
 function fieldForLabel(rawLabel: string): keyof typeof ROW_LABELS | null {
   const label = rawLabel.toLowerCase().trim();
@@ -198,7 +256,10 @@ function fieldForLabel(rawLabel: string): keyof typeof ROW_LABELS | null {
  * oszlop sem értelmezhető méretként, üres térképet adunk vissza (ez nem
  * spec-tábla, hanem pl. a tartozéklista).
  */
-export function parseSpecTable(rows: readonly (readonly string[])[]): Map<string, BoardSpecs> {
+export function parseSpecTable(
+  rows: readonly (readonly string[])[],
+  construction: string | null = null,
+): Map<string, BoardSpecs> {
   const result = new Map<string, BoardSpecs>();
   const header = rows[0];
   if (!header || header.length < 2) return result;
@@ -219,7 +280,8 @@ export function parseSpecTable(rows: readonly (readonly string[])[]): Map<string
     const field = fieldForLabel(row[0] ?? "");
     if (!field) continue;
     for (const [index, key] of columns) {
-      const cell = (row[index] ?? "").trim();
+      // A cellát ELŐBB a saját kivitelünkre szűkítjük (ld. cellForConstruction).
+      const cell = cellForConstruction((row[index] ?? "").trim(), construction);
       if (cell === "") continue;
       const specs = result.get(key);
       if (!specs) continue;
@@ -261,10 +323,11 @@ export function parseSpecTable(rows: readonly (readonly string[])[]): Map<string
  */
 export function mergeSpecTables(
   tables: readonly (readonly (readonly string[])[])[],
+  construction: string | null = null,
 ): Map<string, BoardSpecs> {
   const merged = new Map<string, BoardSpecs>();
   for (const table of tables) {
-    for (const [key, specs] of parseSpecTable(table)) {
+    for (const [key, specs] of parseSpecTable(table, construction)) {
       const existing = merged.get(key);
       if (!existing) {
         merged.set(key, { ...specs });

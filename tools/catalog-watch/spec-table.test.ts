@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  cellForConstruction,
   mergeSpecTables,
   normalizeSizeKey,
   parseRiderWeightKg,
@@ -288,5 +289,64 @@ describe("parseSpecTable — All Star iSUP (a felhasználó által mutatott táb
     // De a teherbírás megvan, a BIZTONSÁGOS (kisebb) értékkel.
     expect(middle?.maxLoadKg).toBe(85);
     expect(middle?.volumeL).toBe(323);
+  });
+});
+
+/**
+ * KIVITEL SZERINTI CELLA-BONTÁS (2026-08-19, felhasználói döntés: a kiviteli
+ * változatok külön deszkák). A gyártó egyetlen cellába zsúfolhatja több kivitel
+ * adatát; a jelöltnek a SAJÁT kivitele szerinti szeletet kell megkapnia.
+ */
+describe("cellForConstruction", () => {
+  const CELL = "Deluxe: 60-105 kgDeluxe Lite: 50-85 kg";
+
+  it("a `Deluxe Lite` a SAJÁT szeletét kapja, nem a `Deluxe`-ét", () => {
+    expect(cellForConstruction(CELL, "Deluxe Lite")).toBe("50-85 kg");
+  });
+
+  it("a `Deluxe` nem kapja meg a `Deluxe Lite` értékét (a rövidebb név a hosszabb eleje)", () => {
+    expect(cellForConstruction(CELL, "Deluxe")).toBe("60-105 kg");
+  });
+
+  it("a kivitelre nem bontó cellát változatlanul adja (mindre érvényes)", () => {
+    expect(cellForConstruction("11.2 kg", "Deluxe")).toBe("11.2 kg");
+    expect(cellForConstruction(`6" / 15 cm`, "Deluxe Lite")).toBe(`6" / 15 cm`);
+  });
+
+  it("ismeretlen kivitelnél NEM tippel — a teljes cellát adja vissza", () => {
+    // A hívó parse-olói ezt több-értékűként elutasítják → marad null.
+    expect(cellForConstruction(CELL, "Blue Carbon")).toBe(CELL);
+  });
+
+  it("kivitel nélkül (null) sem választ — a teljes cellát adja", () => {
+    expect(cellForConstruction(CELL, null)).toBe(CELL);
+  });
+});
+
+describe("parseSpecTable — kivitelenként PONTOS adat", () => {
+  const ALL_STAR_26 = [
+    ["Model", `14'0" x 26" ALL STAR`],
+    ["Rider Weight", "Deluxe: 60-105 kgDeluxe Lite: 50-85 kg"],
+    ["Volume", "323 L"],
+    ["Weight (Tolerance +/- 5%)", "Deluxe: 10.5 kg Deluxe Lite: 9.60 kg"],
+  ];
+
+  it("a Deluxe a saját súlyát és teherbírását kapja", () => {
+    const entry = parseSpecTable(ALL_STAR_26, "Deluxe").get(normalizeSizeKey(`14'0" x 26"`));
+    expect(entry?.weightKg).toBe(10.5);
+    expect(entry?.maxLoadKg).toBe(105);
+  });
+
+  it("a Deluxe Lite a sajátját — így egyik érték sem vész el és nem is torzul", () => {
+    const entry = parseSpecTable(ALL_STAR_26, "Deluxe Lite").get(normalizeSizeKey(`14'0" x 26"`));
+    expect(entry?.weightKg).toBe(9.6);
+    expect(entry?.maxLoadKg).toBe(85);
+  });
+
+  it("a kivitel-független mező mindkettőnél ugyanaz", () => {
+    const deluxe = parseSpecTable(ALL_STAR_26, "Deluxe").get(normalizeSizeKey(`14'0" x 26"`));
+    const lite = parseSpecTable(ALL_STAR_26, "Deluxe Lite").get(normalizeSizeKey(`14'0" x 26"`));
+    expect(deluxe?.volumeL).toBe(323);
+    expect(lite?.volumeL).toBe(323);
   });
 });

@@ -109,12 +109,11 @@ export interface CrawlDeps {
  */
 function applySpecTable(
   product: ExtractedProduct,
+  sizeLabel: string,
   bySize: ReadonlyMap<string, BoardSpecs>,
 ): ExtractedProduct {
-  // A modellnév végén álló méret-címke a kulcs (`shopify.ts` írta oda).
-  const sizeLabel = product.modelName.match(/(\d{1,2}'\s*\d{0,2}"?\s*[xX×]\s*\d{1,3}(?:\.\d+)?"?)\s*$/);
-  if (!sizeLabel) return product;
-  const specs = bySize.get(normalizeSizeKey(sizeLabel[1] ?? ""));
+  if (sizeLabel === "") return product;
+  const specs = bySize.get(normalizeSizeKey(sizeLabel));
   if (!specs) return product;
 
   return {
@@ -377,7 +376,7 @@ async function crawlShopifySource(
     // termékoldalon közli, JS-sel betöltött táblában. TERMÉKENKÉNT EGY
     // renderelés tölti fel az ÖSSZES méretét, ezért az ára elfogadható.
     const needsSpecs = expanded.some(
-      (product) =>
+      ({ product }) =>
         product.accessoryType === null &&
         (product.specs.maxLoadKg === null ||
           product.specs.weightKg === null ||
@@ -388,15 +387,29 @@ async function crawlShopifySource(
       await sleep(delayMs);
       const tables = await deps.renderTables(productUrl);
       if (tables) {
-        const bySize = mergeSpecTables(tables);
-        if (bySize.size > 0) {
-          expanded = expanded.map((product) => applySpecTable(product, bySize));
-          summary.specTablesUsed += 1;
-        }
+        // A táblát KIVITELENKÉNT kell értelmezni: egy cella több kivitel
+        // adatát is tartalmazhatja („Deluxe: 10.5 kg Deluxe Lite: 9.60 kg"),
+        // és a jelöltek kivitelenként külön sorok. A `mergeSpecTables` tiszta
+        // függvény ugyanazon a — már letöltött — táblán fut, ezért a
+        // kivitelenkénti újraértelmezés olcsó; a hálózatot nem terheli.
+        const byConstruction = new Map<string, ReadonlyMap<string, BoardSpecs>>();
+        let used = false;
+        expanded = expanded.map((item) => {
+          const key = item.construction ?? "";
+          let bySize = byConstruction.get(key);
+          if (!bySize) {
+            bySize = mergeSpecTables(tables, item.construction);
+            byConstruction.set(key, bySize);
+          }
+          if (bySize.size === 0) return item;
+          used = true;
+          return { ...item, product: applySpecTable(item.product, item.sizeLabel, bySize) };
+        });
+        if (used) summary.specTablesUsed += 1;
       }
     }
 
-    for (const product of expanded) {
+    for (const { product } of expanded) {
       summary.productsExtracted += 1;
       try {
         await persistExtracted({

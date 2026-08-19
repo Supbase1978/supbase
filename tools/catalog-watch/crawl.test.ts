@@ -498,10 +498,10 @@ describe("crawlSource — Shopify-forrás", () => {
   });
 
   it("ismert deszkát nem duplikál jelöltként, hanem látottnak jelöl", async () => {
-    // A `cleanModelName` a generikus „Paddle Board" utótagot levágja, tehát a
-    // katalógusban is `GO 12'0" X 34"` néven él a már jóváhagyott deszka.
+    // A `cleanModelName` a generikus „Paddle Board" utótagot levágja, a méret
+    // és a KIVITEL viszont a névbe kerül — így él a katalógusban is.
     const { store, candidates, seen } = makeStore([
-      { id: "b-go", brandName: "Starboard", modelName: `GO 12'0" X 34"`, modelYear: null },
+      { id: "b-go", brandName: "Starboard", modelName: `GO 12'0" X 34" Rhino`, modelYear: null },
     ]);
     const network = makeNetwork({
       [`${ORIGIN}/robots.txt`]: { text: "User-agent: *\n" },
