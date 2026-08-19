@@ -23,6 +23,7 @@ import { crawlAll, DEFAULT_MIN_DELAY_MS, type CrawlDeps, type FetchText } from "
 import { resolveSupabaseTarget } from "./env.ts";
 import { findDiscontinuedCandidates, DEFAULT_UNSEEN_DAYS } from "./lifecycle.ts";
 import { dedupeCandidates, type DedupeCandidate } from "./dedupe.ts";
+import { buildFamilyTypeMap, inferBoardType, type TypedExample } from "./family-type.ts";
 import { setFieldValue } from "./lock.ts";
 import type { ProductClassification } from "./normalize.ts";
 import { probeSource } from "./probe.ts";
@@ -330,9 +331,46 @@ async function commandApproveCandidates(args: Args): Promise<void> {
     .eq("status", "pending");
   if (error) throw new Error(`catalog_candidates olvasás: ${error.message}`);
 
+  // CSALÁD → KATEGÓRIA (F2.1-utó-21): a gyártói kollekciók csak az AKTUÁLIS
+  // évjáratot sorolják fel, ezért ugyanannak a modellcsaládnak a régebbi
+  // példányai kategória nélkül maradnak. A már ISMERT besorolásokat (élő
+  // deszkák + típussal bíró jelöltek) átvesszük a család többi tagjára.
+  const { data: liveBoards } = await client
+    .from("boards")
+    .select("model_name, board_type, brand:brands(name)")
+    .eq("kind", "board");
+  const examples: TypedExample[] = [];
+  for (const row of (liveBoards ?? []) as Record<string, unknown>[]) {
+    const brand = row.brand as { name?: string } | { name?: string }[] | null;
+    examples.push({
+      brandName: (Array.isArray(brand) ? brand[0]?.name : brand?.name) ?? null,
+      modelName: (row.model_name as string | null) ?? "",
+      boardType: (row.board_type as BoardType | null) ?? null,
+      // Az élő deszka moderátori döntésből született → megbízható.
+      trusted: true,
+    });
+  }
+  for (const row of rows ?? []) {
+    const extracted = row.extracted as ExtractedProduct | null;
+    if (!extracted || extracted.accessoryType !== null) continue;
+    examples.push({
+      brandName: extracted.brandName,
+      modelName: extracted.modelName,
+      boardType: extracted.boardType,
+      // CSAK a gyártói oldal tippje megbízható: a boltok címeiből levezetett
+      // kategória élesben tévesnek bizonyult (a Fusion „kids" lett volna).
+      trusted: sourceById.get(row.source_id as string)?.kind === "brand_site",
+    });
+  }
+  const { byFamily, conflicts } = buildFamilyTypeMap(examples);
+  if (conflicts.size > 0) {
+    console.log(`Ellentmondásos családok (nem következtetünk): ${[...conflicts].join(", ")}`);
+  }
+
   const eligible: DedupeCandidate[] = [];
   let skippedNoType = 0;
   let skippedNoSafety = 0;
+  let inferredType = 0;
   for (const row of rows ?? []) {
     const extracted = row.extracted as ExtractedProduct | null;
     if (!extracted || extracted.accessoryType !== null) continue;
@@ -344,14 +382,19 @@ async function commandApproveCandidates(args: Args): Promise<void> {
       skippedNoSafety += 1;
       continue;
     }
-    if (extracted.boardType === null) {
-      skippedNoType += 1;
-      continue;
+    let boardType = extracted.boardType;
+    if (boardType === null) {
+      boardType = inferBoardType(byFamily, extracted.brandName, extracted.modelName);
+      if (boardType === null) {
+        skippedNoType += 1;
+        continue;
+      }
+      inferredType += 1;
     }
     eligible.push({
       id: row.id as string,
       url: (row.url as string | null) ?? "",
-      extracted,
+      extracted: { ...extracted, boardType },
       sourceKind: source?.kind ?? "shop",
       sourceName: source?.name ?? "?",
     });
@@ -365,6 +408,9 @@ async function commandApproveCandidates(args: Args): Promise<void> {
       `(${eligible.length - groups.length} duplikátum összevonva)`,
   );
   console.log(`Kihagyva: ${skippedNoType} kategória nélkül · ${skippedNoSafety} biztonsági mező nélkül`);
+  if (inferredType > 0) {
+    console.log(`Kategória a modellcsaládból örökölve: ${inferredType} jelölt`);
+  }
   console.log(apply ? `\nÍRÁS (--apply), ${planned.length} deszka:` : `\n[DRY-RUN] amit létrehozna (${planned.length}):`);
 
   let created = 0;
