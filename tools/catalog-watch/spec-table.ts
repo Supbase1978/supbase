@@ -144,18 +144,35 @@ export function parseRiderWeightKg(cell: string): number | null {
     .map((m) => Number((m[1] ?? "").replace(",", ".")))
     .filter((n) => Number.isFinite(n) && n > 0);
 
-  const numbers =
-    kgNumbers.length > 0
-      ? kgNumbers
-      : [...cell.matchAll(/(\d+(?:[.,]\d+)?)/g)]
-          .map((m) => Number((m[1] ?? "").replace(",", ".")))
-          .filter((n) => Number.isFinite(n) && n > 0);
-  if (numbers.length === 0) return null;
   // Ésszerűségi korlát: emberi testsúly-tartomány. Egy elgépelt/rossz oszlopból
   // származó 900 kg-ot nem írunk be.
-  const plausible = numbers.filter((n) => n >= 20 && n <= 400);
-  if (plausible.length === 0) return null;
-  return Math.max(...plausible);
+  const plausible = (values: number[]) => values.filter((n) => n >= 20 && n <= 400);
+
+  const kgPlausible = plausible(kgNumbers);
+  if (kgPlausible.length > 0) {
+    // A `kg` a TARTOMÁNY FELSŐ határához tapad („60-105 kg" → csak a 105-höz),
+    // tehát KIVITELENKÉNT egy szám gyűlik ide. Ha több van, a cella több
+    // kivitelt sorol fel — élesben mért (All Star 14'0" x 26"):
+    // „Deluxe: 60-105 kg / Deluxe Lite: 50-85 kg".
+    //
+    // Ilyenkor a LEGKISEBB felső határ a helyes: a jelölt a kiviteleket EGY
+    // deszkává vonja össze (ld. `shopify.ts`), a teherbírás pedig BIZTONSÁGI
+    // mező a kemény szűrőben. A 105 kg beírása azt jelentené, hogy egy 100 kg-os
+    // evezősnek ajánljuk a deszkát, holott a Deluxe Lite változata csak 85 kg-ig
+    // terhelhető. Alábecsülve legfeljebb egy jó ajánlatot hagyunk ki;
+    // fölébecsülve viszont a felhasználót küldjük vízre alkalmatlan deszkával.
+    return Math.min(...kgPlausible);
+  }
+
+  // Mértékegység nélküli cella: itt egyetlen tartományt feltételezünk
+  // („70-90"), aminek a FELSŐ határa a teherbírás.
+  const bare = plausible(
+    [...cell.matchAll(/(\d+(?:[.,]\d+)?)/g)]
+      .map((m) => Number((m[1] ?? "").replace(",", ".")))
+      .filter((n) => Number.isFinite(n) && n > 0),
+  );
+  if (bare.length === 0) return null;
+  return Math.max(...bare);
 }
 
 /** Melyik spec-mezőhöz tartozik ez a sor-címke? */

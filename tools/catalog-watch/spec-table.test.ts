@@ -226,3 +226,67 @@ describe("parseSpecTable — teherbírás-címkék (élesben mért hibák)", () 
     expect(entry?.volumeL).toBe(315);
   });
 });
+
+/**
+ * BIZTONSÁGI szabály (2026-08-19, élesben mért: All Star 14'0" x 26").
+ * Egy méret-oszlop TÖBB KIVITEL teherbírását sorolhatja fel. A jelölt a
+ * kiviteleket egy deszkává vonja össze, a teherbírás pedig a kemény szűrő
+ * biztonsági mezője — ezért a legkisebb felső határ a mérvadó.
+ */
+describe("parseRiderWeightKg — több kivitel egy cellában", () => {
+  it("a LEGKISEBB felső határt veszi, nem a legnagyobbat", () => {
+    // Deluxe 105 kg-ig, Deluxe Lite viszont csak 85 kg-ig terhelhető.
+    expect(parseRiderWeightKg("Deluxe: 60-105 kgDeluxe Lite: 50-85 kg")).toBe(85);
+  });
+
+  it("egyetlen tartománynál változatlanul a felső határ", () => {
+    expect(parseRiderWeightKg("60-115 kg")).toBe(115);
+    expect(parseRiderWeightKg("50-90 kg")).toBe(90);
+  });
+
+  it("a font-érték melletti kg-ot nem rontja el", () => {
+    expect(parseRiderWeightKg("308 lbs / 140 kg")).toBe(140);
+  });
+
+  it("mértékegység nélküli tartománynál a felső határ marad", () => {
+    expect(parseRiderWeightKg("70-90")).toBe(90);
+  });
+});
+
+describe("parseSpecTable — All Star iSUP (a felhasználó által mutatott tábla)", () => {
+  const ALL_STAR = [
+    ["Model", `14'0" x 28" ALL STAR`, `14'0" x 26" ALL STAR`, `14'0" x 24.5" ALL STAR`],
+    ["Consructions Available", "Deluxe", "DeluxeDeluxe Lite", "Deluxe"],
+    ["Rider Weight", "60-115 kg", "Deluxe: 60-105 kgDeluxe Lite: 50-85 kg", "50-90 kg"],
+    ["Length", `14'0" / 426.7 cm`, `14'0" / 426.7 cm`, `14'0" / 426.7 cm`],
+    ["Width", `28" / 71.1 cm`, `26" / 66 cm`, `24.5" / 62.2 cm`],
+    ["Thickness", `6" / 15 cm`, `6" / 15 cm`, `6" / 15 cm`],
+    ["Volume", "367 L", "323 L", "310 L"],
+    ["Weight (Tolerance +/- 5%)", "11.2 kg", "Deluxe: 10.5 kg Deluxe Lite: 9.60 kg", "9.9 kg"],
+  ];
+
+  it("az egy-kivitelű oszlopokat HIÁNYTALANUL kiolvassa", () => {
+    const specs = parseSpecTable(ALL_STAR);
+    expect(specs.get(normalizeSizeKey(`14'0" x 28"`))).toMatchObject({
+      widthCm: 71.1,
+      thicknessCm: 15,
+      volumeL: 367,
+      weightKg: 11.2,
+      maxLoadKg: 115,
+    });
+    expect(specs.get(normalizeSizeKey(`14'0" x 24.5"`))).toMatchObject({
+      volumeL: 310,
+      weightKg: 9.9,
+      maxLoadKg: 90,
+    });
+  });
+
+  it("a több-kivitelű oszlopnál a SÚLY marad üres, a teherbírás a szigorúbb", () => {
+    const middle = parseSpecTable(ALL_STAR).get(normalizeSizeKey(`14'0" x 26"`));
+    // Két különböző súly (10.5 / 9.60) — nem tippelünk.
+    expect(middle?.weightKg).toBeNull();
+    // De a teherbírás megvan, a BIZTONSÁGOS (kisebb) értékkel.
+    expect(middle?.maxLoadKg).toBe(85);
+    expect(middle?.volumeL).toBe(323);
+  });
+});
