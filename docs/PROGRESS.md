@@ -2951,3 +2951,33 @@ igényel a moderálásnál.)
 Összevetésül: a kör elején 35 élő deszka és 153 pending jelölt volt, amiből
 96 volt teljes adatú. A munkalista 276-ról 93-ra csökkent úgy, hogy közben
 a jelöltek száma a négyszeresére nőtt.
+
+### F2.1-utó-18 — az Aqua Marina gyártói forrás teljessé tétele (2026-08-19)
+
+A 79 sitemap-URL végigellenőrizve: melyik NEM lett jelölt és miért. A 33
+„kimaradt" közül 30 kategórialap vagy nem-deszka (kajak, platform, csónak,
+száraz zsák) — helyesen. Három valódi termék akadt fenn, két külön okból:
+
+**1. NUTS — más lap-elrendezés (javítva).** A lap KÉT HASÁBBAN közli a
+specifikációt: az egyik `<div>` MINDEN címkét felsorol, a másik MINDEN
+értéket. A szokásos „címke után 40 karakterrel" keresés ilyenkor a KÖVETKEZŐ
+CÍMKÉT találja érték helyett, ezért mind a hat mező üres maradt, és a termék
+egyáltalán nem lett jelölt.
+
+Új `parseTransposedSpecs()` fallback (csak akkor fut, ha a szokásos parse
+üres), két biztonsági feltétellel — különben pozíció-alapú találgatás lenne:
+legalább **4 egymást követő** ismert spec-címke, és **pontosan ugyanannyi**
+értéksor. Eredmény: NUTS → 320×81×15 cm, 300 L, 9,1 kg, teherbírás 140 kg.
+
+**2-3. MEGA (18'1", 550 cm) és AIRSHIP RACE (22'0", 670 cm) — NYITOTT.**
+Ezek valódi Aqua Marina SUP-ok, de többszemélyes „mega" deszkák (650 kg és
+460 kg teherbírás), és a `BOARD_LENGTH_MAX_CM = 520` szűrőn fennakadnak.
+Nem hiba, hanem hatókör-kérdés: a Deszkaválasztó egyéni evezősre ajánl, egy
+18 lábas, 650 kg-os csoportos deszka ott furcsán jönne ki. **Felhasználói
+döntést igényel**, ezért a konstansot nem nyúltam.
+
+**Az Aqua Marina gyártói forrás ezzel kész: 37 jelölt, MIND A 37 teljes
+adatú** (mind az öt mérőszám, teherbírással együtt).
+
+**Állapot:** 587 deszka-jelölt · 536 teherbírással (ajánlásképes) · 494
+teljes adatú · munkalista 93 tétel.
