@@ -226,7 +226,10 @@ const SPEC_LABELS = {
   volumeL: ["térfogat", "volumen", "volume"],
   // A csupasz „weight" szándékosan hiányzik: a „Max weight: 140 kg" sorban
   // beleillene, és a TEHERBÍRÁST írná a deszka saját súlyaként.
-  weightKg: ["deszka súlya", "saját súly", "súly", "tömeg", "board weight"],
+  // A „net weight" ELÉG specifikus ahhoz, hogy ne ütközzön a teherbírással —
+  // az Aqua Marina hivatalos adatlapja (aquamarina.com) ezt a címkét használja
+  // a deszka saját súlyára, „MAX. PAYLOAD" mellett.
+  weightKg: ["deszka súlya", "saját súly", "súly", "tömeg", "board weight", "net weight"],
   maxLoadKg: [
     "teherbírás",
     "terhelhetőség",
@@ -238,6 +241,10 @@ const SPEC_LABELS = {
     "max load",
     "max weight",
     "capacity",
+    // Aqua Marina hivatalos adatlap (aquamarina.com): „MAX. PAYLOAD".
+    // A `kg`-kötelezettség miatt a mellette kiírt font-érték („308 lbs /
+    // 140 kg") nem téveszt meg — a 140 nyer, nem a 308.
+    "payload",
   ],
 } as const satisfies Record<keyof Omit<BoardSpecs, "inflatable">, readonly string[]>;
 

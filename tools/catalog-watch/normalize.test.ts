@@ -548,3 +548,55 @@ describe("extractProduct", () => {
     ).toEqual({ kind: "ignore" });
   });
 });
+
+/**
+ * Aqua Marina HIVATALOS adatlap (aquamarina.com/products/glowing/blaze,
+ * 2026-08-19). Az oldal Elementor-widgetekben, címke–érték párokban közli a
+ * specifikációt — a szövegé alakja pontosan ez. A gyártó a font-értéket is
+ * kiírja, ezért a `kg` kötelező: a 308 lbs SOHA nem kerülhet a teherbírásba.
+ */
+describe("parseSpecsFromText — Aqua Marina gyártói adatlap", () => {
+  const BLAZE = [
+    "BLAZE",
+    "Size: 10'4\"",
+    "PRODUCT",
+    "BLAZE 10'4\"",
+    "MODEL",
+    "BT-26BZ",
+    "NET WEIGHT",
+    "20.5 lbs / 9.3 kg",
+    "LENGTH",
+    "10'4\" / 315 cm",
+    "WIDTH",
+    "31\" / 79 cm",
+    "THICKNESS",
+    "6\" / 15 cm",
+    "VOLUME",
+    "315 L",
+    "MAX. PAYLOAD",
+    "308 lbs / 140 kg",
+    "MAX. AIR PRESSURE",
+    "15 psi",
+  ].join("\n");
+
+  it("mind a hat mérőszámot kiolvassa", () => {
+    expect(parseSpecsFromText(BLAZE)).toMatchObject({
+      lengthCm: 315,
+      widthCm: 79,
+      thicknessCm: 15,
+      volumeL: 315,
+      weightKg: 9.3,
+      maxLoadKg: 140,
+    });
+  });
+
+  it("a `MAX. PAYLOAD` font-értékét NEM veszi teherbírásnak", () => {
+    expect(parseSpecsFromText(BLAZE).maxLoadKg).not.toBe(308);
+  });
+
+  it("a `NET WEIGHT` a deszka súlya, nem a teherbírás", () => {
+    const specs = parseSpecsFromText(BLAZE);
+    expect(specs.weightKg).toBe(9.3);
+    expect(specs.maxLoadKg).toBe(140);
+  });
+});
