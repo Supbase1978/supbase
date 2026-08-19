@@ -2993,3 +2993,72 @@ forrásunk.
 
 **Állapot a kör végén:** 589 deszka-jelölt · 538 teherbírással
 (ajánlásképes) · 496 teljes adatú · munkalista 93 tétel.
+
+### F2.1-utó-19 — tömeges jóváhagyás és duplikátum-összevonás (2026-08-19)
+
+**A kiváltó kérdés (felhasználó):** „ezeket biztosan jóvá kell hagynom?
+ekkora adatmennyiségnél ez hatalmas munka". Jogos — 496 tétel egyenkénti
+átkattintása értelmetlen. A kapu viszont nem az adatminőségről szól (azt a
+gyártói forrás adja), hanem KÉT dologról: a **kategóriáról** (a jóváhagyás
+egyetlen emberi bemenete) és a **duplikátumokról** (136 csoport).
+
+**1. A GYÁRTÓ saját kategóriája (Shopify-kollekciók).** A modellnevekben
+nincs kategória-szó (Spice, Whopper, Wedge), a találgatás pedig félrevisz.
+A gyártói bolt kollekciói viszont a hivatalos besorolást adják — és a
+felhasználó gyanúja beigazolódott: **van átfedés.**
+
+| Modell | `all-round / wave` | `surf` |
+|---|---|---|
+| Whopper, GO Surf | ✓ | ✓ |
+| GO | ✓ | — |
+| Wedge, Longboard, Pro, Spice, TallTwin | — | ✓ |
+
+A Whoppert a gyártó kifejezetten kezdőknek ajánlja („the go-to board for
+first-time paddlers"), a GO Surföt pedig „from learning in the flat" —
+tehát sík vízre IS valók. A Wedge viszont CSAK szörf, pedig a neve alapján
+allroundnak tűnne. **Ezt heurisztikával nem lehetett volna eltalálni** — a
+korábbi, „a szörf-deszkák nem valók a katalógusba" következtetésem téves volt.
+
+**2. Duplikátum-összevonás** (`dedupe.ts`, tiszta modul). A szabály a
+felhasználó döntése: a **gyártói jelölt nyer** (ott hivatalos a modellnév),
+és a **hiányzó mezőit a kereskedői lapról** töltjük — a saját értékét soha
+nem írjuk felül. Biztonsági feltételek: trigram-hasonlóság a `match.ts`
+konzervatív küszöbével, egyező márka, ÉS egyező hossz (5 cm tűrés) — a
+`12'0"` és a `10'8"` GO két külön deszka, pedig a nevük azonos.
+
+**3. `approve-candidates` CLI**, alapértelmezésben DRY-RUN. Nem sérti a
+„figyelő sosem publikál magától" elvet: a parancsot az ADMIN futtatja, a
+crawl továbbra sem ír `boards`-ba. Amit NEM hagy jóvá: nincs kategória, vagy
+hiányzik a teherbírás/térfogat (a két kemény biztonsági szűrő).
+
+Az app-oldali `buildBoardInsert`-ből másolat kellett (`@core/*` alias sima
+`node` alatt nem oldódik fel) — **őrszem-teszt** védi: vitest alatt betölti
+az eredetit és mezőről mezőre összeveti.
+
+**A dry-run két hibát fogott meg írás előtt:**
+- **HTML-entitás a nevekben:** a Shopify `/products.json` és a JSON-LD `name`
+  mezője entitást ad (`Indiana 12&#039;6 Touring`) — nyersen került volna a
+  katalógusba. A `cleanModelName` most feloldja; a 15 már tárolt név
+  egyszeri scripttel javítva.
+- **Zajos bolti nevek és téves kategória** (`Aqua Marina FUSION ( )`,
+  `CORAL Stand up` → race). Ezért a futás **csak gyártói forrásra** ment
+  (`--brand-site`, felhasználói döntés) — a bolti jelöltek nem vesznek el:
+  amint a gyártói deszkák léteznek, a következő crawl őket MÁR ISMERT
+  deszkára illeszti (ár + elérhetőség), nem új jelöltként.
+
+**Eredmény — a katalógus 35-ről 104 deszkára nőtt:**
+
+| | |
+|---|---|
+| élő deszka | **104** (volt: 35) |
+| ebből ajánlásképes | **88** |
+| jóváhagyva ebben a körben | 69 |
+| duplikátum összevonva | 54 |
+
+Márka: Starboard 61 · Bluefin 15 · Aqua Marina 10 · Red Paddle 4 · Fanatic 3
+· Indiana 3 · egyéb 8. Típus: túra 41 · allround 33 · race 18 · gyerek 8 ·
+jóga 2 · folyami 1 · horgász 1.
+
+**Nyitva maradt:** 524 pending jelölt, túlnyomórészt kategória nélkül (a
+Starboard szörf-vonala: Spice, Longboard, Pro, TallTwin — ezekre nincs
+kategóriánk) vagy hiányzó biztonsági mezővel.

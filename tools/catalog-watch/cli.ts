@@ -76,8 +76,8 @@ Parancsok:
                                    Crawl az aktív forrásokból
   approve-candidates               TÖMEGES jóváhagyás (F2.1-utó-19). A tiszta
       [--source NÉV] [--apply]      eseteket egy menetben hagyja jóvá, a
-      [--limit N] [--reviewer ID]   duplikátumokat összevonja: a GYÁRTÓI
-                                    jelölt nyer, a hiányzó mezőit a kereskedői
+      [--brand-site] [--limit N]    duplikátumokat összevonja: a GYÁRTÓI
+      [--reviewer ID]               jelölt nyer, a hiányzó mezőit a kereskedői
                                     lapról tölti. Csak az mehet át, aminél
                                     van kategória ÉS megvan a két biztonsági
                                     mező (teherbírás, térfogat) — a többi a
@@ -308,6 +308,12 @@ async function commandApproveCandidates(args: Args): Promise<void> {
   const apply = flag(args, "apply") !== undefined;
   const limit = flagNumber(args, "limit");
   const sourceFilter = flag(args, "source")?.toLowerCase();
+  // Csak GYÁRTÓI forrásból: a modellnév ott hivatalos, a bolti nevek
+  // zajosak („Aqua Marina FUSION ( )"), és a bolti jelöltek kategória-tippje
+  // is megbízhatatlanabb. A kihagyottak nem vesznek el: amint a gyártói
+  // deszkák léteznek, a következő crawl a boltiakat MÁR ISMERT deszkára
+  // illeszti (ár + elérhetőség), nem új jelöltként.
+  const brandSiteOnly = flag(args, "brand-site") !== undefined;
   const client = connect();
 
   const reviewerId = flag(args, "reviewer") ?? (await resolveAdminReviewer(client));
@@ -332,6 +338,7 @@ async function commandApproveCandidates(args: Args): Promise<void> {
     if (!extracted || extracted.accessoryType !== null) continue;
     const source = sourceById.get(row.source_id as string);
     if (sourceFilter && !(source?.name ?? "").toLowerCase().includes(sourceFilter)) continue;
+    if (brandSiteOnly && source?.kind !== "brand_site") continue;
 
     if (extracted.specs.maxLoadKg === null || extracted.specs.volumeL === null) {
       skippedNoSafety += 1;
