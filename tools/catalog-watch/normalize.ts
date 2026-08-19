@@ -9,7 +9,7 @@
  * címkézett érték kell hozzá, „valahol a szövegben egy szám" nem elég.
  */
 import type { GearCategory } from "../../src/modules/catalog/gear.ts";
-import { htmlToText } from "./html.ts";
+import { decodeEntities, htmlToText } from "./html.ts";
 import type { BoardSpecs, BoardType, ExtractedProduct } from "./types.ts";
 import { EMPTY_SPECS } from "./types.ts";
 
@@ -118,7 +118,10 @@ export function extractModelYear(text: string, now = new Date()): number | null 
  * fontosabb, mint a szépség.
  */
 export function cleanModelName(rawTitle: string, brandName?: string | null): string {
-  let text = rawTitle.replace(/\s+/g, " ").trim();
+  // Az entitás-feloldás ITT történik, mert a nyers cím nem csak HTML-ből jön:
+  // a Shopify `/products.json` és a JSON-LD `name` mezője is entitást ad
+  // (`Indiana 12&#039;6 Touring`) — enélkül az `&#039;` a modellnév része lenne.
+  let text = decodeEntities(rawTitle).replace(/\s+/g, " ").trim();
 
   if (brandName) {
     // A márkanevet bárhol kivesszük (nem csak prefixként): „Aqua Marina Vapor

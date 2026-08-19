@@ -22,6 +22,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { crawlAll, DEFAULT_MIN_DELAY_MS, type CrawlDeps, type FetchText } from "./crawl.ts";
 import { resolveSupabaseTarget } from "./env.ts";
 import { findDiscontinuedCandidates, DEFAULT_UNSEEN_DAYS } from "./lifecycle.ts";
+import { dedupeCandidates, type DedupeCandidate } from "./dedupe.ts";
 import { setFieldValue } from "./lock.ts";
 import type { ProductClassification } from "./normalize.ts";
 import { probeSource } from "./probe.ts";
@@ -35,14 +36,16 @@ import {
 } from "./report.ts";
 import { CRAWLER_USER_AGENT } from "./robots.ts";
 import {
+  approveCandidateRow,
   createDryRunStore,
   createServiceClient,
   createSupabaseStore,
   insertSource,
+  listAllSources,
   listBoardsForLifecycle,
   listSources,
 } from "./store.ts";
-import type { CrawlConfig, ExtractedProduct, SourceKind } from "./types.ts";
+import type { BoardType, CrawlConfig, ExtractedProduct, SourceKind } from "./types.ts";
 
 /** Egyetlen kérés felső időkorlátja — egy lassú bolt ne akassza meg a futást. */
 const FETCH_TIMEOUT_MS = 20_000;
@@ -71,6 +74,15 @@ Parancsok:
       hossz tényleg kijött — így a blog/kategória oldalak kimaradnak.
   crawl [--source NÉV|ID] [--dry-run] [--max N]
                                    Crawl az aktív forrásokból
+  approve-candidates               TÖMEGES jóváhagyás (F2.1-utó-19). A tiszta
+      [--source NÉV] [--apply]      eseteket egy menetben hagyja jóvá, a
+      [--limit N] [--reviewer ID]   duplikátumokat összevonja: a GYÁRTÓI
+                                    jelölt nyer, a hiányzó mezőit a kereskedői
+                                    lapról tölti. Csak az mehet át, aminél
+                                    van kategória ÉS megvan a két biztonsági
+                                    mező (teherbírás, térfogat) — a többi a
+                                    moderátornál marad. ALAPÉRTELMEZÉSBEN
+                                    DRY-RUN; írni csak --apply-vel ír.
   lifecycle [--days N]             Kifutás-jelöltek listája (csak jelentés)
   list-incomplete [--source NÉV]   Hiányos adatú deszkák (pending jelölt ÉS
       [--html [ÚTVONAL]]            élő board) — a havi kézi adatgyűjtés
@@ -279,6 +291,107 @@ async function commandAddSource(args: Args): Promise<void> {
   });
   console.log(`Felvéve: ${source.name} (${source.id})`);
   console.log("Próbafutás írás nélkül:  node tools/catalog-watch/cli.ts crawl --dry-run");
+}
+
+/**
+ * TÖMEGES JÓVÁHAGYÁS. A moderációs UI `approveCandidate`-jével azonos műveletet
+ * végzi, csak sok soron — mert 500 tétel egyenkénti átkattintása értelmetlen
+ * munka lenne. A „figyelő sosem publikál magától" elv NEM sérül: ezt a
+ * parancsot az ADMIN futtatja, a saját döntéseként.
+ *
+ * Amit NEM hagy jóvá (marad a moderátornál):
+ *  - nincs kategória (`boardType`) — azt csak ember tudja eldönteni,
+ *  - hiányzik a TEHERBÍRÁS vagy a TÉRFOGAT — ez a két kemény, biztonsági
+ *    szűrő a Deszkaválasztóban; nélkülük a deszka amúgy sem kerülne ajánlásba.
+ */
+async function commandApproveCandidates(args: Args): Promise<void> {
+  const apply = flag(args, "apply") !== undefined;
+  const limit = flagNumber(args, "limit");
+  const sourceFilter = flag(args, "source")?.toLowerCase();
+  const client = connect();
+
+  const reviewerId = flag(args, "reviewer") ?? (await resolveAdminReviewer(client));
+  if (!reviewerId) {
+    throw new Error("Nem találtam admin profilt — add meg a --reviewer <profil-id> kapcsolóval.");
+  }
+
+  const sources = await listAllSources(client);
+  const sourceById = new Map(sources.map((s) => [s.id, s]));
+
+  const { data: rows, error } = await client
+    .from("catalog_candidates")
+    .select("id, url, source_id, extracted")
+    .eq("status", "pending");
+  if (error) throw new Error(`catalog_candidates olvasás: ${error.message}`);
+
+  const eligible: DedupeCandidate[] = [];
+  let skippedNoType = 0;
+  let skippedNoSafety = 0;
+  for (const row of rows ?? []) {
+    const extracted = row.extracted as ExtractedProduct | null;
+    if (!extracted || extracted.accessoryType !== null) continue;
+    const source = sourceById.get(row.source_id as string);
+    if (sourceFilter && !(source?.name ?? "").toLowerCase().includes(sourceFilter)) continue;
+
+    if (extracted.specs.maxLoadKg === null || extracted.specs.volumeL === null) {
+      skippedNoSafety += 1;
+      continue;
+    }
+    if (extracted.boardType === null) {
+      skippedNoType += 1;
+      continue;
+    }
+    eligible.push({
+      id: row.id as string,
+      url: (row.url as string | null) ?? "",
+      extracted,
+      sourceKind: source?.kind ?? "shop",
+      sourceName: source?.name ?? "?",
+    });
+  }
+
+  const groups = dedupeCandidates(eligible);
+  const planned = limit === undefined ? groups : groups.slice(0, limit);
+
+  console.log(
+    `\nJóváhagyható: ${eligible.length} jelölt → ${groups.length} deszka ` +
+      `(${eligible.length - groups.length} duplikátum összevonva)`,
+  );
+  console.log(`Kihagyva: ${skippedNoType} kategória nélkül · ${skippedNoSafety} biztonsági mező nélkül`);
+  console.log(apply ? `\nÍRÁS (--apply), ${planned.length} deszka:` : `\n[DRY-RUN] amit létrehozna (${planned.length}):`);
+
+  let created = 0;
+  const failures: string[] = [];
+  for (const group of planned) {
+    const w = group.winner.extracted;
+    const merged = group.merged.length > 0 ? ` +${group.merged.length} összevonva` : "";
+    const filled = group.filledFields.length > 0 ? ` [pótolt: ${group.filledFields.join(", ")}]` : "";
+    console.log(`  ${w.brandName} ${w.modelName} (${w.boardType})${merged}${filled}`);
+    if (!apply) continue;
+
+    const result = await approveCandidateRow(client, {
+      candidateId: group.winner.id,
+      extracted: w,
+      boardType: w.boardType as BoardType,
+      reviewerId,
+      mergedCandidateIds: group.merged.map((m) => m.id),
+    });
+    if (result.ok) created += 1;
+    else failures.push(`${w.brandName} ${w.modelName}: ${result.error}`);
+  }
+
+  if (!apply) {
+    console.log("\n(semmi nem íródott — futtasd --apply kapcsolóval)");
+    return;
+  }
+  console.log(`\nLétrehozva: ${created}/${planned.length} deszka`);
+  for (const failure of failures) console.log(`  HIBA: ${failure}`);
+}
+
+/** Az első admin profil — a jóváhagyás `reviewed_by` mezőjéhez. */
+async function resolveAdminReviewer(client: SupabaseClient): Promise<string | null> {
+  const { data } = await client.from("profiles").select("id").eq("role", "admin").limit(1);
+  return ((data as { id: string }[] | null) ?? [])[0]?.id ?? null;
 }
 
 async function commandCrawl(args: Args): Promise<void> {
@@ -663,6 +776,9 @@ async function main(): Promise<void> {
       return commandCrawl(args);
     case "lifecycle":
       return commandLifecycle(args);
+    case "approve-candidates":
+      await commandApproveCandidates(args);
+      break;
     case "verify-specs":
       return commandVerifySpecs(args);
     case "list-incomplete":

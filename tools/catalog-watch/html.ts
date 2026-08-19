@@ -17,7 +17,13 @@ const ENTITIES: Record<string, string> = {
   "&nbsp;": " ",
 };
 
-function decodeEntities(text: string): string {
+/**
+ * HTML-entitások feloldása. EXPORTÁLT, mert nem csak a HTML-ből szedett
+ * szövegnek kell: élesben mérve a Shopify `/products.json` és a JSON-LD
+ * `name` mezője is tartalmaz entitást (`Indiana 12&#039;6 Touring`), és
+ * enélkül az `&#039;` NYERSEN kerülne a katalógusba, a modellnév részeként.
+ */
+export function decodeEntities(text: string): string {
   return text
     .replace(/&#(\d+);/g, (_, code: string) => String.fromCodePoint(Number(code)))
     .replace(/&#x([0-9a-f]+);/gi, (_, code: string) =>

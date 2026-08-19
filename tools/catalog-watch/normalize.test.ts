@@ -807,3 +807,18 @@ describe("extractProductFromPage — két hasábos (transzponált) spec-blokk", 
     expect(extractProductFromPage(truncated, "https://x.com/y", "Aqua Marina")).toBeNull();
   });
 });
+
+/**
+ * HTML-entitás a modellnévben (élesben mért: a Shopify /products.json és a
+ * JSON-LD `name` mezője is ad entitást). Enélkül az `&#039;` NYERSEN kerülne
+ * a katalógusba: „Indiana 12&#039;6 Touring".
+ */
+describe("cleanModelName — HTML-entitások", () => {
+  it("feloldja az aposztróf-entitást, és a méretet utána vágja le", () => {
+    expect(cleanModelName("Indiana 12&#039;6 Touring", "Indiana")).toBe("Touring");
+  });
+
+  it("a nevesített entitásokat is kezeli", () => {
+    expect(cleanModelName("Aqua Marina Vapor &amp; Co", "Aqua Marina")).toBe("Vapor & Co");
+  });
+});

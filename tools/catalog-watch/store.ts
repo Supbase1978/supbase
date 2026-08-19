@@ -15,7 +15,15 @@ import type { SupabaseTarget } from "./env.ts";
 import { shouldRecordPrice } from "./lifecycle.ts";
 import type { BoardForLifecycle } from "./lifecycle.ts";
 import { applyFieldLocks } from "./lock.ts";
-import type { BoardForMatch, BoardSpecs, CatalogSourceRow, ExtractedProduct } from "./types.ts";
+import { buildBoardInsertPayload } from "./approve.ts";
+import { slugify } from "../../src/core/text/slug.ts";
+import type {
+  BoardForMatch,
+  BoardSpecs,
+  BoardType,
+  CatalogSourceRow,
+  ExtractedProduct,
+} from "./types.ts";
 
 /**
  * Service-role kliens a FELOLDOTT célra (lásd `env.ts`: a repo .env-je az
@@ -40,6 +48,14 @@ export async function listSources(
   const { data, error } = await query;
   fail("catalog_sources olvasás", error);
   return (data ?? []) as CatalogSourceRow[];
+}
+
+/**
+ * MINDEN forrás, az inaktívakkal együtt — a tömeges jóváhagyáshoz kell, mert
+ * a jelöltek egy azóta kikapcsolt forrásból is származhatnak.
+ */
+export async function listAllSources(client: SupabaseClient): Promise<CatalogSourceRow[]> {
+  return listSources(client, { onlyActive: false });
 }
 
 /** Új figyelt forrás (`add-source` CLI-parancs). */
@@ -264,4 +280,97 @@ export function createDryRunStore(client: SupabaseClient): {
       async markSourceCrawled() {},
     },
   };
+}
+
+/**
+ * Egy jóváhagyott jelölt beírása `boards`-ba, majd a hozzá tartozó
+ * duplikátumok `merged`-re állítása (F2.1-utó-19).
+ *
+ * ITT SZÜLETIK ÚJ DESZKA a CLI-ből — ugyanaz a művelet, amit a moderációs UI
+ * `approveCandidate`-je végez, csak tömegesen. A „figyelő sosem publikál
+ * magától" elv NEM sérül: ezt a parancsot az ADMIN futtatja, a saját
+ * döntéseként; a crawl továbbra sem ír `boards`-ba.
+ */
+export async function approveCandidateRow(
+  client: SupabaseClient,
+  input: {
+    candidateId: string;
+    extracted: ExtractedProduct;
+    boardType: BoardType;
+    reviewerId: string;
+    mergedCandidateIds: readonly string[];
+  },
+): Promise<{ ok: true; boardId: string } | { ok: false; error: string }> {
+  const brandName = input.extracted.brandName;
+  if (!brandName) return { ok: false, error: "nincs márkanév" };
+
+  const brandId = await resolveBrandIdForApproval(client, brandName);
+  if (!brandId) return { ok: false, error: `márka nem oldható fel: ${brandName}` };
+
+  const seenAt = new Date().toISOString();
+  const slug = await resolveUniqueSlugForApproval(
+    client,
+    slugify(`${brandName} ${input.extracted.modelName}`),
+  );
+
+  const { data, error } = await client
+    .from("boards")
+    .insert(buildBoardInsertPayload(input.extracted, { brandId, boardType: input.boardType, slug, seenAt }))
+    .select("id")
+    .single();
+  if (error || !data) return { ok: false, error: `boards insert: ${error?.message ?? "?"}` };
+  const boardId = (data as { id: string }).id;
+
+  // A nyertes jelölt `approved`, a duplikátumai `merged` — az utóbbiak a
+  // létrejött deszkára mutatnak, így a figyelő többé nem hozza vissza őket.
+  const { error: winnerError } = await client
+    .from("catalog_candidates")
+    .update({ status: "approved", reviewed_by: input.reviewerId, matched_board_id: boardId })
+    .eq("id", input.candidateId)
+    .eq("status", "pending");
+  if (winnerError) return { ok: false, error: `jelölt frissítés: ${winnerError.message}` };
+
+  if (input.mergedCandidateIds.length > 0) {
+    const { error: mergedError } = await client
+      .from("catalog_candidates")
+      .update({ status: "merged", reviewed_by: input.reviewerId, matched_board_id: boardId })
+      .in("id", [...input.mergedCandidateIds])
+      .eq("status", "pending");
+    if (mergedError) return { ok: false, error: `duplikátum frissítés: ${mergedError.message}` };
+  }
+
+  return { ok: true, boardId };
+}
+
+/** Márka feloldása/létrehozása — az app-oldali `resolveBrandId` párja. */
+async function resolveBrandIdForApproval(
+  client: SupabaseClient,
+  name: string,
+): Promise<string | null> {
+  const { data: existing } = await client.from("brands").select("id").ilike("name", name).limit(1);
+  const found = (existing as { id: string }[] | null)?.[0];
+  if (found) return found.id;
+
+  const { data, error } = await client.from("brands").insert({ name }).select("id").single();
+  if (error || !data) return null;
+  return (data as { id: string }).id;
+}
+
+/**
+ * Ütközésmentes slug. A slug a TELJES `boards` táblán belül egyedi (deszka és
+ * kiegészítő ugyanabból a sorhalmazból kap URL-t) — ezért a lekérdezés
+ * `kind`-agnosztikus, az app-oldali párjával egyezően.
+ */
+async function resolveUniqueSlugForApproval(client: SupabaseClient, base: string): Promise<string> {
+  const root = base === "" ? "deszka" : base;
+  for (let attempt = 0; attempt < 50; attempt += 1) {
+    const candidate = attempt === 0 ? root : `${root}-${attempt + 1}`;
+    const { data } = await client
+      .from("boards")
+      .select("id")
+      .eq("slug->>hu", candidate)
+      .limit(1);
+    if (((data as unknown[] | null) ?? []).length === 0) return candidate;
+  }
+  return `${root}-${Date.now()}`;
 }
