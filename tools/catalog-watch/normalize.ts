@@ -542,6 +542,30 @@ const MISC_NON_BOARD_KEYWORDS = [
   "handle",
 ];
 
+/**
+ * SOSEM deszka — bármilyen méret és teherbírás mellett sem (F2.1-utó-17).
+ *
+ * Élesben mért hiba: az `aquamarina.com` gyártói katalógusából KAJAKOK
+ * kerültek be deszka-jelöltként (Halve, Laxo, Memba, Betta, Steam, Tomahawk).
+ * A `classifyProduct` első szabálya rövidre zár — „deszka-tartományú hossz +
+ * teherbírás → deszka" —, márpedig egy kajak pontosan ilyen. Ezek ráadásul
+ * UGYANAZOK a termékek, amiket 2026-08-17-én/18-án kézzel kellett elutasítani
+ * a bolti forrásokból; a kulcsszavas kizárás ezt előzi meg.
+ *
+ * Ezért ez a lista MINDEN más szabály ELŐTT dönt.
+ */
+const NEVER_BOARD_KEYWORDS = [
+  "kajak",
+  "kayak",
+  "kenu",
+  "canoe",
+  "csonak",
+  "gumicsonak",
+  // Gyűjtő-/kategórialap, nem termék („SUP Equipment").
+  "equipment",
+  "felszereles",
+];
+
 /** A deszka-mivolt pozitív jelei a névben/leírásban. */
 const BOARD_NOUNS = ["deszka", "board", "isup", "i-sup", "paddleboard", "paddle board"];
 
@@ -595,8 +619,23 @@ export function classifyProduct(product: {
   modelName: string;
   boardType: BoardType | null;
   specs: BoardSpecs;
+  /**
+   * További, TERMÉKSPECIFIKUS besorolási jel — például az URL útvonala
+   * (`/products/reinforced-kayak/betta/`) vagy a bolt saját kategóriája.
+   * SZÁNDÉKOSAN nem a teljes oldalszöveg: az a navigációt is tartalmazza,
+   * ami minden oldalon ugyanaz (ld. az `extractProduct` doc-kommentjét).
+   */
+  classificationHint?: string;
 }): ProductClassification {
   const { specs } = product;
+
+  // ELSŐKÉNT: ami sosem deszka (kajak, kenu, gyűjtőlap) — a méret-alapú
+  // rövidzár ELŐTT, különben egy kajak deszkaként jönne be.
+  const identity = foldText(`${product.rawTitle} ${product.classificationHint ?? ""}`);
+  if (NEVER_BOARD_KEYWORDS.some((word) => identity.includes(word))) {
+    return { kind: "ignore" };
+  }
+
   const lengthInRange =
     specs.lengthCm !== null &&
     specs.lengthCm >= BOARD_LENGTH_MIN_CM &&
@@ -807,6 +846,25 @@ export function extractProduct(
 }
 
 /**
+ * A termék SAJÁT alcíme: a spec-blokkot közvetlenül megelőző rövid szövegablak.
+ *
+ * MIÉRT ÍGY: a gyártói oldalak a kategóriát a termék fölé írják — „LAXO
+ * RECREATIONAL KAYAK", „RIPPLE RECREATIONAL CANOE", „BLAZE glowing series" —,
+ * és ez az EGYETLEN megbízható per-termék jel. A teljes oldalszöveg
+ * használhatatlan: a navigáció minden oldalon felsorolja a „Kayak" kategóriát
+ * is, ezért élesben mérve a deszka-oldalakon (Blaze) is 31 „kayak" szó van.
+ *
+ * A szűk, 140 karakteres ablak a termék fejlécét fogja meg, a menüt már nem.
+ */
+function headlineBeforeSpecs(pageText: string): string {
+  const anchor = pageText.search(
+    /\b(PRODUCT|LENGTH|NET WEIGHT|MAX\.? PAYLOAD|Rider Weight)\b/,
+  );
+  if (anchor < 0) return "";
+  return pageText.slice(Math.max(0, anchor - 140), anchor).replace(/\s+/g, " ");
+}
+
+/**
  * Termék kinyerése JSON-LD NÉLKÜLI oldalról (F2.1-utó-17, 2026-08-19).
  *
  * MIÉRT KELL: van gyártói oldal, amelyik nem tesz ki schema.org `Product`
@@ -857,7 +915,19 @@ export function extractProductFromPage(
     accessoryType: null,
   };
 
-  const classification = classifyProduct(extracted);
+  // Az URL útvonala erős, termékspecifikus jel: az `aquamarina.com` a
+  // kategóriát is beleírja (`/products/reinforced-kayak/betta/`).
+  let pathHint = "";
+  try {
+    pathHint = decodeURIComponent(new URL(sourceUrl).pathname).replace(/[-_/]+/g, " ");
+  } catch {
+    pathHint = "";
+  }
+
+  const classification = classifyProduct({
+    ...extracted,
+    classificationHint: `${pathHint} ${headlineBeforeSpecs(pageText)}`,
+  });
   if (classification.kind === "ignore") return null;
   extracted.accessoryType =
     classification.kind === "accessory" ? classification.accessoryType : null;

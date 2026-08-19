@@ -645,3 +645,121 @@ describe("extractProductFromPage", () => {
     expect(extractProductFromPage("<html><body>x</body></html>", "https://x.com", "A")).toBeNull();
   });
 });
+
+/**
+ * ÉLESBEN MÉRT HIBA (2026-08-19, aquamarina.com): kajakok kerültek be
+ * deszka-jelöltként. A `classifyProduct` első szabálya rövidre zár
+ * („deszka-tartományú hossz + teherbírás → deszka"), márpedig egy kajak
+ * pontosan ilyen. Ugyanazok a termékek, amiket korábban kézzel kellett
+ * elutasítani a bolti forrásokból.
+ */
+describe("classifyProduct — ami SOSEM deszka", () => {
+  const kayakSpecs = {
+    lengthCm: 398.8,
+    widthCm: 98,
+    thicknessCm: null,
+    volumeL: null,
+    weightKg: 7.4,
+    maxLoadKg: 180,
+    inflatable: true,
+  };
+
+  it("a kajakot a MÉRET ellenére sem veszi deszkának, ha a neve elárulja", () => {
+    expect(
+      classifyProduct({
+        rawTitle: "Aqua Marina Halve kajak",
+        modelName: "Halve",
+        boardType: null,
+        specs: kayakSpecs,
+      }),
+    ).toEqual({ kind: "ignore" });
+  });
+
+  it("az URL-ből jövő kategória-jel is elég a kizáráshoz", () => {
+    // A cím önmagában ártatlan („Halve"), a kategória viszont árulkodó.
+    expect(
+      classifyProduct({
+        rawTitle: "Halve",
+        modelName: "Halve",
+        boardType: null,
+        specs: kayakSpecs,
+        classificationHint: "/products/reinforced-kayak/betta/",
+      }),
+    ).toEqual({ kind: "ignore" });
+  });
+
+  it("a gyűjtő-/kategórialapot sem veszi terméknek", () => {
+    expect(
+      classifyProduct({
+        rawTitle: "Equipment",
+        modelName: "Equipment",
+        boardType: null,
+        specs: { ...kayakSpecs, lengthCm: 165, maxLoadKg: null },
+        classificationHint: "/products/sup-equipment/",
+      }),
+    ).toEqual({ kind: "ignore" });
+  });
+
+  it("a VALÓDI deszkát változatlanul átengedi", () => {
+    expect(
+      classifyProduct({
+        rawTitle: "Blaze",
+        modelName: "Blaze",
+        boardType: "allround",
+        specs: { ...kayakSpecs, lengthCm: 315, volumeL: 315, maxLoadKg: 140 },
+        classificationHint: "/products/glowing/blaze/",
+      }),
+    ).toEqual({ kind: "board" });
+  });
+});
+
+/**
+ * A gyártói oldal SAJÁT alcíme a megbízható kategória-jel (F2.1-utó-17).
+ * A teljes oldalszöveg használhatatlan: a navigáció minden oldalon felsorolja
+ * a „Kayak" kategóriát is (élesben mérve a Blaze DESZKA oldalán is 31 „kayak"
+ * szó van) — a szűk, spec-blokk előtti ablak viszont tiszta.
+ */
+describe("extractProductFromPage — kajak vs. deszka az alcím alapján", () => {
+  function page(headline: string, title: string): string {
+    // A navigáció a valódi oldalakon a dokumentum TETEJÉN van, jóval a
+    // termék-fejléc előtt — a köztes szöveg ezt a távolságot modellezi.
+    return `<html><head><title>${title} – Aqua Marina</title></head><body>
+      <p>SUP Kayak Canoe Accessories</p>
+      <p>${"Lorem ipsum dolor sit amet, consectetur adipiscing elit. ".repeat(6)}</p>
+      <p>Find a Service Provider Connect Get Help Become a Dealer</p>
+      <p>${headline}</p>
+      <p>PRODUCT</p><p>${title}</p>
+      <p>LENGTH</p><p>13'1" / 398.8 cm</p>
+      <p>WIDTH</p><p>38" / 98 cm</p>
+      <p>MAX. PAYLOAD</p><p>396 lbs / 180 kg</p>
+    </body></html>`;
+  }
+
+  it("a `RECREATIONAL KAYAK` alcímű terméket kizárja a méret ellenére", () => {
+    const product = extractProductFromPage(
+      page("LAXO RECREATIONAL KAYAK Sizes: 9'4\"", "Laxo"),
+      "https://aquamarina.com/products/heavy-duty/laxo/",
+      "Aqua Marina",
+    );
+    expect(product).toBeNull();
+  });
+
+  it("a `RECREATIONAL CANOE` alcímű terméket is kizárja", () => {
+    expect(
+      extractProductFromPage(
+        page("RIPPLE RECREATIONAL CANOE Sizes: 12'2\"", "Ripple"),
+        "https://aquamarina.com/products/ripple/",
+        "Aqua Marina",
+      ),
+    ).toBeNull();
+  });
+
+  it("a DESZKÁT átengedi, pedig a navigációban ott a `Kayak` szó", () => {
+    const product = extractProductFromPage(
+      page("BLAZE glowing series Size: 10'4\"", "Blaze"),
+      "https://aquamarina.com/products/glowing/blaze/",
+      "Aqua Marina",
+    );
+    expect(product?.modelName).toBe("Blaze");
+  });
+});
