@@ -6,6 +6,7 @@ import {
   detectInflatable,
   extractModelYear,
   extractProduct,
+  extractProductFromPage,
   guessBoardType,
   normalizeBrandName,
   parseAvailability,
@@ -598,5 +599,49 @@ describe("parseSpecsFromText — Aqua Marina gyártói adatlap", () => {
     const specs = parseSpecsFromText(BLAZE);
     expect(specs.weightKg).toBe(9.3);
     expect(specs.maxLoadKg).toBe(140);
+  });
+});
+
+/**
+ * JSON-LD NÉLKÜLI gyártói oldal (F2.1-utó-17). Élesben mért: aquamarina.com —
+ * 0 JSON-LD, de a specifikáció címkézett szövegként ott van.
+ */
+describe("extractProductFromPage", () => {
+  const BLAZE_PAGE = `<html><head><title>Blaze – Aqua Marina</title></head><body>
+    <p>PRODUCT</p><p>BLAZE 10'4"</p>
+    <p>NET WEIGHT</p><p>20.5 lbs / 9.3 kg</p>
+    <p>LENGTH</p><p>10'4" / 315 cm</p>
+    <p>WIDTH</p><p>31" / 79 cm</p>
+    <p>THICKNESS</p><p>6" / 15 cm</p>
+    <p>VOLUME</p><p>315 L</p>
+    <p>MAX. PAYLOAD</p><p>308 lbs / 140 kg</p>
+  </body></html>`;
+
+  it("a címből és az oldalszövegből teljes jelöltet épít", () => {
+    const product = extractProductFromPage(BLAZE_PAGE, "https://aquamarina.com/x", "Aqua Marina");
+    expect(product?.brandName).toBe("Aqua Marina");
+    expect(product?.modelName).toBe("Blaze");
+    expect(product?.specs).toMatchObject({
+      lengthCm: 315,
+      widthCm: 79,
+      thicknessCm: 15,
+      volumeL: 315,
+      weightKg: 9.3,
+      maxLoadKg: 140,
+    });
+  });
+
+  it("gyártói forrás: árat SOHA nem ad", () => {
+    expect(extractProductFromPage(BLAZE_PAGE, "https://x.com/y", "Aqua Marina")?.priceHuf).toBeNull();
+  });
+
+  it("HOSSZ nélküli oldalból nem csinál jelöltet (blog, kategória)", () => {
+    const blog = `<html><head><title>SUP tippek kezdőknek – Aqua Marina</title></head>
+      <body><p>Néhány jó tanács a kezdéshez.</p></body></html>`;
+    expect(extractProductFromPage(blog, "https://x.com/blog", "Aqua Marina")).toBeNull();
+  });
+
+  it("cím nélküli oldalra null", () => {
+    expect(extractProductFromPage("<html><body>x</body></html>", "https://x.com", "A")).toBeNull();
   });
 });

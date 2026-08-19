@@ -66,6 +66,9 @@ Parancsok:
       (Shopify-boltoknál a méret gyakran csak JS után jelenik meg a HTML-ben;
       a /products.json strukturáltan adja, és 1-2 kérés az egész katalógus).
       --product-type: csak ezek a Shopify-kategóriák (ismételhető)
+      --html-only: nincs JSON-LD az oldalon, de a specifikáció címkézett
+      szövegként ott van (pl. aquamarina.com). Csak akkor ad jelöltet, ha a
+      hossz tényleg kijött — így a blog/kategória oldalak kimaradnak.
   crawl [--source NÉV|ID] [--dry-run] [--max N]
                                    Crawl az aktív forrásokból
   lifecycle [--days N]             Kifutás-jelöltek listája (csak jelentés)
@@ -251,6 +254,9 @@ async function commandAddSource(args: Args): Promise<void> {
   if (defaultBrand) crawlConfig.defaultBrandName = defaultBrand;
   const notes = flag(args, "notes");
   if (notes) crawlConfig.notes = notes;
+
+  // JSON-LD nélküli gyártói oldal (F2.1-utó-17).
+  if (flag(args, "html-only") !== undefined) crawlConfig.htmlOnly = true;
 
   // Shopify-mód (F2.1-utó-14): a `/products.json`-ról dolgozunk, nem sitemapről.
   if (flag(args, "shopify") !== undefined) {

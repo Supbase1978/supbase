@@ -59,6 +59,13 @@ export interface CrawlConfig {
      */
     productTypes?: string[];
   };
+  /**
+   * JSON-LD NÉLKÜLI oldalak feldolgozása (F2.1-utó-17): ha a forrás nem tesz ki
+   * schema.org `Product`-ot, de a specifikációt címkézett szövegként közli
+   * (élesben: `aquamarina.com`), a kinyerés a `<title>` + oldalszöveg alapján
+   * megy. Csak explicit kapcsolóra, mert lazább, mint a JSON-LD út.
+   */
+  htmlOnly?: boolean;
   /** Szabad szöveges megjegyzés az adminnak. */
   notes?: string;
 }

@@ -22,7 +22,7 @@ import type {
 import { htmlToText } from "./html.ts";
 import { findProductNodes, pickPrimaryProduct } from "./jsonld.ts";
 import { matchCandidate } from "./match.ts";
-import { classifyProduct, extractProduct } from "./normalize.ts";
+import { classifyProduct, extractProduct, extractProductFromPage } from "./normalize.ts";
 import {
   CRAWLER_USER_AGENT,
   crawlDelayFor,
@@ -505,9 +505,16 @@ export async function crawlSource(
       }
 
       const node = pickPrimaryProduct(findProductNodes(page.text));
-      if (!node) continue; // nem termékoldal — csendben tovább
-
-      let product = extractProduct(node, url, htmlToText(page.text), config.defaultBrandName ?? null);
+      // JSON-LD NÉLKÜLI gyártói oldal (F2.1-utó-17): van olyan forrás, ami nem
+      // tesz ki schema.org Product-ot, a specifikációt viszont címkézett
+      // szövegként közli (élesben: aquamarina.com). Csak explicit kapcsolóval,
+      // mert a szöveg-alapú kinyerés lazább — és csak akkor ad jelöltet, ha a
+      // hossz tényleg kijött (különben minden blogbejegyzés bekerülne).
+      let product = node
+        ? extractProduct(node, url, htmlToText(page.text), config.defaultBrandName ?? null)
+        : config.htmlOnly
+          ? extractProductFromPage(page.text, url, config.defaultBrandName ?? null)
+          : null;
       if (!product) continue;
       summary.productsExtracted += 1;
 
@@ -524,7 +531,9 @@ export async function crawlSource(
         await sleep(delayMs);
         const renderedText = await deps.renderText!(url);
         if (renderedText !== null) {
-          const rerendered = extractProduct(node, url, renderedText, config.defaultBrandName ?? null);
+          const rerendered = node
+            ? extractProduct(node, url, renderedText, config.defaultBrandName ?? null)
+            : null;
           if (rerendered) product = rerendered;
         }
       }
@@ -532,7 +541,9 @@ export async function crawlSource(
       await persistExtracted({
         product,
         url,
-        raw: node,
+        // JSON-LD nélküli oldalnál nincs mit nyersen eltenni — a `raw` a
+        // moderátornak szóló nyomkövetés, üresen is értelmes.
+        raw: node ?? {},
         source,
         deps,
         summary,

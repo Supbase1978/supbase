@@ -9,6 +9,7 @@
  * címkézett érték kell hozzá, „valahol a szövegben egy szám" nem elég.
  */
 import type { GearCategory } from "../../src/modules/catalog/gear.ts";
+import { htmlToText } from "./html.ts";
 import type { BoardSpecs, BoardType, ExtractedProduct } from "./types.ts";
 import { EMPTY_SPECS } from "./types.ts";
 
@@ -803,4 +804,62 @@ export function extractProduct(
     specs,
     accessoryType: classification.kind === "accessory" ? classification.accessoryType : null,
   };
+}
+
+/**
+ * Termék kinyerése JSON-LD NÉLKÜLI oldalról (F2.1-utó-17, 2026-08-19).
+ *
+ * MIÉRT KELL: van gyártói oldal, amelyik nem tesz ki schema.org `Product`
+ * JSON-LD-t, a specifikációt viszont CÍMKÉZETT SZÖVEGKÉNT közli, amit a
+ * `parseSpecsFromText` amúgy is olvas. Élesben mért: `aquamarina.com` — a
+ * termékoldalain 0 JSON-LD, de „NET WEIGHT / LENGTH / WIDTH / THICKNESS /
+ * VOLUME / MAX. PAYLOAD" párokban ott a teljes adat.
+ *
+ * VÉDELEM A SZEMÉT ELLEN: csak akkor ad vissza terméket, ha a szövegből
+ * KIJÖTT a hossz. Enélkül minden blogbejegyzés és kategóriaoldal jelöltté
+ * válna (a sitemap ezeket is tartalmazza). A hossz megléte az a minimum,
+ * ami elárulja, hogy tényleg egy deszka adatlapját nézzük.
+ */
+export function extractProductFromPage(
+  html: string,
+  sourceUrl: string,
+  defaultBrandName: string | null = null,
+): ExtractedProduct | null {
+  const titleMatch = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
+  const rawTitle = htmlToText(titleMatch?.[1] ?? "")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (rawTitle === "") return null;
+
+  const pageText = htmlToText(html);
+  const specs = parseSpecsFromText(pageText);
+  if (specs.lengthCm === null) return null;
+
+  const brandName = normalizeBrandName(defaultBrandName);
+  const modelName = cleanModelName(rawTitle, brandName);
+  if (modelName === "") return null;
+
+  const extracted: ExtractedProduct = {
+    sourceUrl,
+    brandName,
+    modelName,
+    rawTitle,
+    modelYear: extractModelYear(rawTitle),
+    // Gyártói oldal: árat nem viszünk (ár-megjelenítési politika).
+    priceHuf: null,
+    inStock: null,
+    imageUrl: null,
+    // A besorolási tipphez SZÁNDÉKOSAN csak a cím: az oldalszöveg a
+    // navigációt/kategóriamenüt is tartalmazza, ami minden oldalon ott van
+    // (ugyanaz a csapda, amit az `extractProduct` doc-kommentje ír le).
+    boardType: guessBoardType(rawTitle),
+    specs,
+    accessoryType: null,
+  };
+
+  const classification = classifyProduct(extracted);
+  if (classification.kind === "ignore") return null;
+  extracted.accessoryType =
+    classification.kind === "accessory" ? classification.accessoryType : null;
+  return extracted;
 }
