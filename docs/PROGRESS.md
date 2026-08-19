@@ -3139,3 +3139,63 @@ Márka: Starboard 108 · Aqua Marina 25 · Bluefin 15 · Red Paddle 4 · Fanatic
 jóga 4 · folyami 2 · horgász 2.
 
 Jelöltek: 146 jóváhagyott · 104 összevont · 207 elutasított · **254 pending**.
+
+### F2.1-utó-22 — a besorolás a GYÁRTÓ használat-értékeléséből (2026-08-19)
+
+**Felhasználói kérés:** „ezeket mentsük el és egy következő gyűjtésnél már ne
+legyenek kérdések." Ezért a maradék kategória-kérdéseket NEM eseti döntésekkel
+zártuk le, hanem gyártói adatból — így a következő gyűjtésnél maguktól
+megoldódnak.
+
+**A felismerés:** az `aquamarina.com` minden deszkát PONTOZ négy használati
+mód szerint, százalékos sávokkal:
+
+```
+BLAZE:  ALL-AROUND/ENTRY 100% · GUIDE/EXPLORE 60% · SURF/WAVE 80% · RACE/TRAINING 40%
+```
+
+Ez a gyártó saját állásfoglalása arról, mire való a deszka — a legerősebb
+adja a kategóriát. Erre azért volt szükség, mert a gyártó MARKETING-
+kategóriái (`/products/glowing/`, `/products/family/`, `/products/light-weight/`,
+`/products/hybrid/`) nem használati kategóriák: a „Glowing" annyit tesz, hogy
+világít, nem azt, hogy mire jó.
+
+`usage-rating.ts` — tiszta modul:
+- a horgony az `aria-valuetext` attribútum (képernyőolvasóknak szánt,
+  ember által olvasható összefoglaló → stabilabb, mint a vizuális markup),
+- **döntetlennél nem tippel** (két egyformán erős használatnál a moderátor dönt),
+- **más értékelés-készletet figyelmen kívül hagy** — a NUTS és a Revolution
+  oldala `TRACKING / MANEUVERABILITY / STABILITY / SPEED` sávokat mutat, azok
+  nem használati módok,
+- **ha a SZÖRF vezet, a termék KIMARAD** — a szörf-kizárás így gyártói
+  adatból jön, nem kézzel karbantartott névlistából.
+
+Ez utóbbi rögtön fogott két tételt: a **Wave** (SURF/WAVE 100%) és a **Blade**
+(windsurf-széria, SURF/WAVE 100%) elutasítva.
+
+Elsőbbség: terméknév + URL-kategória → majd a használat-értékelés.
+
+**Amit ez feloldott** — pontosan azok a tételek, amiket egyébként egyenként
+kellett volna eldönteni: Glow, Blaze, Ray (`glowing`), Super Trip / View /
+Tandem (`family`), Airo, Halo (`light-weight`), Cascade, Cascade Tandem
+(`hybrid`), Mega (`multiperson`), AMgo.
+
+**Kategória nélkül maradt (2 tétel, moderátorra vár):** NUTS és Revolution —
+az ő oldaluk más értékelés-készletet használ, tehát a gyártó nem mond
+használati besorolást.
+
+**A katalógus 178 deszka:**
+
+| | kör eleje | most |
+|---|---|---|
+| élő deszka | 35 | **178** |
+| ebből ajánlásképes | ~30 | **161** |
+
+Márka: Starboard 108 · Aqua Marina 37 · Bluefin 15 · Red Paddle 4 · Fanatic 3
+· Indiana 3 · egyéb 8. Típus: allround 84 · túra 50 · race 27 · gyerek 9 ·
+jóga 4 · folyami 2 · horgász 2.
+
+Jelöltek: 158 jóváhagyott · 104 összevont · 209 elutasított · 240 pending
+(ebből 58 kiegészítő, ~63 hiányzó biztonsági mezővel, a többi bolti forrásból —
+azok a következő crawlnál a meglévő deszkákra illeszkednek majd ár- és
+elérhetőség-frissítésként).
