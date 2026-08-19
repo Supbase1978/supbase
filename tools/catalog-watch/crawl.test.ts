@@ -404,3 +404,126 @@ describe("crawlAll", () => {
     expect(summary.sources[0]?.errors[0]).toMatch(/robots\.txt/);
   });
 });
+
+/**
+ * SHOPIFY-ÁG (F2.1-utó-14) — a `/products.json`-ról dolgozó forrás.
+ * A minta a star-board.com valós válaszának szerkezetét követi.
+ */
+describe("crawlSource — Shopify-forrás", () => {
+  const SHOPIFY_SOURCE: CatalogSourceRow = {
+    ...SOURCE,
+    id: "src-shopify",
+    name: "Gyártói Shopify",
+    kind: "brand_site",
+    crawl_config: {
+      minDelayMs: 0,
+      shopify: { productTypes: ["SUP Hardboard"] },
+    },
+  };
+
+  function catalogPage(products: unknown[]): string {
+    return JSON.stringify({ products });
+  }
+
+  const GO = {
+    id: 1,
+    title: "GO Paddle Board",
+    handle: "go-paddle-board",
+    vendor: "Starboard SUP",
+    product_type: "SUP Hardboard",
+    variants: [
+      { id: 10, title: `12'0" X 34" / Rhino`, available: true },
+      { id: 11, title: `11'2" X 32" / Rhino`, available: true },
+    ],
+  };
+  const TSHIRT = {
+    id: 2,
+    title: "Starboard Póló",
+    handle: "polo",
+    vendor: "Starboard",
+    product_type: "T-Shirt",
+    variants: [{ id: 20, title: "M" }],
+  };
+
+  it("a /products.json-ból méretenként külön jelöltet ír, sitemap nélkül", async () => {
+    const { store, candidates } = makeStore([]);
+    const network = makeNetwork({
+      [`${ORIGIN}/robots.txt`]: { text: "User-agent: *\n" },
+      [`${ORIGIN}/products.json?limit=250&page=1`]: { text: catalogPage([GO, TSHIRT]) },
+    });
+
+    const summary = await crawlSource(SHOPIFY_SOURCE, {
+      fetchText: network.fetchText,
+      store,
+    });
+
+    // Két méret → két jelölt; a póló a productTypes szűrőn fennakadt.
+    expect(candidates).toHaveLength(2);
+    expect(summary.candidatesCreated).toBe(2);
+    // Sitemapet EGYÁLTALÁN nem kért le.
+    expect(network.requested.some((u) => u.includes("sitemap"))).toBe(false);
+  });
+
+  it("a hivatalos gyártói nevet és a méretet írja a modellnévbe, ár nélkül", async () => {
+    const { store, candidates } = makeStore([]);
+    const network = makeNetwork({
+      [`${ORIGIN}/robots.txt`]: { text: "User-agent: *\n" },
+      [`${ORIGIN}/products.json?limit=250&page=1`]: { text: catalogPage([GO]) },
+    });
+
+    await crawlSource(SHOPIFY_SOURCE, { fetchText: network.fetchText, store });
+
+    for (const candidate of candidates) {
+      expect(candidate.extracted.brandName).toBe("Starboard");
+      expect(candidate.extracted.modelName).toContain("GO");
+      expect(candidate.extracted.priceHuf).toBeNull();
+      expect(candidate.url).toContain("?variant=");
+    }
+    const lengths = candidates.map((c) => c.extracted.specs.lengthCm);
+    expect(lengths.every((l) => l !== null)).toBe(true);
+  });
+
+  it("a robots.txt tiltása esetén NEM kéri le a katalógust", async () => {
+    const { store, candidates } = makeStore([]);
+    const network = makeNetwork({
+      [`${ORIGIN}/robots.txt`]: { text: "User-agent: *\nDisallow: /products.json\n" },
+      [`${ORIGIN}/products.json?limit=250&page=1`]: { text: catalogPage([GO]) },
+    });
+
+    const summary = await crawlSource(SHOPIFY_SOURCE, { fetchText: network.fetchText, store });
+
+    expect(candidates).toHaveLength(0);
+    expect(summary.robotsBlocked).toBe(1);
+    expect(network.requested.some((u) => u.includes("products.json"))).toBe(false);
+  });
+
+  it("ismert deszkát nem duplikál jelöltként, hanem látottnak jelöl", async () => {
+    // A `cleanModelName` a generikus „Paddle Board" utótagot levágja, tehát a
+    // katalógusban is `GO 12'0" X 34"` néven él a már jóváhagyott deszka.
+    const { store, candidates, seen } = makeStore([
+      { id: "b-go", brandName: "Starboard", modelName: `GO 12'0" X 34"`, modelYear: null },
+    ]);
+    const network = makeNetwork({
+      [`${ORIGIN}/robots.txt`]: { text: "User-agent: *\n" },
+      [`${ORIGIN}/products.json?limit=250&page=1`]: { text: catalogPage([GO]) },
+    });
+
+    await crawlSource(SHOPIFY_SOURCE, { fetchText: network.fetchText, store });
+
+    expect(seen.map((s) => s.boardId)).toContain("b-go");
+    expect(candidates.every((c) => !c.extracted.modelName.includes(`12'0"`))).toBe(true);
+  });
+
+  it("a katalógus HTTP-hibáját jelenti, de nem dob", async () => {
+    const { store } = makeStore([]);
+    const network = makeNetwork({
+      [`${ORIGIN}/robots.txt`]: { text: "User-agent: *\n" },
+      [`${ORIGIN}/products.json?limit=250&page=1`]: { status: 503 },
+    });
+
+    const summary = await crawlSource(SHOPIFY_SOURCE, { fetchText: network.fetchText, store });
+
+    expect(summary.errors.some((e) => e.includes("503"))).toBe(true);
+    expect(summary.candidatesCreated).toBe(0);
+  });
+});

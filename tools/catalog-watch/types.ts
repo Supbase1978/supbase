@@ -45,6 +45,20 @@ export interface CrawlConfig {
    * élvez.
    */
   defaultBrandName?: string;
+  /**
+   * SHOPIFY-MÓD (F2.1-utó-14). Ha jelen van, a crawl NEM a sitemapet járja,
+   * hanem a bolt `/products.json` végpontját (indoklás: `shopify.ts` fejléc).
+   * A `sitemapUrl`/`productUrlPatterns` ilyenkor nem játszik.
+   */
+  shopify?: {
+    /**
+     * Csak ezeket a Shopify `product_type` értékeket vesszük figyelembe (pl.
+     * `["SUP Hardboard", "SUP Inflatable"]`). Üresen minden termék átmegy a
+     * szokásos `classifyProduct` kapun — nagy, vegyes katalógusnál viszont
+     * olcsóbb már itt szűrni.
+     */
+    productTypes?: string[];
+  };
   /** Szabad szöveges megjegyzés az adminnak. */
   notes?: string;
 }

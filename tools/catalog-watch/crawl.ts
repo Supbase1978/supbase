@@ -30,6 +30,7 @@ import {
   parseRobotsTxt,
   type RobotsTxt,
 } from "./robots.ts";
+import { expandShopifyProduct, fetchShopifyCatalog } from "./shopify.ts";
 import { parseSitemap, selectProductUrls } from "./sitemap.ts";
 
 /** Forrásonkénti felső korlát egy futásra (a `crawl_config` felülírhatja). */
@@ -224,6 +225,134 @@ export async function collectProductUrls(
 }
 
 /** Egy forrás teljes bejárása. Dobás helyett a hibákat a summary gyűjti. */
+/**
+ * Egy KINYERT termék sorsa: ismert deszka → `last_seen_at` (+ ársor), egyébként
+ * besorolás után jelölt-sor. KÖZÖS a JSON-LD-s és a Shopify-ág között — a
+ * „soha nem publikál magától" szabály (1. megkötés) így egyetlen helyen él.
+ */
+async function persistExtracted(input: {
+  product: ExtractedProduct;
+  url: string;
+  raw: Record<string, unknown>;
+  source: CatalogSourceRow;
+  deps: CrawlDeps;
+  summary: SourceCrawlSummary;
+  boards: readonly BoardForMatch[];
+  seenAt: string;
+}): Promise<void> {
+  const { product, url, raw, source, deps, summary, boards, seenAt } = input;
+
+  const match = matchCandidate(product, boards);
+
+  if (match.kind === "known" && match.boardId !== null) {
+    summary.matchedKnown += 1;
+    await deps.store.markBoardSeen({
+      boardId: match.boardId,
+      seenAt,
+      inStock: product.inStock,
+    });
+    if (product.priceHuf !== null) {
+      await deps.store.recordPrice({
+        boardId: match.boardId,
+        shopName: source.name,
+        url,
+        priceHuf: product.priceHuf,
+      });
+      summary.pricesRecorded += 1;
+    }
+    return;
+  }
+
+  // A boltok sitemapje evezőt, pumpát, ruházatot is tartalmaz. A jelölt-sor
+  // deszkát VAGY a 3 követett felszerelés-kategóriát kaphatja (F2.3 3.
+  // szakasz) — minden más `ignore` marad, különben használhatatlanná válik
+  // a moderáció. (A fenti „ismert" ág ELŐBB van: meglévő deszka árát ez
+  // nem blokkolja.)
+  const classification = classifyProduct(product);
+  if (classification.kind === "ignore") {
+    summary.skippedNonBoard += 1;
+    return;
+  }
+
+  const created = await deps.store.saveCandidate({
+    sourceId: source.id,
+    url,
+    raw,
+    extracted: product,
+    matchedBoardId: match.boardId,
+    confidence: match.confidence,
+  });
+  if (created) summary.candidatesCreated += 1;
+}
+
+/**
+ * SHOPIFY-ÁG (F2.1-utó-14). A `/products.json` végpontról dolgozik, nem a
+ * sitemapről: a Shopify-boltok termékoldalain a méret csak JS-futás után
+ * jelenik meg, a `/products.json` viszont strukturáltan adja (a részletes
+ * indoklás a `shopify.ts` fejlécében).
+ *
+ * A robots.txt itt is KÖTELEZŐ: a `/products.json` ugyanúgy egy útvonal, amit
+ * a bolt megtilthat — ha tiltja, a forrás kimarad.
+ */
+async function crawlShopifySource(
+  source: CatalogSourceRow,
+  robots: RobotsTxt,
+  origin: string,
+  deps: CrawlDeps,
+  summary: SourceCrawlSummary,
+  delayMs: number,
+): Promise<void> {
+  const config = source.crawl_config ?? {};
+  const shopify = config.shopify ?? {};
+  const now = deps.now ?? (() => new Date());
+  const sleep = deps.sleep ?? (() => Promise.resolve());
+  const log = deps.log ?? (() => {});
+
+  if (!isPathAllowed(robots, "/products.json", CRAWLER_USER_AGENT)) {
+    addError(summary, "robots.txt tiltja a /products.json-t — a forrás kimarad");
+    summary.robotsBlocked += 1;
+    return;
+  }
+
+  const { products, errors } = await fetchShopifyCatalog(origin, deps.fetchText, {
+    maxProducts: config.maxProducts ?? DEFAULT_MAX_PRODUCTS,
+    productTypes: shopify.productTypes,
+    sleep,
+    delayMs,
+  });
+  for (const error of errors) addError(summary, error);
+
+  const boards = await deps.store.listBoardsForMatch();
+  const seenAt = now().toISOString();
+
+  // Egy TERMÉK több jelöltté bomlik (méretenként egy) — a summary
+  // `urlsConsidered` mezője ezért a variánsokat számolja, nem a lekért lapokat.
+  let considered = 0;
+  for (const shopifyProduct of products) {
+    const expanded = expandShopifyProduct(shopifyProduct, origin, config.defaultBrandName ?? null);
+    considered += expanded.length;
+    for (const product of expanded) {
+      summary.productsExtracted += 1;
+      try {
+        await persistExtracted({
+          product,
+          url: product.sourceUrl,
+          raw: shopifyProduct as unknown as Record<string, unknown>,
+          source,
+          deps,
+          summary,
+          boards,
+          seenAt,
+        });
+      } catch (error) {
+        addError(summary, `${product.sourceUrl}: ${errorMessage(error)}`);
+      }
+    }
+  }
+  summary.urlsConsidered = considered;
+  log(`[${source.name}] Shopify: ${products.length} termék → ${considered} méret-variáns`);
+}
+
 export async function crawlSource(
   source: CatalogSourceRow,
   deps: CrawlDeps,
@@ -256,6 +385,18 @@ export async function crawlSource(
   const config = source.crawl_config ?? {};
   const robotsDelayMs = (crawlDelayFor(robots) ?? 0) * 1000;
   const delayMs = Math.max(config.minDelayMs ?? DEFAULT_MIN_DELAY_MS, robotsDelayMs);
+
+  // Shopify-forrás: külön ág, sitemap helyett `/products.json` (F2.1-utó-14).
+  // A `markSourceCrawled` UTÁNA ugyanúgy lefut, ezért itt csak a törzs cserélődik.
+  if (config.shopify) {
+    await crawlShopifySource(source, robots, origin, deps, summary, delayMs);
+    try {
+      await deps.store.markSourceCrawled(source.id, now().toISOString());
+    } catch (error) {
+      addError(summary, `last_crawled_at: ${errorMessage(error)}`);
+    }
+    return summary;
+  }
 
   const urls = await collectProductUrls(source, robots, origin, deps, summary);
   log(`[${source.name}] ${urls.length} termék-URL, szünet ${delayMs} ms`);
@@ -310,48 +451,16 @@ export async function crawlSource(
         }
       }
 
-      const match = matchCandidate(product, boards);
-      const seenAt = now().toISOString();
-
-      if (match.kind === "known" && match.boardId !== null) {
-        summary.matchedKnown += 1;
-        await deps.store.markBoardSeen({
-          boardId: match.boardId,
-          seenAt,
-          inStock: product.inStock,
-        });
-        if (product.priceHuf !== null) {
-          await deps.store.recordPrice({
-            boardId: match.boardId,
-            shopName: source.name,
-            url,
-            priceHuf: product.priceHuf,
-          });
-          summary.pricesRecorded += 1;
-        }
-        continue;
-      }
-
-      // A boltok sitemapje evezőt, pumpát, ruházatot is tartalmaz. A jelölt-sor
-      // deszkát VAGY a 3 követett felszerelés-kategóriát kaphatja (F2.3 3.
-      // szakasz) — minden más `ignore` marad, különben használhatatlanná válik
-      // a moderáció. (A fenti „ismert" ág ELŐBB van: meglévő deszka árát ez
-      // nem blokkolja.)
-      const classification = classifyProduct(product);
-      if (classification.kind === "ignore") {
-        summary.skippedNonBoard += 1;
-        continue;
-      }
-
-      const created = await deps.store.saveCandidate({
-        sourceId: source.id,
+      await persistExtracted({
+        product,
         url,
         raw: node,
-        extracted: product,
-        matchedBoardId: match.boardId,
-        confidence: match.confidence,
+        source,
+        deps,
+        summary,
+        boards,
+        seenAt: now().toISOString(),
       });
-      if (created) summary.candidatesCreated += 1;
     } catch (error) {
       addError(summary, `${url}: ${errorMessage(error)}`);
     }

@@ -70,6 +70,7 @@ indítás (`workflow_dispatch`, van `dry_run` kapcsolója).
 | `match.ts` | `pg_trgm`-kompatibilis trigram-egyezés → ismert / bizonytalan / új |
 | `crawl.ts` | orchestrátor (injektált I/O, hibatűrő, udvarias) |
 | `render.ts` | böngésző-renderelt szöveg FALLBACKKÉNT (Playwright), csak ha a sima HTML-ből mindhárom méret hiányzik |
+| `shopify.ts` | Shopify-boltok `/products.json` katalógusa → méretenkénti jelöltek (sitemap helyett) |
 | `lifecycle.ts` | futás-specifikus döntések; a kifutás-szabály a catalog modulban él |
 | `store.ts` | az EGYETLEN adatbázist író fájl (service-role) |
 | `env.ts` | cél-projekt feloldás + kulcs-projekt egyeztetés |
@@ -91,6 +92,41 @@ adja a MEGLÉVŐ címke-alapú parsernek — nem egyedi, bolt-specifikus JS-
 változót olvasunk ki. Drága művelet, ezért csak fallbackként, ritkán fut.
 A CI-ban (`catalog-watch.yml`) ehhez kell a `playwright install --with-deps
 chromium` lépés is.
+
+## Shopify-mód (F2.1-utó-14, 2026-08-19)
+
+Élesben mért eset: a **star-board.com** 445 termékoldalán szabályos Product
+JSON-LD van, de a MÉRET sem a nyers HTML-ben, sem a Playwright-renderelt
+szövegben nincs ott (a variánsokat egy JS-tab tölti) — a sitemap-út tehát 445
+ÜRES jelöltet gyártana. A Shopify viszont minden boltnál kiszolgálja a
+`/products.json` végpontot, ami ugyanazt a katalógust adja strukturáltan:
+`vendor` (márka), `product_type` (kategória) és `variants[]` (méretenként).
+
+```bash
+node tools/catalog-watch/cli.ts add-source --name "Starboard" \
+  --url https://star-board.com --kind brand_site --country EU \
+  --shopify --product-type "SUP Hardboard" --product-type "SUP Inflatable" \
+  --product-type "Paddleboard" --default-brand Starboard
+```
+
+Amit tudni kell róla:
+
+- **Olcsóbb és pontosabb**: 445 oldalletöltés helyett 2 lapozott kérés.
+- **A robots.txt itt is kötelező** — ha a bolt tiltja a `/products.json`-t,
+  a forrás kimarad (`robotsBlocked`).
+- **Méretenként külön jelölt**, mert a SUP-nál a méret maga a termék (a
+  Deszkaválasztó hossz/szélesség alapján pontoz). A KIVITELI változatok
+  (carbon/standard) viszont ÖSSZEFÉSÜLŐDNEK — ugyanaz a deszka más anyagból,
+  ugyanaz az elv, mint a színváltozatoknál. Az azonos dimenzió eltérő
+  ŰRTARTALOMMAL viszont két külön deszka marad.
+- **A modellnév a HIVATALOS gyártói név** (`vendor` + terméknév), kiegészítve a
+  mérettel — a kereskedői oldalak átnevezik a terméket („ISUP", „2024",
+  csomagajánlat), amitől ugyanaz a deszka több néven kerülne be.
+- **Ár SOHA nem íródik** ebből az ágból: gyártói forrás, és a Shopify `price`
+  a bolt pénznemében van (Starboard: EUR), miközben a `priceHuf` forintot vár.
+- **Amit NEM ad**: vastagság, súly, teherbírás — ezek a `/products.json`-ban
+  nincsenek. A jelöltek tehát fél adattal érkeznek, és a `list-incomplete`
+  listán jelennek meg, `verify-specs`-szel tölthetők.
 
 ## Korlátok (F2-ben tudatosan nyitva)
 

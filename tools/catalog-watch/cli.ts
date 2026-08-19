@@ -59,8 +59,13 @@ Parancsok:
       [--kind shop|brand_site|feed] [--sitemap URL] [--pattern RÉSZLET]...
       [--exclude RÉSZLET]... [--max N] [--delay MS] [--country HU]
       [--default-brand NÉV] [--notes SZÖVEG]
+      [--shopify [--product-type "SUP Hardboard"]...]
       --default-brand: fallback márkanév, ha a JSON-LD nem ad brand/manufacturer
       mezőt (egymárkás gyártói bolt esetén gyakori)
+      --shopify: a bolt /products.json végpontjáról dolgozunk sitemap helyett
+      (Shopify-boltoknál a méret gyakran csak JS után jelenik meg a HTML-ben;
+      a /products.json strukturáltan adja, és 1-2 kérés az egész katalógus).
+      --product-type: csak ezek a Shopify-kategóriák (ismételhető)
   crawl [--source NÉV|ID] [--dry-run] [--max N]
                                    Crawl az aktív forrásokból
   lifecycle [--days N]             Kifutás-jelöltek listája (csak jelentés)
@@ -246,6 +251,17 @@ async function commandAddSource(args: Args): Promise<void> {
   if (defaultBrand) crawlConfig.defaultBrandName = defaultBrand;
   const notes = flag(args, "notes");
   if (notes) crawlConfig.notes = notes;
+
+  // Shopify-mód (F2.1-utó-14): a `/products.json`-ról dolgozunk, nem sitemapről.
+  if (flag(args, "shopify") !== undefined) {
+    const productTypes = flagList(args, "product-type");
+    crawlConfig.shopify = productTypes ? { productTypes } : {};
+    if (crawlConfig.sitemapUrl || crawlConfig.productUrlPatterns) {
+      console.warn(
+        "FIGYELEM: --shopify mellett a --sitemap/--pattern nem játszik (a katalógus a /products.json-ból jön).",
+      );
+    }
+  }
 
   const client = connect();
   const source = await insertSource(client, {
