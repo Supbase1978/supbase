@@ -571,7 +571,12 @@ const BOARD_NOUNS = ["deszka", "board", "isup", "i-sup", "paddleboard", "paddle 
 
 /** Deszkahossz ésszerű tartománya cm-ben — ez a spec-alapú, DÖNTŐ jel. */
 const BOARD_LENGTH_MIN_CM = 240;
-const BOARD_LENGTH_MAX_CM = 520;
+// 700 cm ≈ 23 láb: a gyártók többszemélyes „mega" deszkái (Aqua Marina MEGA
+// 18'1"/550 cm, AIRSHIP RACE 22'0"/670 cm) is valódi SUP-ok, ezért a
+// katalógusban a helyük. Hogy egyéni evezősnek NE ajánljuk őket, az advisor
+// külön hossz-korláttal zárja ki (`singlePaddlerMaxLengthCm`) — felhasználói
+// döntés, 2026-08-19.
+const BOARD_LENGTH_MAX_CM = 700;
 
 /**
  * Csak ezt a 3 kategóriát KÖVETJÜK jelöltként egyelőre (terv 3. szakasz,

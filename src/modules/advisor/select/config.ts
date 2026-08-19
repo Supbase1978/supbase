@@ -47,6 +47,17 @@ export interface AdvisorConfig {
    * mert a normál allround deszkák terhelhetősége nem elég.
    */
   heavyRiderKg: number;
+  /**
+   * 1. réteg — ennél HOSSZABB deszkát nem ajánlunk egyéni evezősnek.
+   *
+   * A gyártók kínálnak többszemélyes „mega" deszkákat (Aqua Marina MEGA
+   * 18'1" / 550 cm, 650 kg; AIRSHIP RACE 22'0" / 670 cm, 460 kg). Ezek
+   * VALÓDI SUP-ok, ezért a katalógusban a helyük (F2.1-utó-18) — de a
+   * kemény szűrőkön (térfogat, terhelhetőség) simán átmennének, hiszen épp
+   * az a lényegük, hogy sokat bírnak. Enélkül a figyelő egy 80 kg-os
+   * kezdőnek is felajánlana egy 18 lábas, csoportos deszkát.
+   */
+  singlePaddlerMaxLengthCm: number;
   /** 2. réteg — ennyi értékelés alatt a Közös nevező semleges 0,5. */
   reviewsMinCount: number;
   /**
@@ -141,6 +152,7 @@ export const ADVISOR_KEYS = {
   "advisor.passenger.adult_kg": ["passenger", "adultKg"],
   "advisor.max_load.safety_factor": ["maxLoadSafetyFactor"],
   "advisor.heavy_rider_kg": ["heavyRiderKg"],
+  "advisor.single_paddler.max_length_cm": ["singlePaddlerMaxLengthCm"],
   "advisor.reviews.min_count": ["reviewsMinCount"],
   "advisor.stability_part.volume": ["stabilityParts", "volume"],
   "advisor.stability_part.width": ["stabilityParts", "width"],
@@ -182,6 +194,9 @@ export const DEFAULT_ADVISOR_CONFIG: AdvisorConfig = {
   passenger: { childKg: 15, dogKg: 25, adultKg: 70 },
   maxLoadSafetyFactor: 0.66,
   heavyRiderKg: 90,
+  // 520 cm ≈ 17 láb: a legnagyobb, még EGYSZEMÉLYES verseny-/túradeszkák is
+  // ez alatt vannak (14–16 láb a felső mezőny).
+  singlePaddlerMaxLengthCm: 520,
   reviewsMinCount: 5,
   stabilityParts: { volume: 45, width: 40, thickness: 15 },
   volumeFit: {
@@ -243,6 +258,7 @@ export function parseAdvisorConfig(
     passenger: { ...DEFAULT_ADVISOR_CONFIG.passenger },
     maxLoadSafetyFactor: DEFAULT_ADVISOR_CONFIG.maxLoadSafetyFactor,
     heavyRiderKg: DEFAULT_ADVISOR_CONFIG.heavyRiderKg,
+    singlePaddlerMaxLengthCm: DEFAULT_ADVISOR_CONFIG.singlePaddlerMaxLengthCm,
     reviewsMinCount: DEFAULT_ADVISOR_CONFIG.reviewsMinCount,
     stabilityParts: { ...DEFAULT_ADVISOR_CONFIG.stabilityParts },
     volumeFit: {

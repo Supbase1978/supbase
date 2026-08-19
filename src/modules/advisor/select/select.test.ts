@@ -445,3 +445,41 @@ describe("passenger: felnőtt társ (F1.6-utó/3)", () => {
     expect(passesHardFilter(board, makeInputs({ passenger: "adult" }), CFG)).toBe(false);
   });
 });
+
+/**
+ * TÖBBSZEMÉLYES „mega" deszkák (F2.1-utó-18, 2026-08-19). A gyártók
+ * kínálnak 18–22 lábas, 460–650 kg teherbírású csoportos SUP-okat (Aqua
+ * Marina MEGA, AIRSHIP RACE). Ezek a katalógusban benne vannak, de egyéni
+ * evezősnek nem valók — és épp azért mennének át a térfogat/terhelhetőség
+ * szűrőn, mert sokat bírnak.
+ */
+describe("passesHardFilter — többszemélyes mega deszka", () => {
+  const MEGA = {
+    lengthCm: 550,
+    volumeL: 1400,
+    maxLoadKg: 650,
+    widthCm: 152,
+    thicknessCm: 20,
+  };
+
+  it("a 18 lábas mega deszkát NEM ajánlja egyéni evezősnek", () => {
+    // Minden más szűrőn átmenne: 1400 L térfogat és 650 kg teherbírás.
+    expect(passesHardFilter(makeBoard(MEGA), makeInputs(), CFG)).toBe(false);
+  });
+
+  it("a 22 lábas AIRSHIP RACE-t sem", () => {
+    expect(
+      passesHardFilter(makeBoard({ ...MEGA, lengthCm: 670, volumeL: 1000, maxLoadKg: 460 }), makeInputs(), CFG),
+    ).toBe(false);
+  });
+
+  it("a határon lévő, EGYSZEMÉLYES 17 lábas deszkát átengedi", () => {
+    expect(
+      passesHardFilter(makeBoard({ lengthCm: CFG.singlePaddlerMaxLengthCm }), makeInputs(), CFG),
+    ).toBe(true);
+  });
+
+  it("hossz nélküli deszkát nem zár ki emiatt (más szűrő dönt)", () => {
+    expect(passesHardFilter(makeBoard({ lengthCm: null }), makeInputs(), CFG)).toBe(true);
+  });
+});

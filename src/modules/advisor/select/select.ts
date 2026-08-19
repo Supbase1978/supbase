@@ -144,6 +144,12 @@ export function passesHardFilter(
   if (board.maxLoadKg * config.maxLoadSafetyFactor < effectiveWeight(inputs, config)) {
     return false;
   }
+  // (b2) TÖBBSZEMÉLYES „mega" deszka: egyéni evezősnek nem ajánljuk. A
+  // térfogat- és terhelhetőség-szűrőn épp azért menne át, mert sokat bír —
+  // ezért kell külön, hossz-alapú korlát (F2.1-utó-18).
+  if (board.lengthCm !== null && board.lengthCm > config.singlePaddlerMaxLengthCm) {
+    return false;
+  }
   // (c) itthoni elérhetőség
   if (!board.availabilityHu) return false;
   // (d) tárolás: "csak felfújható" → inflatable
@@ -182,7 +188,14 @@ export function explainNoMatch(
   const byType = boards.filter((b) => allowed.includes(b.boardType));
   if (byType.length === 0) return "type";
 
-  const available = byType.filter((b) => b.availabilityHu);
+  // A többszemélyes „mega" deszkák kiszűrése ITT, az elérhetőség ELŐTT: az
+  // indok-lánc ugyanabban a sorrendben halad, mint a kemény szűrő.
+  const singlePaddler = byType.filter(
+    (b) => b.lengthCm === null || b.lengthCm <= config.singlePaddlerMaxLengthCm,
+  );
+  if (singlePaddler.length === 0) return "type";
+
+  const available = singlePaddler.filter((b) => b.availabilityHu);
   if (available.length === 0) return "availability";
 
   const byStorage =
