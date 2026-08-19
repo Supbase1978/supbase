@@ -2969,15 +2969,27 @@ egyáltalán nem lett jelölt.
 legalább **4 egymást követő** ismert spec-címke, és **pontosan ugyanannyi**
 értéksor. Eredmény: NUTS → 320×81×15 cm, 300 L, 9,1 kg, teherbírás 140 kg.
 
-**2-3. MEGA (18'1", 550 cm) és AIRSHIP RACE (22'0", 670 cm) — NYITOTT.**
+**2-3. MEGA (18'1", 550 cm) és AIRSHIP RACE (22'0", 670 cm) — MEGOLDVA.**
 Ezek valódi Aqua Marina SUP-ok, de többszemélyes „mega" deszkák (650 kg és
-460 kg teherbírás), és a `BOARD_LENGTH_MAX_CM = 520` szűrőn fennakadnak.
-Nem hiba, hanem hatókör-kérdés: a Deszkaválasztó egyéni evezősre ajánl, egy
-18 lábas, 650 kg-os csoportos deszka ott furcsán jönne ki. **Felhasználói
-döntést igényel**, ezért a konstansot nem nyúltam.
+460 kg teherbírás), és a `BOARD_LENGTH_MAX_CM = 520` szűrőn fennakadtak.
+Nem hiba volt, hanem hatókör-kérdés — **felhasználói döntés (2026-08-19):
+kerüljenek be a katalógusba, de KÜLÖN KEZELVE.**
 
-**Az Aqua Marina gyártói forrás ezzel kész: 37 jelölt, MIND A 37 teljes
-adatú** (mind az öt mérőszám, teherbírással együtt).
+- `catalog-watch`: `BOARD_LENGTH_MAX_CM` 520 → **700** (≈23 láb), hogy
+  jelöltként bejöjjenek.
+- `advisor`: új **`singlePaddlerMaxLengthCm`** (520 cm) kemény szűrő a
+  `passesHardFilter`-ben, és a „miért nincs találat" indok-láncban is.
+  Konfigurálható (`advisor.single_paddler.max_length_cm`), a többi
+  advisor-paraméter mintájára.
 
-**Állapot:** 587 deszka-jelölt · 536 teherbírással (ajánlásképes) · 494
-teljes adatú · munkalista 93 tétel.
+**Miért kell külön szabály:** ezek a deszkák a térfogat- és
+terhelhetőség-szűrőn ÉPP AZÉRT mennének át, mert sokat bírnak (1400 L,
+650 kg) — enélkül az ajánló egy 80 kg-os KEZDŐNEK is felkínálna egy 18
+lábas, csoportos deszkát. A katalógusban tehát láthatók, az ajánlásban nem.
+
+**Az Aqua Marina gyártói forrás ezzel kész: 39 jelölt, MIND A 39 teljes
+adatú** (mind az öt mérőszám, teherbírással együtt) — ez a legtisztább
+forrásunk.
+
+**Állapot a kör végén:** 589 deszka-jelölt · 538 teherbírással
+(ajánlásképes) · 496 teljes adatú · munkalista 93 tétel.
