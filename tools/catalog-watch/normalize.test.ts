@@ -763,3 +763,47 @@ describe("extractProductFromPage — kajak vs. deszka az alcím alapján", () =>
     expect(product?.modelName).toBe("Blaze");
   });
 });
+
+/**
+ * „TRANSZPONÁLT" spec-blokk (F2.1-utó-18, élesben mért: aquamarina.com/nuts).
+ * A lap két hasábban közli a specifikációt — előbb MINDEN címke, utána MINDEN
+ * érték —, ezért a szokásos „címke után 40 karakterrel" keresés a következő
+ * CÍMKÉT találja érték helyett, és mind a hat mező üresen maradna.
+ */
+describe("extractProductFromPage — két hasábos (transzponált) spec-blokk", () => {
+  const NUTS = `<html><head><title>Nuts – Aqua Marina</title></head><body>
+    <p>NUTS RENTAL series Sizes: 10'6"</p>
+    <div><p>MODEL</p><p>PRODUCT</p><p>LENGTH</p><p>WIDTH</p><p>THICKNESS</p>
+         <p>VOLUME</p><p>NET WEIGHT</p><p>MAX. PAYLOAD</p><p>MAX. AIR PRESSURE</p></div>
+    <div><p>NUTS 10'6"</p><p>AM-20NU</p><p>10'6" / 320cm</p><p>32" / 81cm</p><p>6" / 15cm</p>
+         <p>300L</p><p>20.1lbs / 9.1kg</p><p>308lbs / 140kg</p><p>15 psi</p></div>
+  </body></html>`;
+
+  it("a címke- és érték-hasábot pozíció szerint párosítja", () => {
+    const product = extractProductFromPage(NUTS, "https://aquamarina.com/products/nuts/", "Aqua Marina");
+    expect(product?.specs).toMatchObject({
+      lengthCm: 320,
+      widthCm: 81,
+      thicknessCm: 15,
+      volumeL: 300,
+      weightKg: 9.1,
+      maxLoadKg: 140,
+    });
+  });
+
+  it("a font-értéket itt sem veszi kilogrammnak", () => {
+    const specs = extractProductFromPage(NUTS, "https://x.com/y", "Aqua Marina")?.specs;
+    expect(specs?.weightKg).not.toBe(20.1);
+    expect(specs?.maxLoadKg).not.toBe(308);
+  });
+
+  it("hiányos érték-hasábnál NEM párosít (inkább hiányozzon, mint tévedjen)", () => {
+    // Az érték-hasáb hiányos ÉS nincs benne értelmezhető méret — így a
+    // szokásos parse sem tud véletlenül belebotlani egybe.
+    const truncated = `<html><head><title>Csonka – Aqua Marina</title></head><body>
+      <div><p>MODEL</p><p>PRODUCT</p><p>LENGTH</p><p>WIDTH</p><p>THICKNESS</p><p>VOLUME</p></div>
+      <div><p>AM-1</p></div>
+    </body></html>`;
+    expect(extractProductFromPage(truncated, "https://x.com/y", "Aqua Marina")).toBeNull();
+  });
+});

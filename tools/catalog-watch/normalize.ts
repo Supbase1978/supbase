@@ -846,6 +846,92 @@ export function extractProduct(
 }
 
 /**
+ * „Transzponált" spec-blokk: ELŐBB az összes címke, UTÁNA az összes érték.
+ *
+ * Élesben mért (aquamarina.com/products/nuts/): a lap két hasábban közli a
+ * specifikációt — az egyik `<div>` a címkéket sorolja fel, a másik az
+ * értékeket —, ezért a szövegben így jelenik meg:
+ *
+ *   MODEL · PRODUCT · LENGTH · WIDTH · THICKNESS · VOLUME · NET WEIGHT …
+ *   NUTS 10'6" · AM-20NU · 10'6" / 320cm · 32" / 81cm · 6" / 15cm · 300L …
+ *
+ * A szokásos „címke UTÁN 40 karakterrel" keresés ilyenkor a KÖVETKEZŐ CÍMKÉT
+ * találja érték helyett, ezért mind a hat mező üresen maradna.
+ *
+ * BIZTONSÁGI FELTÉTELEK (különben pozíció-alapú találgatás lenne):
+ *  - legalább 4 EGYMÁST KÖVETŐ sor legyen ismert spec-címke,
+ *  - és pontosan ugyanannyi nem üres értéksor kövesse őket.
+ * Ha bármelyik nem teljesül, `null` — marad a szokásos parse.
+ */
+function parseTransposedSpecs(text: string): BoardSpecs | null {
+  const KNOWN: Record<string, keyof BoardSpecs | "skip"> = {
+    model: "skip",
+    product: "skip",
+    length: "lengthCm",
+    width: "widthCm",
+    thickness: "thicknessCm",
+    volume: "volumeL",
+    "net weight": "weightKg",
+    "max. payload": "maxLoadKg",
+    "max payload": "maxLoadKg",
+    "max. air pressure": "skip",
+    "max air pressure": "skip",
+  };
+
+  const lines = text
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => line !== "");
+
+  for (let start = 0; start < lines.length; start += 1) {
+    const labels: (keyof BoardSpecs | "skip")[] = [];
+    let i = start;
+    while (i < lines.length) {
+      const key = (lines[i] ?? "").toLowerCase().replace(/\s+/g, " ");
+      const field = KNOWN[key];
+      if (field === undefined) break;
+      labels.push(field);
+      i += 1;
+    }
+    if (labels.length < 4) continue;
+
+    const values = lines.slice(i, i + labels.length);
+    if (values.length < labels.length) continue;
+
+    const specs: BoardSpecs = { ...EMPTY_SPECS };
+    for (let k = 0; k < labels.length; k += 1) {
+      const field = labels[k];
+      const value = values[k] ?? "";
+      if (field === "skip" || field === undefined) continue;
+      switch (field) {
+        case "lengthCm":
+        case "widthCm":
+        case "thicknessCm":
+          specs[field] = parseDimensionCm(value);
+          break;
+        case "volumeL": {
+          const match = value.match(/(\d+(?:[.,]\d+)?)\s*(?:l\b|liter|litre)/i);
+          specs.volumeL = match ? toNumber(match[1] ?? "") : null;
+          break;
+        }
+        case "weightKg":
+        case "maxLoadKg": {
+          // A `kg` kötelező: a gyártó a fontot is kiírja („20.1lbs / 9.1kg").
+          const match = value.match(/(\d+(?:[.,]\d+)?)\s*kg\b/i);
+          specs[field] = match ? toNumber(match[1] ?? "") : null;
+          break;
+        }
+      }
+    }
+    if (specs.lengthCm !== null) {
+      specs.inflatable = detectInflatable(text);
+      return specs;
+    }
+  }
+  return null;
+}
+
+/**
  * A termék SAJÁT alcíme: a spec-blokkot közvetlenül megelőző rövid szövegablak.
  *
  * MIÉRT ÍGY: a gyártói oldalak a kategóriát a termék fölé írják — „LAXO
@@ -890,7 +976,12 @@ export function extractProductFromPage(
   if (rawTitle === "") return null;
 
   const pageText = htmlToText(html);
-  const specs = parseSpecsFromText(pageText);
+  // Elsőként a szokásos, címke-melletti parse; ha az üres, a két hasábos
+  // („transzponált") elrendezés fallbackje.
+  let specs = parseSpecsFromText(pageText);
+  if (specs.lengthCm === null) {
+    specs = parseTransposedSpecs(pageText) ?? specs;
+  }
   if (specs.lengthCm === null) return null;
 
   const brandName = normalizeBrandName(defaultBrandName);
