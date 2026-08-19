@@ -66,6 +66,18 @@ export interface CrawlConfig {
      * egyezés nyer — a fősodratú kategóriát kell előre venni.
      */
     collectionTypes?: Record<string, BoardType>;
+    /**
+     * Kollekciók, amiknek a TERMÉKEI NEM kellenek. Felhasználói döntés
+     * (2026-08-19): „a surf egy teljesen más dolog, mi a SUP-okra
+     * fókuszálunk" — a `surf-paddleboards` és a wing-kollekciók termékei
+     * tehát ki sem kerülnek jelölt-sorba.
+     *
+     * FONTOS: az ÁTFEDŐ modellek megmaradnak. A `collectionTypes`-ban
+     * szereplő (pl. all-round) kollekció ERŐSEBB — a Whopper és a GO Surf a
+     * gyártónál egyszerre „all-round / wave" ÉS „surf", és ezeket a gyártó
+     * sík vízre is ajánlja, tehát kellenek.
+     */
+    excludeCollections?: string[];
   };
   /**
    * JSON-LD NÉLKÜLI oldalak feldolgozása (F2.1-utó-17): ha a forrás nem tesz ki

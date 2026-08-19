@@ -388,6 +388,42 @@ export async function fetchShopifyCollectionTypes(
   return { byProductId, errors };
 }
 
+/**
+ * Egy kollekció TERMÉK-AZONOSÍTÓI — a kizáráshoz (`excludeCollections`).
+ * Hibatűrő: elérhetetlen kollekció esetén üres halmaz + hibaüzenet, mert egy
+ * hiányzó kollekció miatt nem szabad az egész crawlt eldobni.
+ */
+export async function fetchShopifyCollectionIds(
+  baseUrl: string,
+  fetchJson: FetchJson,
+  handles: readonly string[],
+  options: { sleep?: (ms: number) => Promise<void>; delayMs?: number } = {},
+): Promise<{ ids: Set<string>; errors: string[] }> {
+  const base = baseUrl.replace(/\/+$/, "");
+  const sleep = options.sleep ?? (() => Promise.resolve());
+  const delayMs = options.delayMs ?? 0;
+  const ids = new Set<string>();
+  const errors: string[] = [];
+
+  for (const handle of handles) {
+    await sleep(delayMs);
+    try {
+      const response = await fetchJson(`${base}/collections/${handle}/products.json?limit=250`);
+      if (response.status >= 400) {
+        errors.push(`${handle}: HTTP ${response.status}`);
+        continue;
+      }
+      const parsed = JSON.parse(response.text) as { products?: { id?: number | string }[] };
+      for (const product of parsed.products ?? []) {
+        if (product.id !== undefined) ids.add(String(product.id));
+      }
+    } catch (error) {
+      errors.push(`${handle}: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+  return { ids, errors };
+}
+
 /** A `fetchShopifyCatalog` hálózati függősége — tesztben injektálható. */
 export type FetchJson = (url: string) => Promise<{ status: number; text: string }>;
 

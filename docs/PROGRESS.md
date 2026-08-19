@@ -3062,3 +3062,36 @@ jóga 2 · folyami 1 · horgász 1.
 **Nyitva maradt:** 524 pending jelölt, túlnyomórészt kategória nélkül (a
 Starboard szörf-vonala: Spice, Longboard, Pro, TallTwin — ezekre nincs
 kategóriánk) vagy hiányzó biztonsági mezővel.
+
+### F2.1-utó-20 — a szörf/wing vonal kizárva (2026-08-19)
+
+**Felhasználói döntés:** „a szörf kategóriát töröljük és ezeket a jelölteket
+ne is vegyük fel. A surf egy teljesen más dolog, mi a SUP-okra fókuszálunk."
+Ezzel a korábban felvetett „új szörf BoardType" opció is lekerült a napirendről.
+
+**FONTOS PONTOSÍTÁS az átfedésről.** A kizárás NEM terjed ki azokra a
+modellekre, amiket a gyártó az `all-round / wave` kollekcióban IS szerepeltet:
+
+| Modell | gyártói kollekció | döntés |
+|---|---|---|
+| Whopper, GO Surf | all-round / wave **ÉS** surf | **marad** (a gyártó sík vízre is ajánlja) |
+| Spice, Pro, Longboard, Longboard Surf, Wedge, TallTwin, TwinFin | csak surf | kizárva |
+| Wingboard | wing | kizárva |
+
+**158 pending jelölt elutasítva** (Spice 45, Pro 34, Longboard 32, Wedge 21,
+Longboard Surf 10, TallTwin 7, Wingboard 7, Surf 2). Élő deszkát EGYET SEM
+érintett — a szörf-modellek kategória nélkül maradtak, ezért a tömeges
+jóváhagyás eleve kihagyta őket.
+
+Két tétel SZÁNDÉKOSAN kimaradt az elutasításból:
+- **Surf Pump HP** — pumpa, nem szörf-deszka (a névre illeszkedő minta
+  elkapta volna; az `accessoryType !== null` szűrő védte ki).
+- **Hyper Nut** (2 db) — a leírása nem mondja ki a szörf-célt, ezért a
+  moderátornál marad (inkább hiányozzon, mint tévedjen).
+
+**Beépítve a crawlerbe** (`crawl_config.shopify.excludeCollections`), hogy a
+következő futás be se hozza őket. A `collectionTypes` ERŐSEBB a kizárásnál —
+ez tartja bent az átfedő modelleket; őrszem-teszt védi mindkét irányt.
+
+**Állapot:** 104 élő deszka (88 ajánlásképes) · 366 pending jelölt ·
+84 jóváhagyott + 54 összevont + 207 elutasított.

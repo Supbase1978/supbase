@@ -527,3 +527,81 @@ describe("crawlSource — Shopify-forrás", () => {
     expect(summary.candidatesCreated).toBe(0);
   });
 });
+
+/**
+ * KIZÁRT KOLLEKCIÓK (F2.1-utó-20). Felhasználói döntés (2026-08-19): „a surf
+ * egy teljesen más dolog, mi a SUP-okra fókuszálunk". A gyártó szörf/wing
+ * kollekcióinak termékei ki sem kerülnek jelölt-sorba — DE az ÁTFEDŐ modellek
+ * (Whopper, GO Surf: „all-round / wave" ÉS „surf" is) bent maradnak.
+ */
+describe("crawlSource — Shopify kizárt kollekciók", () => {
+  const SOURCE_EXCL: CatalogSourceRow = {
+    ...SOURCE,
+    id: "src-excl",
+    name: "Gyártó",
+    kind: "brand_site",
+    crawl_config: {
+      minDelayMs: 0,
+      shopify: {
+        collectionTypes: { allround: "allround" },
+        excludeCollections: ["surf"],
+      },
+    },
+  };
+
+  function product(id: number, title: string) {
+    return {
+      id,
+      title,
+      handle: title.toLowerCase().replace(/\s+/g, "-"),
+      vendor: "Starboard SUP",
+      product_type: "SUP Hardboard",
+      variants: [{ id: id * 10, title: `10'0" X 32"` }],
+    };
+  }
+
+  it("a CSAK szörf-kollekciós terméket kihagyja", async () => {
+    const { store, candidates } = makeStore([]);
+    const network = makeNetwork({
+      [`${ORIGIN}/robots.txt`]: { text: "User-agent: *\n" },
+      [`${ORIGIN}/products.json?limit=250&page=1`]: {
+        text: JSON.stringify({ products: [product(1, "Spice"), product(2, "GO")] }),
+      },
+      [`${ORIGIN}/collections/allround/products.json?limit=250`]: {
+        text: JSON.stringify({ products: [{ id: 2 }] }),
+      },
+      [`${ORIGIN}/collections/surf/products.json?limit=250`]: {
+        text: JSON.stringify({ products: [{ id: 1 }] }),
+      },
+    });
+
+    await crawlSource(SOURCE_EXCL, { fetchText: network.fetchText, store });
+
+    const names = candidates.map((c) => c.extracted.modelName);
+    expect(names.some((n) => n.includes("Spice"))).toBe(false);
+    expect(names.some((n) => n.includes("GO"))).toBe(true);
+  });
+
+  it("az ÁTFEDŐ terméket (all-round ÉS surf) MEGTARTJA", async () => {
+    const { store, candidates } = makeStore([]);
+    const network = makeNetwork({
+      [`${ORIGIN}/robots.txt`]: { text: "User-agent: *\n" },
+      [`${ORIGIN}/products.json?limit=250&page=1`]: {
+        text: JSON.stringify({ products: [product(3, "Whopper")] }),
+      },
+      // A Whopper MINDKÉT kollekcióban benne van.
+      [`${ORIGIN}/collections/allround/products.json?limit=250`]: {
+        text: JSON.stringify({ products: [{ id: 3 }] }),
+      },
+      [`${ORIGIN}/collections/surf/products.json?limit=250`]: {
+        text: JSON.stringify({ products: [{ id: 3 }] }),
+      },
+    });
+
+    await crawlSource(SOURCE_EXCL, { fetchText: network.fetchText, store });
+
+    expect(candidates).toHaveLength(1);
+    expect(candidates[0]?.extracted.modelName).toContain("Whopper");
+    expect(candidates[0]?.extracted.boardType).toBe("allround");
+  });
+});

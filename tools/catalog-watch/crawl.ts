@@ -33,6 +33,7 @@ import {
 import {
   expandShopifyProduct,
   fetchShopifyCatalog,
+  fetchShopifyCollectionIds,
   fetchShopifyCollectionTypes,
 } from "./shopify.ts";
 import { parseSitemap, selectProductUrls } from "./sitemap.ts";
@@ -379,6 +380,24 @@ async function crawlShopifySource(
     log(`[${source.name}] gyártói kategóriák: ${typeByProductId.size} termék`);
   }
 
+  // KIZÁRT kollekciók (pl. szörf/wing): ezek termékei nem SUP-ok. A
+  // `collectionTypes` ERŐSEBB — az átfedő modellek (Whopper, GO Surf) így
+  // bent maradnak, mert a gyártó sík vízre is ajánlja őket.
+  const excludedIds = new Set<string>();
+  if (shopify.excludeCollections && shopify.excludeCollections.length > 0) {
+    const excluded = await fetchShopifyCollectionIds(
+      origin,
+      deps.fetchText,
+      shopify.excludeCollections,
+      { sleep, delayMs },
+    );
+    for (const error of excluded.errors) addError(summary, error);
+    for (const id of excluded.ids) {
+      if (!typeByProductId.has(id)) excludedIds.add(id);
+    }
+    log(`[${source.name}] kizárt kollekciókból: ${excludedIds.size} termék`);
+  }
+
   const boards = await deps.store.listBoardsForMatch();
   const seenAt = now().toISOString();
 
@@ -386,6 +405,10 @@ async function crawlShopifySource(
   // `urlsConsidered` mezője ezért a variánsokat számolja, nem a lekért lapokat.
   let considered = 0;
   for (const shopifyProduct of products) {
+    if (excludedIds.has(String(shopifyProduct.id))) {
+      summary.skippedNonBoard += 1;
+      continue;
+    }
     let expanded = expandShopifyProduct(
       shopifyProduct,
       origin,
