@@ -3095,3 +3095,47 @@ ez tartja bent az átfedő modelleket; őrszem-teszt védi mindkét irányt.
 
 **Állapot:** 104 élő deszka (88 ajánlásképes) · 366 pending jelölt ·
 84 jóváhagyott + 54 összevont + 207 elutasított.
+
+### F2.1-utó-21 — kategória öröklése a modellcsaládon belül (2026-08-19)
+
+**A probléma:** a gyártói kollekciók csak az AKTUÁLIS évjáratot sorolják fel,
+így ugyanannak a modellcsaládnak a régebbi példányai kategória nélkül
+maradtak — a 2027-es „All Star" megkapta a `race`-t, a 2024-es ugyanaz a
+deszka nem. 251 kategória nélküli jelöltből 153 pontosan ilyen volt.
+
+**A szabály:** ha egy modellcsalád bármelyik példányának van hivatalos
+kategóriája, azt a család többi tagja is megkapja. A család kulcsa a márka +
+a modellnév SZÁM ELŐTTI része (`All Star 14'0" X 24.5" Wood Carbon` →
+`all star`) — a méret és a kivitel épp azért marad ki, mert azok
+különböztetik meg a testvéreket, a kategóriájuk viszont közös.
+
+**ÉLESBEN MÉRT HIBA, javítva:** az első változat a BOLTI oldalak téves
+tippjét vette át, mert a gyártói jelöltek típusa akkor még `null` volt (az
+Aqua Marina crawl a kategória-felismerés bevezetése ELŐTT futott). Ez a
+következőket okozta volna:
+
+| Deszka | téves | helyes | a téves tipp forrása |
+|---|---|---|---|
+| Aqua Marina **Fusion** | kids | allround | sup-deszka.hu cím |
+| Aqua Marina **Vapor** | kids | allround | sup-deszka.hu cím |
+| Aqua Marina **Atlas** | touring | allround | sup-deszka.hu cím |
+
+Mostantól **csak MEGBÍZHATÓ forrás** adhat kategóriát a családnak: a gyártói
+oldal, vagy a már jóváhagyott (moderátor által átnézett) deszka. Ütköző
+besorolásnál (`starboard|junior`: kids ÉS race) nem következtetünk.
+
+Az Aqua Marina forrás újracrawlolva, hogy a gyártói jelöltek megkapják az
+URL-ből a kategóriájukat.
+
+**Eredmény — a katalógus 166 deszkára nőtt (a kör elején 35 volt):**
+
+| | kör eleje | most |
+|---|---|---|
+| élő deszka | 35 | **166** |
+| ebből ajánlásképes | ~30 | **150** |
+
+Márka: Starboard 108 · Aqua Marina 25 · Bluefin 15 · Red Paddle 4 · Fanatic 3
+· Indiana 3 · egyéb 8. Típus: allround 73 · túra 49 · race 27 · gyerek 9 ·
+jóga 4 · folyami 2 · horgász 2.
+
+Jelöltek: 146 jóváhagyott · 104 összevont · 207 elutasított · **254 pending**.
