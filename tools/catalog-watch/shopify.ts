@@ -226,7 +226,11 @@ export function expandShopifyProduct(
   // A `product_type` erős jel: a bolt maga mondja meg, hogy „SUP Inflatable"
   // vagy „SUP Bag" — ezt a szabad szövegű találgatás nem éri utol.
   const typeHintText = `${rawTitle}\n${product.product_type ?? ""}\n${descriptionText}`;
-  const boardType = guessBoardType(`${rawTitle}\n${product.product_type ?? ""}`);
+  // A `handle` a termék URL-slugja (`2026-touring-inflatable-board-with-paddle`)
+  // — a gyártó saját besorolása gyakran csak ebben látszik.
+  const boardType = guessBoardType(
+    `${rawTitle}\n${product.product_type ?? ""}\n${handle.replace(/[-_]+/g, " ")}`,
+  );
   const inflatable = detectInflatable(typeHintText);
   const modelYear = extractModelYear(`${rawTitle} ${handle}`);
 

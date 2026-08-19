@@ -472,11 +472,15 @@ export function guessBoardType(text: string): BoardType | null {
   const rules: [BoardType, string[]][] = [
     ["kids", ["kids", "gyerek", "junior", "youth"]],
     ["fishing", ["fishing", "horgasz", "angler"]],
-    ["river", ["river", "folyo", "whitewater", "vadviz"]],
+    // A „rapid" és a „wild river" a gyártói kategória-slugokban szerepel
+    // (aquamarina.com/products/rapid/, .../wildriver/).
+    ["river", ["river", "folyo", "whitewater", "vadviz", "rapid"]],
     ["race", ["race", "verseny", "racing"]],
     ["yoga", ["yoga", "joga", "fitness", "pilates"]],
     ["touring", ["touring", "tura", "explorer", "adventure"]],
-    ["allround", ["allround", "all-round", "all round", "univerzalis"]],
+    // Az „all-around" (két a-val) a gyártói írásmód — az aquamarina.com
+    // kategóriája `/products/all-around/` és `/products/advanced-all-around/`.
+    ["allround", ["allround", "all-round", "all round", "all-around", "all around", "univerzalis"]],
   ];
   for (const [type, needles] of rules) {
     if (needles.some((needle) => folded.includes(needle))) return type;
@@ -851,6 +855,20 @@ export function extractProduct(
 }
 
 /**
+ * Az URL kategória-szegmensei szóközzel elválasztva — a gyártó SAJÁT
+ * besorolása (`/products/advanced-all-around/coral/` → „products advanced
+ * all around coral"). A `guessBoardType` ebből pontosabban tippel, mint a
+ * puszta terméknévből.
+ */
+function urlCategoryHint(sourceUrl: string): string {
+  try {
+    return decodeURIComponent(new URL(sourceUrl).pathname).replace(/[-_/]+/g, " ");
+  } catch {
+    return "";
+  }
+}
+
+/**
  * „Transzponált" spec-blokk: ELŐBB az összes címke, UTÁNA az összes érték.
  *
  * Élesben mért (aquamarina.com/products/nuts/): a lap két hasábban közli a
@@ -1003,10 +1021,12 @@ export function extractProductFromPage(
     priceHuf: null,
     inStock: null,
     imageUrl: null,
-    // A besorolási tipphez SZÁNDÉKOSAN csak a cím: az oldalszöveg a
-    // navigációt/kategóriamenüt is tartalmazza, ami minden oldalon ott van
-    // (ugyanaz a csapda, amit az `extractProduct` doc-kommentje ír le).
-    boardType: guessBoardType(rawTitle),
+    // A besorolási tipphez a cím ÉS az URL kategória-szegmense — utóbbi a
+    // gyártó SAJÁT besorolása (`/products/racing/race/`, `/products/youth/…`),
+    // tehát pontosabb, mint bármilyen szöveg-heurisztika. A teljes
+    // oldalszöveget SZÁNDÉKOSAN nem használjuk: a navigáció minden oldalon
+    // felsorol minden kategóriát (ld. az `extractProduct` doc-kommentjét).
+    boardType: guessBoardType(`${rawTitle} ${urlCategoryHint(sourceUrl)}`),
     specs,
     accessoryType: null,
   };
