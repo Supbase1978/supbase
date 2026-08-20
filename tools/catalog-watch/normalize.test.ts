@@ -928,3 +928,57 @@ describe("zraysports.com — a spec-blokk a marketing-próza MÖGÖTT", () => {
     expect(product?.imageUrl).toBe("https://img.website.xin/contents/max-azure.png");
   });
 });
+
+describe("classifyProduct — az ellentmondó méret nem tesz deszkává", () => {
+  const base = {
+    boardType: null,
+    specs: {
+      lengthCm: 396.2,
+      widthCm: 396.2,
+      thicknessCm: null,
+      volumeL: null,
+      weightKg: null,
+      maxLoadKg: 150,
+      inflatable: null,
+    },
+  };
+
+  /**
+   * Élesben (zraysports.com): a kiegészítő-oldalakon nincs saját spec-blokk, a
+   * „Related Products" viszont SUP-deszkákat sorol fel — onnan szivárgott be a
+   * méret. Minden kiegészítő „396,2 × 396,2 cm, 150 kg" deszkaként jött volna.
+   */
+  it("evező NEM deszka attól, hogy a szomszéd termék méretét felszedte", () => {
+    expect(
+      classifyProduct({ ...base, rawTitle: "ALUMINUM OARS", modelName: "Aluminum Oars" }),
+    ).toEqual({ kind: "accessory", accessoryType: "evezo" });
+  });
+
+  it("póráz akkor is kimarad, ha deszka-méretet mértünk rá", () => {
+    expect(classifyProduct({ ...base, rawTitle: "LEASH", modelName: "Leash" })).toEqual({
+      kind: "ignore",
+    });
+  });
+
+  it("a HELYES arányú deszka-adat továbbra is azonnal deszka", () => {
+    expect(
+      classifyProduct({
+        ...base,
+        rawTitle: "Max Azure 11'6",
+        modelName: "Max Azure",
+        specs: { ...base.specs, lengthCm: 350.5, widthCm: 86, volumeL: 379, maxLoadKg: 170 },
+      }),
+    ).toEqual({ kind: "board" });
+  });
+
+  it("szélesség nélküli, de hihető adat továbbra is deszka (nem szigorítunk feleslegesen)", () => {
+    expect(
+      classifyProduct({
+        ...base,
+        rawTitle: "Touring 12'6",
+        modelName: "Touring",
+        specs: { ...base.specs, lengthCm: 381, widthCm: null, volumeL: 300, maxLoadKg: 140 },
+      }),
+    ).toEqual({ kind: "board" });
+  });
+});

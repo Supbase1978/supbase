@@ -610,7 +610,10 @@ const ACCESSORY_CATEGORY_RULES: [GearCategory, string[]][] = [
   ["pumpa", ["pumpa", "pump"]],
   // Bare "paddle" szándékosan hiányzik: az beleillene a "paddleboard"/"paddle
   // board" BOARD_NOUNS-szóba is — csak az egyértelmű "evező"/"paddle blade" számít.
-  ["evezo", ["evezo", "paddle blade"]],
+  // Az „oars" viszont egyértelmű: evezőlapát, sosem deszka (élesben:
+  // zraysports.com „ALUMINUM OARS"). A csupasz „oar" SZÁNDÉKOSAN hiányzik: a
+  // „b-oar-d" részstringje lenne, tehát minden deszkára illeszkedne.
+  ["evezo", ["evezo", "paddle blade", "oars"]],
   ["taska", ["hatizsak", "taska", "backpack", "board bag", "carry bag"]],
   ["ules", ["ules", "kayak seat", "seat"]],
 ];
@@ -756,7 +759,18 @@ export function classifyProduct(product: {
     specs.lengthCm !== null &&
     specs.lengthCm >= BOARD_LENGTH_MIN_CM &&
     specs.lengthCm <= BOARD_LENGTH_MAX_CM;
-  if (lengthInRange && (specs.volumeL !== null || specs.maxLoadKg !== null)) {
+  // A méret-alapú rövidzár csak ÖNMAGÁBAN ELLENTMONDÁSMENTES adatra szólal
+  // meg: egy deszka SOSEM szélesebb, mint amilyen hosszú.
+  //
+  // ÉLESBEN MÉRT HIBA (zraysports.com, 2026-08-20): a kiegészítő-oldalakon
+  // (ALUMINUM OARS, Pump, LEASH, vízhatlan táska) nincs saját spec-blokk, a
+  // „Related Products" viszont SUP-deszkákat sorol fel — a laza szöveg-parse
+  // onnan szedte fel a méretet, és mindegyik kiegészítő „396,2 × 396,2 cm,
+  // 150 kg teherbírás" DESZKAKÉNT jött volna be. A rövidzár szándékosan
+  // erősebb minden kulcsszónál (egy rosszul címzett deszkát a saját adata
+  // ment meg) — de csak akkor, ha az az adat egyáltalán deszkáé lehet.
+  const dimensionsCoherent = specs.widthCm === null || specs.widthCm < (specs.lengthCm ?? 0);
+  if (lengthInRange && dimensionsCoherent && (specs.volumeL !== null || specs.maxLoadKg !== null)) {
     return { kind: "board" };
   }
 
@@ -775,7 +789,9 @@ export function classifyProduct(product: {
 
   const hasBoardNoun = BOARD_NOUNS.some((noun) => folded.includes(noun));
   const hasSup = /\bsup\b/.test(folded);
-  const isBoard = hasBoardNoun || (hasSup && product.boardType !== null) || lengthInRange;
+  // A méret itt is csak ELLENTMONDÁSMENTESEN számít bizonyítéknak (ld. fent).
+  const isBoard =
+    hasBoardNoun || (hasSup && product.boardType !== null) || (lengthInRange && dimensionsCoherent);
   return isBoard ? { kind: "board" } : { kind: "ignore" };
 }
 
