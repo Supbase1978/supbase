@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { imageFromPage, rankImageSources, type ImageSourceCandidate } from "./images.ts";
+import {
+  displayImageUrl,
+  imageFromPage,
+  rankImageSources,
+  type ImageSourceCandidate,
+} from "./images.ts";
 
 const base: ImageSourceCandidate = {
   url: "https://gyarto.com/termek",
@@ -71,5 +76,35 @@ describe("imageFromPage", () => {
 
   it("kép nélküli oldalra null (nem tippel)", () => {
     expect(imageFromPage("<p>semmi</p>", "Coral")).toBeNull();
+  });
+});
+
+/**
+ * MOBIL-SÚLY (2026-08-20). A Shopify-CDN `width` paraméterrel méretez;
+ * a bluefinsupboards.eu JSON-LD-je `width=1920`-at ad (1656 kB).
+ */
+describe("displayImageUrl", () => {
+  it("a Shopify-CDN szélességét a megjelenítési méretre állítja", () => {
+    expect(
+      displayImageUrl("https://bluefinsupboards.eu/cdn/shop/files/Rush.png?v=178&width=1920"),
+    ).toBe("https://bluefinsupboards.eu/cdn/shop/files/Rush.png?v=178&width=768");
+  });
+
+  it("paraméter nélküli Shopify-képre HOZZÁADJA a szélességet", () => {
+    // Élesben: a Starboard képe 165 kB → 114 kB.
+    expect(displayImageUrl("https://cdn.shopify.com/s/files/1/0857/gen-r.jpg?v=17")).toBe(
+      "https://cdn.shopify.com/s/files/1/0857/gen-r.jpg?v=17&width=768",
+    );
+  });
+
+  it("NEM nyúl a nem-Shopify képekhez (ott a srcset dönt)", () => {
+    const wp = "https://aquamarina.com/wp-content/uploads/2024/03/CASCADE-2-768x1159.png";
+    expect(displayImageUrl(wp)).toBe(wp);
+  });
+
+  it("üres és értelmezhetetlen bemenetre nem törik el", () => {
+    expect(displayImageUrl(null)).toBeNull();
+    expect(displayImageUrl("   ")).toBeNull();
+    expect(displayImageUrl("nem-url")).toBe("nem-url");
   });
 });

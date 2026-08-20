@@ -57,19 +57,54 @@ export function rankImageSources(
 export function imageFromPage(html: string, modelName: string): string | null {
   const product = pickPrimaryProduct(findProductNodes(html));
   const fromJsonLd = product ? firstImage(product.image) : null;
-  if (fromJsonLd !== null) return fromJsonLd;
+  if (fromJsonLd !== null) return displayImageUrl(fromJsonLd);
 
   const og = html.match(
     /<meta[^>]+(?:property|name)="og:image"[^>]+content="([^"]+)"/i,
   )?.[1];
-  if (og !== undefined && og.trim() !== "") return og.trim();
+  if (og !== undefined && og.trim() !== "") return displayImageUrl(og.trim());
 
-  return findProductImage(
-    html,
-    findModelCode(htmlToText(html)),
-    modelName,
-    modelName.split(/\s+/)[0] ?? null,
+  return displayImageUrl(
+    findProductImage(
+      html,
+      findModelCode(htmlToText(html)),
+      modelName,
+      modelName.split(/\s+/)[0] ?? null,
+    ),
   );
+}
+
+/**
+ * A megjelenítéshez való szélesség, ahol a KISZOLGÁLÓ tud méretezni.
+ *
+ * A Shopify-CDN (`/cdn/shop/…`) `width` query-paraméterrel szolgál ki
+ * átméretezett képet. Élesben mérve: a bluefinsupboards.eu JSON-LD-je
+ * `width=1920`-at ad (1656 kB), 768-cal ugyanaz 1145 kB; a Starboard
+ * paraméter NÉLKÜLI képe 165 kB → 114 kB. Mobil-first alkalmazásban ez
+ * kártyánként számít.
+ *
+ * A 768 px ugyanaz a cél, mint a `srcset`-választásnál: a legnagyobb
+ * megjelenítéshez (adatlap-hero, 2× kijelző) még elég, a kétoszlopos
+ * telefon-rácshoz bőven.
+ *
+ * Ami NEM megy ezen az úton: a formátum. A `format=webp` paramétert ezek a
+ * boltok nem tisztelik (mérve: marad PNG), tehát a Bluefin nagy, tömör
+ * felületű PNG-i így is nehezek maradnak — azon csak újrakódoló kép-CDN
+ * segítene.
+ */
+export const DISPLAY_IMAGE_WIDTH = 768;
+
+export function displayImageUrl(raw: string | null): string | null {
+  if (raw === null || raw.trim() === "") return null;
+  let url: URL;
+  try {
+    url = new URL(raw);
+  } catch {
+    return raw;
+  }
+  if (!url.pathname.includes("/cdn/shop/") && !url.hostname.startsWith("cdn.shopify.")) return raw;
+  url.searchParams.set("width", String(DISPLAY_IMAGE_WIDTH));
+  return url.toString();
 }
 
 /** A schema.org `image` lehet string, tömb vagy `ImageObject` — mind elviselve. */

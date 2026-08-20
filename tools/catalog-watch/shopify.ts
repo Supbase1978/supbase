@@ -36,6 +36,7 @@ import {
   parseDimensionCm,
 } from "./normalize.ts";
 import { htmlToText } from "./html.ts";
+import { displayImageUrl } from "./images.ts";
 import { EMPTY_SPECS, type BoardSpecs, type BoardType, type ExtractedProduct } from "./types.ts";
 
 /** Egy `/products.json` lapon legfeljebb ennyi termék kérhető (Shopify-korlát). */
@@ -225,7 +226,7 @@ export function expandShopifyProduct(
 
   const brandName = normalizeBrandName(product.vendor) ?? normalizeBrandName(defaultBrandName);
   const descriptionText = htmlToText(product.body_html ?? "");
-  const imageUrl = firstImage(product);
+  const imageUrl = displayImageUrl(firstImage(product));
   const variants = product.variants ?? [];
 
   // A besorolási tippekhez a terméknév + leírás + a Shopify SAJÁT kategóriája.

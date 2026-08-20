@@ -10,6 +10,7 @@
  */
 import type { GearCategory } from "../../src/modules/catalog/gear.ts";
 import { decodeEntities, htmlToText } from "./html.ts";
+import { displayImageUrl } from "./images.ts";
 import {
   boardTypeFromDescription,
   boardTypeFromUsage,
@@ -970,7 +971,7 @@ export function extractProduct(
     modelYear: extractModelYear(`${rawTitle} ${description}`),
     priceHuf: parsePriceHuf(node.offers),
     inStock: parseAvailability(node.offers),
-    imageUrl: firstString(node.image),
+    imageUrl: displayImageUrl(firstString(node.image)),
     boardType,
     specs,
     accessoryType: classification.kind === "accessory" ? classification.accessoryType : null,
