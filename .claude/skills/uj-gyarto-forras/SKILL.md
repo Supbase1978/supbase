@@ -32,12 +32,23 @@ node tools/catalog-watch/cli.ts probe --url https://gyarto.com \
   --sitemap https://gyarto.com/sitemap_en.xml --pattern "-sup-"
 ```
 
+**A sitemap-indexet OLVASD VÉGIG, ne csak az elejét.** Élesben ez háromszor
+bukott meg: a Fanatic indexében a 14. bejegyzés a
+`__sitemap__/products-eu-en-0.xml` (530 termék), az első 13 csak
+tartalom-lista nyelvenként. Az első pár sor alapján tévesen mondtam ki, hogy
+nincs termék-sitemap.
+
 **A minta-illesztés részstring**, nem regex. Élesben mért hiba: a `sup-board`
 minta KIHAGYTA a `…-sup-lite-board-…` URL-eket (a Jobe egész Lite szériáját).
 Nézd meg a valós URL-alakokat, mielőtt mintát adsz — a `-sup-` jobb volt.
 
 Ha a lista JS-ből épül (a nyers HTML-ben nincsenek termék-linkek), ott a
 böngésző kell (`/chrome`), vagy a kategória-oldalak kézi végigjárása.
+
+**Ha a terméklista JS-ből épül**, a termék-URL mintája kideríthető böngészővel:
+nyisd meg a kategória-oldalt Playwrighttal, görgess, és kattints egy
+termékkártyára — az URL elárulja a mintát (Fanatic: a kártyák NEM linkek,
+kattintásra viszont `/en/products/<slug>-<cikkszám>` jön ki).
 
 ## 2. lépés — mérj egy VALÓDI TERMÉKOLDALON
 
@@ -86,6 +97,11 @@ Mind élesben mért eset. Ha valamelyik mező üres vagy gyanús, itt keresd:
   (Jobe). Felhasználói döntés (2026-08-20): ezt vesszük teherbírásnak, mert
   konzervatív (alacsonyabb a teljes terhelhetőségnél).
 - `330LBS` — font-only. Átváltjuk, DE csak ha kilogramm sehol nincs.
+
+**Csak görgetés után megjelenő spec**
+- A Fanatic termékoldalán a `SIZES AND SPECS` tábla LUSTA betöltésű: sem a nyers
+  HTML-ben, sem az azonnali render-szövegben nincs ott, csak görgetés után.
+  Ilyenkor a `render.ts` böngésző-fallback kell — és annak GÖRGETNIE is kell.
 
 **Kép**
 - Ha a `<title>` oldal-szintű utótagot visel (`- Jobesports.com`), add meg a
