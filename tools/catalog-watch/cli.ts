@@ -77,6 +77,8 @@ Parancsok:
       --html-only: nincs JSON-LD az oldalon, de a specifikáció címkézett
       szövegként ott van (pl. aquamarina.com). Csak akkor ad jelöltet, ha a
       hossz tényleg kijött — így a blog/kategória oldalak kimaradnak.
+      --title-suffix: a <title> végéről levágandó oldal-szintű utótag
+      (ismételhető), pl. "-Zray Official Site" — enélkül a modellnév része lenne
   crawl [--source NÉV|ID] [--dry-run] [--max N]
                                    Crawl az aktív forrásokból
   approve-candidates               TÖMEGES jóváhagyás (F2.1-utó-19). A tiszta
@@ -281,6 +283,8 @@ async function commandAddSource(args: Args): Promise<void> {
   if (delay !== undefined) crawlConfig.minDelayMs = delay;
   const defaultBrand = flag(args, "default-brand");
   if (defaultBrand) crawlConfig.defaultBrandName = defaultBrand;
+  const titleSuffixes = flagList(args, "title-suffix");
+  if (titleSuffixes) crawlConfig.titleSuffixes = titleSuffixes;
   const notes = flag(args, "notes");
   if (notes) crawlConfig.notes = notes;
 

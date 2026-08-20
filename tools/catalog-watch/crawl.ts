@@ -560,12 +560,10 @@ export async function crawlSource(
       let product = node
         ? extractProduct(node, url, htmlToText(page.text), config.defaultBrandName ?? null)
         : config.htmlOnly
-          ? extractProductFromPage(
-              page.text,
-              url,
-              config.defaultBrandName ?? null,
-              config.boardTypeByUrl ?? {},
-            )
+          ? extractProductFromPage(page.text, url, config.defaultBrandName ?? null, {
+              boardTypeByUrl: config.boardTypeByUrl ?? {},
+              titleSuffixes: config.titleSuffixes ?? [],
+            })
           : null;
       if (!product) continue;
       summary.productsExtracted += 1;

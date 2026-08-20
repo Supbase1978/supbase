@@ -98,6 +98,13 @@ export interface CrawlConfig {
    * (felhasználói kérés, 2026-08-19).
    */
   boardTypeByUrl?: Record<string, BoardType>;
+  /**
+   * A `<title>` végéről levágandó, OLDAL-SZINTŰ utótagok. Élesben mért eset
+   * (zraysports.com): minden cím „-Zray Official Site"-tal végződik, amitől a
+   * modellnév „Max Azure M2 A Official Site" lenne. Forrásonként más, ezért
+   * konfig — globális zajszó-listaként egy jogos modellnevet is elvághatna.
+   */
+  titleSuffixes?: string[];
   /** Szabad szöveges megjegyzés az adminnak. */
   notes?: string;
 }

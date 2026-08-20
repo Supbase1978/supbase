@@ -291,7 +291,64 @@ function valueAfterLabel(
   labels: readonly string[],
   excludePrecededBy: readonly string[] = [],
 ): string | null {
-  const folded = foldText(text);
+  // KÉTMENETES keresés. Elsőként csak a KETTŐSPONTTAL zárt címkét fogadjuk el
+  // („Volume: 379L"), mert azt csak spec-táblázat írja; a marketing-próza
+  // ugyanazokat a szavakat kötetlenül használja.
+  //
+  // ÉLESBEN MÉRT HIBA (zraysports.com, Max Azure 11'6"): a termékoldalon a
+  // „Related Products" blokk MEGELŐZI a spec-táblát, és MÁS deszkákról ír —
+  // „[HIGHER VOLUME; CAPACITY] The weight capacity is 152 kg". A laza
+  // illesztés emiatt a SZOMSZÉD termék teherbírását (152 kg) adta a 170 kg
+  // helyett, a térfogatot pedig egyáltalán nem találta meg. A teherbírás
+  // BIZTONSÁGI mező (a Deszkaválasztó ez alapján ajánl), tehát ez nem
+  // szépséghiba.
+  //
+  // A második menet a régi, laza viselkedés — a kettőspont nélküli
+  // spec-táblák (aquamarina.com: „NET WEIGHT\n9.3 kg") így változatlanul
+  // működnek.
+  return (
+    labelSearch(text, labels, excludePrecededBy, true) ??
+    labelSearch(text, labels, excludePrecededBy, false)
+  );
+}
+
+/**
+ * Ékezet-hajtás INDEXHŰEN: a kimenet karakterenként ugyanolyan hosszú, mint a
+ * bemenet, tehát a `folded`-ben talált pozícióval az EREDETI szöveg is
+ * vágható.
+ *
+ * MIÉRT KELL (élesben mért hiba, zraysports.com): a `foldText` NFD-re bont,
+ * majd a diakritikus jeleket törli. Az ékezetes latin betűnél ez hossz-semleges
+ * („é" → „e"+U+0301 → „e"), a HANGUL szótagoknál viszont NEM: a site az
+ * ikonjaihoz `&#xb133;`-féle karaktereket használ, amiket az NFD 3 jamóra bont,
+ * és azok nem diakritikusak — a hajtott szöveg így KÉT karakterrel hosszabb
+ * lett minden ilyen ikonnál. A `valueAfterLabel` a hajtott szövegben talált
+ * indexszel vágta az EREDETIT, ezért a „Volume: 379L" ablak „9L"-ként indult,
+ * és 379 helyett 9 litert olvastunk ki.
+ *
+ * Ez csendes, súlyos hiba: a spec-mezők közt ott a teherbírás és a térfogat,
+ * amikre a Deszkaválasztó BIZTONSÁGI döntést épít. Az elcsúszás bármilyen
+ * nem hossz-semlegesen bomló karakternél előjön, nem csak ezen az oldalon.
+ */
+function foldForIndex(value: string): string {
+  let out = "";
+  for (let i = 0; i < value.length; i += 1) {
+    const ch = value[i] as string;
+    const folded = foldText(ch);
+    // Ami nem pontosan egy karakterre hajlik (hangul, surrogate-fél, önálló
+    // kombináló jel), az marad, ahogy volt — címke úgysem áll belőle.
+    out += folded.length === 1 ? folded : ch;
+  }
+  return out;
+}
+
+function labelSearch(
+  text: string,
+  labels: readonly string[],
+  excludePrecededBy: readonly string[],
+  requireColon: boolean,
+): string | null {
+  const folded = foldForIndex(text);
   for (const label of labels) {
     const needle = foldText(label);
     let searchFrom = 0;
@@ -309,6 +366,9 @@ function valueAfterLabel(
 
       const after = folded.slice(index + needle.length, index + needle.length + 4);
       if (/^[ae]v[ae]l/.test(after)) continue;
+      // Az első menetben KÖTELEZŐ a kettőspont (esetleg szóköz után) —
+      // a spec-táblázat írásmódja.
+      if (requireColon && !/^\s*:/.test(after)) continue;
 
       const window = text.slice(index + label.length, index + label.length + 40);
       if (/\d/.test(window)) return window;
@@ -461,15 +521,49 @@ export function parseSpecsFromText(text: string): BoardSpecs {
 /** Felfújható vagy kemény deszka? Bizonytalanságnál null. */
 export function detectInflatable(text: string): boolean | null {
   const folded = foldText(text);
-  const inflatable = ["felfujhato", "inflatable", "isup", "i-sup", "pumpa"].some((w) =>
-    folded.includes(w),
-  );
-  const rigid = ["kemeny deszka", "hardboard", "hard board", "rigid", "epoxy"].some((w) =>
-    folded.includes(w),
-  );
+  // A SZERKEZETI jelek is számítanak, nem csak a szó szerinti „inflatable":
+  // a drop-stitch mag, a nagynyomású szelep és a PVC-réteg fizikai tény egy
+  // felfújható deszkáról. Élesben mért eset (zraysports.com): a termékoldal
+  // egyszer sem írja le, hogy „inflatable", de a technológia-blokkja
+  // részletezi az „I-Drop Stitch Core"-t és a „High Pressure Valve"-ot.
+  const inflatable = [
+    "felfujhato",
+    "inflatable",
+    "isup",
+    "i-sup",
+    "pumpa",
+    "drop stitch",
+    "drop-stitch",
+    "dropstitch",
+    "high pressure valve",
+  ].some((w) => folded.includes(w));
+  const rigid = hasRigidClaim(folded);
   if (inflatable && !rigid) return true;
   if (rigid && !inflatable) return false;
   return null;
+}
+
+/**
+ * Kemény deszkára utaló ÁLLÍTÁS — a HASONLATOT nem számítjuk annak.
+ *
+ * Élesben mért csapda (zraysports.com): egy felfújható deszka leírása szerint
+ * „it makes rider feel just LIKE paddling on a hardboard". Ez épp az
+ * ellenkezőjét mondja annak, amit a puszta szó-illesztés kiolvasna belőle —
+ * ezért a „like"/„mint" előzményű előfordulás nem számít állításnak.
+ */
+function hasRigidClaim(folded: string): boolean {
+  const words = ["kemeny deszka", "hardboard", "hard board", "rigid", "epoxy"];
+  for (const word of words) {
+    let from = 0;
+    for (;;) {
+      const index = folded.indexOf(word, from);
+      if (index < 0) break;
+      from = index + word.length;
+      const before = folded.slice(Math.max(0, index - 30), index);
+      if (!/\b(like|mint)\b/.test(before)) return true;
+    }
+  }
+  return false;
 }
 
 /**
@@ -1000,20 +1094,57 @@ function headlineBeforeSpecs(pageText: string): string {
  * válna (a sitemap ezeket is tartalmazza). A hossz megléte az a minimum,
  * ami elárulja, hogy tényleg egy deszka adatlapját nézzük.
  */
-export function extractProductFromPage(
-  html: string,
-  sourceUrl: string,
-  defaultBrandName: string | null = null,
+/**
+ * Kép-URL abszolutizálása a termékoldal URL-jéhez képest. Élesben mért eset
+ * (zraysports.com): a `<img src>` PROTOKOLL-RELATÍV
+ * (`//img.website.xin/…/3865618.png`) — így ahogy van, a katalógusból nem
+ * tölthető be. Gyök- és útvonal-relatív alak is előfordul; a `URL`
+ * konstruktor mindet elrendezi, érvénytelen bemenetre pedig inkább semmit
+ * adunk, mint törött hivatkozást.
+ */
+function absoluteUrl(raw: string | null, baseUrl: string): string | null {
+  if (raw === null || raw.trim() === "") return null;
+  try {
+    return new URL(raw, baseUrl).toString();
+  } catch {
+    return null;
+  }
+}
+
+export interface PageExtractionOptions {
   /**
    * Kézi kategória-rögzítés (`crawl_config.boardTypeByUrl`): URL-részlet →
    * típus. Ez ÜT minden automatikus tippen, mert moderátori döntés.
    */
-  boardTypeByUrl: Readonly<Record<string, BoardType>> = {},
+  boardTypeByUrl?: Readonly<Record<string, BoardType>>;
+  /**
+   * A `<title>`-ből levágandó, OLDAL-SZINTŰ utótagok
+   * (`crawl_config.titleSuffixes`). Élesben mért eset (zraysports.com): minden
+   * cím „-Zray Official Site"-tal végződik, amitől a modellnév „Max Azure M2 A
+   * Official Site" lenne. Ez forrásonként más, ezért konfig — nem globális
+   * zajszó-lista, ami egy jogos modellnevet is elvághatna.
+   */
+  titleSuffixes?: readonly string[];
+}
+
+export function extractProductFromPage(
+  html: string,
+  sourceUrl: string,
+  defaultBrandName: string | null = null,
+  options: PageExtractionOptions = {},
 ): ExtractedProduct | null {
+  const { boardTypeByUrl = {}, titleSuffixes = [] } = options;
   const titleMatch = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
-  const rawTitle = htmlToText(titleMatch?.[1] ?? "")
+  let rawTitle = htmlToText(titleMatch?.[1] ?? "")
     .replace(/\s+/g, " ")
     .trim();
+  for (const suffix of titleSuffixes) {
+    const folded = foldText(rawTitle);
+    const needle = foldText(suffix);
+    if (needle !== "" && folded.endsWith(needle)) {
+      rawTitle = rawTitle.slice(0, rawTitle.length - suffix.length).replace(/[\s|·–—-]+$/, "");
+    }
+  }
   if (rawTitle === "") return null;
 
   const pageText = htmlToText(html);
@@ -1055,11 +1186,9 @@ export function extractProductFromPage(
     // Horgonyok, a legpontosabbtól: cikkszám → teljes modellnév → a modellnév
     // ELSŐ SZAVA (a családnév; a fájlnév gyakran csak azt viseli:
     // „Coral-R-1.png", „mega_frontback.png").
-    imageUrl: findProductImage(
-      html,
-      findModelCode(pageText),
-      modelName,
-      modelName.split(/\s+/)[0] ?? null,
+    imageUrl: absoluteUrl(
+      findProductImage(html, findModelCode(pageText), modelName, modelName.split(/\s+/)[0] ?? null),
+      sourceUrl,
     ),
     // A besorolási tipphez a cím ÉS az URL kategória-szegmense — utóbbi a
     // gyártó SAJÁT besorolása (`/products/racing/race/`, `/products/youth/…`),

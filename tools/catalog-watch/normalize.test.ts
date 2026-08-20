@@ -856,3 +856,75 @@ describe("classifyProduct — evezőtáska és evezőtartó nem evező", () => {
     expect(result).toEqual({ kind: "accessory", accessoryType: "evezo" });
   });
 });
+
+/**
+ * ZRAY-KÖR (2026-08-20) — négy hiba, mind a `zraysports.com` bekötése közben
+ * mérve. Kettő közülük a MEGLÉVŐ forrásokat is érintő, csendes hiba volt.
+ */
+describe("zraysports.com — a spec-blokk a marketing-próza MÖGÖTT", () => {
+  /**
+   * A termékoldalon a „Related Products" blokk MEGELŐZI a spec-táblát, és MÁS
+   * deszkákról ír. A laza címke-illesztés emiatt a szomszéd termék adatát
+   * vette: 170 kg helyett 152 kg-ot. A teherbírás BIZTONSÁGI mező.
+   */
+  it("a KETTŐSPONTOS spec-címke üt a próza szabad szóhasználatán", () => {
+    const text =
+      "[HIGHER VOLUME; CAPACITY] The weight capacity is 152 kg/335 lb, 22 kg higher. " +
+      "Specification Length: 351 cm Width: 86 cm Thickness: 15 cm Volume: 379L " +
+      "Capacity: up to 170 kg/374 lb";
+    const specs = parseSpecsFromText(text);
+    expect(specs.maxLoadKg).toBe(170);
+    expect(specs.volumeL).toBe(379);
+  });
+
+  it("kettőspont nélküli spec-tábla továbbra is működik (aquamarina.com)", () => {
+    const specs = parseSpecsFromText("LENGTH\n320 cm\nMAX. PAYLOAD\n140 kg");
+    expect(specs.lengthCm).toBe(320);
+    expect(specs.maxLoadKg).toBe(140);
+  });
+
+  /**
+   * CSENDES, ÁLTALÁNOS HIBA: a `foldText` NFD-bontása a hangul szótagoknál nem
+   * hossz-semleges, ezért a hajtott szövegben talált index az EREDETI szöveget
+   * elcsúszva vágta. A Zray az ikonjaihoz használ ilyen karaktert (`&#xb133;`),
+   * és emiatt a „Volume: 379L" ablak „9L"-ként indult → 9 liter.
+   */
+  it("a címke-index NEM csúszik el nem hossz-semlegesen bomló karaktertől", () => {
+    const specs = parseSpecsFromText("넳 넲 ikonok Volume: 379L Capacity: up to 170 kg");
+    expect(specs.volumeL).toBe(379);
+    expect(specs.maxLoadKg).toBe(170);
+  });
+
+  it("a HASONLAT nem tesz keménnyé egy felfújható deszkát", () => {
+    // „…makes rider feel just like paddling on a hardboard" — épp az
+    // ellenkezőjét mondja annak, amit a puszta szó-illesztés kiolvasna.
+    expect(
+      detectInflatable("Drop Stitch Core. It makes rider feel just like paddling on a hardboard."),
+    ).toBe(true);
+    // Valódi állításra viszont továbbra is kemény deszka:
+    expect(detectInflatable("Hardboard construction, epoxy shell")).toBe(false);
+  });
+
+  it("a szerkezeti jel is elárulja a felfújhatót (drop stitch, nagynyomású szelep)", () => {
+    expect(detectInflatable("I-Drop Stitch Core and a High Pressure Valve")).toBe(true);
+  });
+
+  it("a cím OLDAL-SZINTŰ utótagja levágható (titleSuffixes)", () => {
+    const page = `<html><head><title>Max Azure 11'6" - M2-A-Zray Official Site</title></head>
+      <body>Specification Length: 351 cm Width: 86 cm Thickness: 15 cm Volume: 379L
+      Capacity: up to 170 kg</body></html>`;
+    const product = extractProductFromPage(page, "https://www.zraysports.com/productinfo/1.html", "Zray", {
+      titleSuffixes: ["-Zray Official Site"],
+    });
+    expect(product?.modelName).toBe("Max Azure M2 A");
+  });
+
+  it("a PROTOKOLL-RELATÍV kép-URL abszolúttá válik", () => {
+    const page = `<html><head><title>Max Azure</title></head><body>
+      Length: 351 cm Width: 86 cm Thickness: 15 cm
+      <img src="//img.website.xin/contents/max-azure.png">
+      </body></html>`;
+    const product = extractProductFromPage(page, "https://www.zraysports.com/productinfo/1.html", "Zray");
+    expect(product?.imageUrl).toBe("https://img.website.xin/contents/max-azure.png");
+  });
+});
