@@ -1109,3 +1109,48 @@ describe("jobesports.com — cikkszám-horgony a képhez és a galériához", ()
     expect(extractProductFromPage(PAGE, URL_, "Jobe")?.specs.maxLoadKg).toBe(80);
   });
 });
+
+/**
+ * MÉRTÉKEGYSÉG NÉLKÜLI kétoszlopos spec-tábla (2026-08-20, gladiatorsup.com).
+ * A gyártó KÖZLI a térfogatot és a teherbírást, csak nem ismétli meg mellette
+ * az egységet — a korábbi állapotban ezért maradtak üresen. Ez a MI korlátunk
+ * volt, nem a forrásé.
+ */
+describe("címke a saját sorában, alatta puszta szám", () => {
+  const TABLE = [
+    "Board weight",
+    "9,5",
+    "Volume",
+    "245",
+    "Maximum load capacity",
+    "140",
+    "Recommended rider weight",
+    "up to 80",
+  ].join("\n");
+
+  it("a mértékegységet a MEZŐ adja (térfogat → liter, teherbírás → kg)", () => {
+    const specs = parseSpecsFromText(TABLE);
+    expect(specs.volumeL).toBe(245);
+    expect(specs.weightKg).toBe(9.5);
+    expect(specs.maxLoadKg).toBe(140);
+  });
+
+  it("az egységes írásmód MINDIG üt (ez csak a maradékot tölti)", () => {
+    const specs = parseSpecsFromText(`Volume: 300 l\nVolume\n245`);
+    expect(specs.volumeL).toBe(300);
+  });
+
+  /** Prózában ez az alakzat nem fordul elő — a címke-sor rövid és szám nélküli. */
+  it("hosszú prózai sorból NEM olvas értéket", () => {
+    const prose = "This board has an impressive volume for its size, which matters\n245";
+    expect(parseSpecsFromText(prose).volumeL).toBeNull();
+  });
+
+  it("a MÉRETEKET szándékosan nem tölti (32 hüvelyk ≠ 32 cm)", () => {
+    expect(parseSpecsFromText("Length\n354\nWidth\n86").lengthCm).toBeNull();
+  });
+
+  it("nem szám értékre nem lép", () => {
+    expect(parseSpecsFromText("Volume\nnagy").volumeL).toBeNull();
+  });
+});

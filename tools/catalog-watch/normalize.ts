@@ -342,6 +342,49 @@ function valueAfterLabel(
  * nem hossz-semlegesen bomló karakternél előjön, nem csak ezen az oldalon.
  */
 /**
+ * Kétoszlopos spec-tábla MÉRTÉKEGYSÉG NÉLKÜL: a címke a saját sorában áll, és
+ * a KÖVETKEZŐ sor egyetlen puszta szám. Az egységet ilyenkor a MEZŐ adja
+ * (térfogat → liter, teherbírás és súly → kilogramm) — pontosan úgy, ahogy az
+ * olvasó is érti.
+ *
+ * ÉLESBEN MÉRT (gladiatorsup.com):
+ *   Board weight / 9,5 / Volume / 245 / Maximum load capacity / 140
+ * A gyártó KÖZLI az adatot, csak nem ismétli meg mellette az egységet. A
+ * korábbi állapotban ezért maradt üresen a térfogat és a teherbírás — az a MI
+ * korlátunk volt, nem a forrásé.
+ *
+ * MIÉRT NEM VESZÉLYES ez a lazítás, pedig „puszta számból nem találgatunk":
+ *  * a címke-sornak PONTOSAN a címkének kell lennie (semmi más szöveg),
+ *  * a következő sornak PONTOSAN egy számnak (legfeljebb „up to" előtaggal),
+ *  * és csak a MÁR ÜRESEN MARADT mezőket tölti — az egységes írásmód mindig üt.
+ * Prózában ez az alakzat nem fordul elő; ez a shape maga a táblázat.
+ *
+ * A MÉRETEKET SZÁNDÉKOSAN nem tölti: ott a mértékegység dönti el, hogy cm-ről,
+ * hüvelykről vagy lábról van szó — egység nélküli hossz-számot tippelni valódi
+ * hiba lenne (32 hüvelyk kontra 32 cm).
+ */
+function fillFromLabelledLines(text: string, specs: BoardSpecs): void {
+  const fields = ["volumeL", "maxLoadKg", "weightKg"] as const;
+  const lines = text.split("\n").map((line) => line.trim());
+  for (let i = 0; i < lines.length - 1; i += 1) {
+    const label = foldText(lines[i] ?? "").replace(/\s*:$/, "");
+    // A címke-sor legyen RÖVID és szám nélküli — így egy prózai mondat, ami
+    // véletlenül tartalmazza a címkeszót, nem minősül címkének. A valós
+    // címkék többszavasak („Maximum load capacity"), ezért nem pontos
+    // egyezést kérünk, hanem tartalmazást ezen a szűk soron belül.
+    if (label === "" || label.length > 40 || /\d/.test(label)) continue;
+    const value = (lines[i + 1] ?? "").match(/^(?:up to|max\.?|~)?\s*(\d+(?:[.,]\d+)?)$/i);
+    if (!value) continue;
+    for (const field of fields) {
+      if (specs[field] !== null) continue;
+      if (!SPEC_LABELS[field].some((candidate) => label.includes(foldText(candidate)))) continue;
+      specs[field] = toNumber(value[1] ?? "");
+      break;
+    }
+  }
+}
+
+/**
  * A pozíció zárójelen BELÜL van-e.
  *
  * ÉLESBEN MÉRT, CSENDES ADATHIBA (gladiatorsup.com): a méret-sor címkéje
@@ -613,6 +656,10 @@ export function parseSpecsFromText(text: string): BoardSpecs {
     const match = window.match(/(\d+(?:[.,]\d+)?)\s*kg\b/i);
     specs[key] = match ? toNumber(match[1] ?? "") : null;
   }
+
+  // UTOLSÓ MENET: címke a SAJÁT SORÁBAN, alatta PUSZTA SZÁM. Csak a még
+  // üresen maradt mezőket tölti (ld. `fillFromLabelledLines`).
+  fillFromLabelledLines(text, specs);
 
   specs.inflatable = detectInflatable(text);
   return specs;
