@@ -3546,3 +3546,55 @@ katalógusként.
 | deszka | **161** (képpel 160) |
 | kiegészítő | **48** (képpel 48) |
 | márka | Starboard 105 · Aqua Marina 37 · Bluefin 15 · Indiana 3 · Itiwit 1 |
+
+### F2.1-utó-29 — a képek MOBILRA igazítása (2026-08-20)
+
+**Felhasználói kérdés:** „ezek a képek megfelelőek mobilra is? hiszen
+alapvetően mobile-first alkalmazást és natív appot csinálunk." Két valós hiba
+volt, mindkettő MÉRVE.
+
+**1. SÚLY — ezt az F2.1-utó-24 okozta.** Az akkori szabály levágta a WordPress
+méret-utótagot, hogy „ne egy apró változat" kerüljön be — csakhogy ezzel a
+SZERKESZTŐSÉGI EREDETIT választotta:
+
+| | előtte | utána |
+|---|---|---|
+| átlag kép | **680 kB** | ~200 kB |
+| legnagyobb | **8904 kB** (Aqua Marina Cascade) | 1145 kB |
+| 20 kártyás lista | **~13 MB** | ~4 MB |
+
+Két külön mechanizmus, mert a források másképp méreteznek:
+
+* **`srcset`-választás** (WordPress/gyártói oldalak): a gyártó maga kirakja a
+  méret-változatokat; onnan a legkisebb olyat vesszük, ami a legnagyobb
+  megjelenítéshez még elég (`DISPLAY_TARGET_WIDTH = 700`). `srcset` hiányában
+  marad a régi utótag-levágás — ott a `src` gyakran épp egy pici bélyegkép.
+* **`displayImageUrl`** (Shopify-CDN): a `/cdn/shop/` képek `width`
+  query-paramétere 768-ra állítva. A Bluefin JSON-LD-je `width=1920`-at írt.
+  Bekötve mind a NÉGY helyre, ahol kép-URL keletkezik: JSON-LD-ág, Shopify-mód,
+  visszatöltés, és a visszatöltés TÁROLT-URL ága (ez utóbbi külön hiba volt: a
+  régi crawlból származó URL normalizálás nélkül ment tovább).
+
+**Amit ez NEM old meg, őszintén:** a FORMÁTUMOT. A `format=webp` paramétert
+ezek a boltok nem tisztelik (mérve: marad PNG), ezért a Bluefin nagy, tömör
+felületű PNG-i ~1,1 MB-nál nem mennek lejjebb. Erre csak ÚJRAKÓDOLÓ kép-CDN
+segítene (Netlify Image CDN: forrásonként engedélyezni kell a domaint, és a
+natív SPA-buildhez abszolút URL kell) — nem kezdtük el.
+
+**2. ELRENDEZÉS.** A fix négyzetes keret 390 px széles telefonon **egy kártyát**
+engedett képernyőnként — 161 deszka között így böngészni nem lehet, pedig épp
+a modellek közti eligazodás a cél. A terméklisták (deszka, kiegészítő,
+Deszkaválasztó-alternatívák) telefonon kétoszloposak lettek; **kizárólag a
+`sm` alatti töréspont változott**, tableten marad 2, asztalon 3 oszlop
+(képernyőképpel ellenőrizve mindkettő). Ez egyben a natív shop-appok bevett
+mintája.
+
+A keskeny kártyán a modellnév és a típus-badge egy sorban nem fért el (a név 3
+sorra tört), ezért ott egymás alá kerülnek; `sm`-től marad az eredeti,
+egysoros elrendezés.
+
+**A tárolt kép EGY méret, nem eszközfüggő** — ezt tudatosan vállaljuk. A 768 px
+mindhárom célon elég: telefon 2 oszlop (~170 CSS px → 340 px 2×-en), asztali
+PWA 3 oszlop (~350 CSS px → 700 px), adatlap-hero. Valódi eszközönkénti
+kiszolgáláshoz (`srcset`, WebP/AVIF) vagy több változatot kellene tárolni a
+`boards` soron, vagy kép-CDN-t bekötni.

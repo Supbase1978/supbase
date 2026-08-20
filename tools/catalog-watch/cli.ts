@@ -51,7 +51,12 @@ import {
   mergeCandidateIntoBoard,
   updateBoardImage,
 } from "./store.ts";
-import { imageFromPage, rankImageSources, type ImageSourceCandidate } from "./images.ts";
+import {
+  displayImageUrl,
+  imageFromPage,
+  rankImageSources,
+  type ImageSourceCandidate,
+} from "./images.ts";
 import type { BoardType, CrawlConfig, ExtractedProduct, SourceKind } from "./types.ts";
 
 /** Egyetlen kérés felső időkorlátja — egy lassú bolt ne akassza meg a futást. */
@@ -948,7 +953,10 @@ async function commandBackfillImages(args: Args): Promise<void> {
     let image: string | null = null;
     for (const source of ranked) {
       if (source.storedImageUrl) {
-        image = source.storedImageUrl;
+        // A TÁROLT URL is átmegy a megjelenítési normalizáláson: a jelölt-sor
+        // a crawl idején keletkezett, esetleg még a méret-szabály előtt
+        // (élesben: a Bluefin JSON-LD-je `width=1920`-at írt, 1656 kB/kép).
+        image = displayImageUrl(source.storedImageUrl);
         break;
       }
       const { status, text } = await realFetch(source.url as string);
