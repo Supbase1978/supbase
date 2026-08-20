@@ -123,6 +123,48 @@ export async function updateBoardImage(
   fail("boards update (image_url)", error);
 }
 
+/** Egy katalógus-sor a galéria-visszatöltéshez. */
+export interface BoardForGalleryBackfill {
+  id: string;
+  modelName: string;
+  imageUrl: string | null;
+  galleryCount: number;
+}
+
+/**
+ * A galéria-visszatöltés bemenete. SZÁNDÉKOSAN kind-AGNOSZTIKUS: a teljes
+ * képernyős nézet a kiegészítőknél is ugyanúgy működik, és ez nem listázás.
+ */
+export async function listBoardsForGalleryBackfill(
+  client: SupabaseClient,
+  options: { includeFilled?: boolean } = {},
+): Promise<BoardForGalleryBackfill[]> {
+  const { data, error } = await client.from("boards").select("id, model_name, image_url, images");
+  fail("boards olvasás", error);
+  return (data ?? [])
+    .map((row) => ({
+      id: row.id as string,
+      modelName: row.model_name as string,
+      imageUrl: (row.image_url as string | null) ?? null,
+      galleryCount: Array.isArray(row.images) ? row.images.length : 0,
+    }))
+    .filter((row) => options.includeFilled === true || row.galleryCount === 0);
+}
+
+/**
+ * A teljes képernyős nézet képeinek rögzítése (`boards.images`). A BORÍTÓ nem
+ * itt van — az az `image_url`, amit a rács mutat.
+ */
+export async function updateBoardGallery(
+  client: SupabaseClient,
+  boardId: string,
+  images: readonly string[],
+): Promise<void> {
+  const payload = images.map((url) => ({ url, source: "brand" }));
+  const { error } = await client.from("boards").update({ images: payload }).eq("id", boardId);
+  fail("boards update (images)", error);
+}
+
 /** A deszkához KÖTÖTT jelöltek (a kép a saját forrás-oldalról jön). */
 export async function listCandidatesForBoards(
   client: SupabaseClient,

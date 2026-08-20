@@ -75,6 +75,29 @@ export function imageFromPage(html: string, modelName: string): string | null {
 }
 
 /**
+ * Egy Shopify termékoldal URL-jéből a termék SAJÁT JSON-ja.
+ *
+ * A jelölt URL-je `…/products/<handle>?variant=<id>` alakú; a Shopify ugyanezt
+ * a terméket kiszolgálja `…/products/<handle>.json` néven is, a teljes
+ * `images[]` tömbbel. Ez a galéria-visszatöltés olcsó útja: termékenként EGY
+ * kis kérés, a teljes katalógus letöltése nélkül.
+ *
+ * Nem Shopify-alakú URL-re `null` — ott nincs mit próbálni.
+ */
+export function shopifyProductJsonUrl(candidateUrl: string | null): string | null {
+  if (candidateUrl === null) return null;
+  let url: URL;
+  try {
+    url = new URL(candidateUrl);
+  } catch {
+    return null;
+  }
+  const match = url.pathname.match(/^(.*\/products\/[^/]+?)(?:\.json)?$/);
+  if (!match) return null;
+  return `${url.origin}${match[1]}.json`;
+}
+
+/**
  * Legfeljebb ennyi galéria-jelölt kerül a jelölt-sorba. A moderátor ebből
  * válogatja ki a 3–5 megjelenítendőt — a Shopify termékein 7–22 kép van
  * (mérve: star-board.com), az utolsó tizenkettő tipikusan szín-változat és

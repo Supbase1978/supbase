@@ -186,5 +186,12 @@
       "drybag": "For touring, a dry bag protects your clothes and gear from moisture."
     },
     "riverLeashLink": "More in the leash guide"
+  },
+  "gallery": {
+    "open": "Enlarge image",
+    "close": "Close",
+    "previous": "Previous image",
+    "next": "Next image",
+    "position": "Image {{current}} of {{total}}"
   }
 }

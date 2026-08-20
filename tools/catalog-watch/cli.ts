@@ -44,17 +44,21 @@ import {
   createSupabaseStore,
   insertSource,
   listAllSources,
+  listBoardsForGalleryBackfill,
   listBoardsForImageBackfill,
   listBoardsForLifecycle,
   listCandidatesForBoards,
   listSources,
   mergeCandidateIntoBoard,
+  updateBoardGallery,
   updateBoardImage,
 } from "./store.ts";
 import {
   displayImageUrl,
+  galleryCandidates,
   imageFromPage,
   rankImageSources,
+  shopifyProductJsonUrl,
   type ImageSourceCandidate,
 } from "./images.ts";
 import type { BoardType, CrawlConfig, ExtractedProduct, SourceKind } from "./types.ts";
@@ -109,6 +113,15 @@ Parancsok:
                                     próbálja, mint a boltit. Alapból csak a
                                     kép nélküli sorokat nézi (--all: mindet
                                     újraszámolja), és DRY-RUN; --apply ír.
+  backfill-gallery [--apply]       A teljes képernyős nézet TOVÁBBI képei.
+      [--all] [--limit N]           Forrása a Shopify termék saját JSON-ja
+                                    (…/products/<handle>.json): ott a teljes
+                                    images[] tömb strukturáltan ott van,
+                                    termékenként egy kis kéréssel. A
+                                    HTML-forrásokból SZÁNDÉKOSAN nem gyűjt —
+                                    ott a „Related Products" MÁS termékek
+                                    fotóit is felkínálná. Alapból csak a
+                                    galéria nélküli sorokat nézi, és DRY-RUN.
   lifecycle [--days N]             Kifutás-jelöltek listája (csak jelentés)
   list-incomplete [--source NÉV]   Hiányos adatú deszkák (pending jelölt ÉS
       [--html [ÚTVONAL]]            élő board) — a havi kézi adatgyűjtés
@@ -984,6 +997,102 @@ async function commandBackfillImages(args: Args): Promise<void> {
   if (!apply && found > 0) console.log("Írás: add hozzá a --apply kapcsolót.");
 }
 
+/**
+ * GALÉRIA-visszatöltés: a teljes képernyős nézet további képei (F2.1-utó-30).
+ *
+ * MIÉRT KÜLÖN a `backfill-images`-től: más a FORRÁSA. A borítót a termékoldal
+ * HTML-jéből keressük, a galériát viszont a Shopify termék SAJÁT JSON-jából
+ * (`…/products/<handle>.json`) — ott a teljes `images[]` tömb strukturáltan ott
+ * van, termékenként egyetlen kis kéréssel.
+ *
+ * A HTML-forrásokból (Aqua Marina, Indiana, Zray) SZÁNDÉKOSAN nem gyűjtünk:
+ * ott a „Related Products" blokk MÁS termékek fotóit is felkínálná — ugyanaz a
+ * csapda, ami az „ALUMINUM OARS" hibát okozta. Egy rossz kép rosszabb, mint a
+ * hiánya; azok a deszkák egyelőre egy képesek maradnak, és a felület ezt
+ * elegánsan kezeli (nincs pöttysor, nincs legyintés).
+ */
+async function commandBackfillGallery(args: Args): Promise<void> {
+  const apply = flag(args, "apply") === "true";
+  const all = flag(args, "all") === "true";
+  const limit = flagNumber(args, "limit");
+  const client = connect();
+
+  const rows = await listBoardsForGalleryBackfill(client, { includeFilled: all });
+  const targets = limit === undefined ? rows : rows.slice(0, limit);
+  if (targets.length === 0) {
+    console.log("Minden sornak van galériája — nincs mit pótolni.");
+    return;
+  }
+
+  const candidates = await listCandidatesForBoards(
+    client,
+    targets.map((row) => row.id),
+  );
+  const sources = await listAllSources(client);
+  const kindById = new Map(sources.map((source) => [source.id, source.kind as string]));
+
+  const byBoard = new Map<string, ImageSourceCandidate[]>();
+  for (const candidate of candidates) {
+    const list = byBoard.get(candidate.boardId) ?? [];
+    list.push({
+      url: candidate.url,
+      status: candidate.status,
+      sourceKind: kindById.get(candidate.sourceId) ?? null,
+      storedImageUrl: candidate.imageUrl,
+    });
+    byBoard.set(candidate.boardId, list);
+  }
+
+  console.log(
+    `${apply ? "" : "[DRY-RUN] "}${targets.length} sor vizsgálata ` +
+      `(alap-szünet ${DEFAULT_MIN_DELAY_MS} ms)…\n`,
+  );
+
+  let filled = 0;
+  let notShopify = 0;
+  let empty = 0;
+  for (const row of targets) {
+    const ranked = rankImageSources(byBoard.get(row.id) ?? []);
+    const jsonUrl = ranked.map((source) => shopifyProductJsonUrl(source.url)).find((u) => u !== null);
+    if (jsonUrl === undefined || jsonUrl === null) {
+      notShopify += 1;
+      continue;
+    }
+
+    const { status, text } = await realFetch(jsonUrl);
+    await sleep(DEFAULT_MIN_DELAY_MS);
+    if (status >= 400 || text === "") {
+      empty += 1;
+      continue;
+    }
+
+    let imageUrls: string[] = [];
+    try {
+      const parsed = JSON.parse(text) as { product?: { images?: { src?: string }[] } };
+      imageUrls = (parsed.product?.images ?? []).map((image) => image.src ?? "");
+    } catch {
+      empty += 1;
+      continue;
+    }
+
+    const gallery = galleryCandidates(imageUrls, row.imageUrl);
+    if (gallery.length === 0) {
+      empty += 1;
+      continue;
+    }
+
+    filled += 1;
+    console.log(`  ✓ ${row.modelName} — ${gallery.length} kép`);
+    if (apply) await updateBoardGallery(client, row.id, gallery);
+  }
+
+  console.log(
+    `\n${filled} galéria ${apply ? "beírva" : "megvan (DRY-RUN, nem íródott)"} · ` +
+      `${notShopify} nem Shopify-forrású (marad egy képes) · ${empty} üres`,
+  );
+  if (!apply && filled > 0) console.log("Írás: add hozzá a --apply kapcsolót.");
+}
+
 async function commandLifecycle(args: Args): Promise<void> {
   const unseenDays = flagNumber(args, "days") ?? DEFAULT_UNSEEN_DAYS;
   const client = connect();
@@ -1018,6 +1127,8 @@ async function main(): Promise<void> {
       return commandCrawl(args);
     case "backfill-images":
       return commandBackfillImages(args);
+    case "backfill-gallery":
+      return commandBackfillGallery(args);
     case "lifecycle":
       return commandLifecycle(args);
     case "approve-candidates":

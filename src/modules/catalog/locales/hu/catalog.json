@@ -186,5 +186,12 @@
       "drybag": "Túrához szárazzsák véd a ruhád és a felszerelésed a nedvességtől."
     },
     "riverLeashLink": "Bővebben a póráz-útmutatóban"
+  },
+  "gallery": {
+    "open": "Kép nagyítása",
+    "close": "Bezárás",
+    "previous": "Előző kép",
+    "next": "Következő kép",
+    "position": "{{current}}. kép a(z) {{total}}-ból"
   }
 }

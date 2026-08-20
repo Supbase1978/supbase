@@ -6,6 +6,7 @@ import {
   imageFromPage,
   MAX_GALLERY_CANDIDATES,
   rankImageSources,
+  shopifyProductJsonUrl,
   type ImageSourceCandidate,
 } from "./images.ts";
 
@@ -161,5 +162,19 @@ describe("galleryCandidates", () => {
 
   it("kép nélküli termékre üres tömb (egy képes deszka: nincs pöttysor)", () => {
     expect(galleryCandidates([], cover)).toEqual([]);
+  });
+});
+
+describe("shopifyProductJsonUrl", () => {
+  it("a jelölt variáns-URL-jéből a termék saját JSON-ját adja", () => {
+    expect(
+      shopifyProductJsonUrl("https://star-board.com/products/igo-paddleboard?variant=123"),
+    ).toBe("https://star-board.com/products/igo-paddleboard.json");
+  });
+
+  it("nem Shopify-alakú URL-re null (ott nincs mit próbálni)", () => {
+    expect(shopifyProductJsonUrl("https://aquamarina.com/products/touring/coral/")).toBeNull();
+    expect(shopifyProductJsonUrl("nem-url")).toBeNull();
+    expect(shopifyProductJsonUrl(null)).toBeNull();
   });
 });

@@ -138,6 +138,9 @@ export async function loader({ request, params }: Route.LoaderArgs) {
       stabilityIndex: board.stability_index,
       manualUrl: board.manual_url,
       imageUrl: board.image_url,
+      // A teljes képernyős nézet további képei. Csak az URL megy át a hálózaton
+      // — a `source` mező a moderációnak kell, a megjelenítésnek nem.
+      images: (board.images ?? []).map((image) => image.url),
       description: pickTranslated(board.description, locale) || null,
     },
     aggregate,
@@ -251,7 +254,11 @@ export default function BoardDetailRoute({ loaderData, actionData }: Route.Compo
     <main className="mx-auto flex min-h-svh max-w-5xl flex-col gap-6 p-4 sm:p-6">
       <JsonLd data={jsonLd} />
       <header className="flex flex-col gap-2">
-        <BoardHero modelName={board.modelName} imageUrl={board.imageUrl} />
+        <BoardHero
+          modelName={board.modelName}
+          imageUrl={board.imageUrl}
+          images={board.images}
+        />
         <div className="flex flex-wrap items-baseline justify-between gap-2">
           <h1
             className="text-3xl font-semibold text-ink-deep"
