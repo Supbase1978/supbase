@@ -3559,9 +3559,9 @@ SZERKESZTŐSÉGI EREDETIT választotta:
 
 | | előtte | utána |
 |---|---|---|
-| átlag kép | **680 kB** | ~200 kB |
+| átlag kép | **680 kB** | **248 kB** |
 | legnagyobb | **8904 kB** (Aqua Marina Cascade) | 1145 kB |
-| 20 kártyás lista | **~13 MB** | ~4 MB |
+| 20 kártyás lista | **~13 MB** | **~5 MB** |
 
 Két külön mechanizmus, mert a források másképp méreteznek:
 
@@ -3577,7 +3577,8 @@ Két külön mechanizmus, mert a források másképp méreteznek:
 
 **Amit ez NEM old meg, őszintén:** a FORMÁTUMOT. A `format=webp` paramétert
 ezek a boltok nem tisztelik (mérve: marad PNG), ezért a Bluefin nagy, tömör
-felületű PNG-i ~1,1 MB-nál nem mennek lejjebb. Erre csak ÚJRAKÓDOLÓ kép-CDN
+felületű PNG-i ~1,1 MB-nál nem mennek lejjebb — a 16 megmaradt 800 kB fölötti
+kép MIND ilyen. Erre csak ÚJRAKÓDOLÓ kép-CDN
 segítene (Netlify Image CDN: forrásonként engedélyezni kell a domaint, és a
 natív SPA-buildhez abszolút URL kell) — nem kezdtük el.
 
