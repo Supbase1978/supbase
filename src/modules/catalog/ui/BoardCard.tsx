@@ -2,11 +2,15 @@
  * Deszka-kártya a listához (`/deszkak`). Kép vagy token-placeholder + model,
  * márka, board_type-badge, méret-chipek, stabilitási index. A `@core/ui Card`-ra
  * épül; a link az adatlapra visz.
+ *
+ * A kép a `ProductImage` FIX keretében ül: a kártyák egymás mellett állnak, és
+ * a véleményezőnek a modellek KÖZÖTT kell eligazodnia — ehhez minden kártyán
+ * azonos méretű, teljes egészében látszó termékkép kell (lásd `ProductImage`).
  */
 import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
 
-import { Card } from "@core/ui";
+import { Card, ProductImage } from "@core/ui";
 
 import type { BoardType } from "../types";
 
@@ -34,16 +38,7 @@ export function BoardCard({ board, className }: BoardCardProps) {
   return (
     <Card className={className}>
       <Link to={`/deszkak/${board.slug}`} className="flex flex-col gap-2.5">
-        {board.imageUrl ? (
-          <img
-            src={board.imageUrl}
-            alt={board.modelName}
-            className="h-32 w-full rounded-[var(--radius-card)] object-cover"
-            loading="lazy"
-          />
-        ) : (
-          <div className="h-32 w-full rounded-[var(--radius-card)] bg-mist" aria-hidden="true" />
-        )}
+        <ProductImage src={board.imageUrl} alt={board.modelName} />
 
         <div className="flex items-baseline justify-between gap-2">
           <span className="text-lg font-semibold text-ink-deep">{board.modelName}</span>

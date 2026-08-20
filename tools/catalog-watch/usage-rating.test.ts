@@ -144,8 +144,8 @@ describe("findProductImage", () => {
     );
   });
 
-  it("a LOGÓT sosem választja", () => {
-    expect(findProductImage(page, "LOGO")).toBeNull();
+  it("a LOGÓT sosem választja — a fallback ágon sem", () => {
+    expect(findProductImage(page, "LOGO")).not.toContain("LOGO");
   });
 
   it("a RÉSZLET-/technológia-képet kihagyja a fő fotó javára", () => {
@@ -157,9 +157,43 @@ describe("findProductImage", () => {
     expect(findProductImage(page, "BT-26BZ", "Coral")).toContain("BLAZE");
   });
 
-  it("túl rövid vagy hiányzó horgonyra null", () => {
-    expect(findProductImage(page, null)).toBeNull();
-    expect(findProductImage(page, "ab")).toBeNull();
+  /**
+   * A katalógusban a képek EGYMÁS MELLETT állnak, a véleményezőnek el kell
+   * igazodnia köztük — a fehér hátterű front/back render összevethető, az
+   * életkép nem. Élesben: Nuts, Race Elite, Rapid.
+   */
+  it("azonos horgonyra a FRONT/BACK rendert választja az életkép helyett", () => {
+    const rapid = `
+      <img src="https://x.com/uploads/Aqua-Marina-Product-BT-22RP-11.jpg">
+      <img src="https://x.com/uploads/rapid-frontback.png">
+    `;
+    expect(findProductImage(rapid, "rapid")).toBe("https://x.com/uploads/rapid-frontback.png");
+  });
+
+  /**
+   * A fájlnév nem megbízható (a gyártó elgépeli — `revolutiobn.png` —, sőt fel
+   * is cseréli két termékét), a POZÍCIÓ viszont igen: a hero-kép az első
+   * nem-kizárt kép. Csak akkor szólal meg, ha egyetlen horgony sem talált.
+   */
+  it("horgony nélkül az oldal első nem-kizárt képét adja (pozíció-fallback)", () => {
+    const revolution = `
+      <img src="https://x.com/uploads/white_LOGO-01.png">
+      <img src="https://x.com/uploads/revolutiobn.png">
+      <img src="https://x.com/uploads/backpack.jpg">
+    `;
+    expect(findProductImage(revolution, "revolution")).toBe(
+      "https://x.com/uploads/revolutiobn.png",
+    );
+  });
+
+  it("a fallback a horgony UTÁN jön — a találatot nem írja felül", () => {
+    // A „Coral" horgony talál; az első nem-kizárt kép (DJI-életkép) nem nyer.
+    expect(findProductImage(page, "Coral")).not.toContain("DJI");
+  });
+
+  it("kép nélküli oldalra null", () => {
+    expect(findProductImage("<p>nincs kép</p>", "Coral")).toBeNull();
+    expect(findProductImage('<img src="https://x.com/uploads/white_LOGO-01.png">', null)).toBeNull();
   });
 });
 

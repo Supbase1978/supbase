@@ -10,7 +10,7 @@
 import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
 
-import { Card, cx, RatingBar } from "@core/ui";
+import { Card, cx, ProductImage, RatingBar } from "@core/ui";
 
 import {
   ADVISOR_REVIEW_DIMENSIONS,
@@ -345,26 +345,28 @@ function BoardMedia({
   scoreLabel: string;
   large?: boolean;
 }) {
-  const heightClass = large ? "h-40" : "h-28";
   return (
-    <div className={cx("relative w-full", heightClass)}>
-      {imageUrl ? (
-        <img
-          src={imageUrl}
-          alt={modelName}
-          className={cx("h-full w-full rounded-[var(--radius-card)] object-cover")}
-          loading="lazy"
-        />
-      ) : (
-        <div
-          aria-hidden="true"
-          className="h-full w-full rounded-[var(--radius-card)]"
-          style={{
-            background:
-              "linear-gradient(135deg, var(--ink-deep) 0%, var(--petrol) 55%, var(--mist) 100%)",
-          }}
-        />
-      )}
+    <div className="relative w-full">
+      {/*
+       * FIX keret + `object-contain` (`ProductImage`): a Deszkaválasztó épp az
+       * a hely, ahol a modelleket EGYMÁSSAL kell összevetni — a vágott,
+       * eltérő magasságú képek itt ártanának a legtöbbet. A „további
+       * ajánlások" négyzetes kerete kártyáról kártyára azonos.
+       */}
+      <ProductImage
+        src={imageUrl}
+        alt={modelName}
+        frame={large ? "hero" : "card"}
+        fallback={
+          <div
+            className="h-full w-full"
+            style={{
+              background:
+                "linear-gradient(135deg, var(--ink-deep) 0%, var(--petrol) 55%, var(--mist) 100%)",
+            }}
+          />
+        }
+      />
       {/* „X% neked" badge — amber, sötét felirat (token-szabály). */}
       <span className="absolute right-2 top-2 rounded-full bg-amber px-2.5 py-1 text-xs font-bold text-text">
         {scoreLabel}

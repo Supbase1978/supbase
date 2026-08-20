@@ -6,7 +6,7 @@
  */
 import { Link } from "react-router";
 
-import { Card } from "@core/ui";
+import { Card, ProductImage } from "@core/ui";
 
 import type { GearCategory } from "../gear";
 
@@ -31,16 +31,7 @@ export function AccessoryCard({ accessory, className }: AccessoryCardProps) {
         to={`/felszereles/${accessory.category}/${accessory.slug}`}
         className="flex flex-col gap-2.5"
       >
-        {accessory.imageUrl ? (
-          <img
-            src={accessory.imageUrl}
-            alt={accessory.modelName}
-            className="h-32 w-full rounded-[var(--radius-card)] object-cover"
-            loading="lazy"
-          />
-        ) : (
-          <div className="h-32 w-full rounded-[var(--radius-card)] bg-mist" aria-hidden="true" />
-        )}
+        <ProductImage src={accessory.imageUrl} alt={accessory.modelName} />
 
         <span className="text-lg font-semibold text-ink-deep">{accessory.modelName}</span>
 

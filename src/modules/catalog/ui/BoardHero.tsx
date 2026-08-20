@@ -1,30 +1,32 @@
 /**
  * Deszka-adatlap hero: kép, vagy token-gradiens placeholder (petrol-család, a
  * design szerint). A „X% neked"-illeszkedés-badge az advisor (F1.6) — most nincs.
+ *
+ * A kép a `ProductImage` fix keretében ül (`hero` arány), ugyanazzal az
+ * indoklással, mint a kártyáknál: az álló termékrendert nem szabad vágni.
  */
+import { ProductImage } from "@core/ui";
+
 export interface BoardHeroProps {
   modelName: string;
   imageUrl: string | null;
 }
 
 export function BoardHero({ modelName, imageUrl }: BoardHeroProps) {
-  if (imageUrl) {
-    return (
-      <img
-        src={imageUrl}
-        alt={modelName}
-        className="h-44 w-full rounded-[var(--radius-card)] object-cover"
-        loading="lazy"
-      />
-    );
-  }
   return (
-    <div
-      aria-hidden="true"
-      className="h-44 w-full rounded-[var(--radius-card)]"
-      style={{
-        background: "linear-gradient(135deg, var(--ink-deep) 0%, var(--petrol) 55%, var(--mist) 100%)",
-      }}
+    <ProductImage
+      src={imageUrl}
+      alt={modelName}
+      frame="hero"
+      fallback={
+        <div
+          className="h-full w-full"
+          style={{
+            background:
+              "linear-gradient(135deg, var(--ink-deep) 0%, var(--petrol) 55%, var(--mist) 100%)",
+          }}
+        />
+      }
     />
   );
 }

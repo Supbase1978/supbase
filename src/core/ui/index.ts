@@ -31,6 +31,9 @@ export type { SafetyNoteProps } from "./SafetyNote";
 export { DataAge } from "./DataAge";
 export type { DataAgeProps } from "./DataAge";
 
+export { ProductImage } from "./ProductImage";
+export type { ProductImageProps, ProductImageFrame } from "./ProductImage";
+
 export { isStale, minutesSince, STALE_THRESHOLD_MINUTES } from "./data-age";
 
 export { cx } from "./cx";

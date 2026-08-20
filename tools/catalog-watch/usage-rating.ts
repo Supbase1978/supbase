@@ -122,29 +122,57 @@ export function boardTypeFromDescription(text: string): BoardType | null {
  *
  * A MÉRET-UTÓTAG LEVÁGVA: a WordPress `-222x1024` alakú bélyegképeket készít;
  * enélkül egy apró, torzított kép kerülne a katalógusba.
+ *
+ * ELŐNYBEN A FRONT/BACK RENDER (2026-08-20): ha ugyanarra a horgonyra több kép
+ * is illeszkedik, a `…-front-back.png` alakút választjuk. Ez nem szépészeti
+ * kérdés: a katalógusban a képek EGYMÁS MELLETT jelennek meg, és a
+ * véleményezőnek el kell igazodnia köztük — a fehér hátterű, azonos beállítású
+ * gyártói render összehasonlítható, az életkép (drónfotó, vízen evező ember)
+ * nem. Élesben ez a Nuts, a Race Elite és a Rapid képét cserélte életképről
+ * renderre.
+ *
+ * POZÍCIÓ-FALLBACK: ha EGYETLEN horgony sem talál, az oldal első nem-kizárt
+ * képét vesszük. Miért szabad ez? Mert a fájlnév ezen a gyártói oldalon NEM
+ * megbízható, a pozíció viszont az: a `/fitness/peace/` oldal hero-képe
+ * `YOGA-DOCK-1.png` néven fut, a `/fitness/dock/` oldalé `peace.png` néven —
+ * a két fájlnév FEL VAN CSERÉLVE, miközben mindkét oldalon a helyes termék
+ * látszik (megnéztük a képeket). 49 gyártói oldalon mérve: ahol mindkét
+ * szabály adott képet, 30-szor UGYANAZT; a fallback pontosan ott szólal meg,
+ * ahol a horgony néma (elgépelt vagy felcserélt fájlnév).
  */
 export function findProductImage(html: string, ...anchors: (string | null)[]): string | null {
+  const images = [...html.matchAll(/<img[^>]+src="([^"]+)"/gi)]
+    .map((m) => m[1] ?? "")
+    // Kizárt fájlnevek: a fejléc-logó, illetve a RÉSZLET-/technológia-képek
+    // (élesben a Coralnál a „construction-CORAL-Raspberry" nyert volna a
+    // termék fő fotója helyett). Ezek nem alkalmasak katalógus-képnek.
+    .filter((src) => !/logo|construction|technology|detail|icon|thumb|badge/i.test(fileOf(src)));
+
   const needles = anchors
     .map((a) => (a ?? "").replace(/[^a-z0-9]/gi, "").toLowerCase())
     .filter((n) => n.length >= 3);
-  if (needles.length === 0) return null;
-
-  const images = [...html.matchAll(/<img[^>]+src="([^"]+)"/gi)].map((m) => m[1] ?? "");
 
   // A horgonyok SORRENDBEN: a cikkszám pontosabb, a modellnév általánosabb.
   for (const needle of needles) {
-    for (const src of images) {
-      const file = src.split("/").pop() ?? "";
-      // Kizárt fájlnevek: a fejléc-logó, illetve a RÉSZLET-/technológia-képek
-      // (élesben a Coralnál a „construction-CORAL-Raspberry" nyert volna a
-      // termék fő fotója helyett). Ezek nem alkalmasak katalógus-képnek.
-      if (/logo|construction|technology|detail|icon|thumb|badge/i.test(file)) continue;
-      if (!file.replace(/[^a-z0-9]/gi, "").toLowerCase().includes(needle)) continue;
-      // `-222x1024.png` → `.png` (a WordPress bélyegkép helyett az eredeti).
-      return src.replace(/-\d{2,4}x\d{2,4}(?=\.[a-z]{3,4}(?:$|\?))/i, "");
-    }
+    const matches = images.filter((src) => normalizeFile(src).includes(needle));
+    const best = matches.find((src) => /front[_-]?back/i.test(fileOf(src))) ?? matches[0];
+    if (best !== undefined) return fullSize(best);
   }
-  return null;
+
+  return images[0] === undefined ? null : fullSize(images[0]);
+}
+
+function fileOf(src: string): string {
+  return src.split("/").pop() ?? "";
+}
+
+function normalizeFile(src: string): string {
+  return fileOf(src).replace(/[^a-z0-9]/gi, "").toLowerCase();
+}
+
+/** `-222x1024.png` → `.png` (a WordPress bélyegkép helyett az eredeti). */
+function fullSize(src: string): string {
+  return src.replace(/-\d{2,4}x\d{2,4}(?=\.[a-z]{3,4}(?:$|\?))/i, "");
 }
 
 /**

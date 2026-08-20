@@ -81,6 +81,71 @@ export async function insertSource(
   return data as CatalogSourceRow;
 }
 
+/** Egy katalógus-sor a kép-visszatöltéshez (`backfill-images`). */
+export interface BoardForImageBackfill {
+  id: string;
+  modelName: string;
+  kind: string;
+  imageUrl: string | null;
+}
+
+/**
+ * A kép-visszatöltés bemenete. SZÁNDÉKOSAN kind-AGNOSZTIKUS: képre a deszkának
+ * ÉS a kiegészítőnek is szüksége van, és ez nem listázás — a sorokat nem a
+ * felhasználó látja, hanem a saját forrás-oldalukhoz párosítjuk.
+ */
+export async function listBoardsForImageBackfill(
+  client: SupabaseClient,
+  options: { includeWithImage?: boolean } = {},
+): Promise<BoardForImageBackfill[]> {
+  let query = client.from("boards").select("id, model_name, kind, image_url");
+  if (options.includeWithImage !== true) query = query.is("image_url", null);
+  const { data, error } = await query;
+  fail("boards olvasás", error);
+  return (data ?? []).map((row) => ({
+    id: row.id as string,
+    modelName: row.model_name as string,
+    kind: row.kind as string,
+    imageUrl: (row.image_url as string | null) ?? null,
+  }));
+}
+
+/**
+ * A megtalált termékkép rögzítése. A figyelő `boards` SORT NEM HOZ LÉTRE — ez
+ * a meglévő, moderátor által jóváhagyott soron tölt ki EGY mezőt.
+ */
+export async function updateBoardImage(
+  client: SupabaseClient,
+  boardId: string,
+  imageUrl: string,
+): Promise<void> {
+  const { error } = await client.from("boards").update({ image_url: imageUrl }).eq("id", boardId);
+  fail("boards update (image_url)", error);
+}
+
+/** A deszkához KÖTÖTT jelöltek (a kép a saját forrás-oldalról jön). */
+export async function listCandidatesForBoards(
+  client: SupabaseClient,
+  boardIds: readonly string[],
+): Promise<
+  { boardId: string; url: string | null; status: string; sourceId: string; imageUrl: string | null }[]
+> {
+  const { data, error } = await client
+    .from("catalog_candidates")
+    .select("matched_board_id, url, status, source_id, extracted")
+    .in("matched_board_id", [...boardIds]);
+  fail("catalog_candidates olvasás", error);
+  return (data ?? []).map((row) => ({
+    boardId: row.matched_board_id as string,
+    url: (row.url as string | null) ?? null,
+    status: row.status as string,
+    sourceId: row.source_id as string,
+    imageUrl: ((row.extracted as { imageUrl?: string | null } | null)?.imageUrl ?? null) as
+      | string
+      | null,
+  }));
+}
+
 /**
  * Az életciklus-vizsgálat bemenete (minden deszka, kevés oszloppal).
  * `kind = 'board'`: a `boards` tábla F2.3 óta a felszerelést is hordozza, az
@@ -376,9 +441,9 @@ async function resolveBrandIdForApproval(
 }
 
 /**
- * Ütközésmentes slug. A slug a TELJES `boards` táblán belül egyedi (deszka és
- * kiegészítő ugyanabból a sorhalmazból kap URL-t) — ezért a lekérdezés
- * `kind`-agnosztikus, az app-oldali párjával egyezően.
+ * Ütközésmentes slug. SZÁNDÉKOSAN kind-AGNOSZTIKUS: a slug a TELJES `boards`
+ * táblán belül egyedi (deszka és kiegészítő ugyanabból a sorhalmazból kap
+ * URL-t), az app-oldali párjával (`candidates.server.ts`) egyezően.
  */
 async function resolveUniqueSlugForApproval(client: SupabaseClient, base: string): Promise<string> {
   const root = base === "" ? "deszka" : base;
@@ -386,6 +451,7 @@ async function resolveUniqueSlugForApproval(client: SupabaseClient, base: string
     const candidate = attempt === 0 ? root : `${root}-${attempt + 1}`;
     const { data } = await client
       .from("boards")
+      // kind-AGNOSZTIKUS (szándékos): a slug a TELJES táblán belül egyedi.
       .select("id")
       .eq("slug->>hu", candidate)
       .limit(1);

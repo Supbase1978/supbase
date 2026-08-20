@@ -43,9 +43,13 @@ import {
   createSupabaseStore,
   insertSource,
   listAllSources,
+  listBoardsForImageBackfill,
   listBoardsForLifecycle,
+  listCandidatesForBoards,
   listSources,
+  updateBoardImage,
 } from "./store.ts";
+import { imageFromPage, rankImageSources, type ImageSourceCandidate } from "./images.ts";
 import type { BoardType, CrawlConfig, ExtractedProduct, SourceKind } from "./types.ts";
 
 /** Egyetlen kérés felső időkorlátja — egy lassú bolt ne akassza meg a futást. */
@@ -85,6 +89,17 @@ Parancsok:
                                     mező (teherbírás, térfogat) — a többi a
                                     moderátornál marad. ALAPÉRTELMEZÉSBEN
                                     DRY-RUN; írni csak --apply-vel ír.
+  backfill-images [--apply]        TERMÉKKÉP-visszatöltés a már élő sorokra.
+      [--all] [--limit N]           A crawl a JELÖLTET írja, a jóváhagyott
+                                    deszkát nem — a képet ezért a sor SAJÁT
+                                    forrás-oldaláról szedjük, a
+                                    matched_board_id kapcsolaton át (nem
+                                    hasonlóság alapján!). Csak MODERÁTOR által
+                                    elbírált (approved/merged) kapcsolatot
+                                    fogad el, és a gyártói oldalt előbb
+                                    próbálja, mint a boltit. Alapból csak a
+                                    kép nélküli sorokat nézi (--all: mindet
+                                    újraszámolja), és DRY-RUN; --apply ír.
   lifecycle [--days N]             Kifutás-jelöltek listája (csak jelentés)
   list-incomplete [--source NÉV]   Hiányos adatú deszkák (pending jelölt ÉS
       [--html [ÚTVONAL]]            élő board) — a havi kézi adatgyűjtés
@@ -814,6 +829,93 @@ async function commandListIncomplete(args: Args): Promise<void> {
   console.log(formatIncompleteReport(pending, live, skipped));
 }
 
+/**
+ * TERMÉKKÉP-visszatöltés a már élő katalógus-sorokra (`images.ts`).
+ *
+ * MIÉRT KÜLÖN PARANCS és nem a crawl része: a `saveCandidate` szándékosan nem
+ * támasztja fel az elbírált jelölteket, tehát egy újracrawl a jóváhagyott
+ * deszka képét sosem pótolná. Ez a parancs a MEGLÉVŐ soron tölt ki egy mezőt,
+ * a sor saját forrás-oldaláról.
+ */
+async function commandBackfillImages(args: Args): Promise<void> {
+  const apply = flag(args, "apply") === "true";
+  const all = flag(args, "all") === "true";
+  const limit = flagNumber(args, "limit");
+  const client = connect();
+
+  const rows = await listBoardsForImageBackfill(client, { includeWithImage: all });
+  const targets = limit === undefined ? rows : rows.slice(0, limit);
+  if (targets.length === 0) {
+    console.log("Minden katalógus-sornak van képe — nincs mit pótolni.");
+    return;
+  }
+
+  const candidates = await listCandidatesForBoards(
+    client,
+    targets.map((row) => row.id),
+  );
+  const sources = await listAllSources(client);
+  const kindById = new Map(sources.map((source) => [source.id, source.kind as string]));
+
+  const byBoard = new Map<string, ImageSourceCandidate[]>();
+  for (const candidate of candidates) {
+    const list = byBoard.get(candidate.boardId) ?? [];
+    list.push({
+      url: candidate.url,
+      status: candidate.status,
+      sourceKind: kindById.get(candidate.sourceId) ?? null,
+      storedImageUrl: candidate.imageUrl,
+    });
+    byBoard.set(candidate.boardId, list);
+  }
+
+  console.log(
+    `${apply ? "" : "[DRY-RUN] "}${targets.length} sor vizsgálata ` +
+      `(alap-szünet ${DEFAULT_MIN_DELAY_MS} ms)…\n`,
+  );
+
+  let found = 0;
+  let noSource = 0;
+  let noImage = 0;
+  for (const row of targets) {
+    const ranked = rankImageSources(byBoard.get(row.id) ?? []);
+    if (ranked.length === 0) {
+      noSource += 1;
+      console.log(`  – ${row.modelName}: nincs elbírált forrás-oldala`);
+      continue;
+    }
+
+    let image: string | null = null;
+    for (const source of ranked) {
+      if (source.storedImageUrl) {
+        image = source.storedImageUrl;
+        break;
+      }
+      const { status, text } = await realFetch(source.url as string);
+      await sleep(DEFAULT_MIN_DELAY_MS);
+      if (status >= 400 || text === "") continue;
+      image = imageFromPage(text, row.modelName);
+      if (image !== null) break;
+    }
+
+    if (image === null) {
+      noImage += 1;
+      console.log(`  ? ${row.modelName}: a forrás-oldalán nem találtam képet`);
+      continue;
+    }
+
+    found += 1;
+    console.log(`  ✓ ${row.modelName}\n      ${image}`);
+    if (apply) await updateBoardImage(client, row.id, image);
+  }
+
+  console.log(
+    `\n${found} kép ${apply ? "beírva" : "megvan (DRY-RUN, nem íródott)"} · ` +
+      `${noSource} forrás nélkül · ${noImage} oldalon nem volt kép`,
+  );
+  if (!apply && found > 0) console.log("Írás: add hozzá a --apply kapcsolót.");
+}
+
 async function commandLifecycle(args: Args): Promise<void> {
   const unseenDays = flagNumber(args, "days") ?? DEFAULT_UNSEEN_DAYS;
   const client = connect();
@@ -846,6 +948,8 @@ async function main(): Promise<void> {
       return commandAddSource(args);
     case "crawl":
       return commandCrawl(args);
+    case "backfill-images":
+      return commandBackfillImages(args);
     case "lifecycle":
       return commandLifecycle(args);
     case "approve-candidates":
