@@ -75,6 +75,9 @@ const NOISE_WORDS = [
 /** Az évjárat-felismerés ésszerű alsó korlátja (a SUP-piac ennél nem régebbi). */
 const MIN_MODEL_YEAR = 2010;
 
+/** 1 font kilogrammban — a font-only adatok átváltásához (funwaterboard.com). */
+const KG_PER_POUND = 0.45359237;
+
 const CM_PER_INCH = 2.54;
 const CM_PER_FOOT = 30.48;
 
@@ -184,7 +187,10 @@ export function parseDimensionCm(text: string): number | null {
   // jelként (az első `'`-t követő MÁSODIK `'` enélkül "elveszett" karakterré
   // vált volna, a 32-t pedig lábnak olvastuk volna hüvelyk helyett — 32 láb =
   // 975 cm a valós 81,3 cm helyett).
-  const feetInches = text.match(/(\d+)\s*'(?!')\s*(\d+(?:[.,]\d+)?)?\s*(?:''|"|”|’’)?/);
+  // A tipográfiai PRIME-ok (′ U+2032 láb, ″ U+2033 hüvelyk) is számítanak:
+  // élesben (funwaterboard.com) a méret `10′6″ * 33″ * 6″` alakban áll, és a
+  // sima aposztrófra szűrve az egész sor láthatatlan maradt.
+  const feetInches = text.match(/(\d+)\s*['′](?!['′])\s*(\d+(?:[.,]\d+)?)?\s*(?:''|"|”|″|’’)?/);
   if (feetInches) {
     const feet = toNumber(feetInches[1] ?? "");
     const inches = feetInches[2] ? toNumber(feetInches[2]) : 0;
@@ -211,7 +217,7 @@ export function parseDimensionCm(text: string): number | null {
     if (value !== null) return round1(value * 100);
   }
 
-  const inch = text.match(/(\d+(?:[.,]\d+)?)\s*(?:''|"|”|inch|in\b|coll)/i);
+  const inch = text.match(/(\d+(?:[.,]\d+)?)\s*(?:''|"|”|″|inch|in\b|coll)/i);
   if (inch) {
     const value = toNumber(inch[1] ?? "");
     if (value !== null) return round1(value * CM_PER_INCH);
@@ -341,6 +347,30 @@ function valueAfterLabel(
  * amikre a Deszkaválasztó BIZTONSÁGI döntést épít. Az elcsúszás bármilyen
  * nem hossz-semlegesen bomló karakternél előjön, nem csak ezen az oldalon.
  */
+/**
+ * Súly/teherbírás egy címke utáni ablakból, kilogrammban.
+ *
+ * KÉT SORNÁL nem megy tovább: a címke és az értéke legfeljebb egymás alatt
+ * áll. Élesben (funwaterboard.com) a `Capacity` ablaka átnyúlt a KÖVETKEZŐ
+ * mezőbe (`Capacity / 330LBS / Weight / 12.5KG …`), és a teherbírásba a
+ * DESZKA SÚLYA került — 12,5 kg a valós 150 helyett.
+ *
+ * A `kg` továbbra is ELSŐBBSÉGET élvez: ahol a gyártó mindkettőt kiírja
+ * („308 lbs / 140 kg"), a kilogramm nyer. Font-átváltás CSAK akkor, ha
+ * kilogramm egyáltalán nincs — az veszteségmentes, nem találgatás.
+ */
+function parseWeightKg(window: string): number | null {
+  const head = window.split("\n").slice(0, 2).join("\n");
+  const kg = head.match(/(\d+(?:[.,]\d+)?)\s*kg\b/i);
+  if (kg) return toNumber(kg[1] ?? "");
+  const lbs = head.match(/(\d+(?:[.,]\d+)?)\s*(?:lbs?|pounds?)\b/i);
+  if (lbs) {
+    const value = toNumber(lbs[1] ?? "");
+    return value === null ? null : round1(value * KG_PER_POUND);
+  }
+  return null;
+}
+
 /**
  * Kétoszlopos spec-tábla MÉRTÉKEGYSÉG NÉLKÜL: a címke a saját sorában áll, és
  * a KÖVETKEZŐ sor egyetlen puszta szám. Az egységet ilyenkor a MEZŐ adja
@@ -490,7 +520,8 @@ function labelSearch(
  * megkülönböztethetetlen, tehát a forrás oldalán ez nem is „hiba", amit
  * kijavítanának.
  */
-const TIMES_CHARS = "x×хХ";
+// A `*` is szorzójel: élesben (funwaterboard.com) `10′6″ * 33″ * 6″`.
+const TIMES_CHARS = "x×хХ*";
 
 const TRIPLE_DIMENSION_RE = new RegExp(
   `(\\d+(?:[.,]\\d+)?)\\s*[${TIMES_CHARS}]\\s*(\\d+(?:[.,]\\d+)?)\\s*[${TIMES_CHARS}]\\s*(\\d+(?:[.,]\\d+)?)\\s*(cm|inch(?:es)?|in)\\b`,
@@ -510,13 +541,24 @@ function tripleFromMatch(match: RegExpMatchArray): { lengthCm: number; widthCm: 
 function parseTripleDimensionCm(
   text: string,
 ): { lengthCm: number; widthCm: number; thicknessCm: number } | null {
-  // A méret-sorba ÉKELT zárójel is magyarázat, nem érték — élesben
+  // A méret-sorba ÉKELT zárójel magyarázat, nem érték — élesben
   // (gladiatorsup.com): `463 х 91 (36”) х 15 cm`, ahol a `(36”)` a szélesség
   // hüvelykben. Enélkül sem a záró-egységes minta, sem a darabonkénti parse
-  // nem illeszkedik: a középső darab két számot visel.
-  const cleaned = text.replace(/\([^)]*\)/g, " ");
-  const match = cleaned.match(new RegExp(TRIPLE_DIMENSION_RE.source, "i"));
-  return match ? tripleFromMatch(match) : parseTripleByParts(cleaned);
+  // nem illeszkedik: a középső darab két számot viselne.
+  //
+  // DE a zárójel körül is állhat a TELJES hármas — `Mérete (366 x 84 x 15 cm)`
+  // (aquamarinahungary.com) —, ezért az EREDETI szöveg megy előbb, és a
+  // zárójel-mentes változat csak akkor jön, ha az nem illeszkedett.
+  const variants = [text, text.replace(/\([^)]*\)/g, " ")];
+  for (const variant of variants) {
+    const match = variant.match(new RegExp(TRIPLE_DIMENSION_RE.source, "i"));
+    if (match) return tripleFromMatch(match);
+  }
+  for (const variant of variants) {
+    const triple = parseTripleByParts(variant);
+    if (triple) return triple;
+  }
+  return null;
 }
 
 /**
@@ -541,7 +583,14 @@ function parseTripleByParts(
   // a két írásmódot tehát KÜLÖN kell nézni. Enélkül a harmadik darab
   // (`4,75" | 2,59m`) a MÁSIK írásmód HOSSZÁT adná vastagságként (259 cm).
   for (const segment of text.split("|")) {
-    const parts = segment.split(new RegExp(`\\s*[${TIMES_CHARS}]\\s*`, "i"));
+    const parts = segment
+      .split(new RegExp(`\\s*[${TIMES_CHARS}]\\s*`, "i"))
+      // Egy ÉRTÉK nem lóghat át a következő sorra. Élesben
+      // (funwaterboard.com) a méret két készletet ad egymás alatt:
+      //   `10′6″ * 33″ * 6″ for Adults,` / `8′ * 30″ * 4″ for Youth`
+      // A harmadik darab enélkül a MÁSODIK sor első értékét (`8′` = 244 cm)
+      // olvasta volna vastagságnak a valós 6″ (15 cm) helyett.
+      .map((part) => (part.trim().split("\n")[0] ?? "").trim());
     if (parts.length < 3) continue;
     const [length, width, thickness] = parts.slice(0, 3).map((part) => parseDimensionCm(part));
     if (length === undefined || width === undefined || thickness === undefined) continue;
@@ -658,8 +707,7 @@ export function parseSpecsFromText(text: string): BoardSpecs {
   for (const key of ["weightKg", "maxLoadKg"] as const) {
     const window = valueAfterLabel(text, SPEC_LABELS[key]);
     if (window === null) continue;
-    const match = window.match(/(\d+(?:[.,]\d+)?)\s*kg\b/i);
-    specs[key] = match ? toNumber(match[1] ?? "") : null;
+    specs[key] = parseWeightKg(window);
   }
 
   // UTOLSÓ MENET: címke a SAJÁT SORÁBAN, alatta PUSZTA SZÁM. Csak a még

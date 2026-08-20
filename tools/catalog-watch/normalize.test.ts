@@ -1169,3 +1169,47 @@ describe("méret-sorba ékelt zárójel", () => {
     expect(specs.thicknessCm).toBe(15);
   });
 });
+
+/**
+ * FUNWATER-KÖR (2026-08-20). A SPECS-fül teljes adatot ad, de három olyan
+ * írásmóddal, amit addig nem ismertünk.
+ */
+describe("funwaterboard.com — prime-jelek, csillag, font", () => {
+  const SPEC = [
+    "Dimensions",
+    "10′6″ * 33″ * 6″  for Adults,",
+    "8′ * 30″ * 4″  for Youth",
+    "Capacity",
+    "330LBS",
+    "Weight",
+    "12.5KG (10'6\"), 9.68KG (8')",
+  ].join("\n");
+
+  it("a tipográfiai PRIME-okat (′ ″) és a CSILLAG szorzójelet is érti", () => {
+    const specs = parseSpecsFromText(SPEC);
+    expect(specs.lengthCm).toBe(320);
+    expect(specs.widthCm).toBe(83.8);
+  });
+
+  /**
+   * A méret KÉT készletet ad egymás alatt (Adults / Youth). A harmadik darab
+   * enélkül a MÁSODIK sor első értékét (`8′` = 244 cm) olvasta volna
+   * vastagságnak a valós 6″ (15,2 cm) helyett.
+   */
+  it("egy ÉRTÉK nem lóghat át a következő sorra", () => {
+    expect(parseSpecsFromText(SPEC).thicknessCm).toBe(15.2);
+  });
+
+  /**
+   * A `Capacity` ablaka átnyúlt a KÖVETKEZŐ mezőbe, és a teherbírásba a
+   * DESZKA SÚLYA került: 12,5 kg a valós 150 helyett.
+   */
+  it("a címke ablaka nem szivárog a következő mezőbe, és a fontot átváltja", () => {
+    expect(parseSpecsFromText(SPEC).maxLoadKg).toBe(149.7);
+  });
+
+  it("ahol KG is van, az üt a fonton", () => {
+    // Aqua Marina: „MAX. PAYLOAD / 308 lbs / 140 kg" — a 140 nyer.
+    expect(parseSpecsFromText("MAX. PAYLOAD\n308 lbs / 140 kg").maxLoadKg).toBe(140);
+  });
+});
