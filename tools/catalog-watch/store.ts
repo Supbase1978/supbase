@@ -426,6 +426,33 @@ export async function approveCandidateRow(
   return { ok: true, boardId };
 }
 
+/**
+ * Jelölt ÖSSZEFÉSÜLÉSE egy MÁR LÉTEZŐ katalógus-sorral — nem születik új deszka.
+ *
+ * MIÉRT KELL (élesben mért kockázat, 2026-08-20): a jelölt sora a crawl
+ * pillanatában megfagy, benne az AKKORI egyeztetéssel. A bolti jelöltek jó
+ * része KORÁBBAN keletkezett, mint a hozzá tartozó gyártói deszka, ezért
+ * `matched_board_id` nélkül várakozik — a tömeges jóváhagyó pedig ezt „új
+ * típusnak" látta volna, és a katalógusba került volna egy második „ATLAS",
+ * „BEAST", „HYPER", „RAPID" és „Dhyana", bolti nevekkel
+ * („MAGMA 11'2" 23%", „RAPID BT 22RP , 130kg ig").
+ */
+export async function mergeCandidateIntoBoard(
+  client: SupabaseClient,
+  input: { candidateId: string; boardId: string; reviewerId: string },
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { error } = await client
+    .from("catalog_candidates")
+    .update({
+      status: "merged",
+      reviewed_by: input.reviewerId,
+      matched_board_id: input.boardId,
+    })
+    .eq("id", input.candidateId)
+    .eq("status", "pending");
+  return error ? { ok: false, error: error.message } : { ok: true };
+}
+
 /** Márka feloldása/létrehozása — az app-oldali `resolveBrandId` párja. */
 async function resolveBrandIdForApproval(
   client: SupabaseClient,

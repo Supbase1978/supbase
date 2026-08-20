@@ -91,3 +91,39 @@ export function matchCandidate(
   }
   return { kind: "uncertain", boardId: best.board.id, confidence: best.score };
 }
+
+/** Egy jelölt sorsa a TÖMEGES jóváhagyásban. */
+export type ApprovalPlan =
+  | { kind: "merge"; boardId: string; confidence: number }
+  | { kind: "moderator"; boardId: string; confidence: number }
+  | { kind: "create"; confidence: number };
+
+/**
+ * ÚJRA-EGYEZTETÉS a MOSTANI katalógussal, a tömeges jóváhagyás előtt.
+ *
+ * MIÉRT KELL (élesben mért kockázat, 2026-08-20): a jelölt sora a crawl
+ * pillanatában megfagy, benne az AKKORI egyeztetés eredményével. A bolti
+ * jelöltek java KORÁBBAN keletkezett, mint a hozzájuk tartozó gyártói deszka,
+ * ezért `matched_board_id` nélkül várakoznak — a jóváhagyó pedig „új típusnak"
+ * látta őket. Így került volna a katalógusba egy második ATLAS, BEAST, HYPER,
+ * RAPID és Dhyana, ráadásul bolti néven („MAGMA 11'2" 23%").
+ *
+ * A `matchCandidate` három kimenete háromféle sorsot kap:
+ *  * `known`     → **merge**: a deszka már megvan, új sor nem születik,
+ *  * `uncertain` → **moderator**: a bizonytalan egyezés EMBERI döntés; a
+ *    jelölt marad `pending` (inkább maradjon a sorban, mint hogy tévedjünk),
+ *  * `new`       → **create**: tényleg új típus.
+ */
+export function planApproval(
+  candidate: Pick<ExtractedProduct, "brandName" | "modelName" | "modelYear">,
+  boards: readonly BoardForMatch[],
+): ApprovalPlan {
+  const match = matchCandidate(candidate, boards);
+  if (match.kind === "known" && match.boardId !== null) {
+    return { kind: "merge", boardId: match.boardId, confidence: match.confidence };
+  }
+  if (match.kind === "uncertain" && match.boardId !== null) {
+    return { kind: "moderator", boardId: match.boardId, confidence: match.confidence };
+  }
+  return { kind: "create", confidence: match.confidence };
+}

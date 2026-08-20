@@ -24,6 +24,7 @@ import { resolveSupabaseTarget } from "./env.ts";
 import { findDiscontinuedCandidates, DEFAULT_UNSEEN_DAYS } from "./lifecycle.ts";
 import { dedupeCandidates, type DedupeCandidate } from "./dedupe.ts";
 import { buildFamilyTypeMap, inferBoardType, type TypedExample } from "./family-type.ts";
+import { planApproval } from "./match.ts";
 import { setFieldValue } from "./lock.ts";
 import type { ProductClassification } from "./normalize.ts";
 import { probeSource } from "./probe.ts";
@@ -47,6 +48,7 @@ import {
   listBoardsForLifecycle,
   listCandidatesForBoards,
   listSources,
+  mergeCandidateIntoBoard,
   updateBoardImage,
 } from "./store.ts";
 import { imageFromPage, rankImageSources, type ImageSourceCandidate } from "./images.ts";
@@ -433,13 +435,52 @@ async function commandApproveCandidates(args: Args): Promise<void> {
     });
   }
 
-  const groups = dedupeCandidates(eligible);
+  // ÚJRA-EGYEZTETÉS a MOSTANI katalógussal (2026-08-20). A jelölt sora a crawl
+  // pillanatában fagyott meg: a bolti jelöltek java KORÁBBAN keletkezett, mint
+  // a hozzájuk tartozó gyártói deszka, ezért `matched_board_id` nélkül vannak.
+  // Enélkül a jóváhagyó „új típusként" vinné be őket, és a katalógusba került
+  // volna egy második ATLAS, BEAST, HYPER, RAPID és Dhyana — bolti nevekkel.
+  //
+  // A három kimenet háromféle sorsot kap:
+  //  * `known`     — biztos egyezés (név ÉS márka): ÖSSZEFÉSÜLÉS, nem új sor,
+  //  * `uncertain` — bizonytalan: MARAD a moderátornál (nem tippelünk helyette),
+  //  * `new`       — tényleg új típus: mehet a szokásos jóváhagyásra.
+  const liveForMatch = await createSupabaseStore(client).listBoardsForMatch();
+  const freshCandidates: DedupeCandidate[] = [];
+  const toMerge: { candidate: DedupeCandidate; boardId: string; boardName: string }[] = [];
+  let leftUncertain = 0;
+  for (const candidate of eligible) {
+    const plan = planApproval(candidate.extracted, liveForMatch);
+    if (plan.kind === "merge") {
+      const board = liveForMatch.find((b) => b.id === plan.boardId);
+      toMerge.push({
+        candidate,
+        boardId: plan.boardId,
+        boardName: `${board?.brandName ?? ""} ${board?.modelName ?? ""}`.trim(),
+      });
+    } else if (plan.kind === "moderator") {
+      leftUncertain += 1;
+    } else {
+      freshCandidates.push(candidate);
+    }
+  }
+
+  const groups = dedupeCandidates(freshCandidates);
   const planned = limit === undefined ? groups : groups.slice(0, limit);
 
   console.log(
-    `\nJóváhagyható: ${eligible.length} jelölt → ${groups.length} deszka ` +
-      `(${eligible.length - groups.length} duplikátum összevonva)`,
+    `\nJóváhagyható: ${freshCandidates.length} jelölt → ${groups.length} deszka ` +
+      `(${freshCandidates.length - groups.length} duplikátum összevonva)`,
   );
+  if (toMerge.length > 0) {
+    console.log(`MEGLÉVŐ katalógus-sorral fésülendő: ${toMerge.length} jelölt`);
+    for (const merge of toMerge) {
+      console.log(`  ⇄ ${merge.candidate.extracted.modelName} → ${merge.boardName}`);
+    }
+  }
+  if (leftUncertain > 0) {
+    console.log(`Bizonytalan egyezés — a MODERÁTORNÁL marad: ${leftUncertain} jelölt`);
+  }
   console.log(
     `Kihagyva: ${skippedNoType} kategória nélkül · ${skippedNoSafety} biztonsági mező nélkül` +
       (skippedNoBrand > 0 ? ` · ${skippedNoBrand} márkanév nélkül` : ""),
@@ -475,7 +516,22 @@ async function commandApproveCandidates(args: Args): Promise<void> {
     console.log("\n(semmi nem íródott — futtasd --apply kapcsolóval)");
     return;
   }
+
+  let mergedIntoExisting = 0;
+  for (const merge of toMerge) {
+    const result = await mergeCandidateIntoBoard(client, {
+      candidateId: merge.candidate.id,
+      boardId: merge.boardId,
+      reviewerId,
+    });
+    if (result.ok) mergedIntoExisting += 1;
+    else failures.push(`${merge.candidate.extracted.modelName} → ${merge.boardName}: ${result.error}`);
+  }
+
   console.log(`\nLétrehozva: ${created}/${planned.length} deszka`);
+  if (toMerge.length > 0) {
+    console.log(`Meglévő sorral összefésülve: ${mergedIntoExisting}/${toMerge.length} jelölt`);
+  }
   for (const failure of failures) console.log(`  HIBA: ${failure}`);
 }
 

@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 
-import { KNOWN_THRESHOLD, matchCandidate, scorePair, similarity, trigrams } from "./match.ts";
+import {
+  KNOWN_THRESHOLD,
+  matchCandidate,
+  planApproval,
+  scorePair,
+  similarity,
+  trigrams,
+} from "./match.ts";
 import type { BoardForMatch } from "./types.ts";
 
 const BOARDS: BoardForMatch[] = [
@@ -100,5 +107,50 @@ describe("matchCandidate", () => {
       boardId: null,
       confidence: 0,
     });
+  });
+});
+
+/**
+ * ÚJRA-EGYEZTETÉS a tömeges jóváhagyás előtt (2026-08-20). A jelölt sora a
+ * crawl pillanatában fagy meg; a bolti jelöltek java KORÁBBAN keletkezett,
+ * mint a hozzájuk tartozó gyártói deszka.
+ */
+describe("planApproval", () => {
+  const boards = [
+    { id: "b1", modelName: "Atlas", modelYear: null, brandName: "Aqua Marina" },
+    { id: "b2", modelName: "Hyper", modelYear: null, brandName: "Aqua Marina" },
+  ];
+
+  it("a MÁR MEGLÉVŐ deszkát nem hozza létre újra — összefésül", () => {
+    // Élesben: a bolti „ATLAS" jelölt `matched_board_id` nélkül várt, mert a
+    // gyártói „Atlas" deszka KÉSŐBB született meg nála.
+    const plan = planApproval(
+      { brandName: "Aqua Marina", modelName: "ATLAS", modelYear: null },
+      boards,
+    );
+    expect(plan.kind).toBe("merge");
+    expect(plan.kind === "merge" && plan.boardId).toBe("b1");
+  });
+
+  it("a BIZONYTALAN egyezés a moderátoré marad (nem tippelünk helyette)", () => {
+    const plan = planApproval(
+      { brandName: "Aqua Marina", modelName: "Atlas Pro Touring 12'6", modelYear: null },
+      boards,
+    );
+    expect(plan.kind).toBe("moderator");
+  });
+
+  it("a tényleg ÚJ típus mehet jóváhagyásra", () => {
+    const plan = planApproval(
+      { brandName: "Zray", modelName: "RAPID PRO R2", modelYear: null },
+      boards,
+    );
+    expect(plan.kind).toBe("create");
+  });
+
+  it("üres katalógusban minden jelölt új", () => {
+    expect(planApproval({ brandName: "Zray", modelName: "Max Azure", modelYear: null }, []).kind).toBe(
+      "create",
+    );
   });
 });
