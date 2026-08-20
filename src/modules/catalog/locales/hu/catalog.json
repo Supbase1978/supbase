@@ -84,7 +84,16 @@
       "updateFailed": "A mentés nem sikerült.",
       "noBoard": "Válassz deszkát az összefésüléshez."
     },
-    "done": "Kész."
+    "done": "Kész.",
+    "gallery": {
+      "title": "Galéria-válogatás",
+      "lead": "A gyűjtés a gyártó saját kép-sorrendjét hozza. Dobd ki a fölöslegeset, és jelöld ki a borítót — a listában az összehasonlítás azon áll, hogy minden kártya ugyanolyan nézetet mutat.",
+      "empty": "Egyetlen sornak sincs több képe.",
+      "count": "{{count}} kép",
+      "keep": "Marad",
+      "cover": "Borító",
+      "save": "Galéria mentése"
+    }
   },
   "gear": {
     "seo": {

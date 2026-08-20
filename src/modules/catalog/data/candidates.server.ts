@@ -16,6 +16,7 @@ import { slugify } from "@core/text/slug";
 
 import { GEAR_CATEGORIES, type GearCategory } from "../gear";
 import type {
+  BoardImage,
   BoardType,
   CatalogCandidateRow,
   ExtractedBoardData,
@@ -489,6 +490,78 @@ export async function setBoardDiscontinued(
         : { status: "active", discontinued_at: null },
     )
     .eq("id", boardId);
+  return error ? { ok: false, errorKey: "admin.error.updateFailed" } : { ok: true };
+}
+
+/** Egy galériával bíró katalógus-sor a moderációs válogatáshoz. */
+export interface BoardGalleryRow {
+  id: string;
+  modelName: string;
+  brandName: string | null;
+  /** A borító és a további képek EGY listában — a moderátor ezek közül választ. */
+  imageUrls: string[];
+  coverUrl: string | null;
+}
+
+/**
+ * Galériával bíró sorok a moderációhoz (F2.1-utó-30).
+ *
+ * A gyűjtés a gyártó SAJÁT kép-sorrendjét hozza, ami többnyire jó (a fő fotók
+ * elöl vannak), de a végén szín-változatok és életképek is lehetnek. A
+ * moderátor itt dobja ki a fölöslegeset és jelöli ki a BORÍTÓT — utóbbi azért
+ * kritikus, mert a lista-rácsban az összehasonlítás azon áll, hogy minden
+ * kártya ugyanolyan nézetet mutat.
+ *
+ * kind-AGNOSZTIKUS (szándékos): a kiegészítőnek ugyanúgy lehet galériája.
+ */
+export async function listBoardsWithGallery(
+  supabase: SupabaseClient,
+): Promise<BoardGalleryRow[]> {
+  const { data, error } = await supabase
+    .from("boards")
+    .select("id, model_name, image_url, images, brand:brands(name)")
+    .order("model_name", { ascending: true });
+  if (error || !data) return [];
+  return (data as unknown as GalleryQueryRow[])
+    .filter((row) => Array.isArray(row.images) && row.images.length > 0)
+    .map((row) => ({
+      id: row.id,
+      modelName: row.model_name,
+      brandName: row.brand?.name ?? null,
+      coverUrl: row.image_url,
+      imageUrls: [
+        ...(row.image_url === null ? [] : [row.image_url]),
+        ...row.images.map((image) => image.url),
+      ],
+    }));
+}
+
+interface GalleryQueryRow {
+  id: string;
+  model_name: string;
+  image_url: string | null;
+  images: BoardImage[];
+  brand: { name: string } | null;
+}
+
+/**
+ * A moderátor galéria-döntése: MELYIK képek maradnak, és melyik a BORÍTÓ.
+ *
+ * A borító külön oszlopba (`image_url`) megy, a többi a megadott sorrendben az
+ * `images`-be — a borító SOSEM ismétlődik a galériában.
+ */
+export async function setBoardGallery(
+  supabase: SupabaseClient,
+  input: { boardId: string; coverUrl: string | null; keepUrls: readonly string[] },
+): Promise<ModerationResult> {
+  const rest = input.keepUrls.filter((url) => url !== input.coverUrl);
+  const { error } = await supabase
+    .from("boards")
+    .update({
+      image_url: input.coverUrl,
+      images: rest.map((url) => ({ url, source: "brand" })),
+    })
+    .eq("id", input.boardId);
   return error ? { ok: false, errorKey: "admin.error.updateFailed" } : { ok: true };
 }
 

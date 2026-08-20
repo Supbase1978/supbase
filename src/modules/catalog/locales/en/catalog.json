@@ -84,7 +84,16 @@
       "updateFailed": "Could not save.",
       "noBoard": "Pick a board to merge into."
     },
-    "done": "Done."
+    "done": "Done.",
+    "gallery": {
+      "title": "Gallery curation",
+      "lead": "Collection keeps the manufacturer's own image order. Drop what isn't needed and pick the cover — comparison in the list depends on every card showing the same kind of view.",
+      "empty": "No row has extra images.",
+      "count": "{{count}} images",
+      "keep": "Keep",
+      "cover": "Cover",
+      "save": "Save gallery"
+    }
   },
   "gear": {
     "seo": {

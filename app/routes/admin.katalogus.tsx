@@ -23,10 +23,12 @@ import {
   listAccessoryChoicesByCategory,
   listBoardChoices,
   listBoardsForLifecycle,
+  listBoardsWithGallery,
   listPendingCandidates,
   mergeCandidate,
   rejectCandidate,
   setBoardDiscontinued,
+  setBoardGallery,
 } from "@modules/catalog/data/candidates.server";
 import { findDuplicateHints } from "@modules/catalog/data/duplicate-hints";
 import { GEAR_CATEGORIES, isGearCategory, type GearCategory } from "@modules/catalog/gear";
@@ -39,12 +41,14 @@ export async function loader({ request }: Route.LoaderArgs) {
   await requireRole(request, "moderator");
   const { supabase } = createSupabaseServerClient(request);
 
-  const [candidates, boardChoices, accessoryChoicesByCategory, boards] = await Promise.all([
-    listPendingCandidates(supabase),
-    listBoardChoices(supabase),
-    listAccessoryChoicesByCategory(supabase),
-    listBoardsForLifecycle(supabase),
-  ]);
+  const [candidates, boardChoices, accessoryChoicesByCategory, boards, galleries] =
+    await Promise.all([
+      listPendingCandidates(supabase),
+      listBoardChoices(supabase),
+      listAccessoryChoicesByCategory(supabase),
+      listBoardsForLifecycle(supabase),
+      listBoardsWithGallery(supabase),
+    ]);
 
   // Jelölt↔jelölt duplikátum-gyanú (F2.1-utó-8): a `matchedBoardLabel` csak
   // ÉLŐ deszkával veti össze a jelöltet — ez itt a MÁSIK, még el nem bírált
@@ -94,6 +98,7 @@ export async function loader({ request }: Route.LoaderArgs) {
     accessoryChoicesByCategory,
     unseen: findDiscontinuedCandidates(boards),
     unseenDays: DEFAULT_UNSEEN_DAYS,
+    galleries,
   };
 }
 
@@ -157,6 +162,17 @@ export async function action({ request }: Route.ActionArgs) {
     case "reactivate":
       result = await setBoardDiscontinued(supabase, boardId, false);
       break;
+    case "gallery": {
+      // A checkbox-ok CSAK a megtartott képeket küldik el; a borító külön
+      // rádiógomb. Kép nélküli mentés nem lehetséges (a rács üresen maradna).
+      const keepUrls = formData.getAll("keep").map(String);
+      const coverUrl = String(formData.get("cover") ?? "");
+      result =
+        boardId && coverUrl !== "" && keepUrls.includes(coverUrl)
+          ? await setBoardGallery(supabase, { boardId, coverUrl, keepUrls })
+          : { ok: false, errorKey: "admin.error.updateFailed" };
+      break;
+    }
   }
 
   return data<ActionResult>(result, { headers });
@@ -169,7 +185,8 @@ export const meta: Route.MetaFunction = () => {
 
 export default function AdminCatalogRoute({ loaderData, actionData }: Route.ComponentProps) {
   const { t } = useTranslation("catalog");
-  const { candidates, boardChoices, accessoryChoicesByCategory, unseen, unseenDays } = loaderData;
+  const { candidates, boardChoices, accessoryChoicesByCategory, unseen, unseenDays, galleries } =
+    loaderData;
 
   return (
     <main className="mx-auto flex min-h-svh max-w-5xl flex-col gap-6 p-4 sm:p-6">
@@ -236,7 +253,86 @@ export default function AdminCatalogRoute({ loaderData, actionData }: Route.Comp
           </ul>
         )}
       </section>
+
+      {/*
+        GALÉRIA-VÁLOGATÁS (F2.1-utó-30). A gyűjtés a gyártó SAJÁT kép-sorrendjét
+        hozza — többnyire jó, de a végén szín-változat és életkép is lehet. Itt
+        dobható ki a fölösleges, és itt jelölhető ki a BORÍTÓ: a lista-rácsban az
+        összehasonlítás azon áll, hogy minden kártya ugyanolyan nézetet mutat.
+        `<details>`-be zárva, hogy a 100+ sor ne tegye átláthatatlanná az oldalt,
+        és a bélyegképek csak kinyitáskor töltsenek.
+      */}
+      <section className="flex flex-col gap-3">
+        <h2 className="text-xl font-semibold text-ink-deep">{t("admin.gallery.title")}</h2>
+        <p className="text-sm text-text-2">{t("admin.gallery.lead")}</p>
+        {galleries.length === 0 ? (
+          <p className="text-sm text-text-2">{t("admin.gallery.empty")}</p>
+        ) : (
+          <ul className="flex flex-col gap-2">
+            {galleries.map((board) => (
+              <li key={board.id}>
+                <GalleryCard board={board} />
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
     </main>
+  );
+}
+
+type LoaderGallery = Awaited<ReturnType<typeof loader>>["galleries"][number];
+
+/**
+ * Egy sor galéria-válogatása. A képek KÖZÖS listában vannak (borító + többi),
+ * a moderátor pipával tartja meg és rádiógombbal jelöli a borítót — a mentés
+ * a kettőt szétválasztja (`setBoardGallery`).
+ */
+function GalleryCard({ board }: { board: LoaderGallery }) {
+  const { t } = useTranslation("catalog");
+  return (
+    <Card>
+      <details>
+        <summary className="cursor-pointer text-sm font-semibold text-text">
+          {[board.brandName, board.modelName].filter(Boolean).join(" ")}{" "}
+          <span className="font-normal text-text-3">
+            ({t("admin.gallery.count", { count: board.imageUrls.length })})
+          </span>
+        </summary>
+        <Form method="post" className="mt-3 flex flex-col gap-3">
+          <input type="hidden" name="intent" value="gallery" />
+          <input type="hidden" name="boardId" value={board.id} />
+          <ul className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {board.imageUrls.map((url) => (
+              <li key={url} className="flex flex-col gap-1.5">
+                <img
+                  src={url}
+                  alt=""
+                  loading="lazy"
+                  className="aspect-square w-full rounded-[var(--radius-card)] bg-mist object-contain"
+                />
+                <label className="flex items-center gap-1.5 text-xs text-text-2">
+                  <input type="checkbox" name="keep" value={url} defaultChecked />
+                  {t("admin.gallery.keep")}
+                </label>
+                <label className="flex items-center gap-1.5 text-xs text-text-2">
+                  <input
+                    type="radio"
+                    name="cover"
+                    value={url}
+                    defaultChecked={url === board.coverUrl}
+                  />
+                  {t("admin.gallery.cover")}
+                </label>
+              </li>
+            ))}
+          </ul>
+          <Button type="submit" variant="secondary">
+            {t("admin.gallery.save")}
+          </Button>
+        </Form>
+      </details>
+    </Card>
   );
 }
 
