@@ -3302,3 +3302,115 @@ Jelöltek: 208 jóváhagyott · 107 összevont · 213 elutasított · 183 pendin
 - 183 pending jelölt: túlnyomórészt bolti forrásból, hiányzó biztonsági
   mezővel; ezek a következő crawlnál a meglévő deszkákra illeszkednek majd
   ár- és elérhetőség-frissítésként.
+
+### F2.1-utó-25 — EGYSÉGES termékkép + újrafuttatható visszatöltés (2026-08-20)
+
+**Felhasználói szempont:** „a képeket a SUP-deszkákhoz szeretném elsősorban…
+amikor majd valaki véleményezi, akkor ez segít neki a modellek között
+eligazodni, szóval egységes méretű képek kellenének."
+
+Ez nem szépészeti kérés, hanem funkcionális: a kép a MODELLEK KÖZTI
+eligazodás eszköze. Ebből a szempontból nézve derült ki, hogy a képek megléte
+volt a kisebbik gond.
+
+**A NAGYOBBIK HIBA — a megjelenítés.** A kártyák `h-32` + `object-cover`-rel
+mutatták a képet. A gyártói termékrender viszont erősen ÁLLÓ kép (a SUP
+front/back nézete tipikusan 470×1000 px), a bolti életkép pedig fekvő
+(1024×683). Egy 128 px magas, vágott sávban az álló renderből csak a KÖZEPE
+maradt — vagyis minden deszkából ugyanaz a felismerhetetlen színes csík lett.
+Képernyőképen ellenőrizve: az „Airo", az „Airship Race" és négy egymás melletti
+All Star megkülönböztethetetlen volt; épp az veszett el (orr-forma,
+fedélzet-rajz, arány), ami alapján a véleményező választana.
+
+**A megoldás:** `@core/ui ProductImage` — FIX oldalarányú keret +
+`object-contain`. A keret minden kártyán azonos (ez az „egységes méret"), a kép
+teljes egészében, torzítás nélkül látszik benne, a kimaradó részt semleges
+`--mist` passepartout tölti ki. Bekötve: `BoardCard`, `AccessoryCard`,
+`BoardHero`, és a **Deszkaválasztó** találati kártyái — utóbbi a legfontosabb
+hely, ott kifejezetten a modellek KÖZTI választás a feladat.
+
+**A forrás-oldal is egységesebb lett.** Két, élesben mért javítás a
+`findProductImage`-ben:
+
+1. **Azonos horgonyra a front/back RENDER nyer az életkép előtt** (Nuts, Race
+   Elite, Rapid). A fehér hátterű, azonos beállítású gyártói render
+   összevethető, a drónfotó nem.
+2. **POZÍCIÓ-FALLBACK, ha egyetlen horgony sem talál.** A fájlnév ezen a
+   gyártói oldalon NEM megbízható: a Revolution képe `revolutiobn.png`
+   (elgépelés), a `/fitness/peace/` és a `/fitness/dock/` hero-képének a
+   fájlneve pedig FEL VAN CSERÉLVE — a képeket megnézve mindkét oldalon a
+   helyes termék látszik, tehát a POZÍCIÓ helyes, a fájlnév hazudik.
+   49 gyártói oldalon mérve: ahol mindkét szabály adott képet, **30-szor
+   ugyanazt**; a fallback pontosan ott szólal meg, ahol a horgony néma.
+
+**Új parancs — `backfill-images`.** Az F2.1-utó-24-es visszatöltés egyszeri
+szkript volt; mostantól újrafuttatható:
+
+```bash
+node tools/catalog-watch/cli.ts backfill-images            # dry-run
+node tools/catalog-watch/cli.ts backfill-images --apply
+```
+
+A crawl a JELÖLTET írja, a jóváhagyott deszkát nem (a `saveCandidate`
+szándékosan nem támasztja fel az elbírált sorokat), ezért a kép a sor SAJÁT
+forrás-oldaláról jön, a `matched_board_id` kapcsolaton át. Két szabály védi:
+csak **moderátor által elbírált** (`approved`/`merged`) kapcsolatot fogad el (a
+`pending` egyezést a trigram-egyeztető csak tippelte), és a **gyártói oldalt
+előbb** próbálja, mint a boltit.
+
+**Állapot:**
+
+| | |
+|---|---|
+| katalógus | **228 sor** — 180 deszka + 48 kiegészítő |
+| KÉPPEL | **208 / 228** (deszka 160/180, kiegészítő 48/48) |
+
+Az `Aqua Marina Hungary` crawl (F2.1-utó-24-ben hálózati hibával elszállt)
+lefutott: 95 termék · 12 ismert · 12 ársor · 0 új jelölt.
+
+**Amit a kép-kör közben MEGTALÁLTUNK — moderátori döntést kér:**
+
+1. **A 20 kép nélküli sor MIND a katalógus-figyelő ELŐTTI seed-deszka**
+   (`b0000001`…`b0000020`). Nincs forrás-oldaluk, ezért képet sem lehet hozzájuk
+   találni — és ez a kisebbik baj:
+2. **Két seed-sor DUPLIKÁTUM.** A gyártói crawl behozta ugyanazokat:
+
+   | seed (kézi, kép nélkül) | gyártói sor (képpel) |
+   |---|---|
+   | Dhyana 11'0" — 335×86×15, 300 l, 120 kg | **Dhyana** — 325×87×15, 347 l, 155 kg |
+   | Drift 10'10" — 330×90×15, 350 l, 160 kg | **Drift** — 330×97×15, 284 l, 130 kg |
+
+   A méretek ELTÉRNEK, tehát nem elírásról van szó: a seed-adat más (régebbi)
+   évjáraté vagy pontatlan. A gyártói sor a mérvadó. A validálás megkezdése
+   előtt érdemes rendezni, különben a véleményező két „Dhyana"-t lát.
+   (A Starboard `Sprint 14'0"` / `Touring 12'6"` / `iGO 11'2"` seed-sorok
+   szélesség nélküli, általános nevek — a gyártói katalógusban ugyanezek
+   méret-változatonként szerepelnek; ezek is átnézendők.)
+
+**Márka-lefedettség** (a `Kezdők_tanácsok/nepszeru_sup_markak_es_forgalmazok.md`
+12 márkájára, `probe`-bal mérve):
+
+| Márka | Forrás | Állapot |
+|---|---|---|
+| Aqua Marina | gyártói + HU bolt | ✅ 39 deszka |
+| Starboard | gyártói (Shopify) | ✅ 108 |
+| Bluefin | gyártói | ✅ 15 |
+| Indiana (nincs a listán) | gyártói | ✅ 3 |
+| **FunWater** | — | **AZONNAL FELVEHETŐ**: Shopify, 715 termék-URL, Product JSON-LD |
+| **Decathlon (Itiwit)** | — | 5000 URL + JSON-LD; termék-minta kell (a próba márka-oldalakat fogott) |
+| Gladiator | — | 315 URL, **nincs JSON-LD** → `htmlOnly`-munka |
+| Jobe | — | 5000 URL, nincs JSON-LD → `htmlOnly`-munka |
+| **ZRay** | — | `zraysports.com`: 154 URL, **nincs JSON-LD** → `htmlOnly`-munka |
+| Red Paddle Co | — | a sitemap 0 termék-URL-t ad → explicit `--sitemap` kell |
+| Fanatic (Duotone) | — | a sitemap 0 termék-URL-t ad → explicit `--sitemap` kell |
+| Bestway | — | még nem próbálva |
+| Aquatone | — | **robots.txt nem elérhető → kimarad** (nem találgatunk) |
+
+Vagyis a 12 népszerű márkából **4-nek van forrása**. A `products.json`
+(Shopify-mód) csak a FunWaternél él, a többinél egyedi munka kell.
+
+**Jóváhagyandó sor (183 pending):** 180 deszka + 3 kiegészítő. Ebből **68
+teljes adatú** (márka + teherbírás + űrtartalom megvan), 112-nél hiányzik
+biztonsági mező (javarészt Starboard-Shopify, ami nem ad űrtartalmat és
+teherbírást). 38 pendingnek már van párja a katalógusban — azok
+ÖSSZEFÉSÜLÉSRE várnak, nem új típusnak.
