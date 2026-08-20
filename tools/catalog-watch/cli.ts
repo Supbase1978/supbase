@@ -263,6 +263,20 @@ const realFetch: FetchText = async (url) => {
 const sleep = (ms: number): Promise<void> =>
   new Promise((resolveSleep) => setTimeout(resolveSleep, ms));
 
+/**
+ * HIBATŰRŐ letöltés a visszatöltő parancsokhoz. A `realFetch` hálózati hibára
+ * DOB — élesben ez egyetlen `fetch failed`-del megölte a 209 soros
+ * galéria-visszatöltést a második sornál. A crawl régóta hibatűrő
+ * (soronként gyűjti a hibát); a visszatöltők most már ugyanúgy.
+ */
+async function fetchOrNull(url: string): Promise<{ status: number; text: string } | null> {
+  try {
+    return await realFetch(url);
+  } catch {
+    return null;
+  }
+}
+
 async function commandListSources(): Promise<void> {
   const client = connect();
   const sources = await listSources(client, { onlyActive: false });
@@ -972,10 +986,10 @@ async function commandBackfillImages(args: Args): Promise<void> {
         image = displayImageUrl(source.storedImageUrl);
         break;
       }
-      const { status, text } = await realFetch(source.url as string);
+      const response = await fetchOrNull(source.url as string);
       await sleep(DEFAULT_MIN_DELAY_MS);
-      if (status >= 400 || text === "") continue;
-      image = imageFromPage(text, row.modelName);
+      if (response === null || response.status >= 400 || response.text === "") continue;
+      image = imageFromPage(response.text, row.modelName);
       if (image !== null) break;
     }
 
@@ -1059,16 +1073,16 @@ async function commandBackfillGallery(args: Args): Promise<void> {
       continue;
     }
 
-    const { status, text } = await realFetch(jsonUrl);
+    const response = await fetchOrNull(jsonUrl);
     await sleep(DEFAULT_MIN_DELAY_MS);
-    if (status >= 400 || text === "") {
+    if (response === null || response.status >= 400 || response.text === "") {
       empty += 1;
       continue;
     }
 
     let imageUrls: string[] = [];
     try {
-      const parsed = JSON.parse(text) as { product?: { images?: { src?: string }[] } };
+      const parsed = JSON.parse(response.text) as { product?: { images?: { src?: string }[] } };
       imageUrls = (parsed.product?.images ?? []).map((image) => image.src ?? "");
     } catch {
       empty += 1;
