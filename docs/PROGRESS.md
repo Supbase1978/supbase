@@ -3599,3 +3599,71 @@ mindhárom célon elég: telefon 2 oszlop (~170 CSS px → 340 px 2×-en), aszta
 PWA 3 oszlop (~350 CSS px → 700 px), adatlap-hero. Valódi eszközönkénti
 kiszolgáláshoz (`srcset`, WebP/AVIF) vagy több változatot kellene tárolni a
 `boards` soron, vagy kép-CDN-t bekötni.
+
+### F2.1-utó-30 — teljes képernyős képnézegető az adatlapon (2026-08-20)
+
+**Felhasználói ötlet:** „a képre kattintva az adatok eltűnnek és a teljes
+képernyőt a kép tölti ki… ha van több kép a modellről, akkor azok között
+legyintéssel tudnék váltani, illetve újabb koppintással bezárnám."
+
+Ez fizeti vissza a kétoszlopos telefonos rács árát: a rács marad gyors és
+ÖSSZEHASONLÍTÓ (két deszka egymás mellett), a részlet pedig egy koppintásra ott
+van. A két igény ott válik szét, ahol kell.
+
+**A képek 74 %-a már megvolt, ingyen.** A `shopify.ts` `firstImage()`-e eddig
+eldobta a többit (`product.images?.[0]?.src`), pedig a `/products.json`
+termékenként **7–22 képet** ad — ugyanabban a válaszban, amit már letöltünk. Ez
+a Starboard 105 + Bluefin 15 deszkáját fedi.
+
+**A HTML-forrásokból SZÁNDÉKOSAN nem gyűjtünk többet** (Aqua Marina, Indiana,
+Zray): ott a „Related Products" blokk MÁS termékek fotóit is felkínálná —
+ugyanaz a csapda, ami az „ALUMINUM OARS 396×396 cm" hibát okozta. Egy rossz kép
+rosszabb, mint a hiánya; ezek a deszkák egy képesek maradnak, és a felület ezt
+elegánsan kezeli.
+
+**Séma** (20260717092500, additív): `boards.images jsonb` — rendezett tömb,
+`[{url, source}]`. A BORÍTÓ marad az `image_url`: a rácsban az összehasonlítás
+azon áll, hogy minden kártya ugyanolyan nézetet mutat, ezért a borító külön,
+moderátor által választott mező, nem „a tömb első eleme". A lista lekérdezései
+így változatlanok. A `source` most került be, pedig egyelőre mindig `brand` — a
+véleményezői fotó a platform saját tartalma lesz, jobb, ha nem kell migrálni.
+
+**`@core/ui ProductGallery`** — a meglévő `ProductImage` keretére épül:
+
+| | |
+|---|---|
+| bezárás | ×, `Esc`, háttérre koppintás, ÉS magára a képre koppintás |
+| váltás | legyintés, nyíl-gombok, nyíl-billentyűk |
+| jelzés | pöttysor + „N. kép a(z) M-ból" |
+
+Miért nem elég a koppintás-bezárás önmagában: billentyűzettel és
+képernyőolvasóval nem lehet „koppintani". Miért nem elég a legyintés: gyors, de
+LÁTHATATLAN — sosem lehet az egyetlen mód. A legyintés ráadásul kihagyja a
+képernyő szélső 24 px-ét, mert ott a vízszintes húzás iOS-en és Androidon a
+RENDSZER vissza-gesztusa.
+
+**Egy képnél** nincs pöttysor, nincs lapozó, nincs legyintés — ez a normál
+eset a HTML-forrásoknál, nem hibaállapot.
+
+**A súly-szabályt teszt kényszerítette ki.** Az első változat a zárt
+párbeszédablak képeit is a DOM-ban tartotta; egy `display:none` `<img>`
+letöltését a böngészők nem egységesen hagyják ki. A párbeszédablak mostantól
+CSAK nyitott állapotban létezik, és csak a szomszédos képet tartja benne (n±1).
+Élesben mérve az adatlapon (Whopper 11'2", 7 kép): **betöltéskor 1 kép,
+nyitáskor 3** — nem mind a hét.
+
+**Új parancs — `backfill-gallery`.** A jóváhagyott sorok jelöltjei nem
+frissülnek újracrawlnál, ezért a galéria a Shopify termék SAJÁT JSON-jából
+(`…/products/<handle>.json`) jön, termékenként egyetlen kis kéréssel.
+Élesben: **108 galéria beírva** · 88 nem Shopify-forrású · 12 üres.
+
+**Moderáció:** az `/admin/katalogus` új szekciójában a moderátor pipával tartja
+meg a képeket és rádiógombbal jelöli a borítót; a sorok `<details>`-be zárva,
+így a bélyegképek csak kinyitáskor töltenek.
+
+**Mellékesen javítva:** a két visszatöltő parancs nem volt hibatűrő — a 209
+soros galéria-futás a MÁSODIK sornál elszállt egy `fetch failed`-del. A crawl
+régóta soronként gyűjti a hibát; a visszatöltők most már ugyanúgy.
+
+**Elhalasztva (felhasználói döntés):** a LISTA kártyájáról való nagyítás. Az
+adatlapos változat épül meg előbb, és a használat mutatja meg, hiányzik-e.
