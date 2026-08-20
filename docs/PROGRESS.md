@@ -3242,3 +3242,63 @@ Ezért volt szükség a kézi rögzítésre.
 
 **A katalógus 180 deszka (163 ajánlásképes); a gyártói forrásokból NEM
 maradt eldöntetlen tétel.**
+
+### F2.1-utó-24 — termékképek és a kiegészítők behozása (2026-08-20)
+
+**Felhasználói szempont:** „Kellenének képek a termékekről, mert a felhasználók
+sokszor ez alapján döntenek."
+
+**A hiba, amit én okoztam:** a JSON-LD nélküli (`htmlOnly`) ágban
+`imageUrl: null`-t írtam, ezért a katalógus 180 sorából 57-nek nem volt képe —
+köztük MIND a 39 Aqua Marina deszkának.
+
+Az `aquamarina.com` nem ad `og:image`-et, és 30+ `<img>` van egy oldalon
+(fejléc-logók, drónfotók, tartozékok). Ezért HORGONYOKRA megyünk, a
+legpontosabbtól: **cikkszám** (`MODEL: BT-26BZ`) → **teljes modellnév** → a
+**modellnév első szava** (a fájlnév gyakran csak azt viseli: `Coral-R-1.png`,
+`mega_frontback.png`).
+
+Két finomítás élesben mért hibából:
+- **Kizárva a logó és a RÉSZLET-/technológia-kép**: a Coralnál a
+  `construction-CORAL-Raspberry` nyert volna a termék fő fotója helyett.
+- **A WordPress bélyegkép-utótag levágva** (`-222x1024.png` → `.png`), hogy az
+  eredeti méret kerüljön be, ne egy apró változat.
+
+**Visszatöltés a már jóváhagyott deszkákra.** Az újracrawl NEM segített, mert
+a `saveCandidate` szándékosan nem támasztja fel az elbírált sorokat. Ezért a
+pótlás a deszka SAJÁT forrás-oldaláról ment, a `matched_board_id` kapcsolaton
+keresztül — így a kép biztosan a helyes termékhez tartozik, nem
+hasonlóság-keresés eredménye. (Egy korábbi, hasonlóságra épülő próba
+`Drift ← Aqua-Marina-Glow.jpeg` párosítást adott — ezért lett elvetve.)
+
+**Kiegészítők.** A katalógusban 0 volt, miközben 58 jelölt várt — MIND a 58
+képpel. Új `approve-candidates --accessories`: itt nincs emberi döntés (a
+kategóriát a besoroló adja, biztonsági mérőszám nem kell), csak **márkanév**
+kell, ami nélkül a jóváhagyás elakadna.
+
+Két besorolási hiba javítva: az **„evezőtáska"** és az **„evezőtartó"** a
+substring miatt EVEZŐNEK látszott (az egyik táska, a másik rögzítő), a
+**„KENU EVEZŐ"** pedig kenuhoz való. A táska/tartó minta az `evezo` ELÉ került;
+a 4 érintett jelölt elutasítva.
+
+**Állapot:**
+
+| | |
+|---|---|
+| katalógus | **228 sor** — 180 deszka + 48 kiegészítő |
+| ajánlásképes deszka | **163** |
+| KÉPPEL | **202 / 228** |
+
+Kiegészítők: pumpa 27 · evező 17 · mentőmellény 4.
+Jelöltek: 208 jóváhagyott · 107 összevont · 213 elutasított · 183 pending.
+
+**Nyitva (a következő menetre):**
+- **26 kép nélküli sor**: 8 Aqua Marina (a gyártó fájlnevei nem
+  horgonyozhatók — pl. a Revolutionnél elgépelés: `revolutiobn.png`), és 15
+  régi, még a katalógus-figyelő előttről származó deszka (Red Paddle, Fanatic,
+  JP, Naish, Itiwit, Aztron, Gladiator).
+- **Az `Aqua Marina Hungary` crawl hálózati hibával elszállt** (`fetch failed`)
+  — semmi nem íródott, egyszerűen újrafuttatandó.
+- 183 pending jelölt: túlnyomórészt bolti forrásból, hiányzó biztonsági
+  mezővel; ezek a következő crawlnál a meglévő deszkákra illeszkednek majd
+  ár- és elérhetőség-frissítésként.
