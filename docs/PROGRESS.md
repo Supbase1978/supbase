@@ -3414,3 +3414,91 @@ teljes adatú** (márka + teherbírás + űrtartalom megvan), 112-nél hiányzik
 biztonsági mező (javarészt Starboard-Shopify, ami nem ad űrtartalmat és
 teherbírást). 38 pendingnek már van párja a katalógusban — azok
 ÖSSZEFÉSÜLÉSRE várnak, nem új típusnak.
+
+### F2.1-utó-26 — Zray-forrás, és két hiba, amit a bekötése hozott elő (2026-08-20)
+
+**Felhasználói kérdés:** „A Zray már benne van?" — nem volt, mert egyetlen
+forrás sem fedte. A `zraysports.com` sitemapje 138 termék-URL-t ad, Product
+JSON-LD nincs, a specifikáció viszont címkézett szövegként ott van, tehát a
+`htmlOnly` ág való rá. (A site erősen korlátoz: `429 Too Many Requests`, ezért
+3000 ms szünettel fut.)
+
+A bekötés közben **négy hiba** jött elő, ebből **kettő a MEGLÉVŐ forrásokat is
+érintő, csendes hiba** volt:
+
+**1. INDEX-ELCSÚSZÁS (általános, súlyos).** A `foldText` NFD-re bont, majd a
+diakritikus jeleket törli. Ékezetes latin betűnél ez hossz-semleges („é" →
+„e"+U+0301 → „e"), a HANGUL szótagoknál viszont nem: azok 3 nem-diakritikus
+jamóra bomlanak. A Zray az ikonjaihoz használ ilyen karaktert (`&#xb133;`), így
+a hajtott szöveg két karakterrel hosszabb lett — a `valueAfterLabel` pedig az
+abban talált indexszel vágta az EREDETI szöveget. A „Volume: 379L" ablak így
+„9L"-ként indult: **9 liter a 379 helyett.** A hajtás mostantól indexhű.
+
+**2. A SZOMSZÉD TERMÉK ADATA.** A termékoldalon a „Related Products" blokk
+MEGELŐZI a spec-táblát, és más deszkákról ír: „[HIGHER VOLUME; CAPACITY] The
+weight capacity is 152 kg". A címke-keresés emiatt **152 kg-ot olvasott a
+valós 170 helyett.** Mostantól kétmenetes: előbb csak a KETTŐSPONTTAL zárt
+címke számít (azt csak spec-táblázat írja), és csak utána jön a régi, laza
+illesztés — a kettőspont nélküli táblák (aquamarina.com „NET WEIGHT\n9.3 kg")
+tehát változatlanul működnek.
+
+Mindkettő **biztonsági mezőt** rontott: a teherbírásra és a térfogatra a
+Deszkaválasztó ajánlást épít.
+
+**3. A HASONLAT nem állítás.** „…makes rider feel just like paddling on a
+hardboard" — egy FELFÚJHATÓ deszka reklámszövege, amitől a deszka keménynek
+látszott. A „like"/„mint" előzményű előfordulás mostantól nem számít
+állításnak. A szerkezeti jelek (drop stitch, nagynyomású szelep) viszont
+felfújhatót JELEZNEK — ez a Zray-oldalon a döntő, mert az „inflatable" szó
+egyszer sem szerepel rajta.
+
+**4. PROTOKOLL-RELATÍV kép-URL** (`//img.website.xin/…`) — így a katalógusból
+nem töltődne be. A kép-URL mostantól a termékoldalhoz képest abszolutizálódik.
+
+Új forrás-konfig: **`titleSuffixes`** — a `<title>` oldal-szintű utótagja
+(„-Zray Official Site"), enélkül a modellnév „Max Azure M2 A Official Site"
+lenne. Forrásonként más, ezért konfig és nem globális zajszó-lista, ami egy
+jogos modellnevet is elvághatna.
+
+**Ötödik hiba, már az első crawl EREDMÉNYÉBŐL:** a kiegészítő-oldalakon
+(ALUMINUM OARS, Pump, LEASH, vízhatlan táska) nincs saját spec-blokk, a
+„Related Products" viszont SUP-deszkákat sorol — a parse onnan szedte a
+méretet, és mindegyik kiegészítő „396,2 × 396,2 cm, 150 kg" **deszkaként**
+jött be. A `classifyProduct` méret-alapú rövidzára szándékosan erősebb minden
+kulcsszónál, de ez azt feltételezi, hogy az adat a TERMÉK SAJÁTJA — mostantól
+csak ÖNMAGÁBAN ELLENTMONDÁSMENTES adatra szólal meg: **egy deszka sosem
+szélesebb, mint amilyen hosszú.**
+
+**Zray-eredmény:** 138 URL · 80 jelölt · 68 teljes biztonsági adattal · MIND
+képpel. Modellcsaládok: X-Rider, Evasion, Fury, Max, Flora, Mehndi, Graffiti,
+Dual, Concave, Kids, Rapid Pro, All Around Ultra.
+
+### F2.1-utó-27 — a tömeges jóváhagyó ÚJRA-EGYEZTET (2026-08-20)
+
+**A validálás megkezdése előtt elkapva.** Az `approve-candidates` a mostani
+soron **26 ÚJ deszkát** hozott volna létre, köztük egy második ATLAS-t,
+BEAST-et, HYPER-t (kétszer), RAPID-ot, MONSTER-t (kétszer), FUSION-t és SUPER
+TRIP TANDEM-et — mind olyat, ami a gyártói forrásból MÁR BENT VAN. Ráadásul
+BOLTI néven („MAGMA 11'2" 23%", „RAPID BT 22RP , 130kg ig"), tehát a
+katalógusban két, egymásnak ellentmondó sor állt volna ugyanarról a deszkáról,
+épp amikor a véleményezés indul.
+
+**Az ok:** a jelölt sora a crawl PILLANATÁBAN fagy meg, benne az AKKORI
+egyeztetéssel. A bolti jelöltek java KORÁBBAN keletkezett, mint a hozzájuk
+tartozó gyártói deszka, ezért `matched_board_id` nélkül várakoznak — a
+jóváhagyó pedig ezt „új típusnak" olvasta. (A kód kommentje eddig úgy tudta,
+hogy „a következő crawl majd ismert deszkára illeszti" — a MÁR LÉTREJÖTT
+jelölt-soroknál ez nem történik meg.)
+
+`planApproval` (tiszta függvény a `match.ts`-ben): jóváhagyás előtt minden
+jelöltet újra egyeztetünk az AKTUÁLIS katalógussal, és a `matchCandidate`
+három kimenete háromféle sorsot kap:
+
+| egyezés | sors | miért |
+|---|---|---|
+| `known` | **összefésülés** | a deszka már megvan, új sor nem születik |
+| `uncertain` | **marad `pending`** | bizonytalan egyezés = EMBERI döntés |
+| `new` | **jóváhagyható** | tényleg új típus |
+
+**Az eredmény a mostani soron: 26 új deszka helyett 8 valóban új, 9
+összefésülés, 19 moderátori döntés.**
