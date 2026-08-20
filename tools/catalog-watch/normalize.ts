@@ -10,7 +10,7 @@
  */
 import type { GearCategory } from "../../src/modules/catalog/gear.ts";
 import { decodeEntities, htmlToText } from "./html.ts";
-import { displayImageUrl } from "./images.ts";
+import { displayImageUrl, MAX_GALLERY_CANDIDATES } from "./images.ts";
 import {
   boardTypeFromDescription,
   boardTypeFromUsage,
@@ -256,6 +256,16 @@ const SPEC_LABELS = {
     // A `kg`-kötelezettség miatt a mellette kiírt font-érték („308 lbs /
     // 140 kg") nem téveszt meg — a 140 nyer, nem a 308.
     "payload",
+    // Jobe (jobesports.com): „Recommended rider weight: Up to 160kg" — a
+    // márka SEHOL nem ír „max load"-ot, ez az EGYETLEN terhelési korlátja.
+    // Felhasználói döntés (2026-08-20): ezt vesszük teherbírásnak.
+    //
+    // Miért vállalható: az evezős-súlyhatár a gyártó saját korlátja, és
+    // KONZERVATÍV — alacsonyabb, mint a teljes terhelhetőség, ami a
+    // felszerelést is beleérti. A Deszkaválasztó biztonsági szűrője ezzel
+    // inkább kizár, mint beenged. Precedens: a Bluefin „Max User Weight"-jét
+    // ugyanígy vesszük (lásd fent).
+    "rider weight",
   ],
 } as const satisfies Record<keyof Omit<BoardSpecs, "inflatable">, readonly string[]>;
 
@@ -1201,6 +1211,51 @@ function headlineBeforeSpecs(pageText: string): string {
  * ami elárulja, hogy tényleg egy deszka adatlapját nézzük.
  */
 /**
+ * Galéria-jelöltek a HTML-oldalról, KIZÁRÓLAG cikkszám-horgonnyal.
+ *
+ * A BORÍTÓ kimarad (azt az `image_url` viszi), a kizárt fájlnév-minták itt is
+ * érvényesek, és a lista a `MAX_GALLERY_CANDIDATES`-nél elvágódik — ugyanaz a
+ * szerződés, mint a Shopify-ágon (`galleryCandidates`).
+ *
+ * Cikkszám nélkül ÜRES a lista: pozícióra vagy modellnévre itt nem gyűjtünk,
+ * mert a „Related Products" blokk más termékek fotóit is felkínálná.
+ */
+function galleryByCode(html: string, code: string | null, sourceUrl: string): string[] {
+  if (code === null) return [];
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const match of html.matchAll(/<img[^>]+src="([^"]+)"/gi)) {
+    if (out.length >= MAX_GALLERY_CANDIDATES) break;
+    const src = match[1] ?? "";
+    const file = src.split("/").pop() ?? "";
+    if (!file.includes(code)) continue;
+    if (/logo|construction|technology|detail|icon|thumb|badge/i.test(file)) continue;
+    const url = absoluteUrl(src, sourceUrl);
+    if (url === null || seen.has(url)) continue;
+    seen.add(url);
+    out.push(url);
+  }
+  // Az ELSŐ találat lesz a borító (`findProductImage` ugyanezt választja) —
+  // a galériában tehát nem ismételjük meg.
+  return out.slice(1);
+}
+
+/**
+ * A termék-URL végén álló CIKKSZÁM (legalább 6 számjegy az utolsó
+ * útvonal-szegmensben). Élesben (jobesports.com):
+ * `/en/jobe-aero-sava-sup-lite-board-86-package-486425010/` → `486425010`.
+ *
+ * Rövidebb számot SZÁNDÉKOSAN nem fogadunk el: a slugokban méret- és
+ * évszámok is állnak (`…-board-86-`, `…-2026-`), azokra horgonyozni téves
+ * képet adna.
+ */
+function codeFromUrl(sourceUrl: string): string | null {
+  const last = sourceUrl.replace(/\/+$/, "").split("/").pop() ?? "";
+  const match = last.match(/(\d{6,})(?!.*\d{6,})/);
+  return match?.[1] ?? null;
+}
+
+/**
  * Kép-URL abszolutizálása a termékoldal URL-jéhez képest. Élesben mért eset
  * (zraysports.com): a `<img src>` PROTOKOLL-RELATÍV
  * (`//img.website.xin/…/3865618.png`) — így ahogy van, a katalógusból nem
@@ -1293,9 +1348,26 @@ export function extractProductFromPage(
     // ELSŐ SZAVA (a családnév; a fájlnév gyakran csak azt viseli:
     // „Coral-R-1.png", „mega_frontback.png").
     imageUrl: absoluteUrl(
-      findProductImage(html, findModelCode(pageText), modelName, modelName.split(/\s+/)[0] ?? null),
+      findProductImage(
+        html,
+        // A TERMÉK-URL végén álló cikkszám a legerősebb horgony, ahol van:
+        // a bolt ugyanazt a számot írja a képfájlba is. Élesben
+        // (jobesports.com): a `…-486425010/` termékoldalon a kép
+        // `/uploads/product/486425010-big.jpg` — enélkül a pozíció-fallback
+        // a fejléc KOSÁR-IKONJÁT adta termékképnek.
+        codeFromUrl(sourceUrl),
+        findModelCode(pageText),
+        modelName,
+        modelName.split(/\s+/)[0] ?? null,
+      ),
       sourceUrl,
     ),
+    // GALÉRIA a HTML-oldalról — KIZÁRÓLAG a cikkszám-horgonnyal. A pozíció
+    // vagy a modellnév itt nem lenne elég: a „Related Products" blokk MÁS
+    // termékek fotóit is felkínálná (ugyanaz a csapda, ami az „ALUMINUM OARS"
+    // hibát okozta). A cikkszám viszont termék-specifikus — a szomszéd termék
+    // képén más szám áll.
+    imageUrls: galleryByCode(html, codeFromUrl(sourceUrl), sourceUrl),
     // A besorolási tipphez a cím ÉS az URL kategória-szegmense — utóbbi a
     // gyártó SAJÁT besorolása (`/products/racing/race/`, `/products/youth/…`),
     // tehát pontosabb, mint bármilyen szöveg-heurisztika. A teljes

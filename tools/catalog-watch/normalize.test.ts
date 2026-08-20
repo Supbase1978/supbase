@@ -1061,3 +1061,51 @@ describe("jobesports.com — értékenkénti mértékegység és kettős írásm
     expect(parseSpecsFromText("Dimensions: 325 x 82 x 16 cm").lengthCm).toBe(325);
   });
 });
+
+/**
+ * CIKKSZÁM-HORGONY (2026-08-20). A jobesports.com termékoldalán a képek a
+ * cikkszámmal vannak nevesítve, és a cikkszám ott van a termék URL-jében is.
+ */
+describe("jobesports.com — cikkszám-horgony a képhez és a galériához", () => {
+  const PAGE = `<html><head><title>Jobe Aero Sava Sup Lite Board 8.6 Package - Jobesports.com</title></head>
+    <body>
+      <img src="/images/basket-2018.png">
+      <img src="/images/logo.png">
+      Dimensions: 8'6" x 28" x 4,75" | 2,59m x 71,12cm x 12cm
+      Recommended rider weight: Up to 80kg
+      <img src="/uploads/product/486425010-big.jpg">
+      <img src="/uploads/product/486425010-2-big.jpg">
+      <img src="/uploads/product/486425010-3-big.jpg">
+      <img src="/uploads/product/999999999-big.jpg">
+    </body></html>`;
+  const URL_ = "https://www.jobesports.com/en/jobe-aero-sava-sup-lite-board-86-package-486425010/";
+
+  /** Enélkül a pozíció-fallback a fejléc KOSÁR-IKONJÁT adta termékképnek. */
+  it("a cikkszám üt a pozíció-fallbackön", () => {
+    const product = extractProductFromPage(PAGE, URL_, "Jobe");
+    expect(product?.imageUrl).toBe("https://www.jobesports.com/uploads/product/486425010-big.jpg");
+  });
+
+  it("a galéria CSAK az azonos cikkszámú képeket veszi", () => {
+    const product = extractProductFromPage(PAGE, URL_, "Jobe");
+    // A borító nem ismétlődik, és a szomszéd termék (999999999) kimarad.
+    expect(product?.imageUrls).toEqual([
+      "https://www.jobesports.com/uploads/product/486425010-2-big.jpg",
+      "https://www.jobesports.com/uploads/product/486425010-3-big.jpg",
+    ]);
+  });
+
+  it("cikkszám nélküli URL-en NINCS galéria (nem tippelünk pozícióból)", () => {
+    const product = extractProductFromPage(PAGE, "https://x.com/termek/sava/", "Jobe");
+    expect(product?.imageUrls).toEqual([]);
+  });
+
+  /**
+   * A „Recommended rider weight" a Jobe EGYETLEN terhelési korlátja, és a
+   * felhasználó döntése szerint ezt vesszük teherbírásnak (konzervatív:
+   * alacsonyabb, mint a felszerelést is beleértő teljes terhelhetőség).
+   */
+  it("a Recommended rider weight teherbírásként jön be", () => {
+    expect(extractProductFromPage(PAGE, URL_, "Jobe")?.specs.maxLoadKg).toBe(80);
+  });
+});
