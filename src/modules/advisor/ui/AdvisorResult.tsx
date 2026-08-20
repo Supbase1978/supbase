@@ -185,7 +185,7 @@ export function AdvisorResult({ results, sizing, noMatchReason }: AdvisorResultP
           <span className="text-xs font-bold tracking-wide text-text-3 uppercase">
             {t("result.otherMatches")}
           </span>
-          <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <ul className="grid grid-cols-2 gap-3 sm:gap-4">
             {others.map((board) => (
               <li key={board.boardId}>
                 <Card className="flex h-full flex-col gap-2">

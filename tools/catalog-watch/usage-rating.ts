@@ -141,12 +141,15 @@ export function boardTypeFromDescription(text: string): BoardType | null {
  * ahol a horgony néma (elgépelt vagy felcserélt fájlnév).
  */
 export function findProductImage(html: string, ...anchors: (string | null)[]): string | null {
-  const images = [...html.matchAll(/<img[^>]+src="([^"]+)"/gi)]
-    .map((m) => m[1] ?? "")
+  const images = [...html.matchAll(/<img\s[^>]*>/gi)]
+    .map((m) => parseImgTag(m[0]))
+    .filter((image): image is PageImage => image !== null)
     // Kizárt fájlnevek: a fejléc-logó, illetve a RÉSZLET-/technológia-képek
     // (élesben a Coralnál a „construction-CORAL-Raspberry" nyert volna a
     // termék fő fotója helyett). Ezek nem alkalmasak katalógus-képnek.
-    .filter((src) => !/logo|construction|technology|detail|icon|thumb|badge/i.test(fileOf(src)));
+    .filter(
+      (image) => !/logo|construction|technology|detail|icon|thumb|badge/i.test(fileOf(image.src)),
+    );
 
   const needles = anchors
     .map((a) => (a ?? "").replace(/[^a-z0-9]/gi, "").toLowerCase())
@@ -154,12 +157,24 @@ export function findProductImage(html: string, ...anchors: (string | null)[]): s
 
   // A horgonyok SORRENDBEN: a cikkszám pontosabb, a modellnév általánosabb.
   for (const needle of needles) {
-    const matches = images.filter((src) => normalizeFile(src).includes(needle));
-    const best = matches.find((src) => /front[_-]?back/i.test(fileOf(src))) ?? matches[0];
-    if (best !== undefined) return fullSize(best);
+    const matches = images.filter((image) => normalizeFile(image.src).includes(needle));
+    const best = matches.find((image) => /front[_-]?back/i.test(fileOf(image.src))) ?? matches[0];
+    if (best !== undefined) return displayVariant(best);
   }
 
-  return images[0] === undefined ? null : fullSize(images[0]);
+  return images[0] === undefined ? null : displayVariant(images[0]);
+}
+
+interface PageImage {
+  src: string;
+  /** A gyártó SAJÁT méret-változatai (`… 679w, … 2762w`), ha kitette. */
+  srcset: string | null;
+}
+
+function parseImgTag(tag: string): PageImage | null {
+  const src = tag.match(/\ssrc="([^"]+)"/i)?.[1];
+  if (src === undefined || src.trim() === "") return null;
+  return { src, srcset: tag.match(/\ssrcset="([^"]+)"/i)?.[1] ?? null };
 }
 
 function fileOf(src: string): string {
@@ -170,7 +185,46 @@ function normalizeFile(src: string): string {
   return fileOf(src).replace(/[^a-z0-9]/gi, "").toLowerCase();
 }
 
-/** `-222x1024.png` → `.png` (a WordPress bélyegkép helyett az eredeti). */
+/**
+ * MEGJELENÍTÉSRE VALÓ méret-változat — mobil-first alkalmazásban ez nem
+ * apróság.
+ *
+ * ÉLESBEN MÉRT KÁR (2026-08-20): az eredeti szabály a WordPress méret-utótagot
+ * levágta, hogy „ne egy apró változat" kerüljön be — csakhogy ezzel a
+ * SZERKESZTŐSÉGI EREDETIT választotta. A katalógus képei így átlagosan 680 kB-ot
+ * nyomtak, a legrosszabb (Aqua Marina Cascade) **8,9 MB**-ot; egy 20 kártyás
+ * lista ~13 MB mobiladat lett volna.
+ *
+ * A gyártó viszont maga kirakja a méret-változatokat a `srcset`-ben. Onnan a
+ * legkisebb olyat vesszük, ami még bőven elég a legnagyobb megjelenítéshez
+ * (adatlap-hero ~700 CSS px, 2× kijelzőn is fedve) — a Cascade így 8904 kB
+ * helyett 613 kB. Ha nincs `srcset`, marad a régi utótag-levágás: ott a `src`
+ * gyakran épp egy pici bélyegkép.
+ */
+const DISPLAY_TARGET_WIDTH = 700;
+
+function displayVariant(image: PageImage): string {
+  const entries = parseSrcset(image.srcset);
+  if (entries.length === 0) return fullSize(image.src);
+  const enough = entries
+    .filter((entry) => entry.width >= DISPLAY_TARGET_WIDTH)
+    .sort((a, b) => a.width - b.width)[0];
+  // Ha egyik változat sem éri el a célt, a LEGNAGYOBB elérhető a legjobb.
+  const largest = entries.reduce((a, b) => (b.width > a.width ? b : a));
+  return (enough ?? largest).url;
+}
+
+function parseSrcset(srcset: string | null): { url: string; width: number }[] {
+  if (srcset === null) return [];
+  const entries: { url: string; width: number }[] = [];
+  for (const part of srcset.split(",")) {
+    const match = part.trim().match(/^(\S+)\s+(\d+)w$/);
+    if (match) entries.push({ url: match[1] as string, width: Number(match[2]) });
+  }
+  return entries;
+}
+
+/** `-222x1024.png` → `.png` — csak `srcset` HIÁNYÁBAN (ld. `displayVariant`). */
 function fullSize(src: string): string {
   return src.replace(/-\d{2,4}x\d{2,4}(?=\.[a-z]{3,4}(?:$|\?))/i, "");
 }

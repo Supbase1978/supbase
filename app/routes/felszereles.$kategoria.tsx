@@ -137,7 +137,7 @@ export default function GearCategoryRoute({ loaderData }: Route.ComponentProps) 
             <p className="text-sm text-text-2">{t("gear.detail.productsEmpty")}</p>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
             {products.map((product) => (
               <AccessoryCard key={product.id} accessory={product} />
             ))}

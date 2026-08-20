@@ -40,9 +40,17 @@ export function BoardCard({ board, className }: BoardCardProps) {
       <Link to={`/deszkak/${board.slug}`} className="flex flex-col gap-2.5">
         <ProductImage src={board.imageUrl} alt={board.modelName} />
 
-        <div className="flex items-baseline justify-between gap-2">
-          <span className="text-lg font-semibold text-ink-deep">{board.modelName}</span>
-          <span className="shrink-0 rounded-full bg-mist px-2.5 py-1 text-xs font-semibold text-text-2">
+        {/*
+          Telefonon a kártya egy KÉTOSZLOPOS rács fele (~170 px): ott a
+          modellnév és a típus-badge egy sorban nem fér el, a név 3 sorra
+          törne. Keskenyen tehát egymás alá kerülnek, `sm`-től marad az
+          egysoros, jobbra igazított badge.
+        */}
+        <div className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between sm:gap-2">
+          <span className="text-base leading-snug font-semibold text-ink-deep sm:text-lg">
+            {board.modelName}
+          </span>
+          <span className="w-fit shrink-0 rounded-full bg-mist px-2.5 py-1 text-xs font-semibold text-text-2">
             {t(`boardType.${board.boardType}`)}
           </span>
         </div>

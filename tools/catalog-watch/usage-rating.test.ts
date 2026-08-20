@@ -206,3 +206,39 @@ describe("findModelCode", () => {
     expect(findModelCode("Csak egy leírás, cikkszám nélkül.")).toBeNull();
   });
 });
+
+/**
+ * MÉRET-VÁLASZTÁS (2026-08-20) — mobil-first alkalmazásban ez nem apróság.
+ * Az eredeti szabály a szerkesztőségi EREDETIT választotta: a katalógus képei
+ * átlagosan 680 kB-ot nyomtak, a legrosszabb 8,9 MB-ot.
+ */
+describe("findProductImage — megjelenítésre való méret", () => {
+  const cascade = `<img src="https://x.com/CASCADE-2.png"
+    srcset="https://x.com/CASCADE-2.png 2762w,
+            https://x.com/CASCADE-2-199x300.png 199w,
+            https://x.com/CASCADE-2-679x1024.png 679w,
+            https://x.com/CASCADE-2-768x1159.png 768w,
+            https://x.com/CASCADE-2-1357x2048.png 1357w">`;
+
+  it("a srcset-ből a MEGJELENÍTÉSHEZ ELÉG legkisebbet veszi, nem az eredetit", () => {
+    // Élesben: az eredeti 8904 kB, ez a változat 772 kB.
+    expect(findProductImage(cascade, "cascade")).toBe("https://x.com/CASCADE-2-768x1159.png");
+  });
+
+  it("ha egyik változat sem elég nagy, a LEGNAGYOBB elérhetőt", () => {
+    const small = `<img src="https://x.com/revolutiobn.png"
+      srcset="https://x.com/revolutiobn.png 470w, https://x.com/revolutiobn-141x300.png 141w">`;
+    expect(findProductImage(small, "revolution")).toBe("https://x.com/revolutiobn.png");
+  });
+
+  it("srcset HÍJÁN marad az utótag-levágás (ott a src gyakran bélyegkép)", () => {
+    const plain = `<img src="https://x.com/Coral-R-1-222x1024.png">`;
+    expect(findProductImage(plain, "coral")).toBe("https://x.com/Coral-R-1.png");
+  });
+
+  it("a kizárt fájlnevek a srcset-es ágon is kimaradnak", () => {
+    const withLogo = `<img src="https://x.com/white_LOGO.png" srcset="https://x.com/white_LOGO.png 900w">
+      <img src="https://x.com/coral.png" srcset="https://x.com/coral-800x1200.png 800w">`;
+    expect(findProductImage(withLogo, "coral")).toBe("https://x.com/coral-800x1200.png");
+  });
+});
