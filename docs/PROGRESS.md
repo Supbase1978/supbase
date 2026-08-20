@@ -3502,3 +3502,47 @@ három kimenete háromféle sorsot kap:
 
 **Az eredmény a mostani soron: 26 új deszka helyett 8 valóban új, 9
 összefésülés, 19 moderátori döntés.**
+
+### F2.1-utó-28 — a fejlesztői seed-adat kivezetése az éles katalógusból (2026-08-20)
+
+**Amit a kép-kör felszínre hozott:** a 20 kép nélküli sor mind a
+`b0000001`…`b0000020` azonosítójú **seed-deszka** volt a `supabase/seed.sql`-ből
+(11.4) — fejlesztői demo-adat, ami az éles katalógusban ült, és onnan három
+irányban ártott:
+
+1. **Kitalált árak, nem létező boltoktól.** A 20 ársor olyan „boltokra"
+   hivatkozott, mint az „Olcsó SUP", a „Jóga & Víz", a „Horgász Webshop" és a
+   „Vízisport Webshop" — a felhasználó valós piaci adatnak látta volna őket.
+2. **Duplikátumok.** A gyártói crawl behozta ugyanazokat a deszkákat
+   (Dhyana, Drift), ELTÉRŐ méretekkel — a seed-adat pontatlan vagy más
+   évjáraté volt, a gyártói sor a mérvadó.
+3. **Rontották az EGYEZTETÉST.** A méret nélküli, általános seed-nevek magukhoz
+   vonzották a valódi jelölteket: az `iGO 11'2"`-hez 12, a `Touring 12'6"`-hoz
+   és a `Sprint 14'0"`-hez 6-6 Starboard-jelölt kapcsolódott, pedig azok
+   méret-változatonként külön deszkák.
+
+**Felhasználói döntés:** törlés (a `seed.sql` marad — a CI KIZÁRÓLAG lokális
+Supabase-re futtatja, éles projektre soha).
+
+Törölve: **19 seed-deszka + mind a 20 kitalált ársor**; 27 jelölt leválasztva
+róluk (`matched_board_id = null`), így a jóváhagyó a valódi katalógushoz
+egyezteti őket újra.
+
+**Egy sor SZÁNDÉKOSAN maradt: a `Decathlon Itiwit X100 11'0"`** — erre van az
+egyetlen vélemény az egész rendszerben (5/5, 2026-07-21). Felhasználói
+tartalmat nem törlünk automatikusan; a kitalált ára viszont ennek is elment.
+A sor sorsa (a vélemény átvezetése egy valódi Itiwit-sorra, vagy a vélemény
+törlése) moderátori döntés.
+
+**Ára, tudatosan vállalva:** 7 márka (Red Paddle Co, Fanatic, JP Australia,
+Naish, Aztron, Gladiator, Itiwit) 0 deszkára esett vissza, amíg nincs hozzájuk
+forrás. Ez az őszintébb állapot: nem mutatunk ellenőrizetlen adatot valós
+katalógusként.
+
+**A katalógus a kör végén:**
+
+| | |
+|---|---|
+| deszka | **161** (képpel 160) |
+| kiegészítő | **48** (képpel 48) |
+| márka | Starboard 105 · Aqua Marina 37 · Bluefin 15 · Indiana 3 · Itiwit 1 |
