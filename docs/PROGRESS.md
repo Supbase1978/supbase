@@ -3667,3 +3667,75 @@ régóta soronként gyűjti a hibát; a visszatöltők most már ugyanúgy.
 
 **Elhalasztva (felhasználói döntés):** a LISTA kártyájáról való nagyítás. Az
 adatlapos változat épül meg előbb, és a használat mutatja meg, hiányzik-e.
+
+### F2.1-utó-31 — a 12 népszerű márka felmérése, és a Jobe bekötése (2026-08-20)
+
+**Felhasználói kérdés:** „hogy áll a helyzet a többi márkával?"
+(`Kezdők_tanácsok/nepszeru_sup_markak_es_forgalmazok.md`)
+
+Mindegyiket egy VALÓDI termékoldalon mértem, nem csak a sitemapet néztem.
+A tanulság: **a szűk keresztmetszet már nem a kinyerő.**
+
+| Márka | Állapot | Az akadály |
+|---|---|---|
+| Starboard | ✅ 105 deszka | — |
+| Aqua Marina | ✅ 37 | — |
+| Bluefin | ✅ 15 | — |
+| **Jobe** | ✅ **ÚJ forrás** | — (lásd lent) |
+| ZRay | ✅ forrás, 82 jelölt vár | 62-nek nincs kategóriája |
+| Gladiator | ⚠️ méret KIJÖN | űrtartalom/teherbírás **mértékegység nélkül** (`Volume 245`) |
+| FunWater | ⚠️ Shopify, kép van | **spec egyáltalán nincs** (nincs variáns, a leírásban sincs) |
+| Itiwit (Decathlon) | ❌ | a sitemap csak KATEGÓRIA-oldalakat listáz |
+| Red Paddle Co | ❌ | a szerver **HTTP 500**-at ad a robotunknak |
+| Bestway | ❌ | 0 termék-URL a sitemapben |
+| Fanatic (Duotone) | ❌ | nincs sitemap-bejegyzés, a szokásos utak sem élnek |
+| Aquatone | ❌ | **robots.txt nem elérhető** → a szabályunk szerint kimarad |
+
+Öt márkánál a site zár ki minket, kettőnél az adat hiányzik a forrásból.
+
+#### A Jobe bekötése — három lépés
+
+A felhasználó megadta az oldalt és a 4 szériát. Ami kellett hozzá:
+
+**1. ÉRTÉKENKÉNTI MÉRTÉKEGYSÉGŰ méret-sor.** A Jobe így írja:
+`Dimensions: 8'6" x 28" x 4,75" | 2,59m x 71,12cm x 12cm`. Egyik meglévő
+mintára sem illeszkedett: az imperiális részen hüvelyk-JEL áll (nem „inch"
+szó), a metrikus rész pedig KEVERT egységű. A megoldás nem újabb regex, hanem
+a meglévő, bejáratott egy-értékes `parseDimensionCm` darabonként — az már
+ismeri mind a négy alakot. A `|` külön kezelést kapott: ugyanazt a méretet írja
+le kétféleképp, enélkül a harmadik darab (`4,75" | 2,59m`) a MÁSIK írásmód
+hosszát adta volna vastagságként (259 cm a valós 12 helyett).
+
+**2. TEHERBÍRÁS — felhasználói döntés.** A Jobe SEHOL nem ír „max load"-ot,
+csak `Recommended rider weight: Up to 160kg`. A felhasználó döntése: ezt
+vesszük teherbírásnak. Vállalható, mert az evezős-súlyhatár a gyártó saját
+korlátja és KONZERVATÍV (alacsonyabb, mint a felszerelést is beleértő teljes
+terhelhetőség), tehát a Deszkaválasztó biztonsági szűrője ezzel inkább kizár,
+mint beenged. Precedens: a Bluefin „Max User Weight"-jét ugyanígy vesszük.
+
+**3. CIKKSZÁM-HORGONY — kép ÉS galéria.** A `…-486425010/` termékoldalon a
+képek `/uploads/product/486425010-big.jpg` néven futnak: a cikkszám az URL-ben
+ÉS a képfájlban is ott van. Ez lett a legerősebb kép-horgony — enélkül a
+pozíció-fallback a fejléc **kosár-ikonját** adta termékképnek.
+
+Ez egyben feloldotta a HTML-forrásokra kimondott galéria-tilalmat is: eddig
+azért nem gyűjtöttünk onnan több képet, mert a „Related Products" blokk MÁS
+termékek fotóit is felkínálná — a cikkszám viszont termék-specifikus, a
+szomszéd termék képén más szám áll. A Sava 8'6"-on így **7 galéria-kép** jön be.
+
+**Mérés a 4 szérián (22 termék):** 21-nél helyes a méret, **14 TELJES adatú**
+(űrtartalom + teherbírás). A maradék 8-nál a gyártó nem közöl űrtartalmat.
+
+#### Mellékesen: a Gladiator-kör két csendes hibát hozott elő
+
+**Zárójeles címke-magyarázat.** A méret-sor címkéje `Dimensions
+(length/width/thickness)`, és a zárójelben ott a „length", „width",
+„thickness" szó is. A címke-kereső ezeket VALÓDI címkének vette, és mind a
+három mezőbe ugyanazt a 15-öt írta: **354 × 86 × 15 helyett 15 × 15 × 15**.
+Nem hiányzó adat lett belőle, hanem HAMIS. Spec-táblázat sosem teszi zárójelbe
+a saját címkéjét — a zárójelen belüli címkeszó mostantól nem címke.
+
+**Cirill szorzójel.** A `354 х 86 х 15` szorzójele cirill „х" (U+0445), nem
+latin `x`. Vizuálisan megkülönböztethetetlen, tehát a forrás oldalán ez nem is
+„hiba", amit kijavítanának — nálunk viszont az egész méret-sor láthatatlan
+maradt.
