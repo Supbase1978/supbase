@@ -3739,3 +3739,36 @@ a saját címkéjét — a zárójelen belüli címkeszó mostantól nem címke.
 latin `x`. Vizuálisan megkülönböztethetetlen, tehát a forrás oldalán ez nem is
 „hiba", amit kijavítanának — nálunk viszont az egész méret-sor láthatatlan
 maradt.
+
+### F2.1-utó-32 — a márka-táblám HIBÁS volt, és miért (2026-08-20)
+
+**A felhasználó szúrta ki:** a saját táblám a Jobe-ról azt írta, „a sitemap
+üresen jön vissza a robotunknak" — aztán ugyanabban a körben behoztuk a
+márkát. Ha egy sor téves, a többi ugyanazzal a módszerrel készült sor sem
+megbízható.
+
+**A módszer volt felületes.** A `probe` a robots.txt `Sitemap:` sorait és a
+`/sitemap.xml`-t nézi. Ez több gyártónál kevés:
+
+| Márka | Amit a felületes próba mondott | A VALÓSÁG |
+|---|---|---|
+| Jobe | „a sitemap üresen jön vissza" | `/sitemap_index.xml` → `sitemap_en.xml`, **3044 URL** |
+| Fanatic (Duotone) | „nincs sitemap-bejegyzés" | `/sitemap.xml` → `__sitemap__/content-eu-en.xml`, **1116 URL** |
+| Bestway | „0 termék-URL" | a robots.txt rendben, a sitemap 200-at ad — a terméklista JS-ből épül |
+| Red Paddle Co | „HTTP 500" | a sitemap-index ÉL, de a benne hirdetett lapok **üresek** (0 `<loc>`) |
+| Decathlon | „csak kategória-oldalak" | megerősítve: a robots által hirdetett `/sitemap/index.xml` 404, a működő index csak kategória/márka/tartalom-listákat ad |
+| Aquatone | „robots.txt nem elérhető" | megerősítve: a domain **DNS-ből sem oldódik fel** (ENOTFOUND) |
+
+**A másik hibám a MEGFOGALMAZÁS volt.** A Gladiatorra azt írtam, „hiányos
+deszkák lennének" — ez összemosta, hogy a FORRÁS hallgat-e, vagy a MI
+parserünk nem fogadja el. A gyártó KÖZLI a térfogatot és a teherbírást
+(`Volume 245`, `Maximum load capacity 140`), csak mértékegység nélkül. Ez a mi
+korlátunk volt, és javítva lett (lásd a mértékegység nélküli kétoszlopos
+spec-tábla támogatását) — a Gladiator ezzel TELJES adatú lett.
+
+**Tanulság a következő forrás-felmérésre:** a `probe` verdiktje nem elég, ha
+nemleges. Meg kell nézni a `/sitemap_index.xml`-t, a nyelvenkénti
+(`sitemap_en.xml`) és a keretrendszer-specifikus (`__sitemap__/…`,
+`wp-sitemap-posts-…`) utakat is, és egy VALÓDI termékoldalon lefuttatni a
+kinyerőt — a kategória-oldal semmit nem árul el.
+
