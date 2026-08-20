@@ -982,3 +982,44 @@ describe("classifyProduct — az ellentmondó méret nem tesz deszkává", () =>
     ).toEqual({ kind: "board" });
   });
 });
+
+/**
+ * GLADIATOR-KÖR (2026-08-20) — két hiba a `gladiatorsup.com` felmérése közben.
+ * Az első CSENDES ADATHIBA volt: nem hiányzó, hanem HAMIS értéket adott.
+ */
+describe("gladiatorsup.com — zárójeles címke-magyarázat és cirill szorzójel", () => {
+  const SPEC = "Pressure\nmax 26 psi\nDimensions (length/width/thickness)\n354 х 86 х 15 cm\nWarranty\n36 months";
+
+  /**
+   * A méret-sor címkéje `Dimensions (length/width/thickness)`, és a zárójelben
+   * ott a „length", „width", „thickness" szó is. A címke-kereső ezeket VALÓDI
+   * címkének vette, és mind a három mezőbe ugyanazt a 15-öt írta:
+   * 354 × 86 × 15 helyett 15 × 15 × 15.
+   */
+  it("a zárójelben álló címkeszó MAGYARÁZAT, nem címke", () => {
+    const specs = parseSpecsFromText(SPEC);
+    expect(specs.lengthCm).toBe(354);
+    expect(specs.widthCm).toBe(86);
+    expect(specs.thicknessCm).toBe(15);
+  });
+
+  /**
+   * A `354 х 86 х 15` szorzójele CIRILL „х" (U+0445), nem latin `x` —
+   * vizuálisan megkülönböztethetetlen, tehát a forrás oldalán ez nem is
+   * „hiba", amit kijavítanának.
+   */
+  it("a CIRILL szorzójelet is felismeri", () => {
+    const specs = parseSpecsFromText("Dimensions\n354 х 86 х 15 cm");
+    expect(specs.lengthCm).toBe(354);
+  });
+
+  it("a címke utáni zárójeles magyarázat nem nyeli el az értéket", () => {
+    // Enélkül a szűk ablakból már csak „354 х 86 х 1" fért volna bele, és a
+    // hármas minta (ami mértékegységet KÖVETEL) nem illeszkedett volna.
+    expect(parseSpecsFromText("Dimensions (l/w/t) 354 х 86 х 15 cm").lengthCm).toBe(354);
+  });
+
+  it("a zárójelen KÍVÜLI címke továbbra is működik", () => {
+    expect(parseSpecsFromText("Length: 320 cm (a farokig mérve)").lengthCm).toBe(320);
+  });
+});

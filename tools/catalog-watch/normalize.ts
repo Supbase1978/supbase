@@ -331,6 +331,47 @@ function valueAfterLabel(
  * amikre a Deszkaválasztó BIZTONSÁGI döntést épít. Az elcsúszás bármilyen
  * nem hossz-semlegesen bomló karakternél előjön, nem csak ezen az oldalon.
  */
+/**
+ * A pozíció zárójelen BELÜL van-e.
+ *
+ * ÉLESBEN MÉRT, CSENDES ADATHIBA (gladiatorsup.com): a méret-sor címkéje
+ * `Dimensions (length/width/thickness)`, és a zárójelben ott a „length", a
+ * „width" és a „thickness" szó is. A címke-kereső ezeket VALÓDI címkének vette,
+ * és a mögöttük álló szövegből mind a három mezőbe ugyanazt a 15-öt írta
+ * (354 × 86 × 15 helyett 15 × 15 × 15). Nem hiányzó adat lett belőle, hanem
+ * HAMIS — ez a rosszabbik fajta.
+ *
+ * Spec-táblázat SOHA nem teszi zárójelbe a saját címkéjét; a magyarázat igen.
+ */
+function isInsideParens(text: string, index: number): boolean {
+  const before = text.slice(Math.max(0, index - 80), index);
+  const open = before.lastIndexOf("(");
+  if (open < 0) return false;
+  if (before.slice(open).includes(")")) return false;
+  return text.slice(index, index + 80).includes(")");
+}
+
+/** A címke után ennyi karakterből keressük az értéket (szűk, szándékosan). */
+const VALUE_WINDOW_CHARS = 40;
+
+/**
+ * Az érték-ablak a címke után — a KÖZVETLENÜL utána álló zárójeles
+ * magyarázatot ÁTUGORVA.
+ *
+ * ÉLESBEN MÉRT (gladiatorsup.com): a méret-sor így néz ki:
+ * `Dimensions (length/width/thickness) 354 х 86 х 15 cm`. A zárójel 26
+ * karakter, tehát a szűk ablakból már csak `354 х 86 х 1` fért bele — a
+ * mértékegység lemaradt, és a hármas minta (ami egységet KÖVETEL) nem
+ * illeszkedett. Az ablak általános tágítása rossz válasz lenne: attól a
+ * szomszédos mezők értékei szivárognának be. A zárójel viszont
+ * egyértelműen a címke magyarázata, nem érték — átugorható.
+ */
+function windowAfterLabel(text: string, from: number): string {
+  const paren = text.slice(from, from + VALUE_WINDOW_CHARS).match(/^\s*\([^)]*\)/);
+  const start = paren ? from + paren[0].length : from;
+  return text.slice(start, start + VALUE_WINDOW_CHARS);
+}
+
 function foldForIndex(value: string): string {
   let out = "";
   for (let i = 0; i < value.length; i += 1) {
@@ -370,8 +411,10 @@ function labelSearch(
       // Az első menetben KÖTELEZŐ a kettőspont (esetleg szóköz után) —
       // a spec-táblázat írásmódja.
       if (requireColon && !/^\s*:/.test(after)) continue;
+      // ZÁRÓJELEN BELÜLI címkeszó nem címke, hanem MAGYARÁZAT.
+      if (isInsideParens(text, index)) continue;
 
-      const window = text.slice(index + label.length, index + label.length + 40);
+      const window = windowAfterLabel(text, index + label.length);
       if (/\d/.test(window)) return window;
     }
   }
@@ -387,8 +430,19 @@ function labelSearch(
  * elfogadott, a szóköz a szám és az `x`/mértékegység között opcionális
  * (élesben látott: "82 x16cm").
  */
-const TRIPLE_DIMENSION_RE =
-  /(\d+(?:[.,]\d+)?)\s*[x×]\s*(\d+(?:[.,]\d+)?)\s*[x×]\s*(\d+(?:[.,]\d+)?)\s*(cm|inch(?:es)?|in)\b/gi;
+/**
+ * A szorzójel karakterei. A CIRILL „х" (U+0445) SZÁNDÉKOSAN benne van: élesben
+ * mérve (gladiatorsup.com) a méret-sor `354 х 86 х 15 cm` alakú, cirill x-szel
+ * — latin `x`-re szűrve az egész sor láthatatlan marad. Vizuálisan
+ * megkülönböztethetetlen, tehát a forrás oldalán ez nem is „hiba", amit
+ * kijavítanának.
+ */
+const TIMES_CHARS = "x×хХ";
+
+const TRIPLE_DIMENSION_RE = new RegExp(
+  `(\\d+(?:[.,]\\d+)?)\\s*[${TIMES_CHARS}]\\s*(\\d+(?:[.,]\\d+)?)\\s*[${TIMES_CHARS}]\\s*(\\d+(?:[.,]\\d+)?)\\s*(cm|inch(?:es)?|in)\\b`,
+  "gi",
+);
 
 function tripleFromMatch(match: RegExpMatchArray): { lengthCm: number; widthCm: number; thicknessCm: number } | null {
   const length = toNumber(match[1] ?? "");
@@ -439,7 +493,10 @@ function findBareTripleDimension(
  * Csak akkor hívjuk, ha a triple-próbálkozás már hallgatott ugyanezen az
  * ablakon — a `parseSpecsFromText` sorrendje ezt garantálja.
  */
-const PAIR_DIMENSION_RE = /(\d+(?:[.,]\d+)?)\s*[x×]\s*(\d+(?:[.,]\d+)?)\s*(cm|inch(?:es)?|in)\b/i;
+const PAIR_DIMENSION_RE = new RegExp(
+  `(\\d+(?:[.,]\\d+)?)\\s*[${TIMES_CHARS}]\\s*(\\d+(?:[.,]\\d+)?)\\s*(cm|inch(?:es)?|in)\\b`,
+  "i",
+);
 
 function parsePairDimensionCm(text: string): { lengthCm: number; widthCm: number } | null {
   const match = text.match(PAIR_DIMENSION_RE);
