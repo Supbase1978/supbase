@@ -47,5 +47,14 @@ export function htmlToText(html: string): string {
   )
     .replace(/[^\S\n]+/g, " ")
     .replace(/\n\s*\n+/g, "\n")
+    .split("\n")
+    // GÉPI ADAT KISZŰRÉSE: a `\"` és a `\n` ESCAPE-sorozat JSON-string jele —
+    // emberi szemnek szánt szövegben backslash nem áll idézőjel előtt. Élesben
+    // (funwaterboard.com) egy HTML-attribútumba ágyazott JSON így került a
+    // „oldalszövegbe", és HAMIS méretet adott: a `10'6"(320cm) length
+    // 33"(83cm) width` sorban a címke a VÉTE UTÁN áll, ezért a hosszba a
+    // szélesség 83 cm-e került. Nem hiány lett belőle, hanem téves adat.
+    .filter((line) => !/\\["'\\]|\\n|\\u00/.test(line))
+    .join("\n")
     .trim();
 }
