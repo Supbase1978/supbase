@@ -510,8 +510,13 @@ function tripleFromMatch(match: RegExpMatchArray): { lengthCm: number; widthCm: 
 function parseTripleDimensionCm(
   text: string,
 ): { lengthCm: number; widthCm: number; thicknessCm: number } | null {
-  const match = text.match(new RegExp(TRIPLE_DIMENSION_RE.source, "i"));
-  return match ? tripleFromMatch(match) : parseTripleByParts(text);
+  // A méret-sorba ÉKELT zárójel is magyarázat, nem érték — élesben
+  // (gladiatorsup.com): `463 х 91 (36”) х 15 cm`, ahol a `(36”)` a szélesség
+  // hüvelykben. Enélkül sem a záró-egységes minta, sem a darabonkénti parse
+  // nem illeszkedik: a középső darab két számot visel.
+  const cleaned = text.replace(/\([^)]*\)/g, " ");
+  const match = cleaned.match(new RegExp(TRIPLE_DIMENSION_RE.source, "i"));
+  return match ? tripleFromMatch(match) : parseTripleByParts(cleaned);
 }
 
 /**

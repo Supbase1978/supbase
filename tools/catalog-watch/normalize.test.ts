@@ -1154,3 +1154,18 @@ describe("címke a saját sorában, alatta puszta szám", () => {
     expect(parseSpecsFromText("Volume\nnagy").volumeL).toBeNull();
   });
 });
+
+/**
+ * A méret-sorba ÉKELT zárójel (gladiatorsup.com): `463 х 91 (36”) х 15 cm` —
+ * a `(36”)` a szélesség hüvelykben, tehát magyarázat, nem érték. Enélkül sem a
+ * záró-egységes minta, sem a darabonkénti parse nem illeszkedik: a középső
+ * darab két számot viselne.
+ */
+describe("méret-sorba ékelt zárójel", () => {
+  it("a zárójeles átváltást kihagyja, a cm-es hármast olvassa", () => {
+    const specs = parseSpecsFromText(`Dimensions (length/width/thickness)\n463 х 91 (36”) х 15 cm`);
+    expect(specs.lengthCm).toBe(463);
+    expect(specs.widthCm).toBe(91);
+    expect(specs.thicknessCm).toBe(15);
+  });
+});
