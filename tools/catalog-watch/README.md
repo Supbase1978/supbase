@@ -27,6 +27,11 @@ node tools/catalog-watch/cli.ts lifecycle            # kifutás-jelöltek (csak 
 
 ### Új forrás bekötése (a javasolt sorrend)
 
+> **Van rá skill:** `.claude/skills/uj-gyarto-forras/` — a sitemap-felderítés
+> helyes menete és az élesben mért kinyerési csapdák listája (cirill szorzójel,
+> tipográfiai prime-ok, zárójeles címke-magyarázat, font-only teherbírás…).
+> Ha egy márkáról el kell dönteni, behozható-e, azzal kezdd.
+
 1. `add-source` — legalább `--name` és `--url`. A `--pattern /termek/`
    megadása udvariasabb crawl: a blog- és kategória-oldalakat meg sem kérjük.
 2. `crawl --dry-run --source "Bolt" --max 20` — a kimenetből látszik, mit írna:
