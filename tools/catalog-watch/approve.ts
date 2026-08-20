@@ -41,6 +41,7 @@ export function buildBoardInsertPayload(
     max_load_kg: specs.maxLoadKg === null ? null : Math.round(specs.maxLoadKg),
     inflatable: specs.inflatable ?? true,
     image_url: extracted.imageUrl,
+    images: galleryImagesPayload(extracted),
     availability_hu: extracted.inStock ?? false,
     status: "active",
     first_seen_at: options.seenAt,
@@ -76,9 +77,21 @@ export function buildAccessoryInsertPayload(
     max_load_kg: specs.maxLoadKg === null ? null : Math.round(specs.maxLoadKg),
     inflatable: specs.inflatable ?? true,
     image_url: extracted.imageUrl,
+    images: galleryImagesPayload(extracted),
     availability_hu: extracted.inStock ?? false,
     status: "active",
     first_seen_at: options.seenAt,
     last_seen_at: options.seenAt,
   };
+}
+
+/**
+ * A `boards.images` értéke a jelöltből. A jóváhagyás MINDEN begyűjtött
+ * galéria-jelöltet beír (legfeljebb 8-at, `galleryCandidates`) — a tömeges
+ * jóváhagyónál nincs ember a hurokban, a válogatás és a sorrend a
+ * `/admin/katalogus` dolga. Egy fölösleges kép a teljes képernyős nézetben
+ * legfeljebb egy legyintés, a hiányzó kép viszont pótolhatatlan.
+ */
+function galleryImagesPayload(extracted: ExtractedProduct): { url: string; source: "brand" }[] {
+  return (extracted.imageUrls ?? []).map((url) => ({ url, source: "brand" as const }));
 }

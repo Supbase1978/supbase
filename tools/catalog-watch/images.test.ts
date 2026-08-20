@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 
 import {
   displayImageUrl,
+  galleryCandidates,
   imageFromPage,
+  MAX_GALLERY_CANDIDATES,
   rankImageSources,
   type ImageSourceCandidate,
 } from "./images.ts";
@@ -106,5 +108,58 @@ describe("displayImageUrl", () => {
     expect(displayImageUrl(null)).toBeNull();
     expect(displayImageUrl("   ")).toBeNull();
     expect(displayImageUrl("nem-url")).toBe("nem-url");
+  });
+});
+
+/**
+ * GALÉRIA-JELÖLTEK (F2.1-utó-30). A telefonos rács kétoszlopos, tehát a
+ * kártya-kép kicsi — a részletet az adatlap teljes képernyős nézete adja
+ * vissza, és ahhoz kell több kép. A Shopify ugyanabban a válaszban adja őket,
+ * amit már letöltünk (mérve: termékenként 7–22 kép).
+ */
+describe("galleryCandidates", () => {
+  const cover = "https://cdn.shopify.com/s/files/1/go-main.jpg?width=768";
+
+  it("a BORÍTÓT kihagyja — az a rácsé, ne ismétlődjön a galériában", () => {
+    const list = galleryCandidates(
+      ["https://cdn.shopify.com/s/files/1/go-main.jpg", "https://cdn.shopify.com/s/files/1/go-deck.jpg"],
+      cover,
+    );
+    expect(list).toEqual(["https://cdn.shopify.com/s/files/1/go-deck.jpg?width=768"]);
+  });
+
+  it("ugyanaz a KIZÁRÓ minta, mint a borító keresésénél", () => {
+    const list = galleryCandidates(
+      [
+        "https://cdn.shopify.com/s/files/1/brand-logo.png",
+        "https://cdn.shopify.com/s/files/1/construction-layers.png",
+        "https://cdn.shopify.com/s/files/1/go-deck.jpg",
+      ],
+      null,
+    );
+    expect(list).toEqual(["https://cdn.shopify.com/s/files/1/go-deck.jpg?width=768"]);
+  });
+
+  it("legfeljebb 8 jelölt (a moderátor ebből válogat)", () => {
+    const many = Array.from({ length: 22 }, (_, i) => `https://cdn.shopify.com/s/files/1/k${i}.jpg`);
+    expect(galleryCandidates(many, null)).toHaveLength(MAX_GALLERY_CANDIDATES);
+  });
+
+  it("az ismétlődés és az üres bejegyzés kiesik", () => {
+    const list = galleryCandidates(
+      [
+        "https://cdn.shopify.com/s/files/1/go-deck.jpg",
+        "https://cdn.shopify.com/s/files/1/go-deck.jpg?width=768",
+        null,
+        undefined,
+        "  ",
+      ],
+      null,
+    );
+    expect(list).toEqual(["https://cdn.shopify.com/s/files/1/go-deck.jpg?width=768"]);
+  });
+
+  it("kép nélküli termékre üres tömb (egy képes deszka: nincs pöttysor)", () => {
+    expect(galleryCandidates([], cover)).toEqual([]);
   });
 });

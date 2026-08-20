@@ -46,6 +46,19 @@ export interface BrandRow {
 }
 
 /** A `boards` tábla KIND-FÜGGETLEN oszlopai (deszka és kiegészítő közös része). */
+/**
+ * Egy katalógus-kép a teljes képernyős nézethez (`boards.images` eleme).
+ *
+ * A `source` MOST kerül be, pedig egyelőre mindig `"brand"`: a véleményezői
+ * fotó (deszka a vízen) a platform saját tartalma lesz, és jobb, ha nem kell
+ * miatta migrálni — a felület pedig eleve meg tudja majd különböztetni a
+ * gyártói rendert a valós használat-fotótól.
+ */
+export interface BoardImage {
+  url: string;
+  source: "brand" | "user";
+}
+
 export interface CatalogItemRowBase {
   id: string;
   brand_id: string;
@@ -63,7 +76,15 @@ export interface CatalogItemRowBase {
   inflatable: boolean;
   description: Record<string, string> | null;
   manual_url: string | null;
+  /** A BORÍTÓ — ezt mutatja a lista-rács, és ezen áll az összehasonlíthatóság. */
   image_url: string | null;
+  /**
+   * A modell TOVÁBBI képei a teljes képernyős nézethez, megjelenítési
+   * sorrendben (migráció 20260717092500). A borító NEM ismétlődik bennük.
+   * Üres tömb = egy képes sor: a galéria ilyenkor nem mutat pöttysort és nem
+   * enged legyintést.
+   */
+  images: BoardImage[];
   availability_hu: boolean;
   /** Generált oszlop (3.1), csak olvasható. */
   stability_index: number | null;
@@ -148,6 +169,18 @@ export interface ExtractedBoardData {
   priceHuf: number | null;
   inStock: boolean | null;
   imageUrl: string | null;
+  /**
+   * TOVÁBBI képek a modellről, a forrás sorrendjében — a teljes képernyős
+   * nézet jelöltjei, amik közül a moderátor válogat (F2.1-utó-30). Az
+   * `imageUrl` NEM ismétlődik bennük: az a borító, ami a rácsban látszik.
+   *
+   * Csak ott van érdemi tartalma, ahol a forrás strukturáltan adja a
+   * galériát (Shopify `/products.json` `images[]`). A HTML-oldalakról
+   * SZÁNDÉKOSAN nem gyűjtünk többet: ott a „Related Products" blokk MÁS
+   * termékek fotóit is felkínálná (ugyanaz a csapda, ami az „ALUMINUM OARS"
+   * hibát okozta), és egy rossz kép rosszabb, mint a hiánya.
+   */
+  imageUrls?: string[];
   boardType: BoardType | null;
   specs: ExtractedBoardSpecs;
   /**

@@ -216,6 +216,7 @@ export function buildBoardInsert(
     max_load_kg: specs.maxLoadKg === null ? null : Math.round(specs.maxLoadKg),
     inflatable: specs.inflatable ?? true,
     image_url: extracted.imageUrl,
+    images: galleryImagesPayload(extracted),
     availability_hu: extracted.inStock ?? false,
     status: "active",
     first_seen_at: options.seenAt,
@@ -250,6 +251,7 @@ export function buildAccessoryInsert(
     max_load_kg: specs.maxLoadKg === null ? null : Math.round(specs.maxLoadKg),
     inflatable: specs.inflatable ?? true,
     image_url: extracted.imageUrl,
+    images: galleryImagesPayload(extracted),
     availability_hu: extracted.inStock ?? false,
     status: "active",
     first_seen_at: options.seenAt,
@@ -488,4 +490,16 @@ export async function setBoardDiscontinued(
     )
     .eq("id", boardId);
   return error ? { ok: false, errorKey: "admin.error.updateFailed" } : { ok: true };
+}
+
+/**
+ * A `boards.images` értéke a jelöltből. A jóváhagyás MINDEN begyűjtött
+ * galéria-jelöltet beír (legfeljebb 8-at) — a válogatás és a sorrend a
+ * moderátoré. Egy fölösleges kép a teljes képernyős nézetben legfeljebb egy
+ * legyintés, a hiányzó kép viszont pótolhatatlan.
+ *
+ * A `tools/catalog-watch/approve.ts` másolatával EGYÜTT mozog (őrszem-teszt).
+ */
+function galleryImagesPayload(extracted: ExtractedBoardData): { url: string; source: "brand" }[] {
+  return (extracted.imageUrls ?? []).map((url) => ({ url, source: "brand" as const }));
 }

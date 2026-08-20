@@ -36,7 +36,7 @@ import {
   parseDimensionCm,
 } from "./normalize.ts";
 import { htmlToText } from "./html.ts";
-import { displayImageUrl } from "./images.ts";
+import { displayImageUrl, galleryCandidates } from "./images.ts";
 import { EMPTY_SPECS, type BoardSpecs, type BoardType, type ExtractedProduct } from "./types.ts";
 
 /** Egy `/products.json` lapon legfeljebb ennyi termék kérhető (Shopify-korlát). */
@@ -178,7 +178,25 @@ function variantUrl(baseUrl: string, handle: string, variantId: number | string)
 }
 
 function firstImage(product: ShopifyProduct): string | null {
-  const src = product.images?.[0]?.src;
+  return absoluteImage(product.images?.[0]?.src);
+}
+
+/**
+ * A termék ÖSSZES képe, abszolút URL-lel — a galéria-jelöltek nyersanyaga
+ * (F2.1-utó-30). A Shopify ugyanabban a `/products.json` válaszban adja, amit
+ * már letöltünk: termékenként 7–22 kép, plusz hálózati kérés nélkül.
+ */
+function allImages(product: ShopifyProduct): string[] {
+  const urls: string[] = [];
+  for (const image of product.images ?? []) {
+    const url = absoluteImage(image?.src);
+    if (url !== null) urls.push(url);
+  }
+  return urls;
+}
+
+/** A Shopify protokoll-relatív URL-t is adhat (`//cdn.shopify.com/...`). */
+function absoluteImage(src: string | null | undefined): string | null {
   if (!src) return null;
   return src.startsWith("//") ? `https:${src}` : src;
 }
@@ -227,6 +245,9 @@ export function expandShopifyProduct(
   const brandName = normalizeBrandName(product.vendor) ?? normalizeBrandName(defaultBrandName);
   const descriptionText = htmlToText(product.body_html ?? "");
   const imageUrl = displayImageUrl(firstImage(product));
+  // A borító a rácsé, a többi kép a teljes képernyős nézeté — a `galleryCandidates`
+  // ki is hagyja a borítót, hogy ne ismétlődjön.
+  const imageUrls = galleryCandidates(allImages(product), imageUrl);
   const variants = product.variants ?? [];
 
   // A besorolási tippekhez a terméknév + leírás + a Shopify SAJÁT kategóriája.
@@ -285,6 +306,7 @@ export function expandShopifyProduct(
       priceHuf: null,
       inStock: variant?.available ?? null,
       imageUrl,
+      imageUrls,
       boardType,
       specs,
       accessoryType: null,

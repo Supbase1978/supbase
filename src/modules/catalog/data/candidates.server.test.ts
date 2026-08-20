@@ -49,6 +49,7 @@ describe("buildBoardInsert", () => {
       max_load_kg: 140,
       inflatable: true,
       image_url: "https://bolt.hu/kep.jpg",
+      images: [],
       availability_hu: true,
       status: "active",
       first_seen_at: OPTIONS.seenAt,
@@ -146,6 +147,7 @@ describe("buildAccessoryInsert", () => {
       max_load_kg: null,
       inflatable: true,
       image_url: "https://bolt.hu/kep.jpg",
+      images: [],
       availability_hu: true,
       status: "active",
       first_seen_at: ACCESSORY_OPTIONS.seenAt,
@@ -164,5 +166,30 @@ describe("buildAccessoryInsert", () => {
       accessoryType: "pumpa",
     });
     expect(insert.accessory_type).toBe("pumpa");
+  });
+});
+
+/**
+ * GALÉRIA (F2.1-utó-30). A jóváhagyás minden begyűjtött galéria-jelöltet
+ * beír: a tömeges jóváhagyónál nincs ember a hurokban, a válogatás a
+ * moderátoré. A BORÍTÓ nem ismétlődik — azt a `galleryCandidates` már kihagyta.
+ */
+describe("buildBoardInsert — galéria", () => {
+  it("a jelölt további képeit `brand` forrással írja be, sorrendben", () => {
+    const payload = buildBoardInsert(
+      {
+        ...EXTRACTED,
+        imageUrls: ["https://bolt.hu/deck.jpg", "https://bolt.hu/orr.jpg"],
+      },
+      OPTIONS,
+    );
+    expect(payload.images).toEqual([
+      { url: "https://bolt.hu/deck.jpg", source: "brand" },
+      { url: "https://bolt.hu/orr.jpg", source: "brand" },
+    ]);
+  });
+
+  it("kép-lista nélküli jelöltre ÜRES tömb (egy képes deszka)", () => {
+    expect(buildBoardInsert(EXTRACTED, OPTIONS).images).toEqual([]);
   });
 });

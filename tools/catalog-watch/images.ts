@@ -75,6 +75,48 @@ export function imageFromPage(html: string, modelName: string): string | null {
 }
 
 /**
+ * Legfeljebb ennyi galéria-jelölt kerül a jelölt-sorba. A moderátor ebből
+ * válogatja ki a 3–5 megjelenítendőt — a Shopify termékein 7–22 kép van
+ * (mérve: star-board.com), az utolsó tizenkettő tipikusan szín-változat és
+ * életkép, amit végignézni is fárasztó lenne.
+ */
+export const MAX_GALLERY_CANDIDATES = 8;
+
+/**
+ * Galéria-jelöltek egy termék KÉPLISTÁJÁBÓL (F2.1-utó-30).
+ *
+ * A telefonos rács két oszlopos, tehát a kártya-kép kicsi — cserébe két deszka
+ * egymás MELLETT látszik. A részletet az adatlap teljes képernyős nézete adja
+ * vissza, és ahhoz kell több kép.
+ *
+ * Három szabály, mind a meglévő gyakorlatból:
+ *  * a BORÍTÓ kimarad a listából (az az `image_url`, azt a rács mutatja) —
+ *    így a galériában nem az első kép ismétlődik;
+ *  * ugyanaz a KIZÁRÓ minta érvényes, mint a borító keresésénél (logó,
+ *    konstrukció-ábra, technológia-kép) — ezek nem termékfotók;
+ *  * minden URL átmegy a `displayImageUrl`-en, és az ismétlődés kiesik.
+ */
+export function galleryCandidates(
+  imageUrls: readonly (string | null | undefined)[],
+  coverUrl: string | null,
+): string[] {
+  const cover = displayImageUrl(coverUrl);
+  const seen = new Set<string>(cover === null ? [] : [cover]);
+  const out: string[] = [];
+  for (const raw of imageUrls) {
+    if (out.length >= MAX_GALLERY_CANDIDATES) break;
+    const url = displayImageUrl(raw ?? null);
+    if (url === null) continue;
+    const file = url.split("/").pop() ?? "";
+    if (/logo|construction|technology|detail|icon|thumb|badge/i.test(file)) continue;
+    if (seen.has(url)) continue;
+    seen.add(url);
+    out.push(url);
+  }
+  return out;
+}
+
+/**
  * A megjelenítéshez való szélesség, ahol a KISZOLGÁLÓ tud méretezni.
  *
  * A Shopify-CDN (`/cdn/shop/…`) `width` query-paraméterrel szolgál ki
