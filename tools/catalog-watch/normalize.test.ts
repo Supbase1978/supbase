@@ -1023,3 +1023,41 @@ describe("gladiatorsup.com — zárójeles címke-magyarázat és cirill szorzó
     expect(parseSpecsFromText("Length: 320 cm (a farokig mérve)").lengthCm).toBe(320);
   });
 });
+
+/**
+ * JOBE-KÖR (2026-08-20). A `jobesports.com` méret-sora EGYIK meglévő mintára
+ * sem illeszkedett, pedig a teljes adat ott van.
+ */
+describe("jobesports.com — értékenkénti mértékegység és kettős írásmód", () => {
+  /**
+   * `Dimensions: 8'6" x 28" x 4,75" | 2,59m x 71,12cm x 12cm`
+   * Az imperiális részen hüvelyk-JEL áll (nem „inch" szó), a metrikus rész
+   * pedig KEVERT egységű (m, cm, cm) — a záró-egységes hármas minta egyiket
+   * sem fogja meg. A megoldás a meglévő, egy-értékes `parseDimensionCm`
+   * darabonként.
+   */
+  it("kevert mértékegységű hármast is kiolvas", () => {
+    const specs = parseSpecsFromText(`Dimensions: 8'6" x 28" x 4,75" | 2,59m x 71,12cm x 12cm`);
+    expect(specs.lengthCm).toBe(259.1);
+    expect(specs.widthCm).toBe(71.1);
+    expect(specs.thicknessCm).toBe(12.1);
+  });
+
+  /**
+   * A `|` UGYANAZT a méretet írja le kétféleképp. Enélkül a harmadik darab
+   * (`4,75" | 2,59m`) a MÁSIK írásmód HOSSZÁT adta vastagságként: 259 cm.
+   */
+  it("a `|` utáni MÁSIK írásmód nem szivárog be a harmadik értékbe", () => {
+    const specs = parseSpecsFromText(`Dimensions: 11'6" x 31" x 6" | 3,50m x 78,74cm x 15,24cm`);
+    expect(specs.thicknessCm).toBe(15.2);
+    expect(specs.thicknessCm).not.toBe(350);
+  });
+
+  it("mértékegység NÉLKÜLI darabból továbbra sem találgat", () => {
+    expect(parseSpecsFromText("Dimensions: 350 x 79 x 15").lengthCm).toBeNull();
+  });
+
+  it("a záró-egységes klasszikus alak változatlanul működik", () => {
+    expect(parseSpecsFromText("Dimensions: 325 x 82 x 16 cm").lengthCm).toBe(325);
+  });
+});

@@ -458,7 +458,39 @@ function parseTripleDimensionCm(
   text: string,
 ): { lengthCm: number; widthCm: number; thicknessCm: number } | null {
   const match = text.match(new RegExp(TRIPLE_DIMENSION_RE.source, "i"));
-  return match ? tripleFromMatch(match) : null;
+  return match ? tripleFromMatch(match) : parseTripleByParts(text);
+}
+
+/**
+ * Hármas méret ÉRTÉKENKÉNTI mértékegységgel — a `TRIPLE_DIMENSION_RE` egyetlen,
+ * ZÁRÓ egységet vár, és ez élesben kevésnek bizonyult.
+ *
+ * MÉRT ESETEK (jobesports.com):
+ *   `Dimensions: 8'6" x 28" x 4,75" | 2,59m x 71,12cm x 12cm`
+ * Itt EGYIK fél sem illeszkedik a záró-egységes mintára: az imperiális részen
+ * hüvelyk-jelek állnak (nem „inch" szó), a metrikus rész pedig KEVERT egységű
+ * (m, cm, cm).
+ *
+ * A megoldás nem újabb regex, hanem a MEGLÉVŐ, jól bejáratott egy-értékes
+ * `parseDimensionCm` használata darabonként: az már ismeri a láb-hüvelyk, a
+ * hüvelyk-jel, a méter és a centiméter alakot is. Ha bármelyik darabból hiányzik
+ * a mértékegység, `null` — puszta számból továbbra sem találgatunk.
+ */
+function parseTripleByParts(
+  text: string,
+): { lengthCm: number; widthCm: number; thicknessCm: number } | null {
+  // A `|` UGYANAZT a méretet írja le kétféleképp („imperiális | metrikus") —
+  // a két írásmódot tehát KÜLÖN kell nézni. Enélkül a harmadik darab
+  // (`4,75" | 2,59m`) a MÁSIK írásmód HOSSZÁT adná vastagságként (259 cm).
+  for (const segment of text.split("|")) {
+    const parts = segment.split(new RegExp(`\\s*[${TIMES_CHARS}]\\s*`, "i"));
+    if (parts.length < 3) continue;
+    const [length, width, thickness] = parts.slice(0, 3).map((part) => parseDimensionCm(part));
+    if (length === undefined || width === undefined || thickness === undefined) continue;
+    if (length === null || width === null || thickness === null) continue;
+    return { lengthCm: length, widthCm: width, thicknessCm: thickness };
+  }
+  return null;
 }
 
 /**
