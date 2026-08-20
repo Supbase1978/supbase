@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { boardTypeFromDescription, boardTypeFromUsage, parseUsageRatings } from "./usage-rating.ts";
+import {
+  boardTypeFromDescription,
+  boardTypeFromUsage,
+  findModelCode,
+  findProductImage,
+  parseUsageRatings,
+} from "./usage-rating.ts";
 
 /**
  * ÉLESBEN MÉRT alakok (aquamarina.com, 2026-08-19). A gyártó minden deszkát
@@ -115,5 +121,54 @@ describe("boardTypeFromDescription", () => {
       "Designed to be stable enough for a first-time experience but with a shape to " +
       "entertain the expert paddler with performance.";
     expect(boardTypeFromDescription(revolution)).toBeNull();
+  });
+});
+
+/**
+ * TERMÉKKÉP (F2.1-utó-24). A felhasználók sokszor kép alapján döntenek, a
+ * JSON-LD nélküli gyártói oldalon viszont nincs `og:image` sem, és 30+ `<img>`
+ * van — köztük a fejléc-logók.
+ */
+describe("findProductImage", () => {
+  const page = `
+    <img src="https://x.com/uploads/white_LOGO-01.png">
+    <img src="https://x.com/uploads/DJI_0043-scaled.jpg">
+    <img src="https://x.com/uploads/AQUA-MARINA-SUP-construction-CORAL-Raspberry-2-small.png">
+    <img src="https://x.com/uploads/Coral-R-1.png">
+    <img src="https://x.com/uploads/AQUA-MARINA-SUP-BLAZEBT-26BZ-Ghost-White-222x1024.png">
+  `;
+
+  it("a cikkszámra horgonyoz, és levágja a bélyegkép-méretet", () => {
+    expect(findProductImage(page, "BT-26BZ")).toBe(
+      "https://x.com/uploads/AQUA-MARINA-SUP-BLAZEBT-26BZ-Ghost-White.png",
+    );
+  });
+
+  it("a LOGÓT sosem választja", () => {
+    expect(findProductImage(page, "LOGO")).toBeNull();
+  });
+
+  it("a RÉSZLET-/technológia-képet kihagyja a fő fotó javára", () => {
+    // Élesben: a Coralnál a „construction-CORAL-Raspberry" nyert volna.
+    expect(findProductImage(page, "Coral")).toBe("https://x.com/uploads/Coral-R-1.png");
+  });
+
+  it("a horgonyokat SORRENDBEN próbálja (cikkszám előbb, mint név)", () => {
+    expect(findProductImage(page, "BT-26BZ", "Coral")).toContain("BLAZE");
+  });
+
+  it("túl rövid vagy hiányzó horgonyra null", () => {
+    expect(findProductImage(page, null)).toBeNull();
+    expect(findProductImage(page, "ab")).toBeNull();
+  });
+});
+
+describe("findModelCode", () => {
+  it("kiolvassa a cikkszámot a spec-blokkból", () => {
+    expect(findModelCode("PRODUCT\nBLAZE 10'4\"\nMODEL\nBT-26BZ\nNET WEIGHT\n9.3 kg")).toBe("BT-26BZ");
+  });
+
+  it("cikkszám nélküli szövegre null", () => {
+    expect(findModelCode("Csak egy leírás, cikkszám nélkül.")).toBeNull();
   });
 });

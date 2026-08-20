@@ -107,3 +107,51 @@ export function boardTypeFromDescription(text: string): BoardType | null {
   }
   return found.size === 1 ? [...found][0]! : null;
 }
+
+/**
+ * Termékkép a gyártói oldalról (F2.1-utó-24, 2026-08-20).
+ *
+ * MIÉRT KELL: a felhasználók sokszor KÉP alapján döntenek, a JSON-LD nélküli
+ * oldalakon viszont nincs `og:image` sem (élesben: aquamarina.com), és az
+ * oldalon 30+ `<img>` van — köztük a fejléc-logók.
+ *
+ * A HORGONY A MODELLKÓD, MAJD A MODELLNÉV: a gyártó a fájlnévbe írja
+ * (`AQUA-MARINA-SUP-BLAZE-BT-26BZ-Ghost-White-222x1024.png`), a spec-blokk
+ * pedig kiírja („MODEL: BT-26BZ"). Így termék-specifikus a találat, nem
+ * „az oldal első képe" — utóbbi a logót adná.
+ *
+ * A MÉRET-UTÓTAG LEVÁGVA: a WordPress `-222x1024` alakú bélyegképeket készít;
+ * enélkül egy apró, torzított kép kerülne a katalógusba.
+ */
+export function findProductImage(html: string, ...anchors: (string | null)[]): string | null {
+  const needles = anchors
+    .map((a) => (a ?? "").replace(/[^a-z0-9]/gi, "").toLowerCase())
+    .filter((n) => n.length >= 3);
+  if (needles.length === 0) return null;
+
+  const images = [...html.matchAll(/<img[^>]+src="([^"]+)"/gi)].map((m) => m[1] ?? "");
+
+  // A horgonyok SORRENDBEN: a cikkszám pontosabb, a modellnév általánosabb.
+  for (const needle of needles) {
+    for (const src of images) {
+      const file = src.split("/").pop() ?? "";
+      // Kizárt fájlnevek: a fejléc-logó, illetve a RÉSZLET-/technológia-képek
+      // (élesben a Coralnál a „construction-CORAL-Raspberry" nyert volna a
+      // termék fő fotója helyett). Ezek nem alkalmasak katalógus-képnek.
+      if (/logo|construction|technology|detail|icon|thumb|badge/i.test(file)) continue;
+      if (!file.replace(/[^a-z0-9]/gi, "").toLowerCase().includes(needle)) continue;
+      // `-222x1024.png` → `.png` (a WordPress bélyegkép helyett az eredeti).
+      return src.replace(/-\d{2,4}x\d{2,4}(?=\.[a-z]{3,4}(?:$|\?))/i, "");
+    }
+  }
+  return null;
+}
+
+/**
+ * A gyártó cikkszáma a spec-blokkból („MODEL: BT-26BZ"). Ez a horgony a
+ * termékkép megtalálásához — és önmagában is azonosít.
+ */
+export function findModelCode(pageText: string): string | null {
+  const match = pageText.match(/\bMODEL\b\s*\n?\s*([A-Z]{2}[A-Z0-9-]{3,20})\b/);
+  return match?.[1] ?? null;
+}

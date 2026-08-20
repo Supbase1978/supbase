@@ -10,7 +10,12 @@
  */
 import type { GearCategory } from "../../src/modules/catalog/gear.ts";
 import { decodeEntities, htmlToText } from "./html.ts";
-import { boardTypeFromDescription, boardTypeFromUsage } from "./usage-rating.ts";
+import {
+  boardTypeFromDescription,
+  boardTypeFromUsage,
+  findModelCode,
+  findProductImage,
+} from "./usage-rating.ts";
 import type { BoardSpecs, BoardType, ExtractedProduct } from "./types.ts";
 import { EMPTY_SPECS } from "./types.ts";
 
@@ -1040,7 +1045,18 @@ export function extractProductFromPage(
     // Gyártói oldal: árat nem viszünk (ár-megjelenítési politika).
     priceHuf: null,
     inStock: null,
-    imageUrl: null,
+    // A felhasználók sokszor KÉP alapján döntenek, ezért a termékkép fontos.
+    // Horgony a cikkszám, majd a modellnév — nem „az oldal első képe", mert az
+    // a fejléc-logó lenne (élesben 30+ img van egy oldalon).
+    // Horgonyok, a legpontosabbtól: cikkszám → teljes modellnév → a modellnév
+    // ELSŐ SZAVA (a családnév; a fájlnév gyakran csak azt viseli:
+    // „Coral-R-1.png", „mega_frontback.png").
+    imageUrl: findProductImage(
+      html,
+      findModelCode(pageText),
+      modelName,
+      modelName.split(/\s+/)[0] ?? null,
+    ),
     // A besorolási tipphez a cím ÉS az URL kategória-szegmense — utóbbi a
     // gyártó SAJÁT besorolása (`/products/racing/race/`, `/products/youth/…`),
     // tehát pontosabb, mint bármilyen szöveg-heurisztika. A teljes
