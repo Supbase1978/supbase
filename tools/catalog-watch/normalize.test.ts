@@ -1213,3 +1213,20 @@ describe("funwaterboard.com — prime-jelek, csillag, font", () => {
     expect(parseSpecsFromText("MAX. PAYLOAD\n308 lbs / 140 kg").maxLoadKg).toBe(140);
   });
 });
+
+describe("márka-aliasok — ugyanaz a márka két írásmóddal", () => {
+  /**
+   * Élesben (sup-deszka.hu): 6 jelölt „TooMuch", 4 „Too Much". A folding a
+   * szóközt nem tünteti el, tehát jóváhagyáskor KÉT külön márka jött volna
+   * létre, és a deszkák két név alatt szóródtak volna szét.
+   */
+  it("a TooMuch és a Too Much ugyanaz", () => {
+    expect(normalizeBrandName("TooMuch")).toBe("Too Much");
+    expect(normalizeBrandName("Too Much")).toBe("Too Much");
+  });
+
+  it("a Zray és a Z-Ray ugyanaz", () => {
+    expect(normalizeBrandName("Z-Ray")).toBe("Zray");
+    expect(normalizeBrandName("ZRAY")).toBe("Zray");
+  });
+});

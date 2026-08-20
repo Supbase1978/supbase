@@ -49,6 +49,16 @@ export const BRAND_ALIASES: Record<string, string> = {
   "bluefin-testing": "Bluefin",
   "itiwit / decathlon": "Itiwit",
   itiwit: "Itiwit",
+  // Élesben mért eset (2026-08-20, sup-deszka.hu): UGYANAZ a márka két
+  // írásmóddal — 6 jelölt „TooMuch", 4 „Too Much". Egybeírva a folding nem
+  // hozza össze őket (a szóköz nem tűnik el), tehát két külön márka jönne
+  // létre jóváhagyáskor, és a deszkák két név alatt szóródnának szét.
+  toomuch: "Too Much",
+  "too much": "Too Much",
+  coasto: "Coasto",
+  flowa: "Flowa",
+  zray: "Zray",
+  "z-ray": "Zray",
 };
 
 /** Zaj-szavak a modellnévben (a márkán és a méreten túl). */
