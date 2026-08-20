@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 
+import { EMPTY_SPECS } from "./types.ts";
+
 import {
   classifyProduct,
   cleanModelName,
@@ -820,5 +822,37 @@ describe("cleanModelName — HTML-entitások", () => {
 
   it("a nevesített entitásokat is kezeli", () => {
     expect(cleanModelName("Aqua Marina Vapor &amp; Co", "Aqua Marina")).toBe("Vapor & Co");
+  });
+});
+
+/**
+ * Élesben mért besorolási hibák a kiegészítőknél (2026-08-20): az
+ * „evezőtáska" és az „evezőtartó" a substring miatt EVEZŐNEK látszott, pedig
+ * az egyik táska, a másik rögzítő — egyik sem a követett három kategória.
+ */
+describe("classifyProduct — evezőtáska és evezőtartó nem evező", () => {
+  const base = { boardType: null, specs: { ...EMPTY_SPECS } };
+
+  it("az evezőtáska nem kerül a jelölt-sorba evezőként", () => {
+    const result = classifyProduct({
+      ...base,
+      rawTitle: "Aqua Marina evezőtáska fekete",
+      modelName: "evezőtáska fekete",
+    });
+    expect(result).toEqual({ kind: "ignore" });
+  });
+
+  it("az evezőtartó sem", () => {
+    const result = classifyProduct({ ...base, rawTitle: "Aqua Marina Evezőtartó", modelName: "Evezőtartó" });
+    expect(result).toEqual({ kind: "ignore" });
+  });
+
+  it("a VALÓDI evező viszont átmegy", () => {
+    const result = classifyProduct({
+      ...base,
+      rawTitle: "Aqua Marina SOLID evező, 220 cm",
+      modelName: "SOLID evező",
+    });
+    expect(result).toEqual({ kind: "accessory", accessoryType: "evezo" });
   });
 });

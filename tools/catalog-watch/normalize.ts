@@ -505,6 +505,10 @@ export function guessBoardType(text: string): BoardType | null {
  * Csak a `GEAR_CATEGORIES` (catalog modul, `gear.ts`) 8 kategóriáját fedi le.
  */
 const ACCESSORY_CATEGORY_RULES: [GearCategory, string[]][] = [
+  // A TÁSKA/TARTÓ előrébb van, mint az „evezo": az „evezőtáska" és az
+  // „evezőtartó" a substring miatt evezőnek látszana, pedig az egyik táska,
+  // a másik rögzítő — élesben mérve mindkettő megjelent a jelöltek közt.
+  ["taska", ["evezotaska", "evezo taska", "paddle bag", "evezotarto", "evezo tarto"]],
   ["szarazzsak", ["szarazzsak", "dry bag", "drybag"]],
   ["mentomelleny", ["mentomellen", "mellen", "life vest", "life jacket", "pfd"]],
   ["uszony", ["uszony", "finbox", "fin box"]],

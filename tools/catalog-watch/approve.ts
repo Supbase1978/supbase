@@ -12,6 +12,7 @@
  * `buildBoardInsert`-et, és mezőről mezőre összeveti a kettőt. Ha az app-oldali
  * payload változik és ez a másolat nem, a teszt elhasal.
  */
+import type { GearCategory } from "../../src/modules/catalog/gear.ts";
 import type { BoardType, ExtractedProduct } from "./types.ts";
 
 /**
@@ -32,6 +33,41 @@ export function buildBoardInsertPayload(
     slug: { hu: options.slug, en: options.slug },
     kind: "board",
     board_type: options.boardType,
+    length_cm: specs.lengthCm === null ? null : Math.round(specs.lengthCm),
+    width_cm: specs.widthCm === null ? null : Math.round(specs.widthCm),
+    thickness_cm: specs.thicknessCm === null ? null : Math.round(specs.thicknessCm),
+    volume_l: specs.volumeL === null ? null : Math.round(specs.volumeL),
+    weight_kg: specs.weightKg,
+    max_load_kg: specs.maxLoadKg === null ? null : Math.round(specs.maxLoadKg),
+    inflatable: specs.inflatable ?? true,
+    image_url: extracted.imageUrl,
+    availability_hu: extracted.inStock ?? false,
+    status: "active",
+    first_seen_at: options.seenAt,
+    last_seen_at: options.seenAt,
+  };
+}
+
+/**
+ * Egy jóváhagyott KIEGÉSZÍTŐ-jelölt `boards`-sora (F2.3 3. szakasz).
+ *
+ * A `buildBoardInsertPayload` párja; szándékosan KÜLÖN függvény, mert a két
+ * alak más mezőt visel (`board_type` kontra `accessory_type`) — ugyanaz az
+ * indoklás, mint az app-oldali eredetinél. Az elcsúszást ott is őrszem-teszt
+ * védi (`approve.test.ts`).
+ */
+export function buildAccessoryInsertPayload(
+  extracted: ExtractedProduct,
+  options: { brandId: string; accessoryType: GearCategory; slug: string; seenAt: string },
+): Record<string, unknown> {
+  const specs = extracted.specs;
+  return {
+    brand_id: options.brandId,
+    model_name: extracted.modelName === "" ? extracted.rawTitle : extracted.modelName,
+    model_year: extracted.modelYear,
+    slug: { hu: options.slug, en: options.slug },
+    kind: "accessory",
+    accessory_type: options.accessoryType,
     length_cm: specs.lengthCm === null ? null : Math.round(specs.lengthCm),
     width_cm: specs.widthCm === null ? null : Math.round(specs.widthCm),
     thickness_cm: specs.thicknessCm === null ? null : Math.round(specs.thicknessCm),

@@ -78,6 +78,7 @@ Parancsok:
   approve-candidates               TÖMEGES jóváhagyás (F2.1-utó-19). A tiszta
       [--source NÉV] [--apply]      eseteket egy menetben hagyja jóvá, a
       [--brand-site] [--limit N]    duplikátumokat összevonja: a GYÁRTÓI
+      [--accessories]               (--accessories: a felszerelés-jelöltek —
       [--reviewer ID]               jelölt nyer, a hiányzó mezőit a kereskedői
                                     lapról tölti. Csak az mehet át, aminél
                                     van kategória ÉS megvan a két biztonsági
@@ -315,6 +316,11 @@ async function commandApproveCandidates(args: Args): Promise<void> {
   // deszkák léteznek, a következő crawl a boltiakat MÁR ISMERT deszkára
   // illeszti (ár + elérhetőség), nem új jelöltként.
   const brandSiteOnly = flag(args, "brand-site") !== undefined;
+  // KIEGÉSZÍTŐ-mód: a jelölt-sor deszkákat ÉS a 3 követett felszerelés-
+  // kategóriát is tartalmazza. A kiegészítőknél nincs emberi döntés: a
+  // kategóriát (`accessoryType`) a besoroló már megadta, biztonsági
+  // mérőszám pedig nem kell hozzájuk.
+  const accessoriesOnly = flag(args, "accessories") !== undefined;
   const client = connect();
 
   const reviewerId = flag(args, "reviewer") ?? (await resolveAdminReviewer(client));
@@ -370,20 +376,28 @@ async function commandApproveCandidates(args: Args): Promise<void> {
   const eligible: DedupeCandidate[] = [];
   let skippedNoType = 0;
   let skippedNoSafety = 0;
+  let skippedNoBrand = 0;
   let inferredType = 0;
   for (const row of rows ?? []) {
     const extracted = row.extracted as ExtractedProduct | null;
-    if (!extracted || extracted.accessoryType !== null) continue;
+    if (!extracted) continue;
+    const isAccessory = extracted.accessoryType !== null;
+    if (isAccessory !== accessoriesOnly) continue;
     const source = sourceById.get(row.source_id as string);
     if (sourceFilter && !(source?.name ?? "").toLowerCase().includes(sourceFilter)) continue;
     if (brandSiteOnly && source?.kind !== "brand_site") continue;
 
-    if (extracted.specs.maxLoadKg === null || extracted.specs.volumeL === null) {
+    if (!extracted.brandName) {
+      // A jóváhagyás márkát old fel/hoz létre — márkanév nélkül elakadna.
+      skippedNoBrand += 1;
+      continue;
+    }
+    if (!isAccessory && (extracted.specs.maxLoadKg === null || extracted.specs.volumeL === null)) {
       skippedNoSafety += 1;
       continue;
     }
     let boardType = extracted.boardType;
-    if (boardType === null) {
+    if (!isAccessory && boardType === null) {
       boardType = inferBoardType(byFamily, extracted.brandName, extracted.modelName);
       if (boardType === null) {
         skippedNoType += 1;
@@ -407,7 +421,10 @@ async function commandApproveCandidates(args: Args): Promise<void> {
     `\nJóváhagyható: ${eligible.length} jelölt → ${groups.length} deszka ` +
       `(${eligible.length - groups.length} duplikátum összevonva)`,
   );
-  console.log(`Kihagyva: ${skippedNoType} kategória nélkül · ${skippedNoSafety} biztonsági mező nélkül`);
+  console.log(
+    `Kihagyva: ${skippedNoType} kategória nélkül · ${skippedNoSafety} biztonsági mező nélkül` +
+      (skippedNoBrand > 0 ? ` · ${skippedNoBrand} márkanév nélkül` : ""),
+  );
   if (inferredType > 0) {
     console.log(`Kategória a modellcsaládból örökölve: ${inferredType} jelölt`);
   }
@@ -417,15 +434,17 @@ async function commandApproveCandidates(args: Args): Promise<void> {
   const failures: string[] = [];
   for (const group of planned) {
     const w = group.winner.extracted;
+    const label = w.accessoryType ?? w.boardType;
     const merged = group.merged.length > 0 ? ` +${group.merged.length} összevonva` : "";
     const filled = group.filledFields.length > 0 ? ` [pótolt: ${group.filledFields.join(", ")}]` : "";
-    console.log(`  ${w.brandName} ${w.modelName} (${w.boardType})${merged}${filled}`);
+    console.log(`  ${w.brandName} ${w.modelName} (${label})${merged}${filled}`);
     if (!apply) continue;
 
     const result = await approveCandidateRow(client, {
       candidateId: group.winner.id,
       extracted: w,
-      boardType: w.boardType as BoardType,
+      boardType: w.boardType,
+      accessoryType: w.accessoryType,
       reviewerId,
       mergedCandidateIds: group.merged.map((m) => m.id),
     });

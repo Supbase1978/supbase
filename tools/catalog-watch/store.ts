@@ -15,8 +15,9 @@ import type { SupabaseTarget } from "./env.ts";
 import { shouldRecordPrice } from "./lifecycle.ts";
 import type { BoardForLifecycle } from "./lifecycle.ts";
 import { applyFieldLocks } from "./lock.ts";
-import { buildBoardInsertPayload } from "./approve.ts";
+import { buildAccessoryInsertPayload, buildBoardInsertPayload } from "./approve.ts";
 import { slugify } from "../../src/core/text/slug.ts";
+import type { GearCategory } from "../../src/modules/catalog/gear.ts";
 import type {
   BoardForMatch,
   BoardSpecs,
@@ -296,7 +297,9 @@ export async function approveCandidateRow(
   input: {
     candidateId: string;
     extracted: ExtractedProduct;
-    boardType: BoardType;
+    /** Deszkánál a kategória, KIEGÉSZÍTŐNÉL a gear-kategória. */
+    boardType: BoardType | null;
+    accessoryType: GearCategory | null;
     reviewerId: string;
     mergedCandidateIds: readonly string[];
   },
@@ -313,11 +316,27 @@ export async function approveCandidateRow(
     slugify(`${brandName} ${input.extracted.modelName}`),
   );
 
-  const { data, error } = await client
-    .from("boards")
-    .insert(buildBoardInsertPayload(input.extracted, { brandId, boardType: input.boardType, slug, seenAt }))
-    .select("id")
-    .single();
+  // A jelölt vagy DESZKA, vagy KIEGÉSZÍTŐ — a payload ennek megfelelően más
+  // mezőt visel (`board_type` kontra `accessory_type`).
+  const payload =
+    input.accessoryType !== null
+      ? buildAccessoryInsertPayload(input.extracted, {
+          brandId,
+          accessoryType: input.accessoryType,
+          slug,
+          seenAt,
+        })
+      : input.boardType !== null
+        ? buildBoardInsertPayload(input.extracted, {
+            brandId,
+            boardType: input.boardType,
+            slug,
+            seenAt,
+          })
+        : null;
+  if (!payload) return { ok: false, error: "nincs sem kategória, sem kiegészítő-típus" };
+
+  const { data, error } = await client.from("boards").insert(payload).select("id").single();
   if (error || !data) return { ok: false, error: `boards insert: ${error?.message ?? "?"}` };
   const boardId = (data as { id: string }).id;
 

@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { buildBoardInsert } from "../../src/modules/catalog/data/candidates.server";
-import { buildBoardInsertPayload } from "./approve.ts";
+import {
+  buildAccessoryInsert,
+  buildBoardInsert,
+} from "../../src/modules/catalog/data/candidates.server";
+import { buildAccessoryInsertPayload, buildBoardInsertPayload } from "./approve.ts";
 import { EMPTY_SPECS, type ExtractedProduct } from "./types.ts";
 
 /**
@@ -59,5 +62,33 @@ describe("buildBoardInsertPayload — egyezik az app-oldali buildBoardInsert-tel
       specs: { ...EMPTY_SPECS, inflatable: null },
     };
     expect(buildBoardInsertPayload(sparse, options)).toEqual(buildBoardInsert(sparse, options));
+  });
+});
+
+describe("buildAccessoryInsertPayload — egyezik az app-oldali párjával", () => {
+  const extracted: ExtractedProduct = {
+    sourceUrl: "https://aquamarinahungary.com/pumpa",
+    brandName: "Aqua Marina",
+    modelName: "LIQUID AIR V1 kézi pumpa",
+    rawTitle: "Aqua Marina LIQUID AIR V1 kézi pumpa",
+    modelYear: null,
+    priceHuf: null,
+    inStock: true,
+    imageUrl: "https://aquamarinahungary.com/kep.jpg",
+    boardType: null,
+    accessoryType: "pumpa",
+    specs: { ...EMPTY_SPECS, weightKg: 1.2 },
+  };
+  const options = {
+    brandId: "22222222-2222-2222-2222-222222222222",
+    accessoryType: "pumpa" as const,
+    slug: "aqua-marina-liquid-air-v1",
+    seenAt: "2026-08-20T08:00:00.000Z",
+  };
+
+  it("azonos payloadot ad ugyanarra a bemenetre", () => {
+    expect(buildAccessoryInsertPayload(extracted, options)).toEqual(
+      buildAccessoryInsert(extracted, options),
+    );
   });
 });
