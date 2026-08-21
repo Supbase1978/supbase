@@ -98,10 +98,26 @@ Mind élesben mért eset. Ha valamelyik mező üres vagy gyanús, itt keresd:
   konzervatív (alacsonyabb a teljes terhelhetőségnél).
 - `330LBS` — font-only. Átváltjuk, DE csak ha kilogramm sehol nincs.
 
+**Egy oldal, TÖBB méret**
+- Van gyártó (fanatic.com), aki EGY oldalon sorolja fel a modellcsalád minden
+  méretét egyetlen spec-táblában. A SUP-nál a méret maga a termék, ezért
+  méretenként külön jelölt kell (`extractProductsFromPage`) — és a jelölt
+  URL-jének is méretenként EGYEDINEK kell lennie (`?size=…`), különben a
+  méretek felülírják egymást a jelölt-sorban.
+
 **Csak görgetés után megjelenő spec**
 - A Fanatic termékoldalán a `SIZES AND SPECS` tábla LUSTA betöltésű: sem a nyers
   HTML-ben, sem az azonnali render-szövegben nincs ott, csak görgetés után.
-  Ilyenkor a `render.ts` böngésző-fallback kell — és annak GÖRGETNIE is kell.
+  A `render.ts` fallback ezért görget.
+- **Ha a nyers HTML SEMMIT nem ad**, a fallback külön kapcsolóra fut:
+  `--render-when-empty`. Enélkül a crawl kilép, mielőtt renderelne. Csak szűk
+  URL-minta mellé kapcsold be: minden illeszkedő, de terméket nem adó oldal egy
+  böngésző-renderelésbe kerül.
+- **A `--html-only` ÜT a JSON-LD-n.** A Fanatic kitesz Product JSON-LD-t (név,
+  ár), de egyetlen méretet sem — a kapcsoló jelentése épp az, hogy ennél a
+  forrásnál a spec a SZÖVEGBEN van.
+- A fallback akkor is elindul, ha a kijött méretek ELLENTMONDÁSOSAK
+  (`hossz = vastagság`) — a hamis adat rosszabb, mint a hiányzó.
 
 **Kategória (board_type)** — a jóváhagyás EZEN bukik el a leggyakrabban
 - A gyártók ritkán írják le, hogy „all-around board". A SAJÁT szavaik:
@@ -113,6 +129,10 @@ Mind élesben mért eset. Ha valamelyik mező üres vagy gyanús, itt keresd:
   Ez azért szabad, amiért a teljes oldalszöveg NEM: a navigációs menü minden
   kategóriát felsorol MINDEN oldalon, a morzsamenü pontosan egyet — azt, ahová
   EZ a termék tartozik.
+- **A gyártó KATEGÓRIA-FELIRATA a termékfejlécben** (`--category-class`,
+  fanatic.com: `product-overview__line`). A felirat SORRENDJE dönt:
+  „TOURING / FREERACING" → túra, nem race — a gyártó az első helyre a fő
+  felhasználást írja.
 - **VIGYÁZZ a családi örökléssel.** A szabály („ha a család egyik tagjának van
   kategóriája, a többi is azt kapja") az Aqua Marinára készült, ahol a családnév
   használatot jelent (All Star = race). A Gladiatornál viszont az
