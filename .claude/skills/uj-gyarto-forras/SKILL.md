@@ -247,6 +247,32 @@ node tools/catalog-watch/cli.ts backfill-gallery        # Shopify-forrásnál
 node tools/catalog-watch/cli.ts sync-unpublished        # ha van nem közölt mező
 ```
 
+## Olvasd el a crawl MEZŐSORÁT
+
+Minden forrás összefoglalója kiír egy lefedettségi sort. **Ez mondja meg, hogy
+egyedi hibával vagy a kinyerés hibájával állsz-e szemben:**
+
+```
+    mezők: hossz ✓ · szél ✓ · vast ✓ · térf n.a. · súly ✓ · teher 5/6
+```
+
+| alak | jelentése |
+|---|---|
+| `✓` | minden terméknél megvan |
+| `5/6` | EGY termék ügye — nézd meg azt az oldalt |
+| `0/15` | a KINYERÉS hibája ennél a forrásnál — ne termékenként javítsd |
+| `n.a.` | a recept szerint a gyártó nem közli — várt hiány |
+
+A `GYANÚS —` sorok ugyanitt jelennek meg, indoklással. Nem hibák: olyan
+értékek, amik nem férnek össze a katalógus valóságával (lehetetlen űrtartalom,
+a kategóriájához képest túl rövid deszka, a deszka súlya a teherbírásban,
+ellentmondás a már ismert deszkával). A megjelölt jelölt **kimarad a tömeges
+jóváhagyásból** — moderátori döntés kell hozzá.
+
+Ha gyanú-jelet látsz, **először a termékoldalt nézd meg**: gyakran egyetlen
+modell HTML-je tér el a többitől. Ha viszont sok terméknél jön, akkor a recept
+vagy a kinyerés a hibás.
+
 ## „Nem találom" kontra „a gyártó nem közli"
 
 **Mielőtt egy hiányzó mezőt hibaként kezdesz javítani, nézd meg a gyártó
