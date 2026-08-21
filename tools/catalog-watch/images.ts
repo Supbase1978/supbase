@@ -13,7 +13,7 @@
  * hálózat és az adatbázis a `cli.ts`-ben. Így hálózat nélkül tesztelhető.
  */
 import { findProductNodes, pickPrimaryProduct } from "./jsonld.ts";
-import { htmlToText } from "./html.ts";
+import { decodeEntities, htmlToText } from "./html.ts";
 import { findModelCode, findProductImage } from "./usage-rating.ts";
 
 /** Egy szóba jöhető képforrás: a deszkához kötött jelölt egy sora. */
@@ -170,7 +170,11 @@ export function displayImageUrl(raw: string | null): string | null {
   if (raw === null || raw.trim() === "") return null;
   let url: URL;
   try {
-    url = new URL(raw);
+    // ENTITÁS-DEKÓDOLÁS ITT IS: a visszatöltés a JELÖLTBEN TÁROLT URL-lel
+    // dolgozik, ami még a crawl idejéből származhat — ott a `&amp;` bent
+    // maradhatott. Enélkül a paraméter neve `amp;height` lesz, és a
+    // kiszolgáló a bélyegképet adja vissza (élesben: 4 kB, 50 px).
+    url = new URL(decodeEntities(raw));
   } catch {
     return raw;
   }

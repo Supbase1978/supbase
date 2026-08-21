@@ -195,6 +195,16 @@ describe("displayImageUrl — width-paraméteres kiszolgálók", () => {
     expect(url).not.toContain("aspect_ratio");
   });
 
+  /**
+   * A VISSZATÖLTÉS a jelöltben TÁROLT URL-lel dolgozik, ami még a crawl
+   * idejéből származhat — ott a `&amp;` bent maradhatott.
+   */
+  it("a tárolt URL-ben maradt `&amp;`-et is dekódolja", () => {
+    expect(displayImageUrl("https://x.com/a.png?width=50&amp;height=50&amp;aspect_ratio=50:50")).toBe(
+      "https://x.com/a.png?width=768",
+    );
+  });
+
   it("width-paraméter NÉLKÜLI, nem-Shopify URL-hez nem nyúl", () => {
     const wp = "https://aquamarina.com/wp-content/uploads/CASCADE-2-768x1159.png";
     expect(displayImageUrl(wp)).toBe(wp);
