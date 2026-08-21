@@ -3900,3 +3900,55 @@ Az első három VALÓDI duplikátum — a cikkszám rontja le a névhasonlóság
 0,8-as küszöb alá. A negyedik viszont KÉT KÜLÖNBÖZŐ deszka: jó, hogy a
 rendszer nem fésülte össze magától. Pontosan ezért marad ez a kör emberi
 döntés.
+
+### F2.1-utó-35 — MÉRETENKÉNTI bontás és a Fanatic (2026-08-21)
+
+**Felhasználói kérés:** „csináljuk meg a Fanatic méretenkénti bontását."
+
+A Fanatic EGY oldalon sorolja fel a modellcsalád minden méretét, egyetlen
+transzponált spec-táblában. A SUP-nál a MÉRET maga a termék (a Deszkaválasztó
+hossz és szélesség alapján pontoz), ezért méretenként külön jelölt születik —
+ugyanaz az elv, mint a Shopify-ág `expandShopifyProduct`-jánál. A jelölt
+URL-je méretenként EGYEDI (`?size=…`): a jelölt-sorokat a figyelő URL szerint
+azonosítja, közös URL-lel a méretek felülírnák egymást. A modellnév a tábla
+SAJÁT cellájából jön (`FLY AIR S|L|T 9'8"`), nem a cím + méret ragasztásából.
+
+**A bekötés NÉGY rejtett hibát hozott elő, mind a böngésző-fallback körül:**
+
+1. **A fallback htmlOnly forrásnál HATÁSTALAN volt** — a renderelt szöveget
+   csak a JSON-LD-ág értelmezte újra. Új `overrideText` opció: a cím és a képek
+   a HTML-ből, a specifikáció a renderelt szövegből.
+2. **A `htmlOnly` nem ütött a JSON-LD-n.** A Fanatic kitesz Product JSON-LD-t
+   (név, ár), de egyetlen méretet sem — így a féladat nyert. A kapcsoló
+   jelentése épp az, hogy ennél a forrásnál a spec a SZÖVEGBEN van.
+3. **A fallback esélyt sem kapott**, ha a nyers HTML semmit nem adott: a crawl
+   `continue`-val kilépett — épp azon az oldalon, ahol a spec-tábla kizárólag
+   renderelés után létezik. A sorrend megfordult, és ez KÜLÖN kapcsolóra fut
+   (`renderWhenEmpty`), mert drága: enélkül minden blog- és kategória-oldal is
+   böngészőbe kerülne.
+4. **Hamis adat maradt volna.** A nyers HTML a leírás prózájából
+   `hossz 340,4 = vastagság 340,4`-et adott; mivel a hossz nem volt üres, a
+   fallback el sem indult. Az ellentmondás-vizsgálat közös szabály lett
+   (`dimensionsAreCoherent`): egy deszka SOSEM szélesebb és SOSEM vastagabb,
+   mint amilyen hosszú. Ugyanez védi a `classifyProduct` rövidzárát is.
+
+**A kategória a gyártó saját feliratából**, új `categoryClass` konfiggal
+(`product-overview__line`). A felirat SORRENDJE dönt:
+
+| felirat | helyes | amit a szabály-prioritás adott volna |
+|---|---|---|
+| `TOURING / FREERACING` | **túra** | race (a „FREERACING"-ből) |
+| `ALL-AROUND / WINDSURF` | **allround** | allround |
+
+A gyártó az ELSŐ helyre a fő felhasználást írja — ezért kapott saját olvasót
+(`boardTypeFromCategoryLine`), nem a `guessBoardType` prioritásos logikáját.
+
+**Mellékesen:** a szlogen levágása után (`ᐅ`) a Ripper gyerekdeszka (238 cm, a
+méret-küszöb alatt) elesett a `classifyProduct`-on, mert a címben már nem volt
+„SUP" szó. A deszka-azonosítás mostantól a termékspecifikus jelet (URL-útvonal)
+is nézi: `fanatic-ISUP-ripper-air-slt`. A KIEGÉSZÍTŐ-felismerés szándékosan
+marad a puszta címnél — az URL-ben álló „paddle" evezőnek minősítene egy
+deszkát.
+
+**Eredmény:** 11 Fanatic-URL → **16 méret-változat, MIND teljes adattal és
+kategóriával**. A jóváhagyás után a katalógus **236 deszka**.
