@@ -291,6 +291,11 @@ const SPEC_LABELS = {
     "terhelhetőség",
     "max terhelés",
     "maximális terhelés",
+    // Élesben mért címke (aquamarinahungary.com, BLADE Windsurf):
+    // „Max. hasznos teher: 120 kg". A „teher" SZÓTŐ önmagában túl laza lenne
+    // (teherautó, tehermentes), a „hasznos teher" viszont egyértelmű — ez a
+    // payload magyar megfelelője.
+    "hasznos teher",
     // Élesben mért címke (Bluefin): "Max User Weight" — a "max weight"
     // RÉSZSTRING-illesztés ezt nem fogja meg, mert közte van a "user" szó.
     "max user weight",
@@ -349,6 +354,7 @@ function valueAfterLabel(
   text: string,
   labels: readonly string[],
   excludePrecededBy: readonly string[] = [],
+  excludeFollowedBy: readonly string[] = [],
 ): string | null {
   // KÉTMENETES keresés. Elsőként csak a KETTŐSPONTTAL zárt címkét fogadjuk el
   // („Volume: 379L"), mert azt csak spec-táblázat írja; a marketing-próza
@@ -366,8 +372,8 @@ function valueAfterLabel(
   // spec-táblák (aquamarina.com: „NET WEIGHT\n9.3 kg") így változatlanul
   // működnek.
   return (
-    labelSearch(text, labels, excludePrecededBy, true) ??
-    labelSearch(text, labels, excludePrecededBy, false)
+    labelSearch(text, labels, excludePrecededBy, excludeFollowedBy, true) ??
+    labelSearch(text, labels, excludePrecededBy, excludeFollowedBy, false)
   );
 }
 
@@ -522,6 +528,7 @@ function labelSearch(
   text: string,
   labels: readonly string[],
   excludePrecededBy: readonly string[],
+  excludeFollowedBy: readonly string[],
   requireColon: boolean,
 ): string | null {
   const folded = foldForIndex(text);
@@ -580,6 +587,16 @@ function labelSearch(
       //    az érték UTÁNA jön. Élesben (zraysports.com) az egy sorba írt
       //    `… Volume: 379L Capacity: up to 170 kg` sorban a címke előtt a
       //    SZOMSZÉD MEZŐ értéke (379L) áll — kettőspont nélkül azt vennénk.
+      // MINŐSÍTŐ SZÓ A CÍMKE UTÁN: ilyenkor a szám MÁST mér.
+      // Élesben (aquamarinahungary.com, BLADE Windsurf): „Súly vitorlával:
+      // 20,5kg" — a vitorlával együtt mért tömeg NEM a deszka súlya (a deszka
+      // maga ~10 kg). A `[ae]v[ae]l` szabály ezt nem fogja meg, mert az a
+      // címkéhez TAPADT ragot nézi, itt viszont külön szó áll.
+      if (excludeFollowedBy.length > 0) {
+        const gap = folded.slice(index + needle.length, index + needle.length + 24);
+        if (excludeFollowedBy.some((word) => gap.includes(foldText(word)))) continue;
+      }
+
       const hasColon = /^\s*:/.test(after);
       const lineStart = folded.lastIndexOf("\n", index) + 1;
       const trailing = hasColon
@@ -850,7 +867,11 @@ export function parseSpecsFromText(text: string): BoardSpecs {
   }
 
   for (const key of ["weightKg", "maxLoadKg"] as const) {
-    const window = valueAfterLabel(text, SPEC_LABELS[key]);
+    // A DESZKA SÚLYA a keresett érték — a tartozékokkal együtt mért tömeg nem
+    // az. Élesben (aquamarinahungary.com, BLADE Windsurf): „Súly vitorlával:
+    // 20,5kg", miközben a deszka maga ~10 kg. Egy ilyen érték a
+    // katalógusban azt sugallná, hogy a deszka kétszer olyan nehéz.
+    const window = valueAfterLabel(text, SPEC_LABELS[key], [], WEIGHT_QUALIFIERS);
     if (window === null) continue;
     specs[key] = parseWeightKg(window);
   }
@@ -862,6 +883,21 @@ export function parseSpecsFromText(text: string): BoardSpecs {
   specs.inflatable = detectInflatable(text);
   return specs;
 }
+
+/**
+ * Minősítő szavak, amik a súly/teherbírás címke után állva MÁST mérnek: nem a
+ * deszkát magát, hanem a deszkát plusz valamit. Élesben mért eset a
+ * vitorlával együtt megadott tömeg (aquamarinahungary.com).
+ */
+const WEIGHT_QUALIFIERS = [
+  "vitorlával",
+  "vitorlaval",
+  "with sail",
+  "csomaggal",
+  "with bag",
+  "tartozékokkal",
+  "komplett",
+];
 
 /** Felfújható vagy kemény deszka? Bizonytalanságnál null. */
 export function detectInflatable(text: string): boolean | null {

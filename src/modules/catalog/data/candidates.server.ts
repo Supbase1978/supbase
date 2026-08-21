@@ -89,10 +89,17 @@ export async function listBoardChoices(
   if (error || !data) {
     return [];
   }
-  return (data as unknown[]).map((row) => {
-    const typed = row as { id: string; model_name: string; brand: { name: string } | null };
-    return { id: typed.id, label: boardLabel(typed) };
-  });
+  return (data as unknown[])
+    .map((row) => {
+      const typed = row as { id: string; model_name: string; brand: { name: string } | null };
+      return { id: typed.id, label: boardLabel(typed) };
+    })
+    // A LÁTHATÓ FELIRAT szerint rendezünk, nem a modellnév szerint. A felirat
+    // „Márka Modell" alakú, tehát a modellnév szerinti sorrend a moderátornak
+    // véletlenszerűnek látszik — 250+ tételnél ez használhatatlanná teszi a
+    // legördülőt (felhasználói jelzés, 2026-08-21). Magyar egybevetés: az
+    // ékezetes márkanevek is a helyükre kerülnek.
+    .sort((a, b) => a.label.localeCompare(b.label, "hu"));
 }
 
 /**
@@ -126,6 +133,10 @@ export async function listAccessoryChoicesByCategory(
       brand: { name: string } | null;
     };
     empty[typed.accessory_type].push({ id: typed.id, label: boardLabel(typed) });
+  }
+  // Ugyanaz a rendezés, mint a deszkáknál: a moderátor a FELIRATOT olvassa.
+  for (const list of Object.values(empty)) {
+    list.sort((a, b) => a.label.localeCompare(b.label, "hu"));
   }
   return empty;
 }

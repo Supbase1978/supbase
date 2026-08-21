@@ -358,6 +358,18 @@ describe("címke és érték sorrendje", () => {
     expect(specs.volumeL).toBe(379);
   });
 
+  it("a hasznos teher is teherbírás-címke", () => {
+    // aquamarinahungary.com, BLADE Windsurf: „Max. hasznos teher: 120 kg".
+    // A puszta „teher" szótő túl laza lenne, a „hasznos teher" viszont a
+    // payload magyar megfelelője.
+    const specs = parseSpecsFromText(
+      "Súly vitorlával: 20,5kg\nMax. hasznos teher: 120 kg",
+    );
+    expect(specs.maxLoadKg).toBe(120);
+    // A VITORLÁVAL mért súly NEM a deszka súlya — maradjon üres.
+    expect(specs.weightKg).toBeNull();
+  });
+
   it("a MAGYAR BIRTOKOS toldalék is kettőspontos címke", () => {
     // Élesben (aquamarinahungary.com): a `paddleboard súlya:` nem számított
     // kettőspontosnak, ezért a lap alján álló EVEZŐ `Súly:` címkéje nyert, és

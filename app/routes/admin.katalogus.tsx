@@ -340,6 +340,16 @@ type LoaderCandidate = Awaited<ReturnType<typeof loader>>["candidates"][number];
 type BoardChoice = { id: string; label: string };
 type AccessoryChoicesByCategory = Record<GearCategory, BoardChoice[]>;
 
+/**
+ * Ennél biztosabb egyezésnél KÍNÁLJUK FEL készen az összefésülési célpontot.
+ *
+ * Ugyanaz a küszöb, ami a figyelőben az „ismert" sávot jelöli
+ * (`match.ts` — `KNOWN_THRESHOLD`). Itt SZÁNDÉKOSAN másolat: a `tools/` a
+ * bundleren kívül él, az app nem importálhat belőle. A két szám jelentése
+ * viszont ugyanaz, és ha az egyik változik, a másikat is át kell nézni.
+ */
+const CERTAIN_MATCH = 0.8;
+
 function CandidateCard({
   candidate,
   boardChoices,
@@ -501,7 +511,21 @@ function CandidateCard({
           <span className="font-medium text-text">{t("admin.mergeLabel")}</span>
           <select
             name="boardId"
-            defaultValue={candidate.matchedBoardId ?? ""}
+            // BIZONYTALAN TIPPET NEM VÁLASZTUNK ELŐ (felhasználói jelzés,
+            // 2026-08-21). Élesben mért eset: az „Aqua Marina BLADE Windsurf"
+            // jelöltnél a legördülő a „Blaze"-t kínálta készen, 46%-os
+            // egyezéssel — pedig a Blade és a Blaze KÉT KÜLÖN modell, és a
+            // Blade nincs is a katalógusban. Egy figyelmetlen kattintás
+            // véglegesen összeolvasztotta volna őket.
+            //
+            // A moderációs sorba szinte kizárólag bizonytalan egyezés kerül (a
+            // biztosat a figyelő magától összekapcsolja), tehát ez a gyakorlatban
+            // üres alapértéket jelent — a moderátornak TUDATOSAN kell választania.
+            defaultValue={
+              candidate.confidence !== null && candidate.confidence >= CERTAIN_MATCH
+                ? (candidate.matchedBoardId ?? "")
+                : ""
+            }
             className="rounded-lg border border-line bg-surface px-2 py-1.5 text-sm text-text"
           >
             <option value="">—</option>
