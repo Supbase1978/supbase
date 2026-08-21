@@ -1408,6 +1408,30 @@ function galleryByCode(html: string, code: string | null, sourceUrl: string): st
 }
 
 /**
+ * A MORZSAMENÜ szövege — a bolt saját útvonala EHHEZ a termékhez.
+ *
+ * MIÉRT SZABAD EZT OLVASNI, amikor a teljes oldalszöveget SZÁNDÉKOSAN nem: a
+ * navigációs menü MINDEN kategóriát felsorol minden oldalon, a morzsamenü
+ * viszont pontosan egyet — azt, ahová ez a termék tartozik. Ez a gyártó saját
+ * besorolása, ugyanolyan erős jel, mint az URL kategória-szegmense.
+ *
+ * ÉLESBEN MÉRT IGÉNY (zraysports.com): a termék-URL csak sorszám
+ * (`/productinfo/854740.html`), a leírás nem mond kategóriát, a morzsamenü
+ * viszont igen: `HOME › EVO COLLECTION › ALL AROUND EVO › Max Azure 11'6"`.
+ * A Zray 76 deszka-jelöltjéből 62 maradt enélkül besorolatlanul.
+ *
+ * SZŰK ABLAK: a morzsamenü rövid, ezért csak az első pár száz karaktert
+ * nézzük a konténer után — így a mögötte álló oldaltartalom (és a sablon
+ * JS-kódja) nem szólhat bele.
+ */
+function breadcrumbText(html: string): string {
+  const match = html.match(/<[^>]*(?:class|id|ctype)="[^"]*crumb[^"]*"[^>]*>/i);
+  if (!match || match.index === undefined) return "";
+  const after = html.slice(match.index + match[0].length, match.index + match[0].length + 1200);
+  return htmlToText(after).replace(/\s+/g, " ").slice(0, 200);
+}
+
+/**
  * A termék-URL végén álló CIKKSZÁM (legalább 6 számjegy az utolsó
  * útvonal-szegmensben). Élesben (jobesports.com):
  * `/en/jobe-aero-sava-sup-lite-board-86-package-486425010/` → `486425010`.
@@ -1551,6 +1575,7 @@ export function extractProductFromPage(
     boardType:
       pinnedType ??
       guessBoardType(`${rawTitle} ${urlCategoryHint(sourceUrl)}`) ??
+      guessBoardType(breadcrumbText(html)) ??
       usageType ??
       boardTypeFromDescription(pageText),
     specs,

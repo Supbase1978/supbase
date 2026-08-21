@@ -1277,3 +1277,43 @@ describe("fanatic.com — mértékegység a CÍMKÉBEN", () => {
     expect(product).toBeNull();
   });
 });
+
+/**
+ * MORZSAMENÜ-ALAPÚ BESOROLÁS (2026-08-21, zraysports.com). A termék-URL ott
+ * csak sorszám (`/productinfo/854740.html`), a leírás nem mond kategóriát — a
+ * morzsamenü viszont igen. A Zray 76 deszka-jelöltjéből 62 maradt enélkül
+ * besorolatlanul.
+ */
+describe("morzsamenü mint kategória-forrás", () => {
+  const page = (crumb: string, body = "Length: 351 cm Width: 86 cm Thickness: 15 cm") =>
+    `<html><head><title>Max Azure</title></head><body>
+      <div class="w-crumbs"><a>HOME</a> <a>${crumb}</a> <span>Max Azure 11'6"</span></div>
+      <p>${body}</p></body></html>`;
+
+  it("a morzsamenüből veszi a gyártó saját besorolását", () => {
+    const p = extractProductFromPage(page("ALL AROUND EVO"), "https://x.com/productinfo/1.html", "Zray");
+    expect(p?.boardType).toBe("allround");
+  });
+
+  it("a TÚRA-útvonalat is felismeri", () => {
+    const p = extractProductFromPage(page("TOURING COLLECTION"), "https://x.com/productinfo/1.html", "Zray");
+    expect(p?.boardType).toBe("touring");
+  });
+
+  /**
+   * A teljes oldalszöveget SZÁNDÉKOSAN nem olvassuk kategóriáért: a navigációs
+   * menü MINDEN kategóriát felsorol minden oldalon. A morzsamenü viszont
+   * pontosan egyet — azt, ahová EZ a termék tartozik.
+   */
+  it("a morzsamenün KÍVÜLI kategória-felsorolás nem sorol be", () => {
+    const nav = `<html><head><title>Max Azure</title></head><body>
+      <nav>ALL AROUND | TOURING | RACE | YOGA</nav>
+      <p>Length: 351 cm Width: 86 cm Thickness: 15 cm</p></body></html>`;
+    expect(extractProductFromPage(nav, "https://x.com/productinfo/1.html", "Zray")?.boardType).toBeNull();
+  });
+
+  it("a NÉVBŐL vagy URL-ből jövő besorolás ERŐSEBB a morzsamenünél", () => {
+    const p = extractProductFromPage(page("ALL AROUND EVO"), "https://x.com/products/racing/race/1.html", "Zray");
+    expect(p?.boardType).toBe("race");
+  });
+});
