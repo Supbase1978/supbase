@@ -566,6 +566,7 @@ export async function crawlSource(
         boardTypeByUrl: config.boardTypeByUrl ?? {},
         titleSuffixes: config.titleSuffixes ?? [],
         titleCutAfter: config.titleCutAfter ?? [],
+        categoryClass: config.categoryClass,
       };
       // Egy oldal TÖBB deszkát is leírhat: van gyártó, amelyik a modellcsalád
       // minden méretét egyetlen spec-táblában sorolja fel (fanatic.com). A

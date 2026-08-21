@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  boardTypeFromCategoryLine,
   boardTypeFromDescription,
   boardTypeFromUsage,
   findModelCode,
@@ -271,5 +272,25 @@ describe("boardTypeFromDescription — a gyártó saját szavai", () => {
 
   it("ELTÉRŐ kategóriák említésénél továbbra sem tippel", () => {
     expect(boardTypeFromDescription("a versatile board and also a race board")).toBeNull();
+  });
+});
+
+/**
+ * A GYÁRTÓ KATEGÓRIA-FELIRATA (2026-08-21, fanatic.com). A termékfejlécben
+ * áll: „ALL-AROUND / WINDSURF", „TOURING / FREERACING".
+ */
+describe("boardTypeFromCategoryLine — a felirat SORRENDJE dönt", () => {
+  it("az ELSŐ helyen álló kategóriát veszi", () => {
+    // A szokásos `guessBoardType` itt race-t adna a „FREERACING"-ből, mert a
+    // saját szabály-prioritása szerint dönt — a gyártó viszont az első helyre
+    // a fő felhasználást írja.
+    expect(boardTypeFromCategoryLine("TOURING / FREERACING")).toBe("touring");
+    expect(boardTypeFromCategoryLine("ALL-AROUND / WINDSURF")).toBe("allround");
+    expect(boardTypeFromCategoryLine("RACE / FREERACE")).toBe("race");
+  });
+
+  it("ismeretlen feliratra null (nem tippel)", () => {
+    expect(boardTypeFromCategoryLine("WAVE / SURF")).toBeNull();
+    expect(boardTypeFromCategoryLine("")).toBeNull();
   });
 });

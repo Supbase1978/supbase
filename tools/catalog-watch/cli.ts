@@ -322,6 +322,8 @@ async function commandAddSource(args: Args): Promise<void> {
   const titleCut = flagList(args, "title-cut");
   if (titleCut) crawlConfig.titleCutAfter = titleCut;
   if (flag(args, "render-when-empty") !== undefined) crawlConfig.renderWhenEmpty = true;
+  const categoryClass = flag(args, "category-class");
+  if (categoryClass) crawlConfig.categoryClass = categoryClass;
   const notes = flag(args, "notes");
   if (notes) crawlConfig.notes = notes;
 

@@ -124,6 +124,13 @@ export interface CrawlConfig {
    * illeszkedő, de terméket nem adó oldal egy böngésző-renderelésbe kerül.
    */
   renderWhenEmpty?: boolean;
+  /**
+   * A gyártó SAJÁT kategória-feliratát viselő elem osztályneve (részlet).
+   * Élesben (fanatic.com): `product-overview__line` — a termékfejlécben álló
+   * „ALL-AROUND / WINDSURF". Ez termékspecifikus jel, ezért erős: ugyanolyan
+   * rangú, mint az URL kategória-szegmense.
+   */
+  categoryClass?: string;
   /** Szabad szöveges megjegyzés az adminnak. */
   notes?: string;
 }

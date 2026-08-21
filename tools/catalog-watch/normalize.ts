@@ -12,6 +12,7 @@ import type { GearCategory } from "../../src/modules/catalog/gear.ts";
 import { decodeEntities, htmlToText } from "./html.ts";
 import { displayImageUrl, MAX_GALLERY_CANDIDATES } from "./images.ts";
 import {
+  boardTypeFromCategoryLine,
   boardTypeFromDescription,
   boardTypeFromUsage,
   findModelCode,
@@ -1487,6 +1488,18 @@ function galleryByCode(html: string, code: string | null, sourceUrl: string): st
  * nézzük a konténer után — így a mögötte álló oldaltartalom (és a sablon
  * JS-kódja) nem szólhat bele.
  */
+/**
+ * Egy adott osztálynevű elem SZÖVEGE a HTML-ből. Szűk ablak: a keresett
+ * felirat rövid, a mögötte álló oldaltartalom nem szólhat bele.
+ */
+function elementTextByClass(html: string, className: string | undefined): string {
+  if (!className) return "";
+  const match = html.match(new RegExp(`<[^>]*class="[^"]*${escapeRegExp(className)}[^"]*"[^>]*>`, "i"));
+  if (!match || match.index === undefined) return "";
+  const from = match.index + match[0].length;
+  return htmlToText(html.slice(from, from + 300)).replace(/\s+/g, " ").slice(0, 80);
+}
+
 function breadcrumbText(html: string): string {
   const match = html.match(/<[^>]*(?:class|id|ctype)="[^"]*crumb[^"]*"[^>]*>/i);
   if (!match || match.index === undefined) return "";
@@ -1547,6 +1560,11 @@ export interface PageExtractionOptions {
    */
   titleCutAfter?: readonly string[];
   /**
+   * A gyártó SAJÁT kategória-feliratát viselő elem osztályneve
+   * (`crawl_config.categoryClass`). Termékspecifikus jel, ezért erős.
+   */
+  categoryClass?: string;
+  /**
    * A spec-parse-hoz használandó szöveg, a HTML-ből kinyert helyett. A
    * BÖNGÉSZŐ-RENDERELT szöveg érkezik így (`render.ts`): a cím és a képek
    * továbbra is a HTML-ből jönnek, a specifikáció viszont abból a szövegből,
@@ -1564,7 +1582,13 @@ export function extractProductFromPage(
   defaultBrandName: string | null = null,
   options: PageExtractionOptions = {},
 ): ExtractedProduct | null {
-  const { boardTypeByUrl = {}, titleSuffixes = [], titleCutAfter = [], overrideText } = options;
+  const {
+    boardTypeByUrl = {},
+    titleSuffixes = [],
+    titleCutAfter = [],
+    categoryClass,
+    overrideText,
+  } = options;
   const titleMatch = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
   let rawTitle = htmlToText(titleMatch?.[1] ?? "")
     .replace(/\s+/g, " ")
@@ -1658,6 +1682,10 @@ export function extractProductFromPage(
     boardType:
       pinnedType ??
       guessBoardType(`${rawTitle} ${urlCategoryHint(sourceUrl)}`) ??
+      // A gyártó SAJÁT kategória-felirata a termékfejlécben. A SORRENDJE
+      // számít („TOURING / FREERACING" → túra, nem race), ezért nem a
+      // szabály-prioritásos `guessBoardType` olvassa.
+      boardTypeFromCategoryLine(elementTextByClass(html, categoryClass)) ??
       guessBoardType(breadcrumbText(html)) ??
       usageType ??
       boardTypeFromDescription(pageText),

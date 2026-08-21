@@ -260,3 +260,42 @@ export function findModelCode(pageText: string): string | null {
   const match = pageText.match(/\bMODEL\b\s*\n?\s*([A-Z]{2}[A-Z0-9-]{3,20})\b/);
   return match?.[1] ?? null;
 }
+
+/**
+ * Kategória a gyártó SAJÁT KATEGÓRIA-FELIRATÁBÓL, a felirat SORRENDJE szerint.
+ *
+ * Élesben (fanatic.com) a termékfejlécben ez áll:
+ *   Viper Air → „ALL-AROUND / WINDSURF"
+ *   Ray Air   → „TOURING / FREERACING"
+ *
+ * A SORREND SZÁMÍT, és ezért nem használható a szokásos `guessBoardType`: az a
+ * saját szabály-prioritása szerint dönt, és a Ray Airnél a „FREERACING"-ből
+ * race-t adna a valós túra helyett. A gyártó viszont az ELSŐ helyre a fő
+ * felhasználást írja — azt vesszük.
+ */
+export function boardTypeFromCategoryLine(text: string): BoardType | null {
+  // Helyi hajtás: a `normalize.ts`-ből importálni körkörös függést adna
+  // (az importálja EZT a modult).
+  const folded = text
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .toLowerCase();
+  const rules: [BoardType, string[]][] = [
+    ["kids", ["kids", "junior", "youth"]],
+    ["fishing", ["fishing", "angler"]],
+    ["river", ["river", "whitewater", "rapid"]],
+    ["race", ["race", "racing"]],
+    ["yoga", ["yoga", "fitness", "pilates"]],
+    ["touring", ["touring", "tura", "explore", "adventure"]],
+    ["allround", ["all-around", "all around", "allround", "all-round", "all round"]],
+  ];
+  let best: { at: number; type: BoardType } | null = null;
+  for (const [type, needles] of rules) {
+    for (const needle of needles) {
+      const at = folded.indexOf(needle);
+      if (at < 0) continue;
+      if (best === null || at < best.at) best = { at, type };
+    }
+  }
+  return best?.type ?? null;
+}
