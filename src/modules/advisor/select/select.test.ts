@@ -74,8 +74,15 @@ describe("passesHardFilter — 1. réteg kizárások", () => {
     ["alap eset átmegy", {}, {}, true],
     ["alacsony max_load kizár (130×0,66=85,8 < 80? nem — 100×0,66=66<80)", { maxLoadKg: 100 }, {}, false],
     ["kis volume kizár (150 < 80×2,5=200)", { volumeL: 150 }, {}, false],
-    ["hiányzó volume kizár", { volumeL: null }, {}, false],
+    // FELHASZNÁLÓI DÖNTÉS (2026-08-21): a hiányzó űrtartalom NEM zár ki, ha a
+    // gyártói teherbírás megvan. Van márka, amelyik egyetlen modelljénél sem
+    // közöl űrtartalmat (Bluefin) — a korábbi szabály mind a 15 deszkáját
+    // kiejtette az ajánlásból, holott a terhelési korlátjuk ismert.
+    ["hiányzó volume NEM zár ki, ha a teherbírás megvan", { volumeL: null }, {}, true],
+    // A teherbírás viszont KÖTELEZŐ marad: űrtartalom nélkül ez az EGYETLEN
+    // gyártói korlát, amit a felhasználó súlyához mérhetünk.
     ["hiányzó max_load kizár", { maxLoadKg: null }, {}, false],
+    ["mindkét biztonsági mező hiánya kizár", { volumeL: null, maxLoadKg: null }, {}, false],
     ["inflatable_only + merev deszka kizár", { inflatable: false }, { storage: "inflatable_only" }, false],
     ["inflatable_only + felfújható átmegy", { inflatable: true }, { storage: "inflatable_only" }, true],
     ["budget-túllépés kizár", { priceHuf: 600000 }, { budgetHuf: 500000 }, false],
@@ -205,6 +212,17 @@ describe("stabilityScore — sáv-alapú illeszkedés, nem monoton", () => {
     expect(volumeFitScore(makeBoard({ volumeL: null }), inputs, CFG)).toBe(0.5);
     expect(widthFitScore(makeBoard({ widthCm: null }), inputs, CFG)).toBe(0.5);
     expect(thicknessFitScore(makeBoard({ thicknessCm: null }), CFG)).toBe(0.5);
+  });
+
+  it("a CÉLON LÉVŐ űrtartalom megelőzi az ismeretlent", () => {
+    // Ez tartja egyensúlyban a 2026-08-21-i döntést: az űrtartalom nélküli
+    // deszka bekerülhet az ajánlásba, de a semleges 0,5 miatt egy azonos
+    // paraméterű, ISMERT és jó űrtartalmú deszka mindig megelőzi.
+    const inputs = makeInputs();
+    const target = targetVolumeL(inputs, CFG);
+    expect(volumeFitScore(makeBoard({ volumeL: Math.round(target) }), inputs, CFG)).toBeGreaterThan(
+      volumeFitScore(makeBoard({ volumeL: null }), inputs, CFG),
+    );
   });
 });
 

@@ -4036,3 +4036,64 @@ ellenőrizve — **mind helyes**; a hibás értékek a jóváhagyásra váró je
 A Starboard **Shopify-ágához nincs fixtúra**: a `capture-fixture` a HTML-oldalas
 utat járja, a Shopify-mód a `/products.json`-ból dolgozik. Külön rögzítő kell
 hozzá.
+
+---
+
+## F2.1-utó-37 — „A gyártó nem közli" mint rögzített tény (2026-08-21)
+
+**Felhasználói megállapítás:** a Bluefin oldalán ellenőrizve **egyetlen
+modellnél sem szerepel űrtartalom**. Tehát a 15 hiányzó térfogat nem a mi
+kinyerési hibánk — a forrás tulajdonsága.
+
+Ez rávilágított egy megkülönböztetésre, ami eddig hiányzott: egy üres mezőnek
+két, gyökeresen eltérő oka lehet.
+
+| ok | mi a teendő | eddig |
+|---|---|---|
+| a kinyerés nem találta | javítani | megkülönböztethetetlen |
+| a gyártó nem teszi közzé | rögzíteni | megkülönböztethetetlen |
+
+### Amit a megkülönböztetés hiánya okozott
+
+* A 15 Bluefin deszka **örökre „hiányos"** maradt volna a munkalistán.
+* Az adatlapon az űrtartalom sora egyszerűen **eltűnt** — az olvasó nem tudta,
+  hogy mi nem tudjuk-e, vagy nem létezik.
+* A tervezett mezőlefedettségi jelentés minden futásnál anomáliát jelzett
+  volna ott, ahol nincs.
+
+### A megoldás három rétege
+
+1. **A recept mondja ki** (`crawlConfig.unpublishedFields`), indoklással és
+   dátummal — ott, ahol a forrás minden más tulajdonsága is él.
+2. **A fixtúra ELLENŐRZI.** A deklaráció nem mentség: a teszt megköveteli,
+   hogy a deklarált mező tényleg üres legyen a mentett oldalon. Ha a gyártó
+   egyszer közölni kezdi, a teszt bukik, és szól, hogy vegyük le.
+3. **A sor viseli** (`boards.unpublished_fields`, migráció 20260717092600),
+   mert a megjelenítéskor nincs forrás-kapcsolat kéznél.
+   `sync-unpublished [--apply]` vezeti át, idempotensen, csak hozzáadva.
+
+Az adatlap ezentúl **„Térfogat: a gyártó nem közli"** feliratot mutat üres hely
+helyett (élesben ellenőrizve a `bluefin-cruise-gecko` lapon).
+
+### Deszkaválasztó: a hiányzó űrtartalom nem zár ki többé
+
+**Felhasználói döntés (2026-08-21).** A kemény szűrés eddig kizárta a térfogat
+nélküli deszkát (`select.ts:138`) — emiatt a Bluefin mind a 15 modellje
+kiesett az ajánlásból, holott a gyártó saját terhelési korlátja ismert.
+
+Az új szabály:
+
+* a **teherbírás-vizsgálat KÖTELEZŐ marad** — űrtartalom nélkül ez az egyetlen
+  gyártói korlát, amit a felhasználó súlyához mérhetünk;
+* mindkét biztonsági mező hiánya továbbra is kizár;
+* az ilyen deszka a **pontozásban nem nyerhet**: a `volumeFitScore` semleges
+  0,5-öt ad, tehát azonos paraméterű, ismert űrtartalmú deszka mindig
+  megelőzi (külön teszt őrzi);
+* a hiány **látható** marad a felhasználónak.
+
+Amit NEM teszünk: a geometriából számolt űrtartalom kitalált biztonsági adat
+lenne. A 221 mérhető deszkán a térfogat/geometria arány 0,36–1,01 között szór —
+ez becslésre nem elég szoros, ELLENŐRZÉSRE viszont igen (a hibás HYPER 11'6"
+0,12-t ad).
+
+**Kapuk:** typecheck + lint zöld, 1114 teszt (82 fájl).

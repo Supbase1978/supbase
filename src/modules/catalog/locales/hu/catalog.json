@@ -40,7 +40,8 @@
     "maxLoad": "Max terhelés",
     "riderWeight": "Ajánlott testsúly",
     "stabilityIndex": "Stabilitási index",
-    "year": "Évjárat"
+    "year": "Évjárat",
+    "unpublished": "a gyártó nem közli"
   },
   "detail": {
     "description": "Leírás",

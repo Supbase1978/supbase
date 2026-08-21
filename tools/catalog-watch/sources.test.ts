@@ -124,6 +124,26 @@ describe("mentett gyártói oldalak", () => {
         );
         expect(products).toEqual(fixture.expected);
       });
+
+      // A „nem közölt mező" deklaráció ELLENŐRIZHETŐ állítás a forrásról, nem
+      // mentség a hiányra. Ha a gyártó egyszer közölni kezdi (és a kinyerés
+      // megtalálja), ez a teszt BUKIK — és megmondja, hogy a deklarációt le
+      // kell venni. Enélkül a `unpublishedFields` csendben eltakarna egy
+      // valódi, javítható kinyerési hibát.
+      const unpublished = recipe?.crawlConfig.unpublishedFields ?? [];
+      for (const field of unpublished) {
+        it(`a NEM KÖZÖLTNEK deklarált \`${field}\` tényleg hiányzik`, () => {
+          const products = extractPageProducts(
+            fixture.html,
+            fixture.url,
+            recipe!.crawlConfig,
+            fixture.renderedText,
+          );
+          for (const product of products) {
+            expect(product.specs[field], product.modelName).toBeNull();
+          }
+        });
+      }
     });
   }
 });

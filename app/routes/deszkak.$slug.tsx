@@ -141,6 +141,10 @@ export async function loader({ request, params }: Route.LoaderArgs) {
       // A teljes képernyős nézet további képei. Csak az URL megy át a hálózaton
       // — a `source` mező a moderációnak kell, a megjelenítésnek nem.
       images: (board.images ?? []).map((image) => image.url),
+      // Amit a GYÁRTÓ nem tesz közzé. Enélkül az üres mező sora egyszerűen
+      // eltűnne, és az olvasó nem tudná, hogy mi nem tudjuk-e, vagy nem
+      // létezik — élesben ez a Bluefin mind a 15 deszkájánál így volt.
+      unpublishedFields: (board.unpublished_fields ?? []) as string[],
       description: pickTranslated(board.description, locale) || null,
     },
     aggregate,
@@ -282,9 +286,30 @@ export default function BoardDetailRoute({ loaderData, actionData }: Route.Compo
           <SpecItem label={t("spec.length")} value={board.lengthCm} unit="cm" />
           <SpecItem label={t("spec.width")} value={board.widthCm} unit="cm" />
           <SpecItem label={t("spec.thickness")} value={board.thicknessCm} unit="cm" />
-          <SpecItem label={t("spec.volume")} value={board.volumeL} unit="l" />
-          <SpecItem label={t("spec.weight")} value={board.weightKg} unit="kg" />
-          <SpecItem label={t("spec.maxLoad")} value={board.maxLoadKg} unit="kg" />
+          <SpecItem
+            label={t("spec.volume")}
+            value={board.volumeL}
+            unit="l"
+            unpublishedLabel={
+              board.unpublishedFields.includes("volumeL") ? t("spec.unpublished") : undefined
+            }
+          />
+          <SpecItem
+            label={t("spec.weight")}
+            value={board.weightKg}
+            unit="kg"
+            unpublishedLabel={
+              board.unpublishedFields.includes("weightKg") ? t("spec.unpublished") : undefined
+            }
+          />
+          <SpecItem
+            label={t("spec.maxLoad")}
+            value={board.maxLoadKg}
+            unit="kg"
+            unpublishedLabel={
+              board.unpublishedFields.includes("maxLoadKg") ? t("spec.unpublished") : undefined
+            }
+          />
           <SpecItem label={t("spec.stabilityIndex")} value={board.stabilityIndex} />
         </dl>
         {board.description ? (
@@ -412,15 +437,38 @@ export default function BoardDetailRoute({ loaderData, actionData }: Route.Compo
   );
 }
 
+/**
+ * Egy spec-sor. HÁROM állapota van, és a harmadik a lényeg:
+ *  * van érték → kiírjuk;
+ *  * nincs érték, és nem tudjuk, miért → a sor kimarad (nem állítunk semmit);
+ *  * nincs érték, mert a GYÁRTÓ NEM KÖZLI → a sor MEGJELENIK, „a gyártó nem
+ *    közli" felirattal.
+ *
+ * A harmadik nélkül a két hiány-fajta megkülönböztethetetlen volt: mindkettő
+ * üres helyként tűnt el. Élesben (Bluefin) ez 15 deszkát érint, ahol az
+ * űrtartalmat a gyártó egyetlen modellnél sem adja meg — az olvasónak jár,
+ * hogy tudja: nem a mi adatunk hiányzik, hanem nem létezik.
+ */
 function SpecItem({
   label,
   value,
   unit,
+  unpublishedLabel,
 }: {
   label: string;
   value: number | null;
   unit?: string;
+  /** Ha meg van adva, ez a felirat jelenik meg érték helyett. */
+  unpublishedLabel?: string;
 }) {
+  if (value === null && unpublishedLabel !== undefined) {
+    return (
+      <div>
+        <dt className="inline font-semibold">{label}: </dt>
+        <dd className="inline italic text-text-3">{unpublishedLabel}</dd>
+      </div>
+    );
+  }
   if (value === null) {
     return null;
   }

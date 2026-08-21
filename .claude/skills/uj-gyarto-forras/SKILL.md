@@ -244,7 +244,41 @@ Crawl után:
 ```bash
 node tools/catalog-watch/cli.ts approve-candidates      # dry-run: mi lenne
 node tools/catalog-watch/cli.ts backfill-gallery        # Shopify-forrásnál
+node tools/catalog-watch/cli.ts sync-unpublished        # ha van nem közölt mező
 ```
+
+## „Nem találom" kontra „a gyártó nem közli"
+
+**Mielőtt egy hiányzó mezőt hibaként kezdesz javítani, nézd meg a gyártó
+oldalán, hogy egyáltalán közli-e.** A kettő gyökeresen más:
+
+- ha a kinyerés nem találja → javítandó, és a fixtúra rögzíti a javítást;
+- ha a gyártó nem teszi közzé → nincs mit javítani, ez maga a tény.
+
+Élesben mért eset: a **Bluefin egyetlen modelljénél sem ad űrtartalmat**
+(méretet és teherbírást igen). A 15 deszkája enélkül örökre „hiányos" maradt
+volna, és a mezőlefedettségi jelentés minden futásnál anomáliát jelzett volna
+ott, ahol nincs.
+
+A tény a receptbe kerül, indoklással és dátummal:
+
+```ts
+crawlConfig: {
+  unpublishedFields: ["volumeL"],
+  notes: "…ŰRTARTALMAT NEM KÖZÖL (2026-08-21, gyártói oldalon ellenőrizve)…",
+}
+```
+
+Innen `sync-unpublished --apply` viszi a katalógus-sorokra, és az adatlap
+„a gyártó nem közli" felirattal mutatja — nem üres helyként, hogy az olvasó
+tudja: nem a mi adatunk hiányzik.
+
+**Ez NEM feljogosítás becslésre.** A hiányzó érték hiányzó marad; a
+geometriából számolt űrtartalom kitalált biztonsági adat lenne.
+
+A deklaráció ELLENŐRIZHETŐ állítás: a fixtúra-teszt megköveteli, hogy a
+deklarált mező tényleg üres legyen. Ha a gyártó egyszer közölni kezdi, a teszt
+bukik, és szól, hogy vedd le a deklarációt.
 
 ## Amit SOSE tegyél
 

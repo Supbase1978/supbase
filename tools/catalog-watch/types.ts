@@ -131,6 +131,24 @@ export interface CrawlConfig {
    * rangú, mint az URL kategória-szegmense.
    */
   categoryClass?: string;
+  /**
+   * A forrás által NEM KÖZÖLT mezők — „nincs adat", nem hiba (F2.1-utó-37).
+   *
+   * MIÉRT KELL KÜLÖN: a hiányzó mezőnek két, gyökeresen eltérő oka lehet, és
+   * eddig nem tudtuk megkülönböztetni őket:
+   *  * a KINYERÉS nem találta meg (ilyenkor javítani kell) — ez a gyakoribb;
+   *  * a GYÁRTÓ nem teszi közzé (ilyenkor nincs mit javítani).
+   *
+   * Élesben mért eset (bluefinsupboards.eu, felhasználói ellenőrzés
+   * 2026-08-21): a márka EGYETLEN modellnél sem közöl űrtartalmat — méretet
+   * és teherbírást igen. Enélkül a 15 deszka örökre „hiányos" maradna a
+   * munkalistán, és a mezőlefedettségi jelentés minden futásnál anomáliát
+   * jelezne ott, ahol nincs.
+   *
+   * NEM feljogosítás a becslésre. A hiányzó érték hiányzó marad — a
+   * geometriából számolt űrtartalom KITALÁLT biztonsági adat lenne.
+   */
+  unpublishedFields?: ("volumeL" | "weightKg" | "maxLoadKg" | "thicknessCm")[];
   /** Szabad szöveges megjegyzés az adminnak. */
   notes?: string;
 }

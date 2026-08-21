@@ -90,6 +90,11 @@ Parancsok:
                                     verziózva, és egy újraépítésnél elvesztek
                                     volna. SOHA nem töröl: a recept nélküli
                                     forrást csak JELENTI. DRY-RUN; --apply ír.
+  sync-unpublished [--apply]       A receptben deklarált „a gyártó NEM KÖZLI"
+                                    tény átvezetése a katalógus-sorokra, hogy
+                                    az adatlap meg tudja különböztetni a
+                                    „nem tudjuk"-ot a „nem létezik"-től. Csak
+                                    hozzáad; DRY-RUN, --apply ír.
   capture-fixture                  Egy valós termékoldal mentése a GYÁRTÓNKÉNTI
       --source NÉV --url U          regresszió-hálóba (tools/catalog-watch/
       --teaches "mit tanít"         fixtures/). A mentett oldalon a tesztek
@@ -378,6 +383,68 @@ async function commandSyncSources(args: Args): Promise<void> {
     if (error) throw new Error(`${recipe.name}: ${error.message}`);
     console.log(`  írva: ${recipe.name}`);
   }
+}
+
+/**
+ * „A GYÁRTÓ NEM KÖZLI" tény átvezetése a katalógus-sorokra (F2.1-utó-37).
+ *
+ * A tény a RECEPTBEN születik (`unpublishedFields`, indoklással), és a
+ * megjelenítéshez a `boards` sorára kell kerülnie — a felületnek nincs
+ * forrás-kapcsolata kéznél. Az átvezetés a MODERÁTOR ÁLTAL ELBÍRÁLT
+ * (`approved`/`merged`) jelölt-kapcsolaton megy, ugyanazon az úton, mint a
+ * kép-visszatöltés: a `pending` jelölt `matched_board_id`-ját még csak a
+ * trigram-egyeztető tippelte.
+ *
+ * CSAK HOZZÁAD, nem vesz el: ha egy mező már meg van jelölve, marad. A
+ * levételt (mert a gyártó elkezdte közölni) a fixtúra-teszt jelzi, és
+ * moderátori döntés.
+ */
+async function commandSyncUnpublished(args: Args): Promise<void> {
+  const apply = flag(args, "apply") !== undefined;
+  const client = connect();
+  const sources = await listSources(client, { onlyActive: false });
+
+  let touched = 0;
+  for (const source of sources) {
+    const recipe = SOURCE_RECIPES.find((r) => r.name === source.name);
+    const fields = recipe?.crawlConfig.unpublishedFields ?? [];
+    if (fields.length === 0) continue;
+
+    const { data: candidates, error } = await client
+      .from("catalog_candidates")
+      .select("matched_board_id, status")
+      .eq("source_id", source.id)
+      .not("matched_board_id", "is", null)
+      .in("status", ["approved", "merged"]);
+    if (error) throw new Error(`${source.name}: ${error.message}`);
+
+    const boardIds = [...new Set((candidates ?? []).map((c) => c.matched_board_id as string))];
+    if (boardIds.length === 0) continue;
+
+    const { data: boards, error: boardsError } = await client
+      .from("boards")
+      .select("id, model_name, unpublished_fields")
+      .in("id", boardIds);
+    if (boardsError) throw new Error(`${source.name}: ${boardsError.message}`);
+
+    console.log(`${source.name} — nem közölt: ${fields.join(", ")} (${boardIds.length} deszka)`);
+    for (const board of boards ?? []) {
+      const current = (board.unpublished_fields ?? []) as string[];
+      const missing = fields.filter((field) => !current.includes(field));
+      if (missing.length === 0) continue;
+      touched += 1;
+      console.log(`  + ${board.model_name}: ${missing.join(", ")}`);
+      if (!apply) continue;
+      const { error: updateError } = await client
+        .from("boards")
+        .update({ unpublished_fields: [...current, ...missing] })
+        .eq("id", board.id);
+      if (updateError) throw new Error(`${String(board.model_name)}: ${updateError.message}`);
+    }
+  }
+
+  console.log(`\n${touched} deszka jelölendő`);
+  if (touched > 0 && !apply) console.log("DRY-RUN — írni --apply-vel ír.");
 }
 
 /**
@@ -1322,6 +1389,8 @@ async function main(): Promise<void> {
       return commandListSources();
     case "sync-sources":
       return commandSyncSources(args);
+    case "sync-unpublished":
+      return commandSyncUnpublished(args);
     case "capture-fixture":
       return commandCaptureFixture(args);
     case "add-source":

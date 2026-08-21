@@ -85,6 +85,17 @@ export interface CatalogItemRowBase {
    * enged legyintést.
    */
   images: BoardImage[];
+  /**
+   * Amit a GYÁRTÓ nem tesz közzé (migráció 20260717092600), camelCase
+   * spec-mezőnevekkel: `["volumeL"]`.
+   *
+   * Az itt felsorolt mező üressége NEM adathiány, hanem maga a tény — a
+   * felület ezért „a gyártó nem közli" felirattal mutatja, nem üres helyként.
+   * Élesben (bluefinsupboards.eu) a márka egyetlen modelljénél sem ad
+   * űrtartalmat; enélkül az olvasó nem tudná megkülönböztetni a „nem
+   * tudjuk"-ot a „nem létezik"-től.
+   */
+  unpublished_fields: string[];
   availability_hu: boolean;
   /** Generált oszlop (3.1), csak olvasható. */
   stability_index: number | null;

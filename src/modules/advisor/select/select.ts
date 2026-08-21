@@ -135,8 +135,27 @@ export function passesHardFilter(
   config: AdvisorConfig = DEFAULT_ADVISOR_CONFIG,
 ): boolean {
   // (a) térfogat-ráhagyás: volume ≥ súly × szorzó[szint]
-  if (board.volumeL === null) return false;
-  if (board.volumeL < inputs.weightKg * config.volumeMultiplier[inputs.experience]) {
+  //
+  // HIÁNYZÓ ŰRTARTALOM NEM ZÁR KI (felhasználói döntés, 2026-08-21). Van
+  // gyártó, amelyik EGYETLEN modelljénél sem közöl űrtartalmat
+  // (bluefinsupboards.eu, a gyártó oldalán ellenőrizve) — méretet és
+  // teherbírást igen. A korábbi szabály miatt ennek a márkának mind a 15
+  // deszkája kiesett az ajánlásból, holott a gyártó SAJÁT terhelési korlátja
+  // ismert.
+  //
+  // A biztonság így sem gyengül el: a (b) pont teherbírás-vizsgálata
+  // KÖTELEZŐ marad, tehát űrtartalom nélkül is kell egy gyártói korlát, amit
+  // a felhasználó súlya nem lép túl. Amitől elesünk, az a MÁSODIK, független
+  // tartalék — ezért az ilyen deszka a pontozásban sem nyerhet: a
+  // `volumeFitScore` semleges 0,5-öt ad, tehát az azonos paraméterű, ismert
+  // űrtartalmú deszka mindig megelőzi.
+  //
+  // A hiány LÁTHATÓ marad a felhasználónak (adatlap: „a gyártó nem közli") —
+  // nem becsüljük meg a geometriából, mert az kitalált biztonsági adat lenne.
+  if (
+    board.volumeL !== null &&
+    board.volumeL < inputs.weightKg * config.volumeMultiplier[inputs.experience]
+  ) {
     return false;
   }
   // (b) terhelhetőség: max_load × biztonsági faktor ≥ effektív súly
@@ -208,9 +227,12 @@ export function explainNoMatch(
   );
   if (byLoad.length === 0) return "maxLoad";
 
+  // Az „üres eredmény" magyarázata ugyanazt a szabályt tükrözi, mint a kemény
+  // szűrés: a hiányzó űrtartalom nem zár ki, tehát nem is lehet az üres
+  // találati lista OKA.
   const byVolume = byLoad.filter(
     (b) =>
-      b.volumeL !== null &&
+      b.volumeL === null ||
       b.volumeL >= inputs.weightKg * config.volumeMultiplier[inputs.experience],
   );
   if (byVolume.length === 0) return "volume";

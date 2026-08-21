@@ -40,7 +40,8 @@
     "maxLoad": "Max load",
     "riderWeight": "Rider weight",
     "stabilityIndex": "Stability index",
-    "year": "Year"
+    "year": "Year",
+    "unpublished": "not published by the manufacturer"
   },
   "detail": {
     "description": "Description",

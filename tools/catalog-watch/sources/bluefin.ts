@@ -7,6 +7,11 @@
  *    oldalán maradt teszt-adat) — alias oldja meg.
  *  * A JSON-LD képe `width=1920` paramétert visel (1656 kB/kép); a
  *    `displayImageUrl` normalizálja megjelenítési méretre.
+ *  * ŰRTARTALMAT A MÁRKA EGYETLEN MODELLNÉL SEM KÖZÖL (felhasználói
+ *    ellenőrzés a gyártó oldalán, 2026-08-21). Nem a kinyerés hibája: méretet
+ *    és teherbírást mind a 15 deszkánál megad, űrtartalmat egyiknél sem. Ezért
+ *    `unpublishedFields` — így nem marad örökre a hiányos-listán, és a
+ *    mezőlefedettségi jelentés sem jelez ott anomáliát, ahol nincs.
  */
 import type { SourceRecipe } from "./index.ts";
 
@@ -16,7 +21,8 @@ export const recipe: SourceRecipe = {
   kind: "brand_site",
   country: "EU",
   crawlConfig: {
-      "notes": "Hivatalos D2C oldal, JSON-LD 8/8 mintan validalva 2026-07-31",
+      "notes": "Hivatalos D2C oldal, JSON-LD 8/8 mintan validalva 2026-07-31. ŰRTARTALMAT NEM KÖZÖL (2026-08-21, gyártói oldalon ellenőrizve) — a hiányzó térfogat itt nem adathiba.",
+      "unpublishedFields": ["volumeL"],
       "excludeUrlPatterns": [
           "/de/",
           "/es/",
