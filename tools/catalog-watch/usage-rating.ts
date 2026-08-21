@@ -91,15 +91,38 @@ export function boardTypeFromUsage(html: string): BoardType | "surf" | null {
  * hamis találatot adna. Élesben mérve ez a különbség dönt.
  *
  * Több, ELTÉRŐ kategória említésénél `null` — nem tippelünk.
+ *
+ * AZ ALLROUND SZINONIMÁI (2026-08-21, gladiatorsup.com): a gyártók ritkán
+ * írják le, hogy „all-around board" — helyette azt mondják, hogy „versatile",
+ * „universal", „entry-level". Mérve ugyanazon a márkán:
+ *
+ *   ELITE 12.6T  „The **touring** SUP board from the Elite series"   → túra
+ *   ELITE 11.6   „The **universal** SUP board from the Elite series" → allround
+ *   PRO 11.6     „a **versatile** SUP board from the Pro series"     → allround
+ *   ORIGIN 10.6  „a versatile model from the **entry-level** series" → allround
+ *
+ * MIÉRT FONTOS ez a négy szó: enélkül csak a 12.6T kapott kategóriát, a többi
+ * üresen maradt — és a családi öröklés az EGYETLEN „touring" tagtól az egész
+ * `Elite`/`Pro`/`Origin` vonalat túrásnak jelölte volna. Azok viszont KIVITELI
+ * vonalak, nem használati kategóriák: egy családon belül van túra- és
+ * allround-deszka is. A gyártó saját szavai ezt eldöntik, a családnév nem.
+ *
+ * A SZIGORÚ MINTA ITT IS ÁLL: a szó után kötelező a „board"/„model"/„sup"/
+ * „isup", különben egy „versatile bag" vagy „universal fin" is besorolna egy
+ * deszkát. A „model" azért került be, mert a gyártó így is fogalmaz:
+ * „a versatile **model** from the entry-level Origin series" — navigációs
+ * menüben ez az alak nem fordul elő, prózában igen.
  */
 export function boardTypeFromDescription(text: string): BoardType | null {
   const rules: [RegExp, BoardType][] = [
-    [/\ball[\s-]*(?:a|)round\s+(?:i?sup\s+)?board\b/i, "allround"],
-    [/\btouring\s+(?:i?sup\s+)?board\b/i, "touring"],
-    [/\brace\s+(?:i?sup\s+)?board\b/i, "race"],
-    [/\b(?:yoga|fitness)\s+(?:i?sup\s+)?board\b/i, "yoga"],
-    [/\bfishing\s+(?:i?sup\s+)?board\b/i, "fishing"],
-    [/\b(?:river|whitewater)\s+(?:i?sup\s+)?board\b/i, "river"],
+    [/\ball[\s-]*(?:a|)round\s+(?:i?sup\s+)?(?:board|model)\b/i, "allround"],
+    [/\b(?:versatile|universal|all[\s-]*purpose)\s+(?:i?sup\s+)?(?:board|model)\b/i, "allround"],
+    [/\bentry[\s-]*level\s+(?:i?sup\s+)?(?:board|model)\b/i, "allround"],
+    [/\btouring\s+(?:i?sup\s+)?(?:board|model)\b/i, "touring"],
+    [/\brace\s+(?:i?sup\s+)?(?:board|model)\b/i, "race"],
+    [/\b(?:yoga|fitness)\s+(?:i?sup\s+)?(?:board|model)\b/i, "yoga"],
+    [/\bfishing\s+(?:i?sup\s+)?(?:board|model)\b/i, "fishing"],
+    [/\b(?:river|whitewater)\s+(?:i?sup\s+)?(?:board|model)\b/i, "river"],
   ];
   const found = new Set<BoardType>();
   for (const [pattern, type] of rules) {

@@ -242,3 +242,34 @@ describe("findProductImage — megjelenítésre való méret", () => {
     expect(findProductImage(withLogo, "coral")).toBe("https://x.com/coral-800x1200.png");
   });
 });
+
+/**
+ * AZ ALLROUND SZINONIMÁI (2026-08-21, gladiatorsup.com). A gyártók ritkán
+ * írják le, hogy „all-around board" — helyette „versatile", „universal",
+ * „entry-level". Enélkül egy márkán belül csak a túra-deszka kapott
+ * kategóriát, a többi üresen maradt.
+ */
+describe("boardTypeFromDescription — a gyártó saját szavai", () => {
+  it.each([
+    ["The universal SUP board from the Elite series in size 11'6", "allround"],
+    ["The Pro 11'6 is a versatile SUP board from the Pro series", "allround"],
+    ["Origin 10'6 a versatile model from the entry-level Origin series", "allround"],
+    ["The touring SUP board from the Elite series in size 12'6", "touring"],
+  ])("%s → %s", (text, expected) => {
+    expect(boardTypeFromDescription(text)).toBe(expected);
+  });
+
+  /**
+   * A szigorú minta ITT IS áll: a kategória-szó után kötelező a főnév.
+   * Enélkül egy tartozék neve („ELITE Touring Fin 9″", ami MINDEN Gladiator
+   * oldal oldalsávjában ott van) besorolna egy deszkát.
+   */
+  it("tartozék nevéből NEM sorol be", () => {
+    expect(boardTypeFromDescription("Coiled Leash ELITE Touring Fin 9″ SUP SUPER PUMP")).toBeNull();
+    expect(boardTypeFromDescription("versatile bag for your board")).toBeNull();
+  });
+
+  it("ELTÉRŐ kategóriák említésénél továbbra sem tippel", () => {
+    expect(boardTypeFromDescription("a versatile board and also a race board")).toBeNull();
+  });
+});
