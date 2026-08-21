@@ -70,6 +70,7 @@ import {
 } from "./images.ts";
 import { SOURCE_RECIPES } from "./sources/index.ts";
 import { planSourceSync } from "./sources/plan.ts";
+import { findSuspicions, formatCoverage, type Suspicion } from "./suspicion.ts";
 import type { BoardType, CrawlConfig, ExtractedProduct, SourceKind } from "./types.ts";
 
 /** Egyetlen kérés felső időkorlátja — egy lassú bolt ne akassza meg a futást. */
@@ -683,6 +684,8 @@ async function commandApproveCandidates(args: Args): Promise<void> {
   let skippedNoSafety = 0;
   let skippedNoBrand = 0;
   let inferredType = 0;
+  /** Gyanú-jelet viselő sorok — a gépi menet átlépi őket, a moderátor nem. */
+  const skippedSuspicious: { modelName: string; details: Suspicion[] }[] = [];
   for (const row of rows ?? []) {
     const extracted = row.extracted as ExtractedProduct | null;
     if (!extracted) continue;
@@ -697,8 +700,29 @@ async function commandApproveCandidates(args: Args): Promise<void> {
       skippedNoBrand += 1;
       continue;
     }
-    if (!isAccessory && (extracted.specs.maxLoadKg === null || extracted.specs.volumeL === null)) {
+    // BIZTONSÁGI MEZŐK. Az űrtartalom akkor NEM kötelező, ha a forrás
+    // receptje szerint a gyártó nem közli (F2.1-utó-37) — ott a hiány maga a
+    // tény, nem adathiba, és a Deszkaválasztó is beengedi az ilyen deszkát,
+    // ha a gyártói teherbírás megvan. Máshol viszont a hiányzó űrtartalom
+    // továbbra is moderátori kérdés.
+    const unpublished = source?.crawl_config?.unpublishedFields ?? [];
+    const volumeRequired = !unpublished.includes("volumeL");
+    if (
+      !isAccessory &&
+      (extracted.specs.maxLoadKg === null ||
+        (volumeRequired && extracted.specs.volumeL === null))
+    ) {
       skippedNoSafety += 1;
+      continue;
+    }
+    // GYANÚ-JEL (F2.1-utó-38): a megjelölt sor NEM mehet át tömegesen. Ez az a
+    // fogaskerék, ami a jelzést védelemmé teszi — enélkül a gyanús érték
+    // bekerülne az adatbázisba, és onnantól ugyanolyan tényként viselkedne,
+    // mint a többi. A moderátor egyenként megnézheti (hátha csak egy modell
+    // HTML-oldala hibás), de a gépi menet átlépi.
+    const suspicions = findSuspicions(extracted);
+    if (suspicions.length > 0) {
+      skippedSuspicious.push({ modelName: extracted.modelName, details: suspicions });
       continue;
     }
     let boardType = extracted.boardType;
@@ -769,6 +793,17 @@ async function commandApproveCandidates(args: Args): Promise<void> {
     `Kihagyva: ${skippedNoType} kategória nélkül · ${skippedNoSafety} biztonsági mező nélkül` +
       (skippedNoBrand > 0 ? ` · ${skippedNoBrand} márkanév nélkül` : ""),
   );
+  // A gyanús sorokat NÉVVEL és INDOKKAL írjuk ki: a moderátornak egyenként kell
+  // megnéznie őket, és a lista mondja meg, mit keressen az oldalon.
+  if (skippedSuspicious.length > 0) {
+    console.log(
+      `\nGYANÚS ÉRTÉK MIATT KIHAGYVA — moderátori döntés kell (${skippedSuspicious.length}):`,
+    );
+    for (const item of skippedSuspicious) {
+      console.log(`  ${item.modelName}`);
+      for (const detail of item.details) console.log(`      ${detail.detail}`);
+    }
+  }
   if (inferredType > 0) {
     console.log(`Kategória a modellcsaládból örökölve: ${inferredType} jelölt`);
   }
@@ -881,6 +916,19 @@ async function commandCrawl(args: Args): Promise<void> {
         `${source.robotsBlocked} robots-tiltás` +
         (source.specTablesUsed > 0 ? ` · ${source.specTablesUsed} gyártói spec-tábla` : ""),
     );
+    // MEZŐLEFEDETTSÉG (F2.1-utó-38): a hiány forrás-szinten mond valamit. A
+    // „19/20" egy termék ügye, a „0/15" a kinyerésé — a kettőt eddig semmi
+    // nem különböztette meg, mert a summary terméket számolt, mezőt nem.
+    if (source.coverage.length > 0 && source.coverage[0]!.total > 0) {
+      console.log(`    mezők: ${formatCoverage(source.coverage)}`);
+    }
+    // GYANÚS ÉRTÉKEK. Nem elutasítás — de itt, a gyűjtésnél derül ki, amíg
+    // még meg lehet nézni, egyetlen modell oldala hibás-e vagy az egész forrás.
+    for (const item of source.suspicious) {
+      console.log(`    GYANÚS — ${item.modelName}`);
+      for (const detail of item.details) console.log(`        ${detail}`);
+      console.log(`        ${item.url}`);
+    }
     for (const error of source.errors) console.log(`    hiba: ${error}`);
   }
 

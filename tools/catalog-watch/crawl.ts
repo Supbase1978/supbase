@@ -43,6 +43,7 @@ import {
   fetchShopifyCollectionTypes,
 } from "./shopify.ts";
 import { parseSitemap, selectProductUrls } from "./sitemap.ts";
+import { fieldCoverage, findSuspicions } from "./suspicion.ts";
 import { mergeSpecTables, normalizeSizeKey } from "./spec-table.ts";
 import type { BoardSpecs, BoardType } from "./types.ts";
 
@@ -153,6 +154,8 @@ function emptySummary(source: CatalogSourceRow): SourceCrawlSummary {
     pricesRecorded: 0,
     robotsBlocked: 0,
     specTablesUsed: 0,
+    coverage: [],
+    suspicious: [],
     errors: [],
   };
 }
@@ -612,6 +615,8 @@ export async function crawlSource(
   log(`[${source.name}] ${urls.length} termék-URL, szünet ${delayMs} ms`);
 
   const boards = await deps.store.listBoardsForMatch();
+  /** A futás ÖSSZES kinyert terméke — ebből lesz a mezőlefedettség. */
+  const extractedAll: ExtractedProduct[] = [];
 
   for (const url of urls) {
     let path: string;
@@ -648,6 +653,24 @@ export async function crawlSource(
 
       if (products.length === 0) continue;
       summary.productsExtracted += 1;
+      // A LEFEDETTSÉG a futás végén, a teljes szállítmányon számolódik: egy
+      // hiányzó mező soronként semmit nem mond, forrás-szinten viszont
+      // megkülönbözteti az egyedi hibát (19/20) a kinyerés hibájától (0/15).
+      extractedAll.push(...products);
+
+      for (const product of products) {
+        // GYANÚ-JELEK (F2.1-utó-38). NEM elutasítás: a termék megy tovább, de
+        // a jel a GYŰJTÉSNÉL látszik — ott, ahol még meg lehet nézni, hogy
+        // egyetlen modell oldala hibás-e, vagy az egész forrásé.
+        const suspicions = findSuspicions(product);
+        if (suspicions.length > 0) {
+          summary.suspicious.push({
+            modelName: product.modelName,
+            url: product.sourceUrl,
+            details: suspicions.map((item) => item.detail),
+          });
+        }
+      }
 
       for (const product of products) {
         await persistExtracted({
@@ -670,6 +693,8 @@ export async function crawlSource(
       addError(summary, `${url}: ${errorMessage(error)}`);
     }
   }
+
+  summary.coverage = fieldCoverage(extractedAll, config.unpublishedFields ?? []);
 
   try {
     await deps.store.markSourceCrawled(source.id, now().toISOString());

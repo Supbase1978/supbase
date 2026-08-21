@@ -6,6 +6,7 @@
  * a `board_type` CHECK-kényszer és a jelölt-normalizálás ne csúszhasson el —
  * `import type`, tehát futásidőben nyoma sincs (Node type-stripping).
  */
+import type { FieldCoverage } from "./suspicion.ts";
 import type {
   BoardType,
   ExtractedBoardData,
@@ -245,6 +246,18 @@ export interface SourceCrawlSummary {
    * — költséges — böngésző-renderelés.
    */
   specTablesUsed: number;
+  /**
+   * MEZŐLEFEDETTSÉG ebben a futásban (F2.1-utó-38). Nem a soronkénti hiányt
+   * mutatja, hanem a FORRÁSÉT: „19/20-nál volt űrtartalom" egészen mást
+   * jelent, mint „0/15-nél". Az előbbi egy termék ügye, az utóbbi a kinyerésé.
+   */
+  coverage: FieldCoverage[];
+  /**
+   * GYANÚS TERMÉKEK ebben a futásban, emberi indoklással. A gyanú nem
+   * elutasítás: az érték beíródik, de a sor nem csúszhat át a tömeges
+   * jóváhagyáson, és itt, a GYŰJTÉSNÉL derül ki.
+   */
+  suspicious: { modelName: string; url: string; details: string[] }[];
   errors: string[];
 }
 

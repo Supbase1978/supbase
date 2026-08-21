@@ -138,6 +138,8 @@ export async function probeSource(
     pricesRecorded: 0,
     robotsBlocked: 0,
     specTablesUsed: 0,
+    coverage: [],
+    suspicious: [],
     errors: [],
   };
 

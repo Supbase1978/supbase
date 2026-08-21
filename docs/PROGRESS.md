@@ -4097,3 +4097,74 @@ ez becslésre nem elég szoros, ELLENŐRZÉSRE viszont igen (a hibás HYPER 11'6
 0,12-t ad).
 
 **Kapuk:** typecheck + lint zöld, 1114 teszt (82 fájl).
+
+---
+
+## F2.1-utó-38 — Gyanú-jelek és mezőlefedettség (2026-08-21)
+
+**Felhasználói követelmény:** „ezeket a fejlesztéseket azért csináljuk, hogy
+eleve ne jusson el rossz adat a kapuig. Ugyanis ha rossz adat eljut, akkor
+alapvetően megkérdőjeleződik a többi adat is egy adott márkánál."
+
+Két külön eszköz, mert két külön kérdésre válaszolnak.
+
+### 1. Gyanú-jelek — NEM elutasítás
+
+A felhasználó pontosítása döntötte el a formát: a kemény elutasítás rossz
+volna, mert *„egy gyerek SUP hossza biztosan kisebb a többinél… de a gyerek
+méretre mindig utal a gyártó"*. Nem a szám önmagában gyanús, hanem a szám a
+KATEGÓRIÁJÁHOZ képest — és a gyanús értéket **meg kell tudni nézni** (hátha
+csak egyetlen modell HTML-oldala hibás).
+
+Négy jel, mind emberi indoklással:
+
+| jel | mit fog meg | küszöb |
+|---|---|---|
+| `volume_geometry` | HYPER 11'6": 350×79×15 cm mellett 48 L | arány < 0,25 vagy > 1,1 |
+| `too_short` | 210 cm allroundként (az evező tartományából) | gyerek 180 cm, egyéb 240 cm |
+| `implausible_load` | 8,8 kg „teherbírás" (a deszka súlya) | < 40 kg |
+| `conflicts_with_board` | 210 cm egy 300 cm-esként ismert deszkáról | > 10% eltérés, csak ≥0,8 egyezésnél |
+
+**A küszöbök MÉRTEK.** A 221 mérhető deszkán a térfogat/geometria arány
+0,36–1,01 között szór, és mindkét szél értelmes: a hegyes orrú Sprint 14'0"
+adja a 0,36-ot, a szinte téglatest Peace jógadeszka az 1,01-et. A felső határ
+FIZIKAI: a térfogat nem lehet nagyobb a befoglaló doboznál. A hossz-küszöb
+kategóriafüggő, mert a legrövidebb gyerekdeszkánk 244 cm, a legrövidebb
+nem-gyerek 249 cm.
+
+A `suspicion.test.ts` külön blokkja a katalógus VALÓS szélsőértékeit engedi át
+(Sprint, Peace, Kids Navy, Mega, Cruise Gecko) — ha egy jövőbeli szigorítás
+legitim deszkát kezdene gyanúsítani, ott bukik el.
+
+**A fogaskerék, ami a jelzést védelemmé teszi:** a megjelölt sor kimarad a
+TÖMEGES jóváhagyásból, névvel és indokkal kiírva. Enélkül igaza lenne a
+felhasználónak: ami bekerül az adatbázisba, azt tömegesen jóvá is hagyják, és
+onnantól ugyanolyan tényként viselkedik, mint a többi.
+
+Az első futás **4 jelöltet tartott vissza**: a HYPER lehetetlen űrtartalmát és
+három szörfdeszkát (172–223 cm), amik rövidebbek bármelyik valós SUP-nál.
+
+### 2. Mezőlefedettség forrásonként — a GYŰJTÉSNÉL
+
+A felhasználó másik pontja: „ha itt hibázik, akkor joggal merül fel a gyanú,
+hogy mi van az adott gyártó többi modelljével?" Erre a soronkénti hiány nem
+válasz — a forrás-szintű igen:
+
+```
+Bluefin: 6 URL · 6 termék · …
+    mezők: hossz ✓ · szél ✓ · vast ✓ · térf n.a. · súly ✓ · teher 5/6
+```
+
+A `térf n.a.` VÁRT hiány (a recept `unpublishedFields`-je szerint a gyártó nem
+közli), a `teher 5/6` viszont egyetlen terméké — azt kell megnézni. A „0/15"
+alak pedig azt jelentené, hogy nem a termékkel van baj, hanem a kinyeréssel.
+Eddig ez sehol nem látszott: a summary terméket számolt, mezőt nem.
+
+### Mellékesen: a jóváhagyás űrtartalom-követelése pontosítva
+
+A tömeges jóváhagyó eddig MINDIG megkövetelte az űrtartalmat. A -37-es döntés
+után ez ellentmondás lett volna: a Bluefin új modelljei sosem mehettek volna
+át, holott a Deszkaválasztó beengedi őket. Az űrtartalom mostantól ott nem
+kötelező, ahol a recept szerint a gyártó nem közli — máshol változatlanul az.
+
+**Kapuk:** typecheck + lint zöld, 1133 teszt (83 fájl).
