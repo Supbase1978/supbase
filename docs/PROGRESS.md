@@ -3827,3 +3827,30 @@ forrása nem foltozva lett, hanem megszűnt.
 
 Regresszió-ellenőrzés a meglévő forrásokon (Aqua Marina Cascade és Coral
 Touring, Gladiator Elite 11.6/12.6T, Jobe Duna): mind változatlan.
+
+**A javítás után, élesben:**
+
+| | előtte | utána |
+|---|---|---|
+| Gladiator besorolatlan | 72 | **49** (23 allround lett) |
+| Zray kategóriával (a teljes adatúakból) | 8 / 70 | **58 / 70** |
+| jóváhagyható deszka | 35 | **65** |
+| családból ÖRÖKÖLT kategória (tippelés) | 59 | **14** |
+
+Az ellentmondásos családok listája megkapta a `gladiator|pro`,
+`gladiator|origin` és `gladiator|elite` bejegyzést — vagyis a szabály ott
+pontosan úgy hallgatott el, ahogy kell.
+
+**A jóváhagyás lefutott: 65 új deszka + 9 összefésülés.** A katalógus
+**161 → 226 deszka**:
+
+| | |
+|---|---|
+| Starboard 105 · **Zray 41** · Aqua Marina 37 · **Gladiator 21** · Bluefin 15 · Indiana 3 · **Jobe 2** · Itiwit 1 · **Coasto 1** | |
+| típus | allround 123 · túra 62 · race 24 · gyerek 10 · jóga 3 · folyami 2 · horgász 2 |
+| képpel | **225 / 226** |
+| galériával | 110 |
+
+Ellenőrzés a gyártónál: a `CAMO GREEN 10'8"` besorolása azért túra, mert a Zray
+maga teszi oda (`HOME › SUP › Touring › CAMO GREEN`) — a méret alapján
+allroundnak tűnne, de a gyártó saját besorolása az erősebb.
