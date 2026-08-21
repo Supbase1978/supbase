@@ -112,6 +112,18 @@ export interface CrawlConfig {
    * pontos utótagként nem adható meg, a `ᐅ` jel viszont mindig ott áll.
    */
   titleCutAfter?: string[];
+  /**
+   * Böngésző-renderelés akkor is, ha a nyers HTML EGYETLEN terméket sem adott.
+   *
+   * Alapból KI van kapcsolva, mert drága: e nélkül a fallback csak ott fut,
+   * ahol már van termékünk, csak hiányos/ellentmondásos az adata. Van viszont
+   * olyan forrás (fanatic.com), ahol a spec-tábla KIZÁRÓLAG renderelés után
+   * létezik — ott a nyers HTML semmit nem ad, és a fallback esélyt sem kapna.
+   *
+   * Csak akkor kapcsold be, ha az URL-minta már szűkre van húzva: minden
+   * illeszkedő, de terméket nem adó oldal egy böngésző-renderelésbe kerül.
+   */
+  renderWhenEmpty?: boolean;
   /** Szabad szöveges megjegyzés az adminnak. */
   notes?: string;
 }

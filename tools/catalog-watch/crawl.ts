@@ -22,7 +22,12 @@ import type {
 import { htmlToText } from "./html.ts";
 import { findProductNodes, pickPrimaryProduct } from "./jsonld.ts";
 import { matchCandidate } from "./match.ts";
-import { classifyProduct, extractProduct, extractProductsFromPage } from "./normalize.ts";
+import {
+  classifyProduct,
+  dimensionsAreCoherent,
+  extractProduct,
+  extractProductsFromPage,
+} from "./normalize.ts";
 import {
   CRAWLER_USER_AGENT,
   crawlDelayFor,
@@ -566,44 +571,66 @@ export async function crawlSource(
       // minden méretét egyetlen spec-táblában sorolja fel (fanatic.com). A
       // SUP-nál a méret maga a termék, ezért ilyenkor méretenként külön jelölt
       // születik — a JSON-LD-ág változatlanul egy terméket ad.
-      let products = node
-        ? [extractProduct(node, url, htmlToText(page.text), config.defaultBrandName ?? null)].filter(
-            (p): p is ExtractedProduct => p !== null,
-          )
-        : config.htmlOnly
-          ? extractProductsFromPage(page.text, url, config.defaultBrandName ?? null, pageOptions)
+      //
+      // A `htmlOnly` ELSŐBBSÉGET élvez a JSON-LD-vel szemben: a kapcsoló épp
+      // azt jelenti, hogy ennél a forrásnál a specifikáció a SZÖVEGBEN van.
+      // Élesben (fanatic.com) a JSON-LD kitesz nevet és árat, de egyetlen
+      // méretet sem — enélkül az a féladat nyert volna, és a spec-tábla ki sem
+      // olvasódik.
+      let products = config.htmlOnly
+        ? extractProductsFromPage(page.text, url, config.defaultBrandName ?? null, pageOptions)
+        : node
+          ? [
+              extractProduct(node, url, htmlToText(page.text), config.defaultBrandName ?? null),
+            ].filter((p): p is ExtractedProduct => p !== null)
           : [];
-      if (products.length === 0) continue;
-      summary.productsExtracted += 1;
-
-      // Böngésző-renderelt fallback (F2.1-utó-3): csak akkor, ha a sima
-      // HTML-ből a méret MINDHÁROM mezője hiányzott — ez a jele annak, hogy a
-      // bolt a méretet csak JS-futás után írja a látható szövegbe. Drága
-      // művelet, ezért szűk feltétellel hívjuk, és hibatűrő (sosem dob).
-      const first = products[0] as ExtractedProduct;
-      const missingAllDimensions =
+      // BÖNGÉSZŐ-RENDERELT FALLBACK (F2.1-utó-3, bővítve F2.1-utó-35).
+      //
+      // Akkor kell, ha a sima HTML NEM HASZNÁLHATÓ. Három eset:
+      //  * egyetlen méret sem jött ki (az eredeti, bluefinsupboards.eu),
+      //  * a kijött méretek ELLENTMONDÁSOSAK — élesben (fanatic.com) a leírás
+      //    prózájából `hossz 340,4 = vastagság 340,4` jött, és mivel a hossz
+      //    nem volt üres, a fallback korábban el sem indult,
+      //  * VAGY egyáltalán nem született termék. Ez utóbbi korábban `continue`
+      //    volt: a fallback esélyt sem kapott azon az oldalon, ahol a
+      //    spec-tábla KIZÁRÓLAG renderelés után létezik — épp ahol a
+      //    legjobban kellett volna.
+      //
+      // Költség: a renderelés nagyságrendekkel drágább egy HTTP-kérésnél,
+      // ezért az utolsó eset KÜLÖN KAPCSOLÓRA fut (`renderWhenEmpty`) — enélkül
+      // minden nem-termék oldal (blog, kategória) is böngészőbe kerülne.
+      const first = products[0];
+      const plainHtmlUnusable =
         deps.renderText &&
-        first.specs.lengthCm === null &&
-        first.specs.widthCm === null &&
-        first.specs.thicknessCm === null;
-      if (missingAllDimensions) {
+        (first === undefined
+          ? Boolean(config.renderWhenEmpty)
+          : (first.specs.lengthCm === null &&
+              first.specs.widthCm === null &&
+              first.specs.thicknessCm === null) ||
+            !dimensionsAreCoherent(first.specs));
+      if (plainHtmlUnusable) {
         await sleep(delayMs);
         const renderedText = await deps.renderText!(url);
         if (renderedText !== null) {
           // A HTML-ONLY ág is újraértelmez: korábban csak a JSON-LD-ág tette,
           // ezért a böngésző-fallback ott hatástalan volt. Élesben
           // (fanatic.com) a spec-tábla KIZÁRÓLAG renderelés után létezik.
-          const rerendered = node
-            ? [extractProduct(node, url, renderedText, config.defaultBrandName ?? null)].filter(
-                (p): p is ExtractedProduct => p !== null,
-              )
-            : extractProductsFromPage(page.text, url, config.defaultBrandName ?? null, {
+          const rerendered = config.htmlOnly
+            ? extractProductsFromPage(page.text, url, config.defaultBrandName ?? null, {
                 ...pageOptions,
                 overrideText: renderedText,
-              });
+              })
+            : node
+              ? [extractProduct(node, url, renderedText, config.defaultBrandName ?? null)].filter(
+                  (p): p is ExtractedProduct => p !== null,
+                )
+              : [];
           if (rerendered.length > 0) products = rerendered;
         }
       }
+
+      if (products.length === 0) continue;
+      summary.productsExtracted += 1;
 
       for (const product of products) {
         await persistExtracted({

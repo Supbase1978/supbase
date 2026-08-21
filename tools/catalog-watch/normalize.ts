@@ -824,7 +824,8 @@ const ACCESSORY_CATEGORY_RULES: [GearCategory, string[]][] = [
   // zraysports.com „ALUMINUM OARS"). A csupasz „oar" SZÁNDÉKOSAN hiányzik: a
   // „b-oar-d" részstringje lenne, tehát minden deszkára illeszkedne.
   ["evezo", ["evezo", "paddle blade", "oars"]],
-  ["taska", ["hatizsak", "taska", "backpack", "board bag", "carry bag"]],
+  // A „gearbag" egybeírva is táska (fanatic.com: `fanatic-gearbag-pocket-isup`).
+  ["taska", ["hatizsak", "taska", "backpack", "board bag", "carry bag", "gearbag", "gear bag"]],
   ["ules", ["ules", "kayak seat", "seat"]],
 ];
 
@@ -943,6 +944,27 @@ export type ProductClassification =
  * Ami így kiesik (`ignore`), az nem vész el végleg: a következő futás újra
  * megnézi, és a forrás `crawl_config`-jában a mintákkal is szűkíthető a kör.
  */
+/**
+ * A méretek ÖNMAGUKBAN ellentmondásmentesek-e? Egy deszka SOSEM szélesebb és
+ * SOSEM vastagabb, mint amilyen hosszú.
+ *
+ * Két élesben mért hibát fog meg, mindkettő HAMIS adat volt, nem hiányzó:
+ *  * `396,2 × 396,2 cm` — a kiegészítő-oldal a szomszéd deszka méretét szedte
+ *    fel (zraysports.com),
+ *  * `hossz 340,4 = vastagság 340,4` — a leírás prózájából olvasott két
+ *    ugyanolyan számot (fanatic.com), miközben a valódi tábla csak
+ *    böngésző-renderelés után létezik.
+ *
+ * Hiányzó mező nem ellentmondás: ott nincs mit összevetni.
+ */
+export function dimensionsAreCoherent(specs: BoardSpecs): boolean {
+  const { lengthCm, widthCm, thicknessCm } = specs;
+  if (lengthCm === null) return true;
+  if (widthCm !== null && widthCm >= lengthCm) return false;
+  if (thicknessCm !== null && thicknessCm >= lengthCm) return false;
+  return true;
+}
+
 export function classifyProduct(product: {
   rawTitle: string;
   modelName: string;
@@ -970,7 +992,8 @@ export function classifyProduct(product: {
     specs.lengthCm >= BOARD_LENGTH_MIN_CM &&
     specs.lengthCm <= BOARD_LENGTH_MAX_CM;
   // A méret-alapú rövidzár csak ÖNMAGÁBAN ELLENTMONDÁSMENTES adatra szólal
-  // meg: egy deszka SOSEM szélesebb, mint amilyen hosszú.
+  // meg (`dimensionsAreCoherent`): egy deszka sosem szélesebb és sosem
+  // vastagabb, mint amilyen hosszú.
   //
   // ÉLESBEN MÉRT HIBA (zraysports.com, 2026-08-20): a kiegészítő-oldalakon
   // (ALUMINUM OARS, Pump, LEASH, vízhatlan táska) nincs saját spec-blokk, a
@@ -979,7 +1002,7 @@ export function classifyProduct(product: {
   // 150 kg teherbírás" DESZKAKÉNT jött volna be. A rövidzár szándékosan
   // erősebb minden kulcsszónál (egy rosszul címzett deszkát a saját adata
   // ment meg) — de csak akkor, ha az az adat egyáltalán deszkáé lehet.
-  const dimensionsCoherent = specs.widthCm === null || specs.widthCm < (specs.lengthCm ?? 0);
+  const dimensionsCoherent = dimensionsAreCoherent(specs);
   if (lengthInRange && dimensionsCoherent && (specs.volumeL !== null || specs.maxLoadKg !== null)) {
     return { kind: "board" };
   }
