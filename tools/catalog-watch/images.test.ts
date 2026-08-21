@@ -178,3 +178,25 @@ describe("shopifyProductJsonUrl", () => {
     expect(shopifyProductJsonUrl(null)).toBeNull();
   });
 });
+
+/**
+ * BÉLYEGKÉP-CSAPDA (2026-08-21, fanatic.com). A galéria-csík
+ * `?width=50&height=50` képet ad — 4 kB, 50 px —, ami a katalógusban
+ * használhatatlan. Ugyanaz a kép `?width=768`-cal 321 kB.
+ */
+describe("displayImageUrl — width-paraméteres kiszolgálók", () => {
+  it("a bélyegkép-szélességet megjelenítési méretre emeli", () => {
+    const url = displayImageUrl(
+      "https://www.fanatic.com/system/x/original/Blitz.png?width=50&height=50&aspect_ratio=50:50",
+    );
+    expect(url).toContain("width=768");
+    expect(url).not.toContain("height=");
+    // Az `aspect_ratio` is törlődik: enélkül 768×50 jönne.
+    expect(url).not.toContain("aspect_ratio");
+  });
+
+  it("width-paraméter NÉLKÜLI, nem-Shopify URL-hez nem nyúl", () => {
+    const wp = "https://aquamarina.com/wp-content/uploads/CASCADE-2-768x1159.png";
+    expect(displayImageUrl(wp)).toBe(wp);
+  });
+});

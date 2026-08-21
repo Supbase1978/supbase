@@ -101,7 +101,9 @@ export function foldText(value: string): string {
 }
 
 /** Bolti márkanév → kanonikus alak (alias-lista, majd whitespace-tisztítás). */
-export function normalizeBrandName(raw: string | null | undefined): string | null {
+export function normalizeBrandName(
+  raw: string | null | undefined,
+): string | null {
   if (typeof raw !== "string") return null;
   // A ZÁRÓ „SUP" kategória-szó, nem márkajel: a boltok „Gladiator SUP"-ként
   // írják azt, ami a katalógusban „Gladiator" (élesben mért eltérés, ami e
@@ -119,7 +121,10 @@ export function normalizeBrandName(raw: string | null | undefined): string | nul
  * jövőbe legfeljebb egy évet engedünk (a boltok előre hirdetik a következő
  * szezont) — így a „2024" évjárat és a „320" méret nem keveredik.
  */
-export function extractModelYear(text: string, now = new Date()): number | null {
+export function extractModelYear(
+  text: string,
+  now = new Date(),
+): number | null {
   const maxYear = now.getUTCFullYear() + 1;
   let found: number | null = null;
   for (const match of text.matchAll(/\b(20\d{2})\b/g)) {
@@ -138,7 +143,10 @@ export function extractModelYear(text: string, now = new Date()): number | null 
  * zaj-szavak nélkül. Ez megy az egyezés-keresésbe, ezért a determinizmus
  * fontosabb, mint a szépség.
  */
-export function cleanModelName(rawTitle: string, brandName?: string | null): string {
+export function cleanModelName(
+  rawTitle: string,
+  brandName?: string | null,
+): string {
   // Az entitás-feloldás ITT történik, mert a nyers cím nem csak HTML-ből jön:
   // a Shopify `/products.json` és a JSON-LD `name` mezője is entitást ad
   // (`Indiana 12&#039;6 Touring`) — enélkül az `&#039;` a modellnév része lenne.
@@ -177,7 +185,10 @@ function escapeRegExp(value: string): string {
  * szóhatárt — a naiv `\bfelfújható\b` sosem illeszkedne.
  */
 function wholeWordRegExp(word: string): RegExp {
-  return new RegExp(`(?<![\\p{L}\\d])${escapeRegExp(word)}(?![\\p{L}\\d])`, "giu");
+  return new RegExp(
+    `(?<![\\p{L}\\d])${escapeRegExp(word)}(?![\\p{L}\\d])`,
+    "giu",
+  );
 }
 
 /** Tizedesvessző-toleráns szám-parse (a magyar boltok vesszőt írnak). */
@@ -201,7 +212,9 @@ export function parseDimensionCm(text: string): number | null {
   // A tipográfiai PRIME-ok (′ U+2032 láb, ″ U+2033 hüvelyk) is számítanak:
   // élesben (funwaterboard.com) a méret `10′6″ * 33″ * 6″` alakban áll, és a
   // sima aposztrófra szűrve az egész sor láthatatlan maradt.
-  const feetInches = text.match(/(\d+)\s*['′](?!['′])\s*(\d+(?:[.,]\d+)?)?\s*(?:''|"|”|″|’’)?/);
+  const feetInches = text.match(
+    /(\d+)\s*['′](?!['′])\s*(\d+(?:[.,]\d+)?)?\s*(?:''|"|”|″|’’)?/,
+  );
   if (feetInches) {
     const feet = toNumber(feetInches[1] ?? "");
     const inches = feetInches[2] ? toNumber(feetInches[2]) : 0;
@@ -257,7 +270,14 @@ const SPEC_LABELS = {
   // A „net weight" ELÉG specifikus ahhoz, hogy ne ütközzön a teherbírással —
   // az Aqua Marina hivatalos adatlapja (aquamarina.com) ezt a címkét használja
   // a deszka saját súlyára, „MAX. PAYLOAD" mellett.
-  weightKg: ["deszka súlya", "saját súly", "súly", "tömeg", "board weight", "net weight"],
+  weightKg: [
+    "deszka súlya",
+    "saját súly",
+    "súly",
+    "tömeg",
+    "board weight",
+    "net weight",
+  ],
   maxLoadKg: [
     "teherbírás",
     "terhelhetőség",
@@ -284,7 +304,10 @@ const SPEC_LABELS = {
     // ugyanígy vesszük (lásd fent).
     "rider weight",
   ],
-} as const satisfies Record<keyof Omit<BoardSpecs, "inflatable">, readonly string[]>;
+} as const satisfies Record<
+  keyof Omit<BoardSpecs, "inflatable">,
+  readonly string[]
+>;
 
 /**
  * Összevont "Hossz × Szélesség × Vastagság" méret-sor címkéi. "méret" (nem
@@ -414,11 +437,18 @@ function fillFromLabelledLines(text: string, specs: BoardSpecs): void {
     // címkék többszavasak („Maximum load capacity"), ezért nem pontos
     // egyezést kérünk, hanem tartalmazást ezen a szűk soron belül.
     if (label === "" || label.length > 40 || /\d/.test(label)) continue;
-    const value = (lines[i + 1] ?? "").match(/^(?:up to|max\.?|~)?\s*(\d+(?:[.,]\d+)?)$/i);
+    const value = (lines[i + 1] ?? "").match(
+      /^(?:up to|max\.?|~)?\s*(\d+(?:[.,]\d+)?)$/i,
+    );
     if (!value) continue;
     for (const field of fields) {
       if (specs[field] !== null) continue;
-      if (!SPEC_LABELS[field].some((candidate) => label.includes(foldText(candidate)))) continue;
+      if (
+        !SPEC_LABELS[field].some((candidate) =>
+          label.includes(foldText(candidate)),
+        )
+      )
+        continue;
       specs[field] = toNumber(value[1] ?? "");
       break;
     }
@@ -461,7 +491,9 @@ const VALUE_WINDOW_CHARS = 40;
  * egyértelműen a címke magyarázata, nem érték — átugorható.
  */
 function windowAfterLabel(text: string, from: number): string {
-  const paren = text.slice(from, from + VALUE_WINDOW_CHARS).match(/^\s*\([^)]*\)/);
+  const paren = text
+    .slice(from, from + VALUE_WINDOW_CHARS)
+    .match(/^\s*\([^)]*\)/);
   const start = paren ? from + paren[0].length : from;
   return text.slice(start, start + VALUE_WINDOW_CHARS);
 }
@@ -497,10 +529,15 @@ function labelSearch(
       // (pl. "szállítási" a "szállítás" kizáró szóhoz képest "-i" végű
       // melléknévi alak) egy pontos végződés-egyezés túl törékeny lenne.
       const before = folded.slice(Math.max(0, index - 20), index);
-      const excluded = excludePrecededBy.some((word) => before.includes(foldText(word)));
+      const excluded = excludePrecededBy.some((word) =>
+        before.includes(foldText(word)),
+      );
       if (excluded) continue;
 
-      const after = folded.slice(index + needle.length, index + needle.length + 4);
+      const after = folded.slice(
+        index + needle.length,
+        index + needle.length + 4,
+      );
       if (/^[ae]v[ae]l/.test(after)) continue;
       // Az első menetben KÖTELEZŐ a kettőspont (esetleg szóköz után) —
       // a spec-táblázat írásmódja.
@@ -539,14 +576,20 @@ const TRIPLE_DIMENSION_RE = new RegExp(
   "gi",
 );
 
-function tripleFromMatch(match: RegExpMatchArray): { lengthCm: number; widthCm: number; thicknessCm: number } | null {
+function tripleFromMatch(
+  match: RegExpMatchArray,
+): { lengthCm: number; widthCm: number; thicknessCm: number } | null {
   const length = toNumber(match[1] ?? "");
   const width = toNumber(match[2] ?? "");
   const thickness = toNumber(match[3] ?? "");
   if (length === null || width === null || thickness === null) return null;
   const isInches = /^in/i.test(match[4] ?? "");
   const toCm = (v: number) => round1(isInches ? v * CM_PER_INCH : v);
-  return { lengthCm: toCm(length), widthCm: toCm(width), thicknessCm: toCm(thickness) };
+  return {
+    lengthCm: toCm(length),
+    widthCm: toCm(width),
+    thicknessCm: toCm(thickness),
+  };
 }
 
 function parseTripleDimensionCm(
@@ -603,8 +646,11 @@ function parseTripleByParts(
       // olvasta volna vastagságnak a valós 6″ (15 cm) helyett.
       .map((part) => (part.trim().split("\n")[0] ?? "").trim());
     if (parts.length < 3) continue;
-    const [length, width, thickness] = parts.slice(0, 3).map((part) => parseDimensionCm(part));
-    if (length === undefined || width === undefined || thickness === undefined) continue;
+    const [length, width, thickness] = parts
+      .slice(0, 3)
+      .map((part) => parseDimensionCm(part));
+    if (length === undefined || width === undefined || thickness === undefined)
+      continue;
     if (length === null || width === null || thickness === null) continue;
     return { lengthCm: length, widthCm: width, thicknessCm: thickness };
   }
@@ -627,7 +673,9 @@ function findBareTripleDimension(
   for (const match of text.matchAll(re)) {
     const index = match.index ?? 0;
     const before = folded.slice(Math.max(0, index - 20), index);
-    const excluded = excludePrecededBy.some((word) => before.includes(foldText(word)));
+    const excluded = excludePrecededBy.some((word) =>
+      before.includes(foldText(word)),
+    );
     if (excluded) continue;
     const triple = tripleFromMatch(match);
     if (triple !== null) return triple;
@@ -648,7 +696,9 @@ const PAIR_DIMENSION_RE = new RegExp(
   "i",
 );
 
-function parsePairDimensionCm(text: string): { lengthCm: number; widthCm: number } | null {
+function parsePairDimensionCm(
+  text: string,
+): { lengthCm: number; widthCm: number } | null {
   const match = text.match(PAIR_DIMENSION_RE);
   if (!match) return null;
   const length = toNumber(match[1] ?? "");
@@ -674,14 +724,32 @@ export function parseSpecsFromText(text: string): BoardSpecs {
   // Ha a fenti KÜLÖN címkék nem adtak mindhárom méretet, próbáljuk az
   // ÖSSZEVONT "Dimensions: 325 x 82 x 16cm" formát — csak a hiányzó mezőket
   // töltjük ki belőle, a már megtalált (specifikusabb címkéjű) érték marad.
-  if (specs.lengthCm === null || specs.widthCm === null || specs.thicknessCm === null) {
-    const dimensionsWindow = valueAfterLabel(text, DIMENSIONS_LABELS, ["bag", "package", "táska", "csomag", "szállítás", "shipping"]);
-    const triple = dimensionsWindow !== null ? parseTripleDimensionCm(dimensionsWindow) : null;
+  if (
+    specs.lengthCm === null ||
+    specs.widthCm === null ||
+    specs.thicknessCm === null
+  ) {
+    const dimensionsWindow = valueAfterLabel(text, DIMENSIONS_LABELS, [
+      "bag",
+      "package",
+      "táska",
+      "csomag",
+      "szállítás",
+      "shipping",
+    ]);
+    const triple =
+      dimensionsWindow !== null
+        ? parseTripleDimensionCm(dimensionsWindow)
+        : null;
     if (triple !== null) {
       if (specs.lengthCm === null) specs.lengthCm = triple.lengthCm;
       if (specs.widthCm === null) specs.widthCm = triple.widthCm;
       if (specs.thicknessCm === null) specs.thicknessCm = triple.thicknessCm;
-    } else if (specs.lengthCm === null && specs.widthCm === null && dimensionsWindow !== null) {
+    } else if (
+      specs.lengthCm === null &&
+      specs.widthCm === null &&
+      dimensionsWindow !== null
+    ) {
       // A hármas nem illeszkedett (pl. "méretei: 381 x 79 cm" — csak PÁR, a
       // vastagság külön címkével jön) — próbáljuk a pár-mintát ugyanazon az
       // ablakon.
@@ -700,18 +768,32 @@ export function parseSpecsFromText(text: string): BoardSpecs {
   // nélkül is szerepel ugyanez a hármas ("...Aqua Marina, 366x84x15 cm").
   // A minta ön-leíró (explicit cm/inch egység kell hozzá), ezért a teljes
   // szövegben keresve is alacsony a téves találat kockázata.
-  if (specs.lengthCm === null || specs.widthCm === null || specs.thicknessCm === null) {
-    const bareTriple = findBareTripleDimension(text, ["bag", "package", "táska", "csomag", "szállítás", "shipping"]);
+  if (
+    specs.lengthCm === null ||
+    specs.widthCm === null ||
+    specs.thicknessCm === null
+  ) {
+    const bareTriple = findBareTripleDimension(text, [
+      "bag",
+      "package",
+      "táska",
+      "csomag",
+      "szállítás",
+      "shipping",
+    ]);
     if (bareTriple !== null) {
       if (specs.lengthCm === null) specs.lengthCm = bareTriple.lengthCm;
       if (specs.widthCm === null) specs.widthCm = bareTriple.widthCm;
-      if (specs.thicknessCm === null) specs.thicknessCm = bareTriple.thicknessCm;
+      if (specs.thicknessCm === null)
+        specs.thicknessCm = bareTriple.thicknessCm;
     }
   }
 
   const volumeWindow = valueAfterLabel(text, SPEC_LABELS.volumeL);
   if (volumeWindow !== null) {
-    const match = volumeWindow.match(/(\d+(?:[.,]\d+)?)\s*(?:l\b|liter|litre)/i);
+    const match = volumeWindow.match(
+      /(\d+(?:[.,]\d+)?)\s*(?:l\b|liter|litre)/i,
+    );
     specs.volumeL = match ? toNumber(match[1] ?? "") : null;
   }
 
@@ -794,7 +876,17 @@ export function guessBoardType(text: string): BoardType | null {
     ["touring", ["touring", "tura", "explorer", "adventure"]],
     // Az „all-around" (két a-val) a gyártói írásmód — az aquamarina.com
     // kategóriája `/products/all-around/` és `/products/advanced-all-around/`.
-    ["allround", ["allround", "all-round", "all round", "all-around", "all around", "univerzalis"]],
+    [
+      "allround",
+      [
+        "allround",
+        "all-round",
+        "all round",
+        "all-around",
+        "all around",
+        "univerzalis",
+      ],
+    ],
   ];
   for (const [type, needles] of rules) {
     if (needles.some((needle) => folded.includes(needle))) return type;
@@ -813,9 +905,15 @@ const ACCESSORY_CATEGORY_RULES: [GearCategory, string[]][] = [
   // A TÁSKA/TARTÓ előrébb van, mint az „evezo": az „evezőtáska" és az
   // „evezőtartó" a substring miatt evezőnek látszana, pedig az egyik táska,
   // a másik rögzítő — élesben mérve mindkettő megjelent a jelöltek közt.
-  ["taska", ["evezotaska", "evezo taska", "paddle bag", "evezotarto", "evezo tarto"]],
+  [
+    "taska",
+    ["evezotaska", "evezo taska", "paddle bag", "evezotarto", "evezo tarto"],
+  ],
   ["szarazzsak", ["szarazzsak", "dry bag", "drybag"]],
-  ["mentomelleny", ["mentomellen", "mellen", "life vest", "life jacket", "pfd"]],
+  [
+    "mentomelleny",
+    ["mentomellen", "mellen", "life vest", "life jacket", "pfd"],
+  ],
   ["uszony", ["uszony", "finbox", "fin box"]],
   ["poraz", ["poraz", "leash"]],
   ["pumpa", ["pumpa", "pump"]],
@@ -826,7 +924,18 @@ const ACCESSORY_CATEGORY_RULES: [GearCategory, string[]][] = [
   // „b-oar-d" részstringje lenne, tehát minden deszkára illeszkedne.
   ["evezo", ["evezo", "paddle blade", "oars"]],
   // A „gearbag" egybeírva is táska (fanatic.com: `fanatic-gearbag-pocket-isup`).
-  ["taska", ["hatizsak", "taska", "backpack", "board bag", "carry bag", "gearbag", "gear bag"]],
+  [
+    "taska",
+    [
+      "hatizsak",
+      "taska",
+      "backpack",
+      "board bag",
+      "carry bag",
+      "gearbag",
+      "gear bag",
+    ],
+  ],
   ["ules", ["ules", "kayak seat", "seat"]],
 ];
 
@@ -893,7 +1002,14 @@ const NEVER_BOARD_KEYWORDS = [
 ];
 
 /** A deszka-mivolt pozitív jelei a névben/leírásban. */
-const BOARD_NOUNS = ["deszka", "board", "isup", "i-sup", "paddleboard", "paddle board"];
+const BOARD_NOUNS = [
+  "deszka",
+  "board",
+  "isup",
+  "i-sup",
+  "paddleboard",
+  "paddle board",
+];
 
 /** Deszkahossz ésszerű tartománya cm-ben — ez a spec-alapú, DÖNTŐ jel. */
 const BOARD_LENGTH_MIN_CM = 240;
@@ -983,7 +1099,9 @@ export function classifyProduct(product: {
 
   // ELSŐKÉNT: ami sosem deszka (kajak, kenu, gyűjtőlap) — a méret-alapú
   // rövidzár ELŐTT, különben egy kajak deszkaként jönne be.
-  const identity = foldText(`${product.rawTitle} ${product.classificationHint ?? ""}`);
+  const identity = foldText(
+    `${product.rawTitle} ${product.classificationHint ?? ""}`,
+  );
   if (NEVER_BOARD_KEYWORDS.some((word) => identity.includes(word))) {
     return { kind: "ignore" };
   }
@@ -1004,7 +1122,11 @@ export function classifyProduct(product: {
   // erősebb minden kulcsszónál (egy rosszul címzett deszkát a saját adata
   // ment meg) — de csak akkor, ha az az adat egyáltalán deszkáé lehet.
   const dimensionsCoherent = dimensionsAreCoherent(specs);
-  if (lengthInRange && dimensionsCoherent && (specs.volumeL !== null || specs.maxLoadKg !== null)) {
+  if (
+    lengthInRange &&
+    dimensionsCoherent &&
+    (specs.volumeL !== null || specs.maxLoadKg !== null)
+  ) {
     return { kind: "board" };
   }
 
@@ -1033,7 +1155,9 @@ export function classifyProduct(product: {
   const hasSup = /\bi?sup\b/.test(identity);
   // A méret itt is csak ELLENTMONDÁSMENTESEN számít bizonyítéknak (ld. fent).
   const isBoard =
-    hasBoardNoun || (hasSup && product.boardType !== null) || (lengthInRange && dimensionsCoherent);
+    hasBoardNoun ||
+    (hasSup && product.boardType !== null) ||
+    (lengthInRange && dimensionsCoherent);
   return isBoard ? { kind: "board" } : { kind: "ignore" };
 }
 
@@ -1074,7 +1198,8 @@ function collectOffers(offers: unknown): Record<string, unknown>[] {
     if (!isRecord(node)) continue;
     list.push(node);
     if (node.offers !== undefined) stack.push(node.offers);
-    if (node.priceSpecification !== undefined) stack.push(node.priceSpecification);
+    if (node.priceSpecification !== undefined)
+      stack.push(node.priceSpecification);
   }
   return list;
 }
@@ -1202,7 +1327,12 @@ export function extractProduct(
   // A besorolás itt is lefut (nem csak a crawl.ts vezérlésében), hogy a
   // moderációs UI a kategória-legördülőt a figyelő tippjével előválaszthassa —
   // ugyanaz a minta, mint a `boardType` tippnél (a moderátor felülbírálhatja).
-  const classification = classifyProduct({ rawTitle, modelName, boardType, specs });
+  const classification = classifyProduct({
+    rawTitle,
+    modelName,
+    boardType,
+    specs,
+  });
 
   return {
     sourceUrl,
@@ -1215,7 +1345,8 @@ export function extractProduct(
     imageUrl: displayImageUrl(firstString(node.image)),
     boardType,
     specs,
-    accessoryType: classification.kind === "accessory" ? classification.accessoryType : null,
+    accessoryType:
+      classification.kind === "accessory" ? classification.accessoryType : null,
   };
 }
 
@@ -1227,7 +1358,10 @@ export function extractProduct(
  */
 function urlCategoryHint(sourceUrl: string): string {
   try {
-    return decodeURIComponent(new URL(sourceUrl).pathname).replace(/[-_/]+/g, " ");
+    return decodeURIComponent(new URL(sourceUrl).pathname).replace(
+      /[-_/]+/g,
+      " ",
+    );
   } catch {
     return "";
   }
@@ -1257,7 +1391,9 @@ function urlCategoryHint(sourceUrl: string): string {
  */
 
 function bareNumber(value: string): number | null {
-  const match = value.trim().match(/^(?:up to|max\.?|~)?\s*(\d+(?:[.,]\d+)?)$/i);
+  const match = value
+    .trim()
+    .match(/^(?:up to|max\.?|~)?\s*(\d+(?:[.,]\d+)?)$/i);
   return match ? toNumber(match[1] ?? "") : null;
 }
 
@@ -1295,7 +1431,9 @@ const TRANSPOSED_LABELS: Record<string, keyof BoardSpecs | "skip"> = {
  * Egy sor mint transzponált CÍMKE, vagy `undefined` ha nem az.
  * A zárójel itt is magyarázat: a `VOLUME (L)` és a `VOLUME` ugyanaz a mező.
  */
-function transposedLabel(line: string): (keyof BoardSpecs | "skip") | undefined {
+function transposedLabel(
+  line: string,
+): (keyof BoardSpecs | "skip") | undefined {
   const key = line
     .toLowerCase()
     .replace(/\([^)]*\)/g, " ")
@@ -1385,12 +1523,20 @@ export function parseTransposedSpecsBySize(text: string): SizedSpecs[] {
     if (labelCount < 4) continue;
 
     const out: SizedSpecs[] = [];
-    for (let at = start + labelCount; at + labelCount <= lines.length; at += labelCount) {
+    for (
+      let at = start + labelCount;
+      at + labelCount <= lines.length;
+      at += labelCount
+    ) {
       const block = lines.slice(at, at + labelCount);
       // A blokk első cellája NÉV (nem szám) — enélkül már nem méret-sor,
       // hanem az oldal további tartalma.
       if (/^\d/.test(block[0] ?? "")) break;
-      const specs = specsFromBlock(lines.slice(start, start + labelCount), block, text);
+      const specs = specsFromBlock(
+        lines.slice(start, start + labelCount),
+        block,
+        text,
+      );
       if (specs === null) break;
       out.push({ label: block[0] ?? "", specs });
     }
@@ -1402,7 +1548,10 @@ export function parseTransposedSpecsBySize(text: string): SizedSpecs[] {
 /** Hány EGYMÁST KÖVETŐ ismert címke áll `start`-tól? */
 function countKnownLabels(lines: string[], start: number): number {
   let count = 0;
-  while (start + count < lines.length && transposedLabel(lines[start + count] ?? "") !== undefined) {
+  while (
+    start + count < lines.length &&
+    transposedLabel(lines[start + count] ?? "") !== undefined
+  ) {
     count += 1;
   }
   return count;
@@ -1451,7 +1600,11 @@ function headlineBeforeSpecs(pageText: string): string {
  * Cikkszám nélkül ÜRES a lista: pozícióra vagy modellnévre itt nem gyűjtünk,
  * mert a „Related Products" blokk más termékek fotóit is felkínálná.
  */
-function galleryByCode(html: string, code: string | null, sourceUrl: string): string[] {
+function galleryByCode(
+  html: string,
+  code: string | null,
+  sourceUrl: string,
+): string[] {
   if (code === null) return [];
   const seen = new Set<string>();
   const out: string[] = [];
@@ -1460,8 +1613,9 @@ function galleryByCode(html: string, code: string | null, sourceUrl: string): st
     const src = match[1] ?? "";
     const file = src.split("/").pop() ?? "";
     if (!file.includes(code)) continue;
-    if (/logo|construction|technology|detail|icon|thumb|badge/i.test(file)) continue;
-    const url = absoluteUrl(src, sourceUrl);
+    if (/logo|construction|technology|detail|icon|thumb|badge/i.test(file))
+      continue;
+    const url = displayImageUrl(absoluteUrl(src, sourceUrl));
     if (url === null || seen.has(url)) continue;
     seen.add(url);
     out.push(url);
@@ -1492,18 +1646,28 @@ function galleryByCode(html: string, code: string | null, sourceUrl: string): st
  * Egy adott osztálynevű elem SZÖVEGE a HTML-ből. Szűk ablak: a keresett
  * felirat rövid, a mögötte álló oldaltartalom nem szólhat bele.
  */
-function elementTextByClass(html: string, className: string | undefined): string {
+function elementTextByClass(
+  html: string,
+  className: string | undefined,
+): string {
   if (!className) return "";
-  const match = html.match(new RegExp(`<[^>]*class="[^"]*${escapeRegExp(className)}[^"]*"[^>]*>`, "i"));
+  const match = html.match(
+    new RegExp(`<[^>]*class="[^"]*${escapeRegExp(className)}[^"]*"[^>]*>`, "i"),
+  );
   if (!match || match.index === undefined) return "";
   const from = match.index + match[0].length;
-  return htmlToText(html.slice(from, from + 300)).replace(/\s+/g, " ").slice(0, 80);
+  return htmlToText(html.slice(from, from + 300))
+    .replace(/\s+/g, " ")
+    .slice(0, 80);
 }
 
 function breadcrumbText(html: string): string {
   const match = html.match(/<[^>]*(?:class|id|ctype)="[^"]*crumb[^"]*"[^>]*>/i);
   if (!match || match.index === undefined) return "";
-  const after = html.slice(match.index + match[0].length, match.index + match[0].length + 1200);
+  const after = html.slice(
+    match.index + match[0].length,
+    match.index + match[0].length + 1200,
+  );
   return htmlToText(after).replace(/\s+/g, " ").slice(0, 200);
 }
 
@@ -1533,7 +1697,10 @@ function codeFromUrl(sourceUrl: string): string | null {
 function absoluteUrl(raw: string | null, baseUrl: string): string | null {
   if (raw === null || raw.trim() === "") return null;
   try {
-    return new URL(raw, baseUrl).toString();
+    // ENTITÁS-DEKÓDOLÁS: a `src` attribútumban a query-elválasztó `&amp;`
+    // alakban áll. Élesben (fanatic.com) enélkül a paraméter neve
+    // `amp;height` lett, és a kiszolgáló a rossz méretet adta vissza.
+    return new URL(decodeEntities(raw), baseUrl).toString();
   } catch {
     return null;
   }
@@ -1601,7 +1768,9 @@ export function extractProductFromPage(
     const folded = foldText(rawTitle);
     const needle = foldText(suffix);
     if (needle !== "" && folded.endsWith(needle)) {
-      rawTitle = rawTitle.slice(0, rawTitle.length - suffix.length).replace(/[\s|·–—-]+$/, "");
+      rawTitle = rawTitle
+        .slice(0, rawTitle.length - suffix.length)
+        .replace(/[\s|·–—-]+$/, "");
     }
   }
   if (rawTitle === "") return null;
@@ -1628,7 +1797,9 @@ export function extractProductFromPage(
 
   // Moderátori rögzítés (a legerősebb jel): URL-részlet szerint.
   const pinnedType =
-    Object.entries(boardTypeByUrl).find(([needle]) => sourceUrl.includes(needle))?.[1] ?? null;
+    Object.entries(boardTypeByUrl).find(([needle]) =>
+      sourceUrl.includes(needle),
+    )?.[1] ?? null;
 
   const extracted: ExtractedProduct = {
     sourceUrl,
@@ -1645,20 +1816,22 @@ export function extractProductFromPage(
     // Horgonyok, a legpontosabbtól: cikkszám → teljes modellnév → a modellnév
     // ELSŐ SZAVA (a családnév; a fájlnév gyakran csak azt viseli:
     // „Coral-R-1.png", „mega_frontback.png").
-    imageUrl: absoluteUrl(
-      findProductImage(
-        html,
-        // A TERMÉK-URL végén álló cikkszám a legerősebb horgony, ahol van:
-        // a bolt ugyanazt a számot írja a képfájlba is. Élesben
-        // (jobesports.com): a `…-486425010/` termékoldalon a kép
-        // `/uploads/product/486425010-big.jpg` — enélkül a pozíció-fallback
-        // a fejléc KOSÁR-IKONJÁT adta termékképnek.
-        codeFromUrl(sourceUrl),
-        findModelCode(pageText),
-        modelName,
-        modelName.split(/\s+/)[0] ?? null,
+    imageUrl: displayImageUrl(
+      absoluteUrl(
+        findProductImage(
+          html,
+          // A TERMÉK-URL végén álló cikkszám a legerősebb horgony, ahol van:
+          // a bolt ugyanazt a számot írja a képfájlba is. Élesben
+          // (jobesports.com): a `…-486425010/` termékoldalon a kép
+          // `/uploads/product/486425010-big.jpg` — enélkül a pozíció-fallback
+          // a fejléc KOSÁR-IKONJÁT adta termékképnek.
+          codeFromUrl(sourceUrl),
+          findModelCode(pageText),
+          modelName,
+          modelName.split(/\s+/)[0] ?? null,
+        ),
+        sourceUrl,
       ),
-      sourceUrl,
     ),
     // GALÉRIA a HTML-oldalról — KIZÁRÓLAG a cikkszám-horgonnyal. A pozíció
     // vagy a modellnév itt nem lenne elég: a „Related Products" blokk MÁS
@@ -1697,7 +1870,10 @@ export function extractProductFromPage(
   // kategóriát is beleírja (`/products/reinforced-kayak/betta/`).
   let pathHint = "";
   try {
-    pathHint = decodeURIComponent(new URL(sourceUrl).pathname).replace(/[-_/]+/g, " ");
+    pathHint = decodeURIComponent(new URL(sourceUrl).pathname).replace(
+      /[-_/]+/g,
+      " ",
+    );
   } catch {
     pathHint = "";
   }
@@ -1732,7 +1908,12 @@ export function extractProductsFromPage(
   defaultBrandName: string | null = null,
   options: PageExtractionOptions = {},
 ): ExtractedProduct[] {
-  const base = extractProductFromPage(html, sourceUrl, defaultBrandName, options);
+  const base = extractProductFromPage(
+    html,
+    sourceUrl,
+    defaultBrandName,
+    options,
+  );
   if (!base) return [];
 
   const pageText = options.overrideText ?? htmlToText(html);
@@ -1752,7 +1933,8 @@ export function extractProductsFromPage(
 /** A méret-címke mint modellnév: márkanév nélkül, a MÉRET megtartásával. */
 function sizedModelName(label: string, brandName: string | null): string {
   let text = decodeEntities(label).replace(/\s+/g, " ").trim();
-  if (brandName) text = text.replace(new RegExp(escapeRegExp(brandName), "gi"), " ");
+  if (brandName)
+    text = text.replace(new RegExp(escapeRegExp(brandName), "gi"), " ");
   return text.replace(/\s+/g, " ").trim();
 }
 

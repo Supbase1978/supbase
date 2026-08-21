@@ -1376,3 +1376,20 @@ describe("extractProductsFromPage — méretenkénti bontás", () => {
     expect(p?.modelName).toBe("FLY AIR");
   });
 });
+
+describe("kép-URL entitás-dekódolás", () => {
+  /**
+   * Élesben (fanatic.com) a `src`-ben a query-elválasztó `&amp;` alakban áll.
+   * Enélkül a paraméter neve `amp;height` lett, és a kiszolgáló a rossz
+   * méretet adta vissza — a katalógusba 4 kB-os, 50 px-es bélyegkép került.
+   */
+  it("a `&amp;` a kép-URL-ben valódi elválasztóvá válik", () => {
+    const page = `<html><head><title>Blitz Air</title></head><body>
+      <p>Length: 340 cm Width: 81 cm Thickness: 15 cm</p>
+      <img src="https://x.com/files/original/Blitz_Air.png?width=50&amp;height=50">
+      </body></html>`;
+    const p = extractProductFromPage(page, "https://www.fanatic.com/en/products/z-1.html", "Fanatic");
+    expect(p?.imageUrl).not.toContain("amp;");
+    expect(p?.imageUrl).toContain("width=768");
+  });
+});

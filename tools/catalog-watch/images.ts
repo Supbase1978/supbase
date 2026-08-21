@@ -152,6 +152,13 @@ export function galleryCandidates(
  * megjelenítéshez (adatlap-hero, 2× kijelző) még elég, a kétoszlopos
  * telefon-rácshoz bőven.
  *
+ * ÁLTALÁNOSABBAN: bármelyik kép-URL, ami `width` query-paramétert visel, a
+ * kiszolgálója méretezni tud — élesben (fanatic.com) a galéria-csík
+ * `?width=50&height=50` BÉLYEGKÉPET ad (4 kB, 50 px), ami a katalógusban
+ * használhatatlan; `?width=768`-cal ugyanaz a kép 321 kB. A `height` és az
+ * `aspect_ratio` ilyenkor TÖRLŐDIK, hogy a kiszolgáló az eredeti arányt
+ * tartsa meg — különben 768×50 jönne.
+ *
  * Ami NEM megy ezen az úton: a formátum. A `format=webp` paramétert ezek a
  * boltok nem tisztelik (mérve: marad PNG), tehát a Bluefin nagy, tömör
  * felületű PNG-i így is nehezek maradnak — azon csak újrakódoló kép-CDN
@@ -167,8 +174,14 @@ export function displayImageUrl(raw: string | null): string | null {
   } catch {
     return raw;
   }
-  if (!url.pathname.includes("/cdn/shop/") && !url.hostname.startsWith("cdn.shopify.")) return raw;
+  const isShopify =
+    url.pathname.includes("/cdn/shop/") || url.hostname.startsWith("cdn.shopify.");
+  if (!isShopify && !url.searchParams.has("width")) return raw;
   url.searchParams.set("width", String(DISPLAY_IMAGE_WIDTH));
+  // A magasság és a rögzített oldalarány törlődik: így a kiszolgáló az
+  // EREDETI arányt tartja. Enélkül a `height=50` maradna, és 768×50 jönne.
+  url.searchParams.delete("height");
+  url.searchParams.delete("aspect_ratio");
   return url.toString();
 }
 
