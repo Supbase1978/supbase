@@ -3952,3 +3952,87 @@ deszkát.
 
 **Eredmény:** 11 Fanatic-URL → **16 méret-változat, MIND teljes adattal és
 kategóriával**. A jóváhagyás után a katalógus **236 deszka**.
+
+---
+
+## F2.1-utó-36 — Gyártói receptek a repóban + regresszió-háló (2026-08-21)
+
+**A felismerés a felhasználóé:** „gyártónként vannak egyedi megoldások… inkább
+alkalmazkodjunk mi, mint egy általános (és soha jól nem működő) megoldást
+gyártani." Ez a lépés arra ad választ, **mi legyen gyártónkénti és mi közös**.
+
+### A szétválasztás
+
+A megelőző napon 20 commit nyúlt a kinyerő szabályaihoz. Két csoportra estek:
+
+* **„így ír a világ"** (cirill szorzójel, tipográfiai prime, font-only
+  teherbírás, `&amp;` a kép-URL-ben, NFD-indexcsúszás, zárójeles
+  címke-magyarázat) → **KÖZÖS marad** a `normalize.ts`-ben. Négy esetben az
+  egyik gyártóért írt szabály oldott meg egy MÁSIKAT, mielőtt ránéztünk volna
+  (pl. a Gladiatorért írt „mértékegység a címkében" a Fanatic `VOLUME (L)`-jét).
+  Gyártónkénti másolatban mind a négyet újra fel kellett volna fedezni.
+* **valóban a forrásé** (melyik sitemap, URL-minta, cím-vágás,
+  kategória-osztály, rögzített besorolások, kell-e renderelés) → **RECEPT**.
+
+### 1. A recept a repóban él
+
+`tools/catalog-watch/sources/<gyarto>.ts` — a `crawl_config` értékei **és a
+MIÉRT**: melyik élesben mért viselkedés indokolja. Eddig ez kizárólag az
+adatbázisban élt: nem volt átnézhető, nem volt verziózva, és egy
+adatbázis-újraépítésnél mind a 10 forrás beállítása elveszett volna.
+
+`sync-sources [--apply]` írja az adatbázisba, dry-run alapértelmezéssel. **Soha
+nem töröl**: a recept nélküli forrást csak jelenti — egy elfelejtett receptfájl
+nem szedheti ki a talajt egy működő forrás alól. A mai 10 forrásra nulla
+eltérést ad.
+
+### 2. Gyártónkénti regresszió-háló
+
+`tools/catalog-watch/fixtures/<gyarto>/` — mentett valós termékoldal + a VÁRT
+kinyerés. **Ez váltja ki a legdrágább kézi műveletet**: az előző napon ~15-ször
+kellett kézzel ellenőrizni, hogy egy általános javítás nem rontott-e el egy
+másik gyártót.
+
+*Eltérés a tervtől:* a fixtúra a TELJES oldalt tárolja (gzip-elve, 7 oldal =
+424 kB), nem egy kivágott szeletet. A kézi vágás pont azt a zajt tüntetné el,
+amit a kinyerőnek túl kell élnie — a „Related Products" elszívása (152 kg a
+valós 170 helyett) épp ilyen zajban bújt meg.
+
+Az oldal-szintű kinyerés `extractPageProducts` / `needsRenderedText` néven
+kiemelve a crawl-ciklusból: a teszt **pontosan azt futtatja**, amit az éles
+crawl, nem egy utánzatot.
+
+**Ellenőrizve:** a cirill szorzójel kivétele buktatja a Gladiator fixtúráját,
+miközben a többi zöld marad.
+
+### 3. Amit a háló AZONNAL talált — négy hamis adat
+
+| hol | mit adott | miért |
+|---|---|---|
+| sup-deszka.hu | **vadvízi** deszka egy kezdő allroundból | „ideális tengerre, tóra vagy **folyóra**" — prózában a kategória-szó ÚTI CÉL |
+| sup-deszka.hu | **8,8 kg** teherbírás 150 helyett | „max. 150 kg **teherbírással** és mindössze 8,8 kg súllyal" — magyar ragozásnál az érték a címke ELŐTT áll |
+| aquamarinahungary.com | **210 cm** hossz egy 366 cm-es deszkára | „hossza: 165-210cm" — az ÁLLÍTHATÓ EVEZŐ adata; tartomány nem méret |
+| aquamarinahungary.com | üres súly a kiírt 11 kg helyett | „paddleboard **súlya:**" nem számított kettőspontos címkének, ezért a lap alján álló evező „Súly:" címkéje nyert |
+
+Mind a négy javítva, mindegyikhez unit-teszt ÉS fixtúra. A közös szabályok
+ennek megfelelően pontosultak:
+
+* `boardTypeFromProse` — prózában FŐNÉV is kell a kategória-szó mellé, és a
+  **kötőszó megállítja**: a sorolt kategóriák egyike sem A kategória. A
+  címben/URL-slugban marad a laza `guessBoardType`, mert ott a szó maga a
+  besorolás.
+* a címke-keresés sorrendje: **közvetlenül a címke előtti szám+egység →
+  azonos sor a címke után → következő sor**. Kettőspontnál („Capacity:") az
+  „előtte" ág nem él, mert a kettőspont maga mondja ki, hogy az érték utána jön.
+* `parseDimensionCm` elutasítja a tartományt.
+* a kettőspontos menet elfogadja a magyar birtokos toldalékot (`súlya:`).
+
+Az élő katalógus 7 speciális besorolása (2 river, 3 yoga, 2 fishing)
+ellenőrizve — **mind helyes**; a hibás értékek a jóváhagyásra váró jelöltekben
+ültek, oda nem jutottak be.
+
+### Nyitva maradt
+
+A Starboard **Shopify-ágához nincs fixtúra**: a `capture-fixture` a HTML-oldalas
+utat járja, a Shopify-mód a `/products.json`-ból dolgozik. Külön rögzítő kell
+hozzá.
