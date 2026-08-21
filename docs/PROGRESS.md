@@ -3772,3 +3772,58 @@ nemleges. Meg kell nézni a `/sitemap_index.xml`-t, a nyelvenkénti
 `wp-sitemap-posts-…`) utakat is, és egy VALÓDI termékoldalon lefuttatni a
 kinyerőt — a kategória-oldal semmit nem árul el.
 
+
+### F2.1-utó-33 — a KATEGÓRIA a szűk keresztmetszet (2026-08-21)
+
+**Mérés, mielőtt döntöttünk.** A felhasználó azt kérdezte, melyik irányt
+javaslom: a kész jelöltek jóváhagyását, vagy a Fanatic méretenkénti bontását.
+A jóváhagyó próbafutása mindkettőt felülírta:
+
+```
+Jóváhagyható:  70 jelölt → 35 deszka
+Kihagyva:     136 kategória nélkül · 128 biztonsági mező nélkül
+```
+
+Nem a források hiányoztak, hanem a besorolás. **És ami rosszabb:** a dry-run
+listáján MINDEN Gladiator „touring" volt.
+
+**A hamis címke forrása.** A Gladiator saját leírásai:
+
+| oldal | amit a gyártó ír | helyes |
+|---|---|---|
+| ELITE 12.6T | „The **touring** SUP board from the Elite series" | túra ✓ |
+| ELITE 11.6 | „The **universal** SUP board from the Elite series" | allround |
+| PRO 11.6 | „a **versatile** SUP board from the Pro series" | allround |
+| ORIGIN 10.6 | „a versatile **model** from the entry-level series" | allround |
+
+A leírás-parser csak az „all-around board" alakot ismerte, ezért ezekből
+egyedül a 12.6T kapott kategóriát — a többi üresen maradt, és a CSALÁDI
+ÖRÖKLÉS az egyetlen „touring" tagtól az egész `Elite`/`Pro`/`Origin` vonalat
+túrásnak jelölte volna. Azok viszont KIVITELI vonalak, nem használati
+kategóriák: egy családon belül van túra- és allround-deszka is. A szabály az
+Aqua Marinára készült, ahol a családnév használatot jelent (All Star = race).
+
+**Két javítás, mindkettő a forrás SAJÁT szavaira épül:**
+
+1. **Az allround szinonimái**: versatile / universal / all-purpose /
+   entry-level. A főnév-lista „model"-lel bővült — a gyártó így is fogalmaz,
+   és navigációs menüben ez az alak nem fordul elő. A SZIGORÚ MINTA áll:
+   kategória-szó + főnév, különben a minden Gladiator-oldal oldalsávjában ott
+   álló tartozék („ELITE **Touring** Fin 9″") sorolna be deszkákat.
+   *Eredmény: 72 besorolatlan → 49, és 23 lett allround.*
+
+2. **A MORZSAMENÜ mint kategória-forrás.** A Zray termék-URL-je puszta sorszám
+   (`/productinfo/854740.html`), a leírás nem mond kategóriát — a morzsamenü
+   viszont igen: `HOME › EVO COLLECTION › ALL AROUND EVO › Max Azure 11'6"`.
+   Ez azért szabad, amiért a teljes oldalszöveg NEM: a navigációs menü MINDEN
+   kategóriát felsorol minden oldalon, a morzsamenü pontosan egyet — azt,
+   ahová EZ a termék tartozik. A sorrendben közvetlenül az URL-szegmens után
+   áll, tehát a névből/URL-ből jövő besorolás üt rajta.
+
+**Mellékhatás, ami magától javít:** ha a leírás-alapú besorolás működik, a
+Gladiator `Elite` családja ELLENTMONDÁSOSSÁ válik (11.6 allround, 12.6T túra),
+és a családi öröklés — helyesen — nem következtet többé. A hibás címkék
+forrása nem foltozva lett, hanem megszűnt.
+
+Regresszió-ellenőrzés a meglévő forrásokon (Aqua Marina Cascade és Coral
+Touring, Gladiator Elite 11.6/12.6T, Jobe Duna): mind változatlan.
