@@ -653,12 +653,23 @@ export async function crawlSource(
 
       if (products.length === 0) continue;
       summary.productsExtracted += 1;
-      // A LEFEDETTSÉG a futás végén, a teljes szállítmányon számolódik: egy
-      // hiányzó mező soronként semmit nem mond, forrás-szinten viszont
-      // megkülönbözteti az egyedi hibát (19/20) a kinyerés hibájától (0/15).
-      extractedAll.push(...products);
-
       for (const product of products) {
+        // CSAK A DESZKÁKAT nézzük. Se a lefedettség, se a gyanú-jelek nem
+        // értelmesek egy táskán vagy pumpán, a boltok sitemapje viszont tele
+        // van velük.
+        //
+        // Az `extracted.accessoryType` NEM elég szűrő: az csak a KÖVETETT
+        // felszerelés-kategóriákat tölti ki, minden más termék (hátizsák,
+        // vízálló táska, ruházat) `null`-lal jön — vagyis deszkának látszik.
+        // Élesben ez 83 „deszkát" számolt 47 helyett, és a jelentés hamisan
+        // riasztott: 16 gyanús tétel, csupa táska. Egy hamisan riasztó
+        // jelentést pedig pár nap után senki nem néz meg.
+        if (classifyProduct(product).kind !== "board") continue;
+        // A LEFEDETTSÉG a futás végén, a teljes szállítmányon számolódik: egy
+        // hiányzó mező soronként semmit nem mond, forrás-szinten viszont
+        // megkülönbözteti az egyedi hibát (19/20) a kinyerés hibájától (0/15).
+        extractedAll.push(product);
+
         // GYANÚ-JELEK (F2.1-utó-38). NEM elutasítás: a termék megy tovább, de
         // a jel a GYŰJTÉSNÉL látszik — ott, ahol még meg lehet nézni, hogy
         // egyetlen modell oldala hibás-e, vagy az egész forrásé.
