@@ -3854,3 +3854,49 @@ pontosan úgy hallgatott el, ahogy kell.
 Ellenőrzés a gyártónál: a `CAMO GREEN 10'8"` besorolása azért túra, mert a Zray
 maga teszi oda (`HOME › SUP › Touring › CAMO GREEN`) — a méret alapján
 allroundnak tűnne, de a gyártó saját besorolása az erősebb.
+
+### F2.1-utó-34 — a Gladiator kategória-taxonómiája (2026-08-21)
+
+**A felhasználó vette észre:** a gladiatorsup.com fejlécében ott a kategória-
+bontás (`All round · Turing · Sport · Special · Paddles`). A „Turing" a
+gyártónál ELGÉPELVE szerepel.
+
+**Ahol a besorolás NINCS:** a termékoldal morzsamenüje a KIVITELI vonalat adja
+(`Home › Collection › Elite`), nem a használatot — ezért nem segített a
+morzsamenü-szabály. A termékoldalak a saját aktivitás-kategóriájukra sem
+hivatkoznak.
+
+**Ahol VAN:** külön taxonómia, `/catalog_activity/{all-round,turizm,sport}/`.
+A kategória-oldalak viszont JS-ből épülnek: nyers HTML-ből mindhárom a TELJES
+katalógust adta (81/76/84 „termék", azonos listával) — böngészővel jött ki a
+valódi, szűrt lista (48 / 28 / 36).
+
+**A kategóriák ÁTFEDNEK.** A gyártó szélesen sorol: 82 termékből **25 egyszerre
+több kategóriában** van (az `elite-12-6lt` mind a háromban). Ezeknél nem
+döntünk helyette:
+
+| | |
+|---|---|
+| egyértelmű, rögzítve | **57** — allround 25 · túra 11 · race 21 |
+| többértelmű, kihagyva | 25 (marad a leírás-alapú szabálynál) |
+
+A rögzítés a meglévő `boardTypeByUrl` mechanizmussal ment (ugyanaz, mint az
+Aqua Marina Revolutionnél): a döntés a FORRÁS KONFIGJÁBAN marad, tehát a
+következő gyűjtésnél már nem kérdés.
+
+*Eredmény: a Gladiator besorolatlan jelöltjei 49 → 29, és megjelent a race (7).*
+
+**A maradék a moderátoré, és ez így helyes.** A jóváhagyó most 35 jelöltet ad
+át emberi döntésre. Mintavétel a listából:
+
+| jelölt (bolti név) | javasolt pár | pontszám |
+|---|---|---|
+| Aqua Marina Fusion **BT 23FUP** | Aqua Marina Fusion | 0,635 |
+| Aqua Marina Dhyana **BT 23DHP** | Aqua Marina Dhyana | 0,635 |
+| Aqua Marina RAPID **BT 22RP , 130kg** | Aqua Marina Rapid | 0,520 |
+| Aqua Marina **FLOW YOGA** | Aqua Marina Yoga Dock | 0,566 |
+
+Az első három VALÓDI duplikátum — a cikkszám rontja le a névhasonlóságot a
+0,8-as küszöb alá. A negyedik viszont KÉT KÜLÖNBÖZŐ deszka: jó, hogy a
+rendszer nem fésülte össze magától. Pontosan ezért marad ez a kör emberi
+döntés.
