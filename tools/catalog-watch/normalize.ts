@@ -1219,6 +1219,28 @@ function urlCategoryHint(sourceUrl: string): string {
  *  - és pontosan ugyanannyi nem üres értéksor kövesse őket.
  * Ha bármelyik nem teljesül, `null` — marad a szokásos parse.
  */
+/**
+ * Egy cella értéke, ha az CSAK egy szám (legfeljebb „up to" előtaggal).
+ * Táblázatban a mértékegység az oszlop fejében áll — máshol NEM használjuk.
+ */
+/**
+ * Ugyanaz az érték-blokk ISMÉTLŐDIK-e a következő pozíción? A többméretű
+ * táblák jele: a második blokk első cellája megint NÉV (nem szám), miközben a
+ * másodikban szám áll — pontosan úgy, mint az elsőben.
+ */
+function looksLikeRepeatedBlock(lines: string[], start: number, size: number): boolean {
+  const next = lines.slice(start + size, start + size * 2);
+  if (next.length < size) return false;
+  const firstIsName = !/^\d/.test(next[0] ?? "");
+  const secondIsNumber = /^\d/.test(next[1] ?? "");
+  return firstIsName && secondIsNumber;
+}
+
+function bareNumber(value: string): number | null {
+  const match = value.trim().match(/^(?:up to|max\.?|~)?\s*(\d+(?:[.,]\d+)?)$/i);
+  return match ? toNumber(match[1] ?? "") : null;
+}
+
 function parseTransposedSpecs(text: string): BoardSpecs | null {
   const KNOWN: Record<string, keyof BoardSpecs | "skip"> = {
     model: "skip",
@@ -1232,7 +1254,30 @@ function parseTransposedSpecs(text: string): BoardSpecs | null {
     "max payload": "maxLoadKg",
     "max. air pressure": "skip",
     "max air pressure": "skip",
+    // Fanatic (fanatic.com) „SIZES AND SPECS" táblája — a címkék MÉRTÉKEGYSÉG-
+    // utótagot viselnek (`VOLUME (L)`, `WIDTH (IN / CM)`, `WEIGHT (KG) (+/-2%)`),
+    // amit a normalizálás levág; a saját szavaik viszont kellenek ide.
+    board: "skip",
+    technology: "skip",
+    fittings: "skip",
+    "packing volume": "skip",
+    "mastfoot insert": "skip",
+    weight: "weightKg",
+    "recommended user weight": "maxLoadKg",
+    "rec. user weight": "maxLoadKg",
+    "rec user weight": "maxLoadKg",
   };
+
+  /**
+   * Címke-normalizálás: kisbetű, egy szóköz, és a MÉRTÉKEGYSÉG-utótag levágása.
+   * A `VOLUME (L)` és a `VOLUME` ugyanaz a mező — a zárójel itt is magyarázat.
+   */
+  const normalizeLabel = (line: string): string =>
+    line
+      .toLowerCase()
+      .replace(/\([^)]*\)/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
 
   const lines = text
     .split("\n")
@@ -1243,7 +1288,7 @@ function parseTransposedSpecs(text: string): BoardSpecs | null {
     const labels: (keyof BoardSpecs | "skip")[] = [];
     let i = start;
     while (i < lines.length) {
-      const key = (lines[i] ?? "").toLowerCase().replace(/\s+/g, " ");
+      const key = normalizeLabel(lines[i] ?? "");
       const field = KNOWN[key];
       if (field === undefined) break;
       labels.push(field);
@@ -1253,6 +1298,14 @@ function parseTransposedSpecs(text: string): BoardSpecs | null {
 
     const values = lines.slice(i, i + labels.length);
     if (values.length < labels.length) continue;
+
+    // TÖBB MÉRETŰ tábla: egy címke-blokk alatt EGYMÁS UTÁN több méret
+    // értéksora áll (fanatic.com Fly Air: 9'8", 10'4", 10'8"…). Ilyenkor az
+    // ELSŐ blokk kiolvasása FÉLREVEZETŐ lenne: a modellt egyetlen méretével
+    // vinnénk be, a többit elhallgatva. Amíg a méretenkénti bontás nincs kész
+    // (a Shopify-ág `expandShopifyProduct`-jának megfelelője), inkább NEM
+    // adunk vissza semmit — a moderátor így legalább látja, hogy hiányzik.
+    if (looksLikeRepeatedBlock(lines, i, labels.length)) return null;
 
     const specs: BoardSpecs = { ...EMPTY_SPECS };
     for (let k = 0; k < labels.length; k += 1) {
@@ -1267,14 +1320,18 @@ function parseTransposedSpecs(text: string): BoardSpecs | null {
           break;
         case "volumeL": {
           const match = value.match(/(\d+(?:[.,]\d+)?)\s*(?:l\b|liter|litre)/i);
-          specs.volumeL = match ? toNumber(match[1] ?? "") : null;
+          // Egység a CÍMKÉBEN: `VOLUME (L)` fölött a cella csak `355`
+          // (fanatic.com). Táblázatban ez egyértelmű — az oszlop feje mondja
+          // meg a mértékegységet, ahogy az olvasónak is.
+          specs.volumeL = match ? toNumber(match[1] ?? "") : bareNumber(value);
           break;
         }
         case "weightKg":
         case "maxLoadKg": {
-          // A `kg` kötelező: a gyártó a fontot is kiírja („20.1lbs / 9.1kg").
+          // A `kg` ELSŐBBSÉGET élvez: a gyártó a fontot is kiírja
+          // („20.1lbs / 9.1kg"), és ilyenkor a kilogramm nyer.
           const match = value.match(/(\d+(?:[.,]\d+)?)\s*kg\b/i);
-          specs[field] = match ? toNumber(match[1] ?? "") : null;
+          specs[field] = match ? toNumber(match[1] ?? "") : bareNumber(value);
           break;
         }
       }

@@ -42,6 +42,27 @@ export interface RenderFetcher {
 }
 
 /**
+ * Végiggörgeti az oldalt, hogy a lusta betöltésű blokkok is a DOM-ba kerüljenek.
+ * Fix számú lépés és rövid szünetek: a cél nem a „minden betöltődött" garancia
+ * (az nem is elérhető), hanem hogy a látómezőhöz kötött tartalom megjelenjen.
+ * SOSEM dob — hiba esetén a hívó a meglévő szöveggel folytatja.
+ */
+async function autoScroll(page: {
+  evaluate: (fn: () => void) => Promise<unknown>;
+  waitForTimeout: (ms: number) => Promise<void>;
+}): Promise<void> {
+  try {
+    for (let step = 0; step < 8; step += 1) {
+      await page.evaluate(() => window.scrollBy(0, window.innerHeight * 1.5));
+      await page.waitForTimeout(400);
+    }
+    await page.evaluate(() => window.scrollTo(0, 0));
+  } catch {
+    // A görgetés nem kritikus: ami eddig betöltődött, az megmarad.
+  }
+}
+
+/**
  * Lusta indítású böngésző: a `chromium.launch()` csak az ELSŐ `renderText`
  * híváskor fut le, nem a `createRenderFetcher()`-nél — ha egyetlen termék
  * sem igényli a fallbacket, a böngésző-indítás költsége el sem indul.
@@ -69,6 +90,12 @@ export function createRenderFetcher(): RenderFetcher {
           // kliens-oldali (Liquid/JS) tartalom kirenderelődéséhez.
           await page.goto(url, { waitUntil: "domcontentloaded", timeout: 20_000 });
           await page.waitForTimeout(1500);
+          // GÖRGETÉS: a spec-tábla LUSTA betöltésű is lehet — élesben
+          // (fanatic.com) a „SIZES AND SPECS" blokk csak akkor kerül a DOM-ba,
+          // ha a látómezőbe ér. Egy vásárló is legörget érte; enélkül a
+          // renderelt szöveg pontosan azt NEM tartalmazza, amiért a fallbacket
+          // egyáltalán hívtuk.
+          await autoScroll(page);
           const text = await page.evaluate(() => document.body.innerText);
           return typeof text === "string" && text.length > 0 ? text : null;
         } finally {

@@ -1230,3 +1230,50 @@ describe("márka-aliasok — ugyanaz a márka két írásmóddal", () => {
     expect(normalizeBrandName("ZRAY")).toBe("Zray");
   });
 });
+
+/**
+ * FANATIC-KÖR (2026-08-21). A `fanatic.com` „SIZES AND SPECS" táblája
+ * transzponált — ugyanaz az alak, mint az Aqua Marináé —, de két újdonsággal:
+ * a címkék MÉRTÉKEGYSÉG-utótagot viselnek, és az érték mértékegység nélkül áll.
+ */
+describe("fanatic.com — mértékegység a CÍMKÉBEN", () => {
+  const page = (body: string) =>
+    `<html><head><title>FANATIC VIPER AIR</title></head><body><p>${body
+      .split("\n")
+      .join("</p><p>")}</p></body></html>`;
+
+  const ONE_SIZE = [
+    "SIZES AND SPECS", "BOARD", "VOLUME (L)", "WIDTH (IN / CM)", "LENGTH (IN / CM)",
+    "THICKNESS (IN / CM)", "TECHNOLOGY", "WEIGHT (KG) (+/-2%)", "PACKING VOLUME (L)",
+    "FITTINGS", "RECOMMENDED USER WEIGHT", "MASTFOOT INSERT",
+    "VIPER AIR S|L|T", "355", `33.5" / 85.1`, `11'0" / 335.3`, `6" / 15`,
+    "S|L|T (STIFF-LIGHT-TOUGH), WELDED", "11.20", "85", "2 X US BOX", "UP TO 100 KG", "YES",
+  ].join("\n");
+
+  it("a címke-utótagot levágja, és az egységet a MEZŐBŐL veszi", () => {
+    const specs = extractProductFromPage(page(ONE_SIZE), "https://www.fanatic.com/en/products/x-33250-1504", "Fanatic")?.specs;
+    expect(specs?.lengthCm).toBe(335.3);
+    expect(specs?.widthCm).toBe(85.1);
+    expect(specs?.volumeL).toBe(355); // a cella csak „355" — az egység a `VOLUME (L)` címkében
+    expect(specs?.weightKg).toBe(11.2);
+    expect(specs?.maxLoadKg).toBe(100); // „RECOMMENDED USER WEIGHT / UP TO 100 KG"
+  });
+
+  /**
+   * A Fly Air táblája EGY címke-blokk alatt TÖBB méret értéksorát hozza. Az
+   * elsőt kiolvasni félrevezető lenne: a modellt egyetlen méretével vinnénk
+   * be, a többit elhallgatva. Amíg a méretenkénti bontás nincs kész, inkább
+   * semmit nem adunk.
+   */
+  it("TÖBB MÉRETŰ táblából inkább semmit nem olvas ki", () => {
+    const multi = [
+      "BOARD", "VOLUME (L)", "LENGTH (IN / CM)", "WIDTH (IN / CM)", "REC. USER WEIGHT",
+      `FLY AIR 9'8"`, "213", `9'8'' / 294.6`, `32'' / 81.3`, "UP TO 80 KG",
+      `FLY AIR 10'4"`, "284", `10'4'' / 315`, `33" / 83.8`, "UP TO 90 KG",
+    ].join("\n");
+    // A hossz sem jön ki, ezért a termék EGÉSZE elesik — nem fél adattal
+    // kerül a jelölt-sorba, hanem sehogy. A moderátor így látja, hogy hiányzik.
+    const product = extractProductFromPage(page(multi), "https://www.fanatic.com/en/products/y-33250-1501", "Fanatic");
+    expect(product).toBeNull();
+  });
+});
