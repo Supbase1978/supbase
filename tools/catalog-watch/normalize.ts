@@ -143,6 +143,40 @@ export function extractModelYear(
  * zaj-szavak nélkül. Ez megy az egyezés-keresésbe, ezért a determinizmus
  * fontosabb, mint a szépség.
  */
+/**
+ * AQUA MARINA CIKKSZÁM: `BT-23ATP`, `PA-25T320`, szóközzel is (`BT 26RAY`).
+ *
+ * A második két számjegy a MODELLÉV: `BT-19YD` = 2019-es Yoga Dock,
+ * `PA-25T320` = 2025-ös Pure Air Tropic 320. Élesben ellenőrizve: 32 jelöltnél
+ * szerepel ilyen kód, és MIND Aqua Marina — a prefixek `BT-` és `PA-`, az évek
+ * 19-től 26-ig futnak, hézag nélkül.
+ *
+ * MIÉRT MÁRKÁHOZ KÖTVE: ez a gyártó saját cikkszám-konvenciója, nem általános
+ * szabály. Egy másik márkánál ugyanez az alak mást jelenthet, és egy rossz
+ * évjárat KÜLÖN modellt csinálna ugyanabból a deszkából.
+ */
+const AQUA_MARINA_CODE = /\b(?:BT|PA)[-\s]?(\d{2})[A-Z]{1,4}\d*\b/;
+
+/**
+ * Modellév az Aqua Marina cikkszámából (felhasználói felismerés, 2026-08-21).
+ *
+ * MIÉRT SZÁMÍT: az évjárat nélkül a 2020-as és a 2025-ös Blade ugyanannak a
+ * deszkának látszik, pedig más a mérete és a teherbírása. A kereskedői oldalak
+ * az évet gyakran sehol nem írják ki — a cikkszámban viszont ott van.
+ */
+export function modelYearFromProductCode(
+  text: string,
+  brandName: string | null,
+  now = new Date(),
+): number | null {
+  if (brandName === null || !/aqua\s*marina/i.test(brandName)) return null;
+  const match = text.match(AQUA_MARINA_CODE);
+  if (!match) return null;
+  const year = 2000 + Number(match[1]);
+  if (year < MIN_MODEL_YEAR || year > now.getUTCFullYear() + 1) return null;
+  return year;
+}
+
 export function cleanModelName(
   rawTitle: string,
   brandName?: string | null,
@@ -161,9 +195,27 @@ export function cleanModelName(
 
   text = text
     // méret-jelölések: 10'6", 10' 6'', 320 cm, 3,2 m, 32"
+    //
+    // A TIPOGRÁFIAI láb-jel (’ U+2019, ′ U+2032) SZÁNDÉKOSAN nincs benne,
+    // pedig a magyar boltok így írják („Atlas 12’0”"). Kipróbálva
+    // (2026-08-21): ha levágnánk, a `PURE AIR Tropic 10′6″` és a
+    // `PURE AIR Tropic 10′10″` UGYANARRA a névre normalizálódna — a SUP-nál
+    // viszont a méret maga a termék, tehát a kettő összefésülhetővé válna.
+    // A méret a névben marad, amíg a modell↔méret azonosítás nem külön mező.
     .replace(/\d+\s*'\s*\d*\s*(?:''|"|”|’’)?/g, " ")
     .replace(/\d+([.,]\d+)?\s*(cm|mm|m|inch|coll|"|”)\b/gi, " ")
-    .replace(/\b(20\d{2})(-(es|as|ös|os))?\b/g, " ");
+    .replace(/\b(20\d{2})(-(es|as|ös|os))?\b/g, " ")
+    // A KERESKEDŐ ÁLTAL ODAÍRT TEHERBÍRÁS nem a modellnév része (felhasználói
+    // jelzés, 2026-08-21): „PURE AIR Tropic 12'0" Aqua Marina | 170 kg",
+    // „RAPID BT 22RP , 130kg ig", „Atlas 12'0" BT 23ATP 180 kg". A gyártó
+    // hivatalos nevében ilyen sosincs, és két bolt kétféleképp írja oda —
+    // vagyis a duplikátum-felismerést is rontja.
+    .replace(/\d+([.,]\d+)?\s*kg\b(\s*(ig|-ig))?/gi, " ")
+    // A CIKKSZÁM sem: az évjáratot már kiolvastuk belőle
+    // (`modelYearFromProductCode`), a névben viszont csak zaj — és
+    // boltonként más írásmóddal (`BT-23ATP` kontra `BT 23ATP`) két külön
+    // modellnek látszana ugyanaz a deszka.
+    .replace(new RegExp(AQUA_MARINA_CODE.source, "g"), " ");
 
   for (const word of NOISE_WORDS) {
     text = text.replace(wholeWordRegExp(word), " ");
@@ -1464,10 +1516,14 @@ export function extractProduct(
   // A `boardTypeFromDescription` az angol „versatile/entry-level model" alakot
   // ismeri (a Gladiatorért készült), a `boardTypeFromProse` a magyar szórendet
   // és a ragozást — a kettő kiegészíti egymást, és mindkettő főnevet követel.
-  const boardType =
-    guessBoardType(rawTitle) ??
-    boardTypeFromProse(description) ??
-    boardTypeFromDescription(description);
+  const { boardType, boardTypeSource } = resolveBoardType({
+    pinned: null,
+    name: guessBoardType(rawTitle),
+    category: null,
+    breadcrumb: null,
+    usage: null,
+    description: boardTypeFromProse(description) ?? boardTypeFromDescription(description),
+  });
   // A besorolás itt is lefut (nem csak a crawl.ts vezérlésében), hogy a
   // moderációs UI a kategória-legördülőt a figyelő tippjével előválaszthassa —
   // ugyanaz a minta, mint a `boardType` tippnél (a moderátor felülbírálhatja).
@@ -1483,11 +1539,17 @@ export function extractProduct(
     brandName,
     modelName,
     rawTitle,
-    modelYear: extractModelYear(`${rawTitle} ${description}`),
+    // A KIÍRT évszám az elsődleges; ha nincs, az Aqua Marina cikkszáma
+    // elárulja (`BT-23ATP` → 2023). A kereskedői oldalak az évet gyakran
+    // sehol nem írják ki, a cikkszámot viszont igen.
+    modelYear:
+      extractModelYear(`${rawTitle} ${description}`) ??
+      modelYearFromProductCode(`${rawTitle} ${description}`, brandName),
     priceHuf: parsePriceHuf(node.offers),
     inStock: parseAvailability(node.offers),
     imageUrl: displayImageUrl(firstString(node.image)),
     boardType,
+    boardTypeSource,
     specs,
     accessoryType:
       classification.kind === "accessory" ? classification.accessoryType : null,
@@ -1850,6 +1912,49 @@ function absoluteUrl(raw: string | null, baseUrl: string): string | null {
   }
 }
 
+/**
+ * A KATEGÓRIA FORRÁSA — a moderátornak szól (felhasználói kérés, 2026-08-21).
+ *
+ * MIÉRT KELL: a moderációs felület eddig csak a VÉGEREDMÉNYT mutatta, azt is
+ * úgy, hogy hiányzó kategória esetén némán „allround"-ot választott. Így a
+ * moderátornak MINDEN modellt le kellett ellenőriznie a neten — nem tudta
+ * megkülönböztetni a gyártó saját besorolását a névből tippelt találgatástól.
+ *
+ * A sorrend ITT a megbízhatóság sorrendje is: a `pinned` moderátori/taxonómia
+ * döntés, a `category` és a `breadcrumb` a gyártó SAJÁT besorolása, a `name`
+ * és a `description` viszont következtetés.
+ */
+export type BoardTypeSource =
+  | "pinned"
+  | "name"
+  | "category"
+  | "breadcrumb"
+  | "usage"
+  | "description";
+
+/**
+ * A kategória-lánc kiértékelése ÚGY, hogy az is megmaradjon, MELYIK lépés
+ * adta. Az elsőbbségi sorrend változatlan — csak eddig elveszett az információ,
+ * hogy honnan jött.
+ */
+function resolveBoardType(
+  candidates: Record<BoardTypeSource, BoardType | null>,
+): { boardType: BoardType | null; boardTypeSource: BoardTypeSource | null } {
+  const order: BoardTypeSource[] = [
+    "pinned",
+    "name",
+    "category",
+    "breadcrumb",
+    "usage",
+    "description",
+  ];
+  for (const source of order) {
+    const value = candidates[source];
+    if (value !== null) return { boardType: value, boardTypeSource: source };
+  }
+  return { boardType: null, boardTypeSource: null };
+}
+
 export interface PageExtractionOptions {
   /**
    * Kézi kategória-rögzítés (`crawl_config.boardTypeByUrl`): URL-részlet →
@@ -1950,7 +2055,8 @@ export function extractProductFromPage(
     brandName,
     modelName,
     rawTitle,
-    modelYear: extractModelYear(rawTitle),
+    modelYear:
+      extractModelYear(rawTitle) ?? modelYearFromProductCode(pageText, brandName),
     // Gyártói oldal: árat nem viszünk (ár-megjelenítési politika).
     priceHuf: null,
     inStock: null,
@@ -1996,16 +2102,17 @@ export function extractProductFromPage(
     // sávok viszont igen.
     //  3. a gyártó saját LEÍRÁSA („the perfect all-around board for…"), ha a
     //     használat-sávok más készletet mutatnak (NUTS: TRACKING/STABILITY).
-    boardType:
-      pinnedType ??
-      guessBoardType(`${rawTitle} ${urlCategoryHint(sourceUrl)}`) ??
+    ...resolveBoardType({
+      pinned: pinnedType,
+      name: guessBoardType(`${rawTitle} ${urlCategoryHint(sourceUrl)}`),
       // A gyártó SAJÁT kategória-felirata a termékfejlécben. A SORRENDJE
       // számít („TOURING / FREERACING" → túra, nem race), ezért nem a
       // szabály-prioritásos `guessBoardType` olvassa.
-      boardTypeFromCategoryLine(elementTextByClass(html, categoryClass)) ??
-      guessBoardType(breadcrumbText(html)) ??
-      usageType ??
-      boardTypeFromDescription(pageText),
+      category: boardTypeFromCategoryLine(elementTextByClass(html, categoryClass)),
+      breadcrumb: guessBoardType(breadcrumbText(html)),
+      usage: usageType,
+      description: boardTypeFromDescription(pageText),
+    }),
     specs,
     accessoryType: null,
   };

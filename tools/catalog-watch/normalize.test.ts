@@ -12,6 +12,7 @@ import {
   extractProductsFromPage,
   boardTypeFromProse,
   guessBoardType,
+  modelYearFromProductCode,
   normalizeBrandName,
   parseAvailability,
   parseDimensionCm,
@@ -385,6 +386,51 @@ describe("címke és érték sorrendje", () => {
     const specs = parseSpecsFromText("Teherbírás\n150 kg\nSúly\n8,8 kg");
     expect(specs.maxLoadKg).toBe(150);
     expect(specs.weightKg).toBe(8.8);
+  });
+});
+
+/**
+ * A KERESKEDŐ HOZZÁÍRÁSAI a modellnévben (F2.1-utó-39, felhasználói jelzés).
+ *
+ * A boltok teherbírást és cikkszámot is a címbe írnak — a gyártó hivatalos
+ * nevében ilyen nincs. Két baj származik belőle: a katalógusban zajos név
+ * jelenik meg, és két bolt kétféle írásmódja két külön modellnek látszik.
+ */
+describe("cleanModelName — bolti hozzáírások", () => {
+  it.each([
+    ["PURE AIR Tropic 12'0\" Aqua Marina | 170 kg", "Aqua Marina", "PURE AIR Tropic"],
+    // A MÉRET a névben MARAD (tipográfiai jellel): a SUP-nál a méret maga a
+    // termék, és levágva a 10′6″ meg a 10′10″ ugyanaz a modell lenne.
+    ["Atlas 12’0” BT 23ATP 180 kg", "Aqua Marina", "Atlas 12’0”"],
+    ["RAPID BT 22RP , 130kg ig", "Aqua Marina", "RAPID"],
+    ["VAPOR , 140 kg BT 23VAP", "Aqua Marina", "VAPOR"],
+  ])("%s → %s", (raw, brand, expected) => {
+    expect(cleanModelName(raw, brand).replace(/\s*,\s*/g, " ").trim()).toBe(expected);
+  });
+});
+
+describe("modelYearFromProductCode", () => {
+  // Az Aqua Marina cikkszáma kódolja a modellévet: BT-19YD = 2019-es Yoga
+  // Dock, PA-25T320 = 2025-ös Pure Air Tropic. Élesben 32 jelöltnél szerepel
+  // ilyen kód, és egyiknél sem volt évjárat.
+  it.each([
+    ["Atlas 12’0” BT 23ATP", "Aqua Marina", 2023],
+    ["Yoga Dock platform BT 19YD", "Aqua Marina", 2019],
+    ["Pure Air Tropic PA-25T320", "Aqua Marina", 2025],
+  ])("%s → %s", (text, brand, expected) => {
+    expect(modelYearFromProductCode(text, brand)).toBe(expected);
+  });
+
+  it("MÁS MÁRKÁNÁL nem él — ez a gyártó saját konvenciója", () => {
+    // Egy rossz évjárat KÜLÖN modellt csinálna ugyanabból a deszkából, ezért
+    // idegen márkára inkább semmit nem mondunk.
+    expect(modelYearFromProductCode("Board BT-23ATP", "Starboard")).toBeNull();
+    expect(modelYearFromProductCode("Board BT-23ATP", null)).toBeNull();
+  });
+
+  it("a jövőbeli és a túl régi évet elveti", () => {
+    expect(modelYearFromProductCode("BT-99XY", "Aqua Marina")).toBeNull();
+    expect(modelYearFromProductCode("BT-05XY", "Aqua Marina")).toBeNull();
   });
 });
 

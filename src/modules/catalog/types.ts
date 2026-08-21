@@ -193,6 +193,27 @@ export interface ExtractedBoardData {
    */
   imageUrls?: string[];
   boardType: BoardType | null;
+  /**
+   * HONNAN jött a kategória — a moderációs felület ezt mutatja a legördülő
+   * mellett (F2.1-utó-39, felhasználói kérés).
+   *
+   * MIÉRT: a moderátor eddig csak a végeredményt látta, és nem tudta
+   * megkülönböztetni a GYÁRTÓ SAJÁT besorolását (kategória-oldal, morzsamenü)
+   * a névből tippelt következtetéstől — ezért minden modellt le kellett
+   * ellenőriznie a neten. A forrás megmutatásával az erős eseteket egy
+   * pillantással el lehet fogadni.
+   *
+   * `null`, ha nincs kategória — ilyenkor a felület NEM választ előre semmit.
+   */
+  boardTypeSource?:
+    | "pinned"
+    | "name"
+    | "category"
+    | "breadcrumb"
+    | "usage"
+    | "description"
+    | "family"
+    | null;
   specs: ExtractedBoardSpecs;
   /**
    * Felszerelés-kategória, ha a figyelő `classifyProduct` döntése `accessory`

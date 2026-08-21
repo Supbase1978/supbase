@@ -16,6 +16,7 @@
       "imageUrl": "https://gladiatorsup.com/wp-content/uploads/2024/11/elite-1.jpg",
       "imageUrls": [],
       "boardType": "allround",
+      "boardTypeSource": "pinned",
       "specs": {
         "lengthCm": 354,
         "widthCm": 86,
