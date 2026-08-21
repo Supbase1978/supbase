@@ -997,8 +997,16 @@ export function classifyProduct(product: {
     return { kind: "ignore" };
   }
 
-  const hasBoardNoun = BOARD_NOUNS.some((noun) => folded.includes(noun));
-  const hasSup = /\bsup\b/.test(folded);
+  // A deszka-azonosításhoz a CÍM MELLETT a termékspecifikus jel (URL-útvonal,
+  // bolti kategória) is számít — ugyanaz az `identity`, amit a „sosem deszka"
+  // kizárás is használ. Élesben (fanatic.com): a gyerekdeszka címe a szlogen
+  // levágása után csak „RIPPER AIR S | L | T", a mérete pedig 238 cm — a
+  // küszöb alatt. Az URL viszont kimondja: `fanatic-ISUP-ripper-air-slt`.
+  //
+  // A KIEGÉSZÍTŐ-felismerés SZÁNDÉKOSAN marad a puszta címnél: az URL-ben álló
+  // „paddle" (paddleboard) evezőnek minősítene egy deszkát.
+  const hasBoardNoun = BOARD_NOUNS.some((noun) => identity.includes(noun));
+  const hasSup = /\bi?sup\b/.test(identity);
   // A méret itt is csak ELLENTMONDÁSMENTESEN számít bizonyítéknak (ld. fent).
   const isBoard =
     hasBoardNoun || (hasSup && product.boardType !== null) || (lengthInRange && dimensionsCoherent);
@@ -1223,125 +1231,157 @@ function urlCategoryHint(sourceUrl: string): string {
  * Egy cella értéke, ha az CSAK egy szám (legfeljebb „up to" előtaggal).
  * Táblázatban a mértékegység az oszlop fejében áll — máshol NEM használjuk.
  */
-/**
- * Ugyanaz az érték-blokk ISMÉTLŐDIK-e a következő pozíción? A többméretű
- * táblák jele: a második blokk első cellája megint NÉV (nem szám), miközben a
- * másodikban szám áll — pontosan úgy, mint az elsőben.
- */
-function looksLikeRepeatedBlock(lines: string[], start: number, size: number): boolean {
-  const next = lines.slice(start + size, start + size * 2);
-  if (next.length < size) return false;
-  const firstIsName = !/^\d/.test(next[0] ?? "");
-  const secondIsNumber = /^\d/.test(next[1] ?? "");
-  return firstIsName && secondIsNumber;
-}
 
 function bareNumber(value: string): number | null {
   const match = value.trim().match(/^(?:up to|max\.?|~)?\s*(\d+(?:[.,]\d+)?)$/i);
   return match ? toNumber(match[1] ?? "") : null;
 }
 
+/**
+ * Transzponált spec-tábla CÍMKÉI → mezők. A kulcsok normalizált alakban állnak
+ * (kisbetű, egy szóköz, a mértékegység-utótag levágva).
+ */
+const TRANSPOSED_LABELS: Record<string, keyof BoardSpecs | "skip"> = {
+  model: "skip",
+  product: "skip",
+  length: "lengthCm",
+  width: "widthCm",
+  thickness: "thicknessCm",
+  volume: "volumeL",
+  "net weight": "weightKg",
+  "max. payload": "maxLoadKg",
+  "max payload": "maxLoadKg",
+  "max. air pressure": "skip",
+  "max air pressure": "skip",
+  // Fanatic (fanatic.com) „SIZES AND SPECS" táblája — a címkék MÉRTÉKEGYSÉG-
+  // utótagot viselnek (`VOLUME (L)`, `WIDTH (IN / CM)`, `WEIGHT (KG) (+/-2%)`),
+  // amit a normalizálás levág; a saját szavaik viszont kellenek ide.
+  board: "skip",
+  technology: "skip",
+  fittings: "skip",
+  "packing volume": "skip",
+  "mastfoot insert": "skip",
+  weight: "weightKg",
+  "recommended user weight": "maxLoadKg",
+  "rec. user weight": "maxLoadKg",
+  "rec user weight": "maxLoadKg",
+};
+
+/**
+ * Egy sor mint transzponált CÍMKE, vagy `undefined` ha nem az.
+ * A zárójel itt is magyarázat: a `VOLUME (L)` és a `VOLUME` ugyanaz a mező.
+ */
+function transposedLabel(line: string): (keyof BoardSpecs | "skip") | undefined {
+  const key = line
+    .toLowerCase()
+    .replace(/\([^)]*\)/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  return TRANSPOSED_LABELS[key];
+}
+
+/**
+ * Egy címke-blokk + egy értékblokk → specifikáció. `null`, ha a hossz nem jött
+ * ki: az a minimum, ami elárulja, hogy tényleg deszka-sort olvasunk.
+ */
+function specsFromBlock(
+  labelLines: readonly string[],
+  values: readonly string[],
+  fullText: string,
+): BoardSpecs | null {
+  const specs: BoardSpecs = { ...EMPTY_SPECS };
+  for (let k = 0; k < labelLines.length; k += 1) {
+    const field = transposedLabel(labelLines[k] ?? "");
+    const value = values[k] ?? "";
+    if (field === "skip" || field === undefined) continue;
+    switch (field) {
+      case "lengthCm":
+      case "widthCm":
+      case "thicknessCm":
+        specs[field] = parseDimensionCm(value);
+        break;
+      case "volumeL": {
+        const match = value.match(/(\d+(?:[.,]\d+)?)\s*(?:l\b|liter|litre)/i);
+        // Egység a CÍMKÉBEN: `VOLUME (L)` fölött a cella csak `355`
+        // (fanatic.com). Táblázatban ez egyértelmű — az oszlop feje mondja
+        // meg a mértékegységet, ahogy az olvasónak is.
+        specs.volumeL = match ? toNumber(match[1] ?? "") : bareNumber(value);
+        break;
+      }
+      case "weightKg":
+      case "maxLoadKg": {
+        // A `kg` ELSŐBBSÉGET élvez: a gyártó a fontot is kiírja
+        // („20.1lbs / 9.1kg"), és ilyenkor a kilogramm nyer.
+        const match = value.match(/(\d+(?:[.,]\d+)?)\s*kg\b/i);
+        specs[field] = match ? toNumber(match[1] ?? "") : bareNumber(value);
+        break;
+      }
+    }
+  }
+  if (specs.lengthCm === null) return null;
+  specs.inflatable = detectInflatable(fullText);
+  return specs;
+}
+
 function parseTransposedSpecs(text: string): BoardSpecs | null {
-  const KNOWN: Record<string, keyof BoardSpecs | "skip"> = {
-    model: "skip",
-    product: "skip",
-    length: "lengthCm",
-    width: "widthCm",
-    thickness: "thicknessCm",
-    volume: "volumeL",
-    "net weight": "weightKg",
-    "max. payload": "maxLoadKg",
-    "max payload": "maxLoadKg",
-    "max. air pressure": "skip",
-    "max air pressure": "skip",
-    // Fanatic (fanatic.com) „SIZES AND SPECS" táblája — a címkék MÉRTÉKEGYSÉG-
-    // utótagot viselnek (`VOLUME (L)`, `WIDTH (IN / CM)`, `WEIGHT (KG) (+/-2%)`),
-    // amit a normalizálás levág; a saját szavaik viszont kellenek ide.
-    board: "skip",
-    technology: "skip",
-    fittings: "skip",
-    "packing volume": "skip",
-    "mastfoot insert": "skip",
-    weight: "weightKg",
-    "recommended user weight": "maxLoadKg",
-    "rec. user weight": "maxLoadKg",
-    "rec user weight": "maxLoadKg",
-  };
+  return parseTransposedSpecsBySize(text)[0]?.specs ?? null;
+}
 
-  /**
-   * Címke-normalizálás: kisbetű, egy szóköz, és a MÉRTÉKEGYSÉG-utótag levágása.
-   * A `VOLUME (L)` és a `VOLUME` ugyanaz a mező — a zárójel itt is magyarázat.
-   */
-  const normalizeLabel = (line: string): string =>
-    line
-      .toLowerCase()
-      .replace(/\([^)]*\)/g, " ")
-      .replace(/\s+/g, " ")
-      .trim();
+/**
+ * MÉRETENKÉNTI bontás transzponált spec-táblából (F2.1-utó-35).
+ *
+ * Élesben (fanatic.com): EGY címke-blokk alatt EGYMÁS UTÁN több méret
+ * értéksora áll —
+ *
+ *   BOARD | VOLUME (L) | LENGTH (IN / CM) | …
+ *   FLY AIR S|L|T 9'8"  | 213 | 9'8'' / 294.6 | …
+ *   FLY AIR S|L|T 10'4" | 284 | 10'4'' / 315  | …
+ *
+ * A SUP-nál a MÉRET maga a termék (a Deszkaválasztó hossz/szélesség alapján
+ * pontoz), ezért itt is méretenként külön jelölt születik — ugyanaz az elv,
+ * mint a Shopify-ág `expandShopifyProduct`-jánál.
+ *
+ * A blokk ELSŐ cellája a méret-címke (`FLY AIR S|L|T 9'8"`), ami a modellnevet
+ * egészíti ki: enélkül öt azonos nevű „Fly Air" jelölt születne.
+ */
+export interface SizedSpecs {
+  /** A méret-blokk első cellája — a modellnév kiegészítése. */
+  label: string;
+  specs: BoardSpecs;
+}
 
+export function parseTransposedSpecsBySize(text: string): SizedSpecs[] {
   const lines = text
     .split("\n")
     .map((line) => line.trim())
     .filter((line) => line !== "");
 
   for (let start = 0; start < lines.length; start += 1) {
-    const labels: (keyof BoardSpecs | "skip")[] = [];
-    let i = start;
-    while (i < lines.length) {
-      const key = normalizeLabel(lines[i] ?? "");
-      const field = KNOWN[key];
-      if (field === undefined) break;
-      labels.push(field);
-      i += 1;
-    }
-    if (labels.length < 4) continue;
+    const labelCount = countKnownLabels(lines, start);
+    if (labelCount < 4) continue;
 
-    const values = lines.slice(i, i + labels.length);
-    if (values.length < labels.length) continue;
-
-    // TÖBB MÉRETŰ tábla: egy címke-blokk alatt EGYMÁS UTÁN több méret
-    // értéksora áll (fanatic.com Fly Air: 9'8", 10'4", 10'8"…). Ilyenkor az
-    // ELSŐ blokk kiolvasása FÉLREVEZETŐ lenne: a modellt egyetlen méretével
-    // vinnénk be, a többit elhallgatva. Amíg a méretenkénti bontás nincs kész
-    // (a Shopify-ág `expandShopifyProduct`-jának megfelelője), inkább NEM
-    // adunk vissza semmit — a moderátor így legalább látja, hogy hiányzik.
-    if (looksLikeRepeatedBlock(lines, i, labels.length)) return null;
-
-    const specs: BoardSpecs = { ...EMPTY_SPECS };
-    for (let k = 0; k < labels.length; k += 1) {
-      const field = labels[k];
-      const value = values[k] ?? "";
-      if (field === "skip" || field === undefined) continue;
-      switch (field) {
-        case "lengthCm":
-        case "widthCm":
-        case "thicknessCm":
-          specs[field] = parseDimensionCm(value);
-          break;
-        case "volumeL": {
-          const match = value.match(/(\d+(?:[.,]\d+)?)\s*(?:l\b|liter|litre)/i);
-          // Egység a CÍMKÉBEN: `VOLUME (L)` fölött a cella csak `355`
-          // (fanatic.com). Táblázatban ez egyértelmű — az oszlop feje mondja
-          // meg a mértékegységet, ahogy az olvasónak is.
-          specs.volumeL = match ? toNumber(match[1] ?? "") : bareNumber(value);
-          break;
-        }
-        case "weightKg":
-        case "maxLoadKg": {
-          // A `kg` ELSŐBBSÉGET élvez: a gyártó a fontot is kiírja
-          // („20.1lbs / 9.1kg"), és ilyenkor a kilogramm nyer.
-          const match = value.match(/(\d+(?:[.,]\d+)?)\s*kg\b/i);
-          specs[field] = match ? toNumber(match[1] ?? "") : bareNumber(value);
-          break;
-        }
-      }
+    const out: SizedSpecs[] = [];
+    for (let at = start + labelCount; at + labelCount <= lines.length; at += labelCount) {
+      const block = lines.slice(at, at + labelCount);
+      // A blokk első cellája NÉV (nem szám) — enélkül már nem méret-sor,
+      // hanem az oldal további tartalma.
+      if (/^\d/.test(block[0] ?? "")) break;
+      const specs = specsFromBlock(lines.slice(start, start + labelCount), block, text);
+      if (specs === null) break;
+      out.push({ label: block[0] ?? "", specs });
     }
-    if (specs.lengthCm !== null) {
-      specs.inflatable = detectInflatable(text);
-      return specs;
-    }
+    if (out.length > 0) return out;
   }
-  return null;
+  return [];
+}
+
+/** Hány EGYMÁST KÖVETŐ ismert címke áll `start`-tól? */
+function countKnownLabels(lines: string[], start: number): number {
+  let count = 0;
+  while (start + count < lines.length && transposedLabel(lines[start + count] ?? "") !== undefined) {
+    count += 1;
+  }
+  return count;
 }
 
 /**
@@ -1477,6 +1517,22 @@ export interface PageExtractionOptions {
    * zajszó-lista, ami egy jogos modellnevet is elvághatna.
    */
   titleSuffixes?: readonly string[];
+  /**
+   * A címet ENNÉL A JELNÉL vágjuk el (`crawl_config.titleCutAfter`) — a
+   * mögötte álló szlogen termékenként más, ezért pontos utótagként nem adható
+   * meg.
+   */
+  titleCutAfter?: readonly string[];
+  /**
+   * A spec-parse-hoz használandó szöveg, a HTML-ből kinyert helyett. A
+   * BÖNGÉSZŐ-RENDERELT szöveg érkezik így (`render.ts`): a cím és a képek
+   * továbbra is a HTML-ből jönnek, a specifikáció viszont abból a szövegből,
+   * amit a felhasználó ténylegesen LÁT.
+   *
+   * Miért kell: élesben (fanatic.com) a „SIZES AND SPECS" tábla csak JS után,
+   * görgetésre kerül a DOM-ba — a nyers HTML-ben egyetlen mérete sincs ott.
+   */
+  overrideText?: string;
 }
 
 export function extractProductFromPage(
@@ -1485,11 +1541,15 @@ export function extractProductFromPage(
   defaultBrandName: string | null = null,
   options: PageExtractionOptions = {},
 ): ExtractedProduct | null {
-  const { boardTypeByUrl = {}, titleSuffixes = [] } = options;
+  const { boardTypeByUrl = {}, titleSuffixes = [], titleCutAfter = [], overrideText } = options;
   const titleMatch = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
   let rawTitle = htmlToText(titleMatch?.[1] ?? "")
     .replace(/\s+/g, " ")
     .trim();
+  for (const marker of titleCutAfter) {
+    const at = rawTitle.indexOf(marker);
+    if (at > 0) rawTitle = rawTitle.slice(0, at).trim();
+  }
   for (const suffix of titleSuffixes) {
     const folded = foldText(rawTitle);
     const needle = foldText(suffix);
@@ -1499,7 +1559,7 @@ export function extractProductFromPage(
   }
   if (rawTitle === "") return null;
 
-  const pageText = htmlToText(html);
+  const pageText = overrideText ?? htmlToText(html);
   // Elsőként a szokásos, címke-melletti parse; ha az üres, a két hasábos
   // („transzponált") elrendezés fallbackje.
   let specs = parseSpecsFromText(pageText);
@@ -1599,4 +1659,59 @@ export function extractProductFromPage(
   extracted.accessoryType =
     classification.kind === "accessory" ? classification.accessoryType : null;
   return extracted;
+}
+
+/**
+ * MÉRETENKÉNTI jelöltek egy termékoldalból (F2.1-utó-35).
+ *
+ * A legtöbb oldal EGY deszkáról szól — ilyenkor egyelemű a lista, és minden
+ * pontosan úgy viselkedik, mint eddig. Van viszont olyan gyártó
+ * (élesben: fanatic.com), amelyik EGY oldalon a modellcsalád MINDEN méretét
+ * felsorolja egyetlen spec-táblában. A SUP-nál a MÉRET maga a termék (a
+ * Deszkaválasztó hossz/szélesség alapján pontoz), ezért ilyenkor méretenként
+ * külön jelölt születik — ugyanaz az elv, mint a Shopify-ág
+ * `expandShopifyProduct`-jánál.
+ *
+ * A JELÖLT URL-je méretenként EGYEDI (`?size=…`): a jelölt-sorokat a figyelő
+ * URL szerint azonosítja, közös URL-lel a méretek felülírnák egymást.
+ */
+export function extractProductsFromPage(
+  html: string,
+  sourceUrl: string,
+  defaultBrandName: string | null = null,
+  options: PageExtractionOptions = {},
+): ExtractedProduct[] {
+  const base = extractProductFromPage(html, sourceUrl, defaultBrandName, options);
+  if (!base) return [];
+
+  const pageText = options.overrideText ?? htmlToText(html);
+  const sizes = parseTransposedSpecsBySize(pageText);
+  if (sizes.length < 2) return [base];
+
+  return sizes.map((size) => ({
+    ...base,
+    // A blokk első cellája a gyártó SAJÁT, méretet is viselő neve
+    // („FLY AIR S|L|T 9'8\"") — ez pontosabb, mint a cím + méret ragasztása.
+    modelName: sizedModelName(size.label, base.brandName) || base.modelName,
+    sourceUrl: `${sourceUrl}${sourceUrl.includes("?") ? "&" : "?"}size=${sizeSlug(size.label)}`,
+    specs: size.specs,
+  }));
+}
+
+/** A méret-címke mint modellnév: márkanév nélkül, a MÉRET megtartásával. */
+function sizedModelName(label: string, brandName: string | null): string {
+  let text = decodeEntities(label).replace(/\s+/g, " ").trim();
+  if (brandName) text = text.replace(new RegExp(escapeRegExp(brandName), "gi"), " ");
+  return text.replace(/\s+/g, " ").trim();
+}
+
+/** URL-be tehető azonosító a méret-címkéből. */
+function sizeSlug(label: string): string {
+  return (
+    decodeEntities(label)
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 40) || "1"
+  );
 }

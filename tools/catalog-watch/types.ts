@@ -105,6 +105,13 @@ export interface CrawlConfig {
    * konfig — globális zajszó-listaként egy jogos modellnevet is elvághatna.
    */
   titleSuffixes?: string[];
+  /**
+   * A `<title>`-t ENNÉL A JELNÉL elvágjuk, a mögötte álló reklámszöveggel
+   * együtt. Élesben (fanatic.com): „FANATIC VIPER AIR S | L | T ᐅ SUPing or
+   * Windsurfing couldn't be easier!" — a szlogen termékenként más, ezért
+   * pontos utótagként nem adható meg, a `ᐅ` jel viszont mindig ott áll.
+   */
+  titleCutAfter?: string[];
   /** Szabad szöveges megjegyzés az adminnak. */
   notes?: string;
 }

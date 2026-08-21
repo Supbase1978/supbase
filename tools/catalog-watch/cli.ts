@@ -319,6 +319,8 @@ async function commandAddSource(args: Args): Promise<void> {
   if (defaultBrand) crawlConfig.defaultBrandName = defaultBrand;
   const titleSuffixes = flagList(args, "title-suffix");
   if (titleSuffixes) crawlConfig.titleSuffixes = titleSuffixes;
+  const titleCut = flagList(args, "title-cut");
+  if (titleCut) crawlConfig.titleCutAfter = titleCut;
   const notes = flag(args, "notes");
   if (notes) crawlConfig.notes = notes;
 

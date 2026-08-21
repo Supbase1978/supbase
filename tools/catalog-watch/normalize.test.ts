@@ -9,6 +9,7 @@ import {
   extractModelYear,
   extractProduct,
   extractProductFromPage,
+  extractProductsFromPage,
   guessBoardType,
   normalizeBrandName,
   parseAvailability,
@@ -1315,5 +1316,63 @@ describe("morzsamenü mint kategória-forrás", () => {
   it("a NÉVBŐL vagy URL-ből jövő besorolás ERŐSEBB a morzsamenünél", () => {
     const p = extractProductFromPage(page("ALL AROUND EVO"), "https://x.com/products/racing/race/1.html", "Zray");
     expect(p?.boardType).toBe("race");
+  });
+});
+
+/**
+ * MÉRETENKÉNTI BONTÁS (F2.1-utó-35, fanatic.com). A gyártó EGY oldalon
+ * sorolja fel a modellcsalád minden méretét, egyetlen spec-táblában. A SUP-nál
+ * a MÉRET maga a termék (a Deszkaválasztó hossz/szélesség alapján pontoz),
+ * ezért méretenként külön jelölt születik — mint a Shopify-ág variánsainál.
+ */
+describe("extractProductsFromPage — méretenkénti bontás", () => {
+  // A `<p>SIZES AND SPECS</p>` nem dísz: enélkül a `<title>` szövege
+  // ÖSSZERAGAD a tábla első sorával, és a címke-blokk elcsúszik.
+  const page = (body: string, title = "FANATIC FLY AIR") =>
+    `<html><head><title>${title}</title></head><body><p>SIZES AND SPECS</p><p>${body
+      .split("\n")
+      .join("</p><p>")}</p></body></html>`;
+
+  const MULTI = [
+    "BOARD", "VOLUME (L)", "LENGTH (IN / CM)", "WIDTH (IN / CM)", "REC. USER WEIGHT",
+    `FLY AIR 9'8"`, "213", `9'8'' / 294.6`, `32'' / 81.3`, "UP TO 80 KG",
+    `FLY AIR 10'4"`, "284", `10'4'' / 315`, `33" / 83.8`, "UP TO 90 KG",
+  ].join("\n");
+
+  it("méretenként KÜLÖN jelöltet ad, a gyártó saját nevével", () => {
+    const products = extractProductsFromPage(page(MULTI), "https://www.fanatic.com/en/products/x-33250-1501", "Fanatic");
+    expect(products).toHaveLength(2);
+    expect(products[0]?.modelName).toBe(`FLY AIR 9'8"`);
+    expect(products[1]?.modelName).toBe(`FLY AIR 10'4"`);
+    expect(products[0]?.specs.lengthCm).toBe(294.6);
+    expect(products[1]?.specs.lengthCm).toBe(315);
+  });
+
+  /**
+   * A jelölt-sorokat a figyelő URL szerint azonosítja — közös URL-lel a
+   * méretek felülírnák egymást a jelölt-sorban.
+   */
+  it("a jelölt URL-je MÉRETENKÉNT egyedi", () => {
+    const products = extractProductsFromPage(page(MULTI), "https://www.fanatic.com/en/products/x-33250-1501", "Fanatic");
+    const urls = products.map((p) => p.sourceUrl);
+    expect(new Set(urls).size).toBe(2);
+    expect(urls[0]).toContain("?size=");
+  });
+
+  it("EGY méretnél változatlanul egyetlen terméket ad, a címből vett névvel", () => {
+    const single = ["BOARD", "VOLUME (L)", "LENGTH (IN / CM)", "WIDTH (IN / CM)", "REC. USER WEIGHT",
+      "VIPER AIR", "355", `11'0" / 335.3`, `33.5" / 85.1`, "UP TO 100 KG"].join("\n");
+    const products = extractProductsFromPage(page(single, "FANATIC VIPER AIR"), "https://www.fanatic.com/en/products/y-1.html", "Fanatic");
+    expect(products).toHaveLength(1);
+    expect(products[0]?.sourceUrl).not.toContain("?size=");
+  });
+
+  /** A szlogen termékenként más, ezért pontos utótagként nem adható meg. */
+  it("a cím a megadott JELNÉL elvágható (titleCutAfter)", () => {
+    const html = page("Length: 320 cm Width: 81 cm Thickness: 15 cm", "FANATIC FLY AIR ᐅ your all-round board!");
+    const p = extractProductsFromPage(html, "https://www.fanatic.com/en/products/fanatic-isup-fly-1.html", "Fanatic", {
+      titleCutAfter: ["ᐅ"],
+    })[0];
+    expect(p?.modelName).toBe("FLY AIR");
   });
 });

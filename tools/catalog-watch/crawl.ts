@@ -22,7 +22,7 @@ import type {
 import { htmlToText } from "./html.ts";
 import { findProductNodes, pickPrimaryProduct } from "./jsonld.ts";
 import { matchCandidate } from "./match.ts";
-import { classifyProduct, extractProduct, extractProductFromPage } from "./normalize.ts";
+import { classifyProduct, extractProduct, extractProductsFromPage } from "./normalize.ts";
 import {
   CRAWLER_USER_AGENT,
   crawlDelayFor,
@@ -557,49 +557,71 @@ export async function crawlSource(
       // szövegként közli (élesben: aquamarina.com). Csak explicit kapcsolóval,
       // mert a szöveg-alapú kinyerés lazább — és csak akkor ad jelöltet, ha a
       // hossz tényleg kijött (különben minden blogbejegyzés bekerülne).
-      let product = node
-        ? extractProduct(node, url, htmlToText(page.text), config.defaultBrandName ?? null)
+      const pageOptions = {
+        boardTypeByUrl: config.boardTypeByUrl ?? {},
+        titleSuffixes: config.titleSuffixes ?? [],
+        titleCutAfter: config.titleCutAfter ?? [],
+      };
+      // Egy oldal TÖBB deszkát is leírhat: van gyártó, amelyik a modellcsalád
+      // minden méretét egyetlen spec-táblában sorolja fel (fanatic.com). A
+      // SUP-nál a méret maga a termék, ezért ilyenkor méretenként külön jelölt
+      // születik — a JSON-LD-ág változatlanul egy terméket ad.
+      let products = node
+        ? [extractProduct(node, url, htmlToText(page.text), config.defaultBrandName ?? null)].filter(
+            (p): p is ExtractedProduct => p !== null,
+          )
         : config.htmlOnly
-          ? extractProductFromPage(page.text, url, config.defaultBrandName ?? null, {
-              boardTypeByUrl: config.boardTypeByUrl ?? {},
-              titleSuffixes: config.titleSuffixes ?? [],
-            })
-          : null;
-      if (!product) continue;
+          ? extractProductsFromPage(page.text, url, config.defaultBrandName ?? null, pageOptions)
+          : [];
+      if (products.length === 0) continue;
       summary.productsExtracted += 1;
 
       // Böngésző-renderelt fallback (F2.1-utó-3): csak akkor, ha a sima
       // HTML-ből a méret MINDHÁROM mezője hiányzott — ez a jele annak, hogy a
       // bolt a méretet csak JS-futás után írja a látható szövegbe. Drága
       // művelet, ezért szűk feltétellel hívjuk, és hibatűrő (sosem dob).
+      const first = products[0] as ExtractedProduct;
       const missingAllDimensions =
         deps.renderText &&
-        product.specs.lengthCm === null &&
-        product.specs.widthCm === null &&
-        product.specs.thicknessCm === null;
+        first.specs.lengthCm === null &&
+        first.specs.widthCm === null &&
+        first.specs.thicknessCm === null;
       if (missingAllDimensions) {
         await sleep(delayMs);
         const renderedText = await deps.renderText!(url);
         if (renderedText !== null) {
+          // A HTML-ONLY ág is újraértelmez: korábban csak a JSON-LD-ág tette,
+          // ezért a böngésző-fallback ott hatástalan volt. Élesben
+          // (fanatic.com) a spec-tábla KIZÁRÓLAG renderelés után létezik.
           const rerendered = node
-            ? extractProduct(node, url, renderedText, config.defaultBrandName ?? null)
-            : null;
-          if (rerendered) product = rerendered;
+            ? [extractProduct(node, url, renderedText, config.defaultBrandName ?? null)].filter(
+                (p): p is ExtractedProduct => p !== null,
+              )
+            : extractProductsFromPage(page.text, url, config.defaultBrandName ?? null, {
+                ...pageOptions,
+                overrideText: renderedText,
+              });
+          if (rerendered.length > 0) products = rerendered;
         }
       }
 
-      await persistExtracted({
-        product,
-        url,
-        // JSON-LD nélküli oldalnál nincs mit nyersen eltenni — a `raw` a
-        // moderátornak szóló nyomkövetés, üresen is értelmes.
-        raw: node ?? {},
-        source,
-        deps,
-        summary,
-        boards,
-        seenAt: now().toISOString(),
-      });
+      for (const product of products) {
+        await persistExtracted({
+          product,
+          // A jelölt URL-je MÉRETENKÉNT egyedi (`?size=…`): a jelölt-sorokat a
+          // figyelő URL szerint azonosítja, közös URL-lel a méretek
+          // felülírnák egymást.
+          url: product.sourceUrl,
+          // JSON-LD nélküli oldalnál nincs mit nyersen eltenni — a `raw` a
+          // moderátornak szóló nyomkövetés, üresen is értelmes.
+          raw: node ?? {},
+          source,
+          deps,
+          summary,
+          boards,
+          seenAt: now().toISOString(),
+        });
+      }
     } catch (error) {
       addError(summary, `${url}: ${errorMessage(error)}`);
     }
