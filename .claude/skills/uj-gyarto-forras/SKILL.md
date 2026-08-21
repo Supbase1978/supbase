@@ -103,6 +103,27 @@ Mind élesben mért eset. Ha valamelyik mező üres vagy gyanús, itt keresd:
   HTML-ben, sem az azonnali render-szövegben nincs ott, csak görgetés után.
   Ilyenkor a `render.ts` böngésző-fallback kell — és annak GÖRGETNIE is kell.
 
+**Kategória (board_type)** — a jóváhagyás EZEN bukik el a leggyakrabban
+- A gyártók ritkán írják le, hogy „all-around board". A SAJÁT szavaik:
+  **versatile**, **universal**, **entry-level**, és a főnév sem mindig „board",
+  hanem „**model**" („a versatile model from the entry-level Origin series").
+- **A morzsamenü a legjobb forrás, ha az URL nem árulkodik.** A Zray
+  termék-URL-je puszta sorszám (`/productinfo/854740.html`), a morzsamenü
+  viszont kimondja: `HOME › EVO COLLECTION › ALL AROUND EVO › Max Azure`.
+  Ez azért szabad, amiért a teljes oldalszöveg NEM: a navigációs menü minden
+  kategóriát felsorol MINDEN oldalon, a morzsamenü pontosan egyet — azt, ahová
+  EZ a termék tartozik.
+- **VIGYÁZZ a családi örökléssel.** A szabály („ha a család egyik tagjának van
+  kategóriája, a többi is azt kapja") az Aqua Marinára készült, ahol a családnév
+  használatot jelent (All Star = race). A Gladiatornál viszont az
+  `Elite`/`Pro`/`Origin` KIVITELI vonal: egy családon belül van túra- és
+  allround-deszka is. Élesben ez az EGYETLEN „touring" tagtól ~35 deszkát
+  jelölt volna túrásnak. Ha a leírás-alapú besorolás működik, a család
+  ellentmondásossá válik, és a szabály — helyesen — elhallgat.
+- **A tartozék neve NEM kategória.** Minden Gladiator-oldal oldalsávjában ott
+  áll a „ELITE **Touring** Fin 9″" — a szigorú minta (kategória-szó + főnév)
+  védi ki.
+
 **Kép**
 - Ha a `<title>` oldal-szintű utótagot visel (`- Jobesports.com`), add meg a
   `--title-suffix`-szel, különben a modellnév része lesz. **Egy oldalon több
