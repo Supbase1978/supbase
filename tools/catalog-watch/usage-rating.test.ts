@@ -294,3 +294,17 @@ describe("boardTypeFromCategoryLine — a felirat SORRENDJE dönt", () => {
     expect(boardTypeFromCategoryLine("")).toBeNull();
   });
 });
+
+describe("findProductImage — a két nézetes render többféle néven", () => {
+  /**
+   * Élesben: a Fanatic Viper Air képe enélkül a `Gallery02.jpg` lett volna —
+   * egy vitorlás felszerelés a vízen, nem a deszka.
+   */
+  it("a Top_Bottom rendert ugyanúgy előnyben részesíti, mint a front-backet", () => {
+    const page = `
+      <img src="https://x.com/FANATIC-SUP-2025_ViperAirSLT_Gallery02.jpg">
+      <img src="https://x.com/FANATIC-SUP_2025_Viper_Air_SLT_Top_Bottom_2500x2500px.png">
+    `;
+    expect(findProductImage(page, "Viper Air")).toContain("Top_Bottom");
+  });
+});

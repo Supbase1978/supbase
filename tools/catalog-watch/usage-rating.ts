@@ -181,7 +181,7 @@ export function findProductImage(html: string, ...anchors: (string | null)[]): s
   // A horgonyok SORRENDBEN: a cikkszám pontosabb, a modellnév általánosabb.
   for (const needle of needles) {
     const matches = images.filter((image) => normalizeFile(image.src).includes(needle));
-    const best = matches.find((image) => /front[_-]?back/i.test(fileOf(image.src))) ?? matches[0];
+    const best = matches.find((image) => isRenderFile(fileOf(image.src))) ?? matches[0];
     if (best !== undefined) return displayVariant(best);
   }
 
@@ -198,6 +198,19 @@ function parseImgTag(tag: string): PageImage | null {
   const src = tag.match(/\ssrc="([^"]+)"/i)?.[1];
   if (src === undefined || src.trim() === "") return null;
   return { src, srcset: tag.match(/\ssrcset="([^"]+)"/i)?.[1] ?? null };
+}
+
+/**
+ * A fájlnév a KÉT NÉZETES gyártói rendert jelöli-e? Ugyanaz a fogalom többféle
+ * néven: `front-back` (Aqua Marina), `Top_Bottom` (Fanatic). Ezek fehér
+ * hátterű, azonos beállítású képek — a katalógusban EGYMÁS MELLETT
+ * összevethetők, az életkép nem.
+ *
+ * Élesben: a Fanatic Viper Air képe enélkül a `Gallery02.jpg` lett volna —
+ * egy vitorlás felszerelés a vízen, nem a deszka.
+ */
+function isRenderFile(file: string): boolean {
+  return /front[_-]?back|top[_-]?bottom/i.test(file);
 }
 
 function fileOf(src: string): string {
