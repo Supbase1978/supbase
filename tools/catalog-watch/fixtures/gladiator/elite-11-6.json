@@ -1,0 +1,31 @@
+{
+  "source": "Gladiator",
+  "url": "https://gladiatorsup.com/catalog/elite-11-6/",
+  "capturedAt": "2026-08-21",
+  "teaches": "CIRILL szorzójel (354 х 86 х 15) és MERTEKEGYSEG NELKULI ketoszlopos tabla (Volume / 245); a kategoria a boardTypeByUrl rogzitesbol jon, mert a morzsamenu csak a kiviteli vonalat adja.",
+  "rendered": false,
+  "expected": [
+    {
+      "sourceUrl": "https://gladiatorsup.com/catalog/elite-11-6/",
+      "brandName": "Gladiator",
+      "modelName": "ELITE 11.6",
+      "rawTitle": "ELITE 11.6 |",
+      "modelYear": null,
+      "priceHuf": null,
+      "inStock": null,
+      "imageUrl": "https://gladiatorsup.com/wp-content/uploads/2024/11/elite-1.jpg",
+      "imageUrls": [],
+      "boardType": "allround",
+      "specs": {
+        "lengthCm": 354,
+        "widthCm": 86,
+        "thicknessCm": 15,
+        "volumeL": 330,
+        "weightKg": 9.8,
+        "maxLoadKg": 200,
+        "inflatable": null
+      },
+      "accessoryType": null
+    }
+  ]
+}

@@ -10,6 +10,7 @@ import {
   extractProduct,
   extractProductFromPage,
   extractProductsFromPage,
+  boardTypeFromProse,
   guessBoardType,
   normalizeBrandName,
   parseAvailability,
@@ -84,6 +85,13 @@ describe("parseDimensionCm", () => {
     // 32 lábként (975,4cm) parse-olódott 81,3cm helyett.
     ["32''", 81.3],
     [`10'6''`, 320],
+    // TARTOMÁNY NEM MÉRET. Élesben (aquamarinahungary.com): a termékoldal
+    // alján az ÁLLÍTHATÓ EVEZŐ adata áll (`hossza: 165-210cm`), amiből 210 cm
+    // „deszkahossz" lett egy 366 cm-es deszkára. Egyetlen deszka hossza sem
+    // tartomány — inkább maradjon üres, mint hogy hamis legyen.
+    ["165-210cm", null],
+    ["165 – 210 cm", null],
+    ["30-34 inch", null],
   ])("%s → %s cm", (text, expected) => {
     expect(parseDimensionCm(text)).toBe(expected);
   });
@@ -315,6 +323,82 @@ describe("guessBoardType", () => {
     ["Semmilyen kulcsszó", null],
   ])("%s → %s", (text, expected) => {
     expect(guessBoardType(text)).toBe(expected);
+  });
+});
+
+/**
+ * MAGYAR SZÓREND a spec-mondatokban (F2.1-utó-36, sup-deszka.hu).
+ *
+ * A magyar ragozás miatt az érték gyakran a címke ELŐTT áll („150 kg
+ * teherbírással"), és a címke UTÁN már a következő állítás száma jön. Ez
+ * élesben a teherbírásba a deszka SÚLYÁT írta — 8,8 kg a valós 150 helyett.
+ */
+describe("címke és érték sorrendje", () => {
+  it("a ragozott címke ELŐTTI érték nyer a mögötte álló szám ellenében", () => {
+    const specs = parseSpecsFromText(
+      "Pure Air FREEDOM 11’ SUP deszka 335 x 84 x 15 cm méretben, max. 150 kg " +
+        "teherbírással és mindössze 8,8 kg súllyal.",
+    );
+    expect(specs.maxLoadKg).toBe(150);
+  });
+
+  it("ÍRÁSJEL megállítja: a vessző előtti érték a szomszéd mezőé", () => {
+    // „…330 x 81 x 15 cm, teherbírás max. 160 kg" — a 15 cm a VASTAGSÁG.
+    const specs = parseSpecsFromText(
+      "TooMuch TIDE SUP deszka 330 x 81 x 15 cm, teherbírás max. 160 kg, 15 PSI.",
+    );
+    expect(specs.maxLoadKg).toBe(160);
+    expect(specs.thicknessCm).toBe(15);
+  });
+
+  it("a KETTŐSPONT után álló érték nyer a címke előtti szomszéd ellenében", () => {
+    // Egy sorba írt spec (zraysports.com): a `Capacity:` előtt a térfogat áll.
+    const specs = parseSpecsFromText("Volume: 379L Capacity: up to 170 kg/374 lb");
+    expect(specs.maxLoadKg).toBe(170);
+    expect(specs.volumeL).toBe(379);
+  });
+
+  it("a MAGYAR BIRTOKOS toldalék is kettőspontos címke", () => {
+    // Élesben (aquamarinahungary.com): a `paddleboard súlya:` nem számított
+    // kettőspontosnak, ezért a lap alján álló EVEZŐ `Súly:` címkéje nyert, és
+    // a deszka súlya üresen maradt.
+    const specs = parseSpecsFromText(
+      "paddleboard súlya: 11 kg\npaddleboard terhelhetősége: 180 kg\nSúly:\n900g",
+    );
+    expect(specs.weightKg).toBe(11);
+    expect(specs.maxLoadKg).toBe(180);
+  });
+
+  it("a címke SOR ELEJÉN: az előző sor értéke nem szivárog át", () => {
+    const specs = parseSpecsFromText("Teherbírás\n150 kg\nSúly\n8,8 kg");
+    expect(specs.maxLoadKg).toBe(150);
+    expect(specs.weightKg).toBe(8.8);
+  });
+});
+
+describe("boardTypeFromProse", () => {
+  // A PRÓZA más, mint a cím: ott a kategória-szó úti célt is jelenthet. Ezért
+  // itt FŐNÉV kell a kulcsszó mellé — a `guessBoardType` laza listája a
+  // címre/URL-slugra való.
+  it.each([
+    // Élesben mért HIBA (sup-deszka.hu, TooMuch TIDE): a mondat három vizet
+    // sorol fel, tehát épp NEM vadvízi deszkáról beszél.
+    ["ideális tengerre, tóra vagy folyóra", null],
+    // Sorolás angolul: a kötőszó megállítja a mintát, hiába jön főnév.
+    ["great for river or lake board sessions", null],
+    // Jelző ékelődik a kategória-szó és a főnév közé (bluefinsupboards.eu).
+    ["a lightweight all-round inflatable paddleboard", "allround"],
+    // Magyar szórend és összetett szó.
+    ["kiváló túra deszka hosszabb kirándulásokhoz", "touring"],
+    ["egy igazi versenydeszka a profiknak", "race"],
+    ["ez egy vadvízi deszka", "river"],
+    ["gyerek SUP deszka 8 éves kortól", "kids"],
+    // Két kimondott kategória = nincs döntés, a moderátoré a szó.
+    ["túra deszka és verseny deszka egyben", null],
+    // Kulcsszó főnév nélkül: nem besorolás.
+    ["kezdőknek és rekreációhoz", null],
+  ])("%s → %s", (text, expected) => {
+    expect(boardTypeFromProse(text)).toBe(expected);
   });
 });
 

@@ -15,6 +15,7 @@
 import type {
   BoardForMatch,
   CatalogSourceRow,
+  CrawlConfig,
   CrawlSummary,
   ExtractedProduct,
   SourceCrawlSummary,
@@ -483,6 +484,85 @@ async function crawlShopifySource(
   log(`[${source.name}] Shopify: ${products.length} termék → ${considered} méret-variáns`);
 }
 
+/**
+ * EGY termékoldal kinyerése — a crawl és a fixtúra-tesztek KÖZÖS belépője.
+ *
+ * Miért külön függvény (F2.1-utó-36): a gyártónkénti regresszió-háló csak
+ * akkor ér valamit, ha PONTOSAN azt futtatja, amit az éles crawl. Amíg ez a
+ * logika a crawl-ciklus belsejében élt, egy teszt csak UTÁNOZNI tudta volna —
+ * és az utánzat elcsúszik.
+ *
+ * JSON-LD NÉLKÜLI gyártói oldal (F2.1-utó-17): van forrás, ami nem tesz ki
+ * schema.org `Product`-ot, a specifikációt viszont címkézett szövegként közli
+ * (élesben: aquamarina.com). Csak explicit `htmlOnly` kapcsolóval, mert a
+ * szöveg-alapú kinyerés lazább — és csak akkor ad jelöltet, ha a hossz tényleg
+ * kijött (különben minden blogbejegyzés bekerülne).
+ *
+ * A `htmlOnly` ELSŐBBSÉGET élvez a JSON-LD-vel szemben: a kapcsoló épp azt
+ * jelenti, hogy ennél a forrásnál a specifikáció a SZÖVEGBEN van. Élesben
+ * (fanatic.com) a JSON-LD kitesz nevet és árat, de egyetlen méretet sem —
+ * enélkül az a féladat nyerne, és a spec-tábla ki sem olvasódna.
+ *
+ * Egy oldal TÖBB deszkát is leírhat: van gyártó, amelyik a modellcsalád minden
+ * méretét egyetlen spec-táblában sorolja fel (fanatic.com). A SUP-nál a méret
+ * maga a termék, ezért ilyenkor méretenként külön jelölt születik — a
+ * JSON-LD-ág változatlanul egy terméket ad.
+ *
+ * @param overrideText böngészőben renderelt oldalszöveg, ha van. `null`
+ *   esetén a nyers HTML-ből képzett szöveggel dolgozik.
+ */
+export function extractPageProducts(
+  html: string,
+  url: string,
+  config: CrawlConfig,
+  overrideText: string | null,
+): ExtractedProduct[] {
+  const pageOptions = {
+    boardTypeByUrl: config.boardTypeByUrl ?? {},
+    titleSuffixes: config.titleSuffixes ?? [],
+    titleCutAfter: config.titleCutAfter ?? [],
+    categoryClass: config.categoryClass,
+    ...(overrideText === null ? {} : { overrideText }),
+  };
+  if (config.htmlOnly) {
+    return extractProductsFromPage(html, url, config.defaultBrandName ?? null, pageOptions);
+  }
+  const node = pickPrimaryProduct(findProductNodes(html));
+  if (node === null) return [];
+  const text = overrideText ?? htmlToText(html);
+  const product = extractProduct(node, url, text, config.defaultBrandName ?? null);
+  return product === null ? [] : [product];
+}
+
+/**
+ * Kell-e BÖNGÉSZŐ-RENDERELT szöveg (F2.1-utó-3, bővítve F2.1-utó-35)?
+ *
+ * Akkor, ha a sima HTML NEM HASZNÁLHATÓ. Három eset:
+ *  * egyetlen méret sem jött ki (az eredeti, bluefinsupboards.eu);
+ *  * a kijött méretek ELLENTMONDÁSOSAK — élesben (fanatic.com) a leírás
+ *    prózájából `hossz 340,4 = vastagság 340,4` jött, és mivel a hossz nem
+ *    volt üres, a fallback korábban el sem indult;
+ *  * VAGY egyáltalán nem született termék. Ez utóbbi korábban `continue` volt:
+ *    a fallback esélyt sem kapott azon az oldalon, ahol a spec-tábla
+ *    KIZÁRÓLAG renderelés után létezik — épp ahol a legjobban kellett volna.
+ *
+ * Költség: a renderelés nagyságrendekkel drágább egy HTTP-kérésnél, ezért az
+ * utolsó eset KÜLÖN KAPCSOLÓRA fut (`renderWhenEmpty`) — enélkül minden
+ * nem-termék oldal (blog, kategória) is böngészőbe kerülne.
+ */
+export function needsRenderedText(
+  products: readonly ExtractedProduct[],
+  config: CrawlConfig,
+): boolean {
+  const first = products[0];
+  if (first === undefined) return Boolean(config.renderWhenEmpty);
+  const noDimensions =
+    first.specs.lengthCm === null &&
+    first.specs.widthCm === null &&
+    first.specs.thicknessCm === null;
+  return noDimensions || !dimensionsAreCoherent(first.specs);
+}
+
 export async function crawlSource(
   source: CatalogSourceRow,
   deps: CrawlDeps,
@@ -556,76 +636,12 @@ export async function crawlSource(
         continue;
       }
 
-      const node = pickPrimaryProduct(findProductNodes(page.text));
-      // JSON-LD NÉLKÜLI gyártói oldal (F2.1-utó-17): van olyan forrás, ami nem
-      // tesz ki schema.org Product-ot, a specifikációt viszont címkézett
-      // szövegként közli (élesben: aquamarina.com). Csak explicit kapcsolóval,
-      // mert a szöveg-alapú kinyerés lazább — és csak akkor ad jelöltet, ha a
-      // hossz tényleg kijött (különben minden blogbejegyzés bekerülne).
-      const pageOptions = {
-        boardTypeByUrl: config.boardTypeByUrl ?? {},
-        titleSuffixes: config.titleSuffixes ?? [],
-        titleCutAfter: config.titleCutAfter ?? [],
-        categoryClass: config.categoryClass,
-      };
-      // Egy oldal TÖBB deszkát is leírhat: van gyártó, amelyik a modellcsalád
-      // minden méretét egyetlen spec-táblában sorolja fel (fanatic.com). A
-      // SUP-nál a méret maga a termék, ezért ilyenkor méretenként külön jelölt
-      // születik — a JSON-LD-ág változatlanul egy terméket ad.
-      //
-      // A `htmlOnly` ELSŐBBSÉGET élvez a JSON-LD-vel szemben: a kapcsoló épp
-      // azt jelenti, hogy ennél a forrásnál a specifikáció a SZÖVEGBEN van.
-      // Élesben (fanatic.com) a JSON-LD kitesz nevet és árat, de egyetlen
-      // méretet sem — enélkül az a féladat nyert volna, és a spec-tábla ki sem
-      // olvasódik.
-      let products = config.htmlOnly
-        ? extractProductsFromPage(page.text, url, config.defaultBrandName ?? null, pageOptions)
-        : node
-          ? [
-              extractProduct(node, url, htmlToText(page.text), config.defaultBrandName ?? null),
-            ].filter((p): p is ExtractedProduct => p !== null)
-          : [];
-      // BÖNGÉSZŐ-RENDERELT FALLBACK (F2.1-utó-3, bővítve F2.1-utó-35).
-      //
-      // Akkor kell, ha a sima HTML NEM HASZNÁLHATÓ. Három eset:
-      //  * egyetlen méret sem jött ki (az eredeti, bluefinsupboards.eu),
-      //  * a kijött méretek ELLENTMONDÁSOSAK — élesben (fanatic.com) a leírás
-      //    prózájából `hossz 340,4 = vastagság 340,4` jött, és mivel a hossz
-      //    nem volt üres, a fallback korábban el sem indult,
-      //  * VAGY egyáltalán nem született termék. Ez utóbbi korábban `continue`
-      //    volt: a fallback esélyt sem kapott azon az oldalon, ahol a
-      //    spec-tábla KIZÁRÓLAG renderelés után létezik — épp ahol a
-      //    legjobban kellett volna.
-      //
-      // Költség: a renderelés nagyságrendekkel drágább egy HTTP-kérésnél,
-      // ezért az utolsó eset KÜLÖN KAPCSOLÓRA fut (`renderWhenEmpty`) — enélkül
-      // minden nem-termék oldal (blog, kategória) is böngészőbe kerülne.
-      const first = products[0];
-      const plainHtmlUnusable =
-        deps.renderText &&
-        (first === undefined
-          ? Boolean(config.renderWhenEmpty)
-          : (first.specs.lengthCm === null &&
-              first.specs.widthCm === null &&
-              first.specs.thicknessCm === null) ||
-            !dimensionsAreCoherent(first.specs));
-      if (plainHtmlUnusable) {
+      let products = extractPageProducts(page.text, url, config, null);
+      if (deps.renderText && needsRenderedText(products, config)) {
         await sleep(delayMs);
-        const renderedText = await deps.renderText!(url);
+        const renderedText = await deps.renderText(url);
         if (renderedText !== null) {
-          // A HTML-ONLY ág is újraértelmez: korábban csak a JSON-LD-ág tette,
-          // ezért a böngésző-fallback ott hatástalan volt. Élesben
-          // (fanatic.com) a spec-tábla KIZÁRÓLAG renderelés után létezik.
-          const rerendered = config.htmlOnly
-            ? extractProductsFromPage(page.text, url, config.defaultBrandName ?? null, {
-                ...pageOptions,
-                overrideText: renderedText,
-              })
-            : node
-              ? [extractProduct(node, url, renderedText, config.defaultBrandName ?? null)].filter(
-                  (p): p is ExtractedProduct => p !== null,
-                )
-              : [];
+          const rerendered = extractPageProducts(page.text, url, config, renderedText);
           if (rerendered.length > 0) products = rerendered;
         }
       }
@@ -642,7 +658,7 @@ export async function crawlSource(
           url: product.sourceUrl,
           // JSON-LD nélküli oldalnál nincs mit nyersen eltenni — a `raw` a
           // moderátornak szóló nyomkövetés, üresen is értelmes.
-          raw: node ?? {},
+          raw: pickPrimaryProduct(findProductNodes(page.text)) ?? {},
           source,
           deps,
           summary,

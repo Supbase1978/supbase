@@ -1,0 +1,39 @@
+{
+  "source": "Jobe",
+  "url": "https://www.jobesports.com/en/jobe-aero-duna-sup-board-116-package-blue-486425006/",
+  "capturedAt": "2026-08-21",
+  "teaches": "KETTOS meret-irasmod kevert egyseggel (8'6 x 28 hüvelyk | 2,59m x 71,12cm); a Recommended rider weight szamit teherbirasnak; a kephorgony az URL vegi cikkszam, ami a kepfajlok neveben is ott van.",
+  "rendered": false,
+  "expected": [
+    {
+      "sourceUrl": "https://www.jobesports.com/en/jobe-aero-duna-sup-board-116-package-blue-486425006/",
+      "brandName": "Jobe",
+      "modelName": "Aero Duna Board 11.6 Blue",
+      "rawTitle": "Jobe Aero Duna SUP Board 11.6 Package Blue",
+      "modelYear": null,
+      "priceHuf": null,
+      "inStock": null,
+      "imageUrl": "https://www.jobesports.com/uploads/product/486425006-big.jpg",
+      "imageUrls": [
+        "https://www.jobesports.com/uploads/product/486425006-2-big.jpg",
+        "https://www.jobesports.com/uploads/product/486425006-3-big.jpg",
+        "https://www.jobesports.com/uploads/product/486425006-4-big.jpg",
+        "https://www.jobesports.com/uploads/product/486425006-5-big.jpg",
+        "https://www.jobesports.com/uploads/product/486425006-6-big.jpg",
+        "https://www.jobesports.com/uploads/product/486425006-7-big.jpg",
+        "https://www.jobesports.com/uploads/product/486425006-8-big.jpg"
+      ],
+      "boardType": null,
+      "specs": {
+        "lengthCm": 350,
+        "widthCm": 78.8,
+        "thicknessCm": 15,
+        "volumeL": 324,
+        "weightKg": 10.2,
+        "maxLoadKg": 160,
+        "inflatable": true
+      },
+      "accessoryType": null
+    }
+  ]
+}

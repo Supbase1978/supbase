@@ -1,0 +1,31 @@
+{
+  "source": "Zray",
+  "url": "https://www.zraysports.com/productinfo/283788.html",
+  "capturedAt": "2026-08-21",
+  "teaches": "Cimkezett, kettospontos spec; a kategoria a MORZSAMENUBOL jon (a termek-URL puszta sorszam); a -Zray Official Site utotag levagando; a Hangul ikonok NFD-indexcsuszast okoztak (379L helyett 9L).",
+  "rendered": false,
+  "expected": [
+    {
+      "sourceUrl": "https://www.zraysports.com/productinfo/283788.html",
+      "brandName": "Zray",
+      "modelName": "X RIDER XL",
+      "rawTitle": "X-RIDER XL 13'",
+      "modelYear": null,
+      "priceHuf": null,
+      "inStock": null,
+      "imageUrl": "https://img.website.xin/contents/sitefiles3603/18015719/images/3865618.png",
+      "imageUrls": [],
+      "boardType": "allround",
+      "specs": {
+        "lengthCm": 396.2,
+        "widthCm": 91,
+        "thicknessCm": 15,
+        "volumeL": 400,
+        "weightKg": null,
+        "maxLoadKg": 220,
+        "inflatable": null
+      },
+      "accessoryType": null
+    }
+  ]
+}

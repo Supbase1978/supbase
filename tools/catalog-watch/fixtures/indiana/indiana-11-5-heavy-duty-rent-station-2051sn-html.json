@@ -1,0 +1,30 @@
+{
+  "source": "Indiana Paddle & Surf",
+  "url": "https://indiana-paddlesurf.com/en_ch/indiana-11-5-heavy-duty-rent-station-2051sn.html",
+  "capturedAt": "2026-08-21",
+  "teaches": "A huvelyk-jelet ASCII dupla aposztroffal irja (Width Foot/Inch: 32''), amit lab-jelkent olvasva 32 lab = 975 cm jonne ki a valos 81,3 helyett.",
+  "rendered": false,
+  "expected": [
+    {
+      "sourceUrl": "https://indiana-paddlesurf.com/en_ch/indiana-11-5-heavy-duty-rent-station-2051sn.html",
+      "brandName": "Indiana",
+      "modelName": "Heavy Duty Rent & Station",
+      "rawTitle": "Indiana 11&#039;5 Heavy Duty Rent &amp; Station",
+      "modelYear": null,
+      "priceHuf": null,
+      "inStock": false,
+      "imageUrl": "https://indiana-paddlesurf.com/media/catalog/product/cache/6517c62f5899ad6aa0ba23ceb3eeff97/2/0/2051SN_Indiana_11_5_Heavy_Duty_Rent__4.jpg",
+      "boardType": null,
+      "specs": {
+        "lengthCm": 347.5,
+        "widthCm": 86.4,
+        "thicknessCm": 14,
+        "volumeL": 276,
+        "weightKg": null,
+        "maxLoadKg": 120,
+        "inflatable": null
+      },
+      "accessoryType": null
+    }
+  ]
+}

@@ -203,6 +203,14 @@ function toNumber(raw: string): number | null {
  * Egyik sem illeszkedik → null (nem találgatunk mértékegység nélküli számból).
  */
 export function parseDimensionCm(text: string): number | null {
+  // TARTOMÁNY NEM MÉRET. Élesben mért eset (aquamarinahungary.com, ATLAS): a
+  // termékoldal alján az EVEZŐ adatai állnak, köztük `hossza: 165-210cm` — az
+  // állítható evezőé. Ebből 210 cm „deszkahossz" lett egy 366 cm-es deszkára.
+  // Egyetlen deszka hossza sem tartomány, tehát ez biztosan nem a keresett
+  // mező: inkább maradjon üresen, mint hogy hamis legyen.
+  if (/\d\s*[-–—]\s*\d+\s*(?:cm|mm|m\b|''|"|”|″|inch|in\b|coll)/i.test(text)) {
+    return null;
+  }
   // A `(?!')` védi ki, hogy egy dupla-aposztróffal írt hüvelyk-jel (`32''`,
   // gyakori ASCII-helyettesítő a valódi ″ karakterre — élesben mért eset,
   // indiana-paddlesurf.com "Width Foot/Inch: 32''") ne illeszkedjen láb-
@@ -536,16 +544,60 @@ function labelSearch(
 
       const after = folded.slice(
         index + needle.length,
-        index + needle.length + 4,
+        index + needle.length + 6,
       );
       if (/^[ae]v[ae]l/.test(after)) continue;
       // Az első menetben KÖTELEZŐ a kettőspont (esetleg szóköz után) —
       // a spec-táblázat írásmódja.
-      if (requireColon && !/^\s*:/.test(after)) continue;
+      //
+      // A MAGYAR BIRTOKOS TOLDALÉK is átmegy (`súlya:`, `mérete:`,
+      // `terhelhetősége:`, `hossza:`), mert a magyar boltok így címkéznek.
+      // Élesben mért hiba (aquamarinahungary.com, ATLAS): a `paddleboard
+      // súlya: 11 kg` sor kettőspontosnak sem számított, ezért a kettőspontos
+      // menet a lap alján álló EVEZŐ `Súly:` címkéjét találta meg — és a
+      // deszka súlya üresen maradt. Három betűnél többet nem engedünk: az már
+      // másik szó lenne, nem toldalék.
+      if (requireColon && !/^[a-z]{0,3}\s*:/.test(after)) continue;
       // ZÁRÓJELEN BELÜLI címkeszó nem címke, hanem MAGYARÁZAT.
       if (isInsideParens(text, index)) continue;
 
+      // HÁROM HELY, A LEGSZIGORÚBBTÓL. Élesben mért hiba (sup-deszka.hu, Pure
+      // Air FREEDOM): a teherbírásba a DESZKA SÚLYA került — 8,8 kg a valós
+      // 150 helyett. A biztonsági mezőkben ez a legveszélyesebb hibafajta.
+      //
+      // 1. KÖZVETLENÜL A CÍMKE ELŐTT, mértékegységgel. Ez a legszorosabb
+      //    kötés, ezért ez megy elöl. A magyar ragozás miatt kell: a
+      //    „max. 150 kg **teherbírással** és mindössze 8,8 kg súllyal"
+      //    mondatban a címke után is áll szám — csak az már a KÖVETKEZŐ
+      //    állítás értéke. A `-sal/-sel` rag épp azt jelenti, hogy az érték
+      //    elöl van.
+      //
+      //    A minta szándékosan szoros: szám + mértékegység, közte csak
+      //    nem-szám karakter. Enélkül a sor bármelyik száma bekerülhetne —
+      //    egy „3 uszony, teherbírás" sorból 3 kg teherbírás lenne. A SOR
+      //    elejénél megáll, tehát az előző mező értéke nem szivároghat át.
+      //    KETTŐSPONT ESETÉN NEM ÉL: a `Capacity:` alak maga mondja ki, hogy
+      //    az érték UTÁNA jön. Élesben (zraysports.com) az egy sorba írt
+      //    `… Volume: 379L Capacity: up to 170 kg` sorban a címke előtt a
+      //    SZOMSZÉD MEZŐ értéke (379L) áll — kettőspont nélkül azt vennénk.
+      const hasColon = /^\s*:/.test(after);
+      const lineStart = folded.lastIndexOf("\n", index) + 1;
+      const trailing = hasColon
+        ? null
+        : text
+            .slice(lineStart, index)
+            // Az érték és a címke között CSAK SZÓKÖZ állhat. Írásjel már
+            // mezőhatárt jelöl: a „…15 cm, teherbírás max. 160 kg" sorban a
+            // vessző előtti 15 cm a VASTAGSÁG, nem a teherbírás.
+            .match(/(\d+(?:[.,]\d+)?\s*(?:kg|lbs?|pounds?|l|liter|litre|cm|mm|m)\b)[ \t]*$/i);
+      if (trailing?.[1] !== undefined) return trailing[1];
+
       const window = windowAfterLabel(text, index + label.length);
+      // 2. AZONOS SOR, A CÍMKE UTÁN — a leggyakoribb alak („Teherbírás 150 kg").
+      if (/\d/.test(window.split("\n")[0] ?? "")) return window;
+      // 3. A KÖVETKEZŐ SOR — a kétoszlopos táblák alakja („MAX. PAYLOAD" és
+      //    alatta „308 lbs / 140 kg"). Ez a legkockázatosabb (a szomszédos
+      //    mező szivároghat be), ezért marad utolsónak.
       if (/\d/.test(window)) return window;
     }
   }
@@ -892,6 +944,51 @@ export function guessBoardType(text: string): BoardType | null {
     if (needles.some((needle) => folded.includes(needle))) return type;
   }
   return null;
+}
+
+/**
+ * Deszkatípus MARKETING-PRÓZÁBÓL — ugyanaz a szigor, mint az angol
+ * `boardTypeFromDescription`-nél, de magyar szórenddel is (F2.1-utó-36).
+ *
+ * MIÉRT KÜLÖN A PRÓZA: a `guessBoardType` puszta kulcsszót keres, mert a
+ * CÍMBEN és az URL-SLUGBAN a szó maga a besorolás (`/products/wildriver/`).
+ * Prózában viszont ugyanaz a szó ÚTI CÉLT jelenthet. Élesben mért eset
+ * (sup-deszka.hu, TooMuch TIDE): „EVA borítás, 3 uszony kezdőknek és
+ * rekreációhoz – ideális tengerre, tóra vagy **folyóra**." Ebből a „folyo"
+ * kulcsszó VADVÍZI deszkát csinált egy kezdő allround deszkából — pont a
+ * legveszélyesebb irányba tévedve, hiszen a mondat épp azt mondja, hogy
+ * HÁROMFÉLE vízre jó, tehát univerzális.
+ *
+ * A magyar itt fordított szórendű („túra deszka", „verseny SUP"), ezért a
+ * főnév a kulcsszó UTÁN áll, és a ragozott alak (`folyó**ra**`, `tó**ra**`)
+ * nem illeszkedik — a kategóriát jelentő alak `folyami`/`vadvízi`.
+ */
+export function boardTypeFromProse(text: string): BoardType | null {
+  const folded = foldText(text);
+  // A kategória-szó és a főnév közé JELZŐK ékelődhetnek („all-round
+  // **inflatable** paddleboard"), ezért legfeljebb három szó átugorható —
+  // KÖTŐSZÓ viszont nem. A kötőszó ugyanis SOROLÁST jelent („river **or** lake
+  // board"), és a sorolt kategóriák egyike sem A kategória. Írásjel sem fér
+  // bele: a szóközt szigorúan megköveteljük, így a „tóra, vagy folyóra"
+  // vesszője megállítja a mintát.
+  const gap = String.raw`(?:[ \t]+(?!or\b|and\b|vagy\b|es\b|vs\b)[a-z0-9-]+){0,3}`;
+  const noun = String.raw`${gap}[ \t-]*(?:i?sup[ \t-]*)?(?:paddleboard|paddle board|deszka|board|model|szorf)`;
+  const rules: [BoardType, string][] = [
+    ["kids", String.raw`(?:gyerek|junior|kids|youth)`],
+    ["fishing", String.raw`(?:horgasz|fishing|angler)`],
+    ["river", String.raw`(?:folyami|vadvizi|river|whitewater)`],
+    ["race", String.raw`(?:verseny|race|racing)`],
+    ["yoga", String.raw`(?:joga|yoga|fitness|pilates)`],
+    ["touring", String.raw`(?:tura|touring|explorer)`],
+    ["allround", String.raw`(?:allround|all-round|all round|univerzalis)`],
+  ];
+  const found = new Set<BoardType>();
+  for (const [type, keyword] of rules) {
+    if (new RegExp(`\\b${keyword}${noun}\\b`, "i").test(folded)) found.add(type);
+  }
+  // TÖBB TALÁLAT = NINCS DÖNTÉS. Ugyanaz az elv, mint az angol ágon: ha a
+  // szöveg két kategóriát is kimond, a moderátoré a döntés.
+  return found.size === 1 ? [...found][0]! : null;
 }
 
 /**
@@ -1323,7 +1420,18 @@ export function extractProduct(
   // besorolási ág gyakorlatilag bármit deszkának vett, ami "SUP"-ot említ. A
   // spec-parse (fent) ettől függetlenül a teljes szöveget nézi — az OTT talált
   // címkézett érték helyhez kötött, nem szennyeződik a menütől.
-  const boardType = guessBoardType(`${rawTitle}\n${description}`);
+  // A CÍM és a LEÍRÁS KÜLÖN úton megy (F2.1-utó-36). A címben a kategória-szó
+  // maga a besorolás, ezért ott a laza kulcsszó-lista jó; a leírás viszont
+  // marketing-próza, ahol ugyanaz a szó úti célt jelenthet („ideális tengerre,
+  // tóra vagy folyóra" → NEM vadvízi deszka). Ott ezért a főnevet is megkövetelő
+  // szigorú minta fut.
+  // A `boardTypeFromDescription` az angol „versatile/entry-level model" alakot
+  // ismeri (a Gladiatorért készült), a `boardTypeFromProse` a magyar szórendet
+  // és a ragozást — a kettő kiegészíti egymást, és mindkettő főnevet követel.
+  const boardType =
+    guessBoardType(rawTitle) ??
+    boardTypeFromProse(description) ??
+    boardTypeFromDescription(description);
   // A besorolás itt is lefut (nem csak a crawl.ts vezérlésében), hogy a
   // moderációs UI a kategória-legördülőt a figyelő tippjével előválaszthassa —
   // ugyanaz a minta, mint a `boardType` tippnél (a moderátor felülbírálhatja).

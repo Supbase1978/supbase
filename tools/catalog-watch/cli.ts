@@ -14,12 +14,19 @@
  * indoklás (shell-árnyékolás elleni védelem) az `env.ts` fejlécében.
  */
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { dirname, resolve } from "node:path";
-import { gunzipSync } from "node:zlib";
+import { dirname, join, resolve } from "node:path";
+import { gunzipSync, gzipSync } from "node:zlib";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-import { crawlAll, DEFAULT_MIN_DELAY_MS, type CrawlDeps, type FetchText } from "./crawl.ts";
+import {
+  crawlAll,
+  DEFAULT_MIN_DELAY_MS,
+  extractPageProducts,
+  needsRenderedText,
+  type CrawlDeps,
+  type FetchText,
+} from "./crawl.ts";
 import { resolveSupabaseTarget } from "./env.ts";
 import { findDiscontinuedCandidates, DEFAULT_UNSEEN_DAYS } from "./lifecycle.ts";
 import { dedupeCandidates, type DedupeCandidate } from "./dedupe.ts";
@@ -61,6 +68,8 @@ import {
   shopifyProductJsonUrl,
   type ImageSourceCandidate,
 } from "./images.ts";
+import { SOURCE_RECIPES } from "./sources/index.ts";
+import { planSourceSync } from "./sources/plan.ts";
 import type { BoardType, CrawlConfig, ExtractedProduct, SourceKind } from "./types.ts";
 
 /** Egyetlen kérés felső időkorlátja — egy lassú bolt ne akassza meg a futást. */
@@ -74,6 +83,21 @@ Parancsok:
       [--sitemap URL] [--samples N]     sitemap, JSON-LD, ár — és milyen
       [--default-brand NÉV]              kapcsolókkal érdemes felvenni
   list-sources                     A figyelt források listája
+  sync-sources [--apply]           A REPÓBELI receptek (tools/catalog-watch/
+                                    sources/*.ts) írása az adatbázisba. A
+                                    beállítások eddig CSAK az adatbázisban
+                                    éltek: nem voltak átnézhetők, nem voltak
+                                    verziózva, és egy újraépítésnél elvesztek
+                                    volna. SOHA nem töröl: a recept nélküli
+                                    forrást csak JELENTI. DRY-RUN; --apply ír.
+  capture-fixture                  Egy valós termékoldal mentése a GYÁRTÓNKÉNTI
+      --source NÉV --url U          regresszió-hálóba (tools/catalog-watch/
+      --teaches "mit tanít"         fixtures/). A mentett oldalon a tesztek
+      [--brand MAPPA] [--name SLUG] hálózat nélkül futnak, így egy általános
+                                    javításról másodpercek alatt kiderül, ha
+                                    elrontott egy másik gyártót. A kiírt
+                                    elvárás a MOSTANI kimenet — commit előtt
+                                    át kell nézni.
   add-source --name N --url U      Új forrás felvétele
       [--kind shop|brand_site|feed] [--sitemap URL] [--pattern RÉSZLET]...
       [--exclude RÉSZLET]... [--max N] [--delay MS] [--country HU]
@@ -292,6 +316,162 @@ async function commandListSources(): Promise<void> {
         `    ${source.base_url ?? "(nincs URL)"}  · utolsó crawl: ${last}`,
     );
   }
+}
+
+/**
+ * A repóbeli receptek szinkronizálása az adatbázisba (F2.1-utó-36).
+ *
+ * A repó az AUTORITÁS: ami a receptben áll, az kerül a `crawl_config`-ba. Ez
+ * fordítva is igaz — ha valaki élesben, kézzel írt át egy beállítást, a
+ * szinkron VISSZAÁLLÍTJA a receptre. Ez szándékos: a beállítás mögött mindig
+ * egy mérés áll, és annak a receptben, indoklással a helye.
+ */
+async function commandSyncSources(args: Args): Promise<void> {
+  const apply = flag(args, "apply") !== undefined;
+  const client = connect();
+  const existing = await listSources(client, { onlyActive: false });
+  const actions = planSourceSync(
+    SOURCE_RECIPES,
+    existing.map((row) => ({
+      id: row.id,
+      name: row.name,
+      base_url: row.base_url,
+      kind: row.kind,
+      country: row.country,
+      crawl_config: row.crawl_config,
+    })),
+  );
+
+  for (const action of actions) {
+    if (action.kind === "unchanged") continue;
+    if (action.kind === "extra") {
+      console.log(`?  ${action.name} — az adatbázisban van, de NINCS receptje (érintetlen)`);
+      continue;
+    }
+    const what = action.kind === "create" ? "ÚJ forrás" : action.changes.join(", ");
+    console.log(`${action.kind === "create" ? "+" : "~"}  ${action.name} — ${what}`);
+  }
+  const unchanged = actions.filter((a) => a.kind === "unchanged").length;
+  const writes = actions.filter((a) => a.kind === "create" || a.kind === "update");
+  console.log(`\n${unchanged} változatlan · ${writes.length} írandó`);
+
+  if (writes.length === 0) return;
+  if (!apply) {
+    console.log("DRY-RUN — írni --apply-vel ír.");
+    return;
+  }
+
+  for (const action of writes) {
+    const recipe = SOURCE_RECIPES.find((r) => r.name === action.name);
+    if (recipe === undefined) continue;
+    const row = {
+      name: recipe.name,
+      base_url: recipe.baseUrl,
+      kind: recipe.kind,
+      country: recipe.country,
+      crawl_config: recipe.crawlConfig,
+    };
+    const { error } =
+      action.id === null
+        ? await client.from("catalog_sources").insert(row)
+        : await client.from("catalog_sources").update(row).eq("id", action.id);
+    if (error) throw new Error(`${recipe.name}: ${error.message}`);
+    console.log(`  írva: ${recipe.name}`);
+  }
+}
+
+/**
+ * FIXTÚRA-RÖGZÍTÉS: egy valós termékoldal mentése a regresszió-hálóba.
+ *
+ * A rögzítés ADATBÁZIS NÉLKÜL megy — a beállítás a repóbeli receptből jön,
+ * ahogy a tesztben is. A renderelés csak akkor fut, ha a recept szerint kell
+ * (`renderWhenEmpty`) vagy a nyers HTML nem használható.
+ *
+ * FONTOS: a kiírt `expected` a MOSTANI kimenet. Ha a kinyerés ma hibás, a
+ * fixtúra a HIBÁT betonozná be — ezért a parancs kiírja a hat mezőt, és a
+ * commit előtt EL KELL OLVASNI. Ez ugyanaz a lépés, mint a `crawl --dry-run`
+ * ellenőrzése egy új forrásnál.
+ */
+async function commandCaptureFixture(args: Args): Promise<void> {
+  const sourceName = flag(args, "source");
+  const url = flag(args, "url");
+  if (!sourceName || !url) throw new Error("Kötelező: --source és --url");
+  const recipe = SOURCE_RECIPES.find((r) => r.name === sourceName);
+  if (recipe === undefined) {
+    throw new Error(
+      `Nincs recept ehhez: "${sourceName}". Ismert: ${SOURCE_RECIPES.map((r) => r.name).join(", ")}`,
+    );
+  }
+  const teaches = flag(args, "teaches");
+  if (!teaches) {
+    throw new Error(
+      "Kötelező: --teaches «mit tanít ez a fixtúra» — bukáskor EZ mondja meg, mi veszett el.",
+    );
+  }
+  const dir = join(
+    "tools/catalog-watch/fixtures",
+    flag(args, "brand") ?? slugify(recipe.name),
+  );
+  // Az URL utolsó NEM ÜRES szegmense: sok forrás záró perjellel adja a
+  // termék-URL-t (gladiatorsup.com), és a puszta `pop()` ott üres nevet adna.
+  const segments = new URL(url).pathname.split("/").filter((part) => part !== "");
+  const slug = flag(args, "name") ?? slugify(segments[segments.length - 1] ?? "oldal");
+
+  const page = await realFetch(url);
+  if (page.status !== 200) throw new Error(`HTTP ${page.status}`);
+
+  let products = extractPageProducts(page.text, url, recipe.crawlConfig, null);
+  let renderedText: string | null = null;
+  if (needsRenderedText(products, recipe.crawlConfig)) {
+    const fetcher = createRenderFetcher();
+    try {
+      renderedText = await fetcher.renderText(url);
+    } finally {
+      await fetcher.close();
+    }
+    if (renderedText !== null) {
+      const rerendered = extractPageProducts(page.text, url, recipe.crawlConfig, renderedText);
+      if (rerendered.length > 0) products = rerendered;
+      else renderedText = null;
+    }
+  }
+  if (products.length === 0) throw new Error("A kinyerés EGYETLEN terméket sem adott.");
+
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(join(dir, `${slug}.html.gz`), gzipSync(Buffer.from(page.text, "utf8")));
+  if (renderedText !== null) {
+    writeFileSync(join(dir, `${slug}.txt.gz`), gzipSync(Buffer.from(renderedText, "utf8")));
+  }
+  const kase = {
+    source: recipe.name,
+    url,
+    capturedAt: new Date().toISOString().slice(0, 10),
+    teaches,
+    rendered: renderedText !== null,
+    expected: products,
+  };
+  writeFileSync(join(dir, `${slug}.json`), `${JSON.stringify(kase, null, 2)}\n`);
+
+  console.log(`\n${dir}/${slug} — ${products.length} termék${renderedText ? " (renderelt)" : ""}`);
+  console.log("NÉZD ÁT, mielőtt commitolod — a mostani kimenet lesz az elvárás:\n");
+  for (const product of products) {
+    const s = product.specs;
+    console.log(
+      `  ${product.brandName ?? "?"} · ${product.modelName} [${product.boardType ?? "nincs kategória"}]\n` +
+        `    ${s.lengthCm ?? "?"} × ${s.widthCm ?? "?"} × ${s.thicknessCm ?? "?"} cm · ` +
+        `${s.volumeL ?? "?"} L · ${s.weightKg ?? "?"} kg · teherbírás ${s.maxLoadKg ?? "?"} kg`,
+    );
+  }
+}
+
+/** Fájlnév-barát alak: ékezet nélkül, kisbetűvel, kötőjelezve. */
+function slugify(value: string): string {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
 }
 
 async function commandAddSource(args: Args): Promise<void> {
@@ -1140,6 +1320,10 @@ async function main(): Promise<void> {
       return commandProbe(args);
     case "list-sources":
       return commandListSources();
+    case "sync-sources":
+      return commandSyncSources(args);
+    case "capture-fixture":
+      return commandCaptureFixture(args);
     case "add-source":
       return commandAddSource(args);
     case "crawl":

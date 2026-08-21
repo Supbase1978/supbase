@@ -1,0 +1,31 @@
+{
+  "source": "Fanatic",
+  "url": "https://www.fanatic.com/en/products/fanatic-viper-air-33250-1504",
+  "capturedAt": "2026-08-21",
+  "teaches": "Renderelés + görgetés után jön elő a SIZES AND SPECS tábla, és EGY oldal a modellcsalád MINDEN méretét adja — méretenként külön jelölt, ?size= URL-lel.",
+  "rendered": true,
+  "expected": [
+    {
+      "sourceUrl": "https://www.fanatic.com/en/products/fanatic-viper-air-33250-1504",
+      "brandName": "Fanatic",
+      "modelName": "VIPER AIR S L T",
+      "rawTitle": "FANATIC VIPER AIR S | L | T",
+      "modelYear": null,
+      "priceHuf": null,
+      "inStock": null,
+      "imageUrl": "https://www.fanatic.com/system/product_hotspot_pictures/pictures/67c9/a247/364f/c600/c345/dc26/xxlarge/FANATIC-SUP_2025_Viper_Air_SLT_Top_Bottom_2500x2500px.png?width=768",
+      "imageUrls": [],
+      "boardType": "allround",
+      "specs": {
+        "lengthCm": 335.3,
+        "widthCm": 85.1,
+        "thicknessCm": 15.2,
+        "volumeL": 355,
+        "weightKg": 11.2,
+        "maxLoadKg": 100,
+        "inflatable": true
+      },
+      "accessoryType": null
+    }
+  ]
+}

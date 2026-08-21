@@ -50,7 +50,58 @@ nyisd meg a kategória-oldalt Playwrighttal, görgess, és kattints egy
 termékkártyára — az URL elárulja a mintát (Fanatic: a kártyák NEM linkek,
 kattintásra viszont `/en/products/<slug>-<cikkszám>` jön ki).
 
-## 2. lépés — mérj egy VALÓDI TERMÉKOLDALON
+## 2. lépés — válaszd ki a MÓDSZERT
+
+Nincs univerzális kinyerő, és nem is érdemes olyat gyártani — a forráshoz
+alkalmazkodunk. A sorrend a legolcsóbbtól a legdrágábbig megy, és **az első
+működő nyer**:
+
+| # | Ha a forrásnál… | akkor |
+|---|---|---|
+| 1 | van `/products.json` | **Shopify-mód** (`--shopify`) — 1-2 kérés az EGÉSZ katalógus, a galéria ingyen jár |
+| 2 | van Product JSON-LD **mérettel** | JSON-LD-ág (alapértelmezés) |
+| 3 | a spec címkézett szövegként ott van | `--html-only` — ez **ÜT** a JSON-LD-n |
+| 4 | a spec csak renderelés után létezik | `--render-when-empty` (a fallback görget is) |
+| 5 | egy oldal több méretet ad | méretenkénti bontás, `?size=…` egyedi URL-lel |
+| 6 | a kategória sehol nem egyértelmű | a lánc: URL-szegmens → kategória-felirat (`--category-class`) → morzsamenü → leírás → `boardTypeByUrl` rögzítés |
+
+A 2. pontnál **nézd meg, hogy a JSON-LD tényleg ad-e méretet.** Élesben
+(fanatic.com) kitesz nevet és árat, de egyetlen méretet sem — ott a `--html-only`
+kellett, különben a féladat nyert volna.
+
+## A recept a REPÓBAN él
+
+A beállítás nem az adatbázisban születik, hanem
+`tools/catalog-watch/sources/<gyarto>.ts`-ben — a MIÉRT-tel együtt (melyik
+mért viselkedés indokolja). Onnan megy az adatbázisba:
+
+```bash
+node tools/catalog-watch/cli.ts sync-sources            # dry-run: mi változna
+node tools/catalog-watch/cli.ts sync-sources --apply
+```
+
+A szinkron **soha nem töröl**: a recept nélküli forrást csak jelenti.
+
+## Mentsd el a forrást a REGRESSZIÓ-HÁLÓBA
+
+Amint a kinyerés jó, rögzíts egy valós termékoldalt:
+
+```bash
+node tools/catalog-watch/cli.ts capture-fixture --source "Márka" \
+  --url "<TERMÉK-URL>" --teaches "mit tanít ez az oldal"
+```
+
+Ez menti az oldalt (gzip-elve, teljes egészében) és a VÁRT kinyerést. Innentől
+minden `npm test` megmondja, ha egy általános javítás elrontotta ezt a gyártót
+— hálózat nélkül, másodpercek alatt. **Ez váltja ki a kézi újraellenőrzést**,
+amiből egyetlen napon ~15 kör ment el.
+
+A `--teaches` mondat kötelező: bukáskor EZ mondja meg, mi veszett el.
+
+**A kiírt elvárást olvasd el, mielőtt commitolod** — ha a kinyerés most hibás,
+a fixtúra a hibát betonozná be.
+
+## 3. lépés — mérj egy VALÓDI TERMÉKOLDALON
 
 **Ez a másik hely, ahol kétszer is elrontottam.** A kategória-oldal és a
 kiegészítő semmit nem árul el a deszkák adatáról:
@@ -68,7 +119,7 @@ mezőt**: hossz, szélesség, vastagság, űrtartalom, súly, teherbírás. A
 jóváhagyáshoz **űrtartalom ÉS teherbírás** kell — e kettő nélkül a deszka a
 moderációs sorban marad, és a Deszkaválasztó sem ajánlja.
 
-## 3. lépés — a csapda-lista
+## 4. lépés — a csapda-lista
 
 Mind élesben mért eset. Ha valamelyik mező üres vagy gyanús, itt keresd:
 
@@ -91,6 +142,21 @@ Mind élesben mért eset. Ha valamelyik mező üres vagy gyanús, itt keresd:
   nélkül (Gladiator). Az egységet a mező adja.
 - `Capacity / 330LBS / Weight / 12.5KG` — az ablak **átnyúlhat a következő
   mezőbe**. A súly/teherbírás legfeljebb két sort néz.
+- `max. 150 kg teherbírással és mindössze 8,8 kg súllyal` — **magyar
+  ragozásnál az érték a címke ELŐTT áll**, és a címke UTÁN már a következő
+  állítás száma jön. Élesben (sup-deszka.hu) ez a deszka SÚLYÁT írta a
+  teherbírásba: 8,8 kg a valós 150 helyett. A sorrend ezért: közvetlenül a
+  címke előtti szám+egység → azonos sor a címke után → következő sor.
+  **Kettőspontnál (`Capacity:`) az „előtte" ág nem él** — a kettőspont maga
+  mondja ki, hogy az érték utána jön.
+
+**Kategória PRÓZÁBÓL**
+- `ideális tengerre, tóra vagy folyóra` — a kategória-szó **prózában úti célt
+  jelenthet**, nem besorolást. Élesben (sup-deszka.hu) ebből VADVÍZI deszka
+  lett egy kezdő allround deszkából — pont a legveszélyesebb irányba. A
+  címben/URL-slugban a puszta kulcsszó jó (`guessBoardType`), prózában
+  FŐNÉV is kell (`boardTypeFromProse`), és **kötőszó megállítja**: a sorolt
+  kategóriák egyike sem A kategória.
 
 **Teherbírás**
 - `Recommended rider weight: Up to 160kg` — sok gyártó CSAK ezt közli
@@ -155,7 +221,7 @@ Mind élesben mért eset. Ha valamelyik mező üres vagy gyanús, itt keresd:
 - Shopify-forrásnál a `/products.json` `images[]` tömbje ingyen adja a
   galériát (7–22 kép/termék).
 
-## 4. lépés — felvétel és ellenőrzés
+## 5. lépés — felvétel és ellenőrzés
 
 ```bash
 node tools/catalog-watch/cli.ts add-source --name "Márka" --url https://gyarto.com \

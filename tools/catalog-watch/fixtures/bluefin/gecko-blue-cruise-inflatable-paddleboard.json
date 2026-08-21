@@ -1,0 +1,30 @@
+{
+  "source": "Bluefin",
+  "url": "https://bluefinsupboards.eu/products/gecko-blue-cruise-inflatable-paddleboard",
+  "capturedAt": "2026-08-21",
+  "teaches": "JSON-LD-ag; a JSON-LD markaneve a termekek egy reszen Bluefin-testing (a bolt oldalan maradt teszt-adat), es a kep width=1920 parametert visel (1656 kB) - a displayImageUrl normalizalja.",
+  "rendered": false,
+  "expected": [
+    {
+      "sourceUrl": "https://bluefinsupboards.eu/products/gecko-blue-cruise-inflatable-paddleboard",
+      "brandName": "Bluefin",
+      "modelName": "Cruise Gecko",
+      "rawTitle": "Cruise 10'8 Inflatable Paddleboard SUP - Gecko",
+      "modelYear": null,
+      "priceHuf": null,
+      "inStock": true,
+      "imageUrl": "https://bluefinsupboards.eu/cdn/shop/files/Main-Images_Gecko-Cruise_5baac709-3ae9-474f-892e-f75799879127.png?v=1782737983&width=768",
+      "boardType": "allround",
+      "specs": {
+        "lengthCm": 325,
+        "widthCm": 82,
+        "thicknessCm": 16,
+        "volumeL": null,
+        "weightKg": 9.1,
+        "maxLoadKg": 150,
+        "inflatable": true
+      },
+      "accessoryType": null
+    }
+  ]
+}

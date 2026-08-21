@@ -1,0 +1,30 @@
+{
+  "source": "Aqua Marina Hungary",
+  "url": "https://aquamarinahungary.com/ISUP-Aqua-Marina-ATLAS-366cm-Paddleboard",
+  "capturedAt": "2026-08-21",
+  "teaches": "MAGYAR bolt, ket csapdaval: (1) a lap aljan az EVEZO adatai allnak (hossza: 165-210cm), amibol 210 cm deszkahossz lett - a TARTOMANY nem meret; (2) a magyar cimke birtokos (paddleboard sulya:), amit a kettospontos menet nem ismert fel, ezert az evezo Suly: cimkejet vette.",
+  "rendered": false,
+  "expected": [
+    {
+      "sourceUrl": "https://aquamarinahungary.com/ISUP-Aqua-Marina-ATLAS-366cm-Paddleboard",
+      "brandName": "Aqua Marina",
+      "modelName": "ATLAS",
+      "rawTitle": "Aqua Marina ATLAS 366cm Paddleboard ISUP",
+      "modelYear": null,
+      "priceHuf": 159900,
+      "inStock": true,
+      "imageUrl": "https://aquamarinahungary.com/img/34680/AMM1423823/AMM1423823.jpg?time=1722702463",
+      "boardType": null,
+      "specs": {
+        "lengthCm": 366,
+        "widthCm": 86,
+        "thicknessCm": 15,
+        "volumeL": 390,
+        "weightKg": 11,
+        "maxLoadKg": 180,
+        "inflatable": true
+      },
+      "accessoryType": null
+    }
+  ]
+}

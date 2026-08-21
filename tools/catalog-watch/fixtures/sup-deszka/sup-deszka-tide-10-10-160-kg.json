@@ -1,0 +1,30 @@
+{
+  "source": "sup-deszka.hu",
+  "url": "https://sup-deszka.hu/t/sup-deszka-tide-10-10-160-kg/",
+  "capturedAt": "2026-08-21",
+  "teaches": "MAGYAR, tobbmarkas bolt JSON-LD-vel. A leiras vege - ideális tengerre, tóra vagy folyóra - korabban VADVIZI deszkat csinalt egy kezdo allround deszkabol: a folyo kulcsszo prozaban UTI CELT jelent, nem kategoriat. Ezert marad ures a kategoria (moderator dont), es ezert kell a fonevet is megkovetelo boardTypeFromProse.",
+  "rendered": false,
+  "expected": [
+    {
+      "sourceUrl": "https://sup-deszka.hu/t/sup-deszka-tide-10-10-160-kg/",
+      "brandName": "Too Much",
+      "modelName": "TooMuch TIDE 10’10” 160 kg",
+      "rawTitle": "TooMuch TIDE 10’10” | SUP deszka 330 cm 160 kg",
+      "modelYear": null,
+      "priceHuf": 65500,
+      "inStock": false,
+      "imageUrl": "https://sup-deszka.hu/wp-content/uploads/2026/04/TooMuch-Tide-1010-330x81x15-tm-tide.jpg",
+      "boardType": null,
+      "specs": {
+        "lengthCm": 330,
+        "widthCm": 81,
+        "thicknessCm": 15,
+        "volumeL": null,
+        "weightKg": 12.5,
+        "maxLoadKg": 160,
+        "inflatable": true
+      },
+      "accessoryType": null
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "source": "Aqua Marina (gyártói)",
+  "url": "https://aquamarina.com/products/advanced-all-around/coral-nf/",
+  "capturedAt": "2026-08-21",
+  "teaches": "TRANSZPONALT spec-tabla (cimkek egy oszlopban, alattuk az ertekek); a MAX. PAYLOAD fontot ES kilogrammot is kiir (308 lbs / 140 kg), ezert kotelezo a kg a mintaban.",
+  "rendered": false,
+  "expected": [
+    {
+      "sourceUrl": "https://aquamarina.com/products/advanced-all-around/coral-nf/",
+      "brandName": "Aqua Marina",
+      "modelName": "Coral Night Fade",
+      "rawTitle": "Coral Night Fade – Aqua Marina",
+      "modelYear": null,
+      "priceHuf": null,
+      "inStock": null,
+      "imageUrl": "https://aquamarina.com/wp-content/uploads/2023/01/Coral-N-1.png",
+      "imageUrls": [],
+      "boardType": "allround",
+      "specs": {
+        "lengthCm": 309.9,
+        "widthCm": 78,
+        "thicknessCm": 12,
+        "volumeL": 238,
+        "weightKg": 9,
+        "maxLoadKg": 105,
+        "inflatable": null
+      },
+      "accessoryType": null
+    }
+  ]
+}
