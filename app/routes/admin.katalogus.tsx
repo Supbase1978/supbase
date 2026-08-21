@@ -486,9 +486,20 @@ function CandidateCard({
             <span className="font-medium text-text">{t("admin.typeLabel")}</span>
             <select
               name="boardType"
-              defaultValue={extracted.boardType ?? "allround"}
+              // NINCS KITALÁLT ALAPÉRTÉK (2026-08-21). Korábban `?? "allround"`
+              // állt itt: ha a figyelő NEM talált kategóriát, a felület akkor is
+              // magabiztosan „Allround"-ot mutatott — 255 jelöltből 194-nél.
+              // Egy jóváhagyó kattintás így némán ALLROUND deszkát csinált
+              // olyanból, amiről semmit nem tudtunk. Ez a felület által
+              // GYÁRTOTT hamis adat, a legrosszabb fajta: úgy néz ki, mint egy
+              // mérés. Üresen hagyva a moderátornak választania KELL.
+              defaultValue={extracted.boardType ?? ""}
+              required
               className="rounded-lg border border-line bg-surface px-2 py-1.5 text-sm text-text"
             >
+              {extracted.boardType === null ? (
+                <option value="">{t("admin.typeChoose")}</option>
+              ) : null}
               {BOARD_TYPES.map((type) => (
                 <option key={type} value={type}>
                   {t(`boardType.${type}`)}
@@ -501,7 +512,16 @@ function CandidateCard({
           {t("admin.approve")}
         </Button>
       </Form>
-      <p className="mt-1 text-xs text-text-3">{t("admin.typeHint")}</p>
+      {/* A felirat IGAZAT mondjon: tippről csak akkor beszélünk, ha van tipp.
+          Kategória nélküli jelöltnél a moderátornak azt kell tudnia, hogy a
+          figyelő NEM talált semmit — nem azt, hogy „nézd át a tippet". */}
+      <p className="mt-1 text-xs text-text-3">
+        {extracted.boardType === null
+          ? t("admin.typeUnknown")
+          : t("admin.typeHint", {
+              source: t(`admin.typeSource.${extracted.boardTypeSource ?? "unknown"}`),
+            })}
+      </p>
 
       {/* Összefésülés meglévő deszkába/kiegészítőbe — a dupla-név elleni védelem. */}
       <Form method="post" className="mt-3 flex flex-wrap items-end gap-2">

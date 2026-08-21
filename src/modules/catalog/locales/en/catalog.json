@@ -64,7 +64,7 @@
     "kindAccessory": "Gear",
     "categoryLabel": "Gear category",
     "typeLabel": "Board type",
-    "typeHint": "The watcher's guess is preselected — it drives the Board finder's purpose matching, so please review it.",
+    "typeHint": "Source: {{source}}. This drives the Board selector's purpose matching, so review it.",
     "mergeLabel": "Merge into an existing board",
     "approve": "Approve — new board",
     "merge": "Merge",
@@ -94,6 +94,19 @@
       "keep": "Keep",
       "cover": "Cover",
       "save": "Save gallery"
+    },
+    "typeChoose": "— choose a category —",
+    "typeUnknown": "The watcher found NO category on this page — the call is yours. Open the product page if needed.",
+    "typeSource": {
+      "pinned": "moderator pin from the maker's category page",
+      "category": "the maker's own category label on the product page",
+      "breadcrumb": "the maker's breadcrumb",
+      "usage": "the maker's usage rating",
+      "collection": "the maker's collection",
+      "name": "inferred from the model name / URL",
+      "description": "inferred from the maker's description",
+      "family": "inherited from the model family",
+      "unknown": "unknown"
     }
   },
   "gear": {

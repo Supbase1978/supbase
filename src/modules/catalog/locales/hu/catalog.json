@@ -64,7 +64,7 @@
     "kindAccessory": "Felszerelés",
     "categoryLabel": "Felszerelés-kategória",
     "typeLabel": "Deszkatípus",
-    "typeHint": "A figyelő tippje előre kiválasztva — ez vezérli a Deszkaválasztó cél-illesztését, ezért nézd át.",
+    "typeHint": "Forrás: {{source}}. Ez vezérli a Deszkaválasztó cél-illesztését, ezért nézd át.",
     "mergeLabel": "Összefésülés meglévő deszkával",
     "approve": "Jóváhagyás — új deszka",
     "merge": "Összefésülés",
@@ -94,6 +94,19 @@
       "keep": "Marad",
       "cover": "Borító",
       "save": "Galéria mentése"
+    },
+    "typeChoose": "— válassz kategóriát —",
+    "typeUnknown": "A figyelő NEM talált kategóriát ezen az oldalon — a besorolás a tiéd. Nyisd meg a termékoldalt, ha kell.",
+    "typeSource": {
+      "pinned": "moderátori rögzítés a gyártó kategória-oldaláról",
+      "category": "a gyártó saját kategória-felirata a termékoldalon",
+      "breadcrumb": "a gyártó morzsamenüje",
+      "usage": "a gyártó használat-értékelése",
+      "collection": "a gyártó kollekciója",
+      "name": "a modellnévből / az URL-ből következtetve",
+      "description": "a gyártó leírásából következtetve",
+      "family": "a modellcsaládból örökölve",
+      "unknown": "ismeretlen"
     }
   },
   "gear": {
