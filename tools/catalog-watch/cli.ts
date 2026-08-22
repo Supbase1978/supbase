@@ -70,8 +70,16 @@ import {
 } from "./images.ts";
 import { SOURCE_RECIPES } from "./sources/index.ts";
 import { planSourceSync } from "./sources/plan.ts";
+import { htmlToText } from "./html.ts";
+import { boardTypesFromProse, multiUseFromProse } from "./normalize.ts";
 import { findSuspicions, formatCoverage, type Suspicion } from "./suspicion.ts";
 import type { BoardType, CrawlConfig, ExtractedProduct, SourceKind } from "./types.ts";
+
+/**
+ * Szünet a `suggest-categories --from-pages` letöltései között. Udvarias
+ * crawl: ez a menet a MEGLÉVŐ katalógusra fut rá, tehát nem sürgős.
+ */
+const SUGGEST_DELAY_MS = 1200;
 
 /** Egyetlen kérés felső időkorlátja — egy lassú bolt ne akassza meg a futást. */
 const FETCH_TIMEOUT_MS = 20_000;
@@ -446,6 +454,104 @@ async function commandSyncUnpublished(args: Args): Promise<void> {
 
   console.log(`\n${touched} deszka jelölendő`);
   if (touched > 0 && !apply) console.log("DRY-RUN — írni --apply-vel ír.");
+}
+
+/**
+ * TOVÁBBI KATEGÓRIÁK a gyártói LEÍRÁSBÓL (F2.1-utó-44).
+ *
+ * MIÉRT: „ahol a leírás többféle használatot tesz lehetővé, ott már előre
+ * jelöljük" (felhasználói kérés, 2026-08-22). A gyártók a prózában mondják ki
+ * a többes használatot — „Ideal for both all-around paddling and touring" —,
+ * a specifikációs táblában nem. A halmaz-modell óta ez nem kétértelműség,
+ * hanem a válasz.
+ *
+ * A FORRÁS a jelöltek `raw.description` mezője: a JSON-LD-s forrásoknál ez már
+ * el van tárolva, tehát 209 termékhez HÁLÓZAT NÉLKÜL megvan a szöveg.
+ *
+ * CSAK HOZZÁAD, nem vesz el: a moderátor által beállított kategóriát nem
+ * bántja. A javaslat DRY-RUN, mint minden író parancsunk.
+ */
+async function commandSuggestCategories(args: Args): Promise<void> {
+  const apply = flag(args, "apply") !== undefined;
+  const client = connect();
+
+  const { data: candidates, error } = await client
+    .from("catalog_candidates")
+    .select("raw, url, extracted, matched_board_id, status")
+    .not("matched_board_id", "is", null)
+    .in("status", ["approved", "merged"]);
+  if (error) throw new Error(`catalog_candidates: ${error.message}`);
+
+  // A leírás a JELÖLTÉ, a kategória a DESZKÁÉ — a kapcsolat a moderátor által
+  // elbírált `matched_board_id`. Bizonytalan (pending) párosítást nem
+  // fogadunk el: ott a trigram-egyeztető tippelt, és MÁS termék leírása
+  // kerülne a deszkára.
+  const fromPages = flag(args, "from-pages") !== undefined;
+  const proseByBoard = new Map<string, Set<string>>();
+
+  if (fromPages) {
+    // A TELJES TERMÉKOLDALRÓL. A tárolt `raw.description` rövid SEO-blurb
+    // (medián 196 karakter, mérve: 210-ből 195 semmit nem ad) — a gyártók a
+    // többes használatot a TELJES prózában mondják ki. Ezért itt újra
+    // letöltjük az oldalt, és a `multiUseFromProse` mondat-szintű mintáját
+    // eresztjük rá: az a navigációs menüre NEM ugrik rá.
+    const urls = new Map<string, string>();
+    for (const row of candidates ?? []) {
+      const url = row.url as string | null;
+      if (url) urls.set(row.matched_board_id as string, url);
+    }
+    let done = 0;
+    for (const [boardId, url] of urls) {
+      const page = await fetchOrNull(url);
+      done += 1;
+      if (done % 25 === 0) console.log(`  … ${done}/${urls.size}`);
+      if (page === null || page.status !== 200) continue;
+      const types = multiUseFromProse(htmlToText(page.text));
+      if (types.length > 0) proseByBoard.set(boardId, new Set(types));
+      await sleep(SUGGEST_DELAY_MS);
+    }
+  } else {
+    for (const row of candidates ?? []) {
+      const description = (row.raw as { description?: unknown } | null)?.description;
+      if (typeof description !== "string" || description.length < 40) continue;
+      const boardId = row.matched_board_id as string;
+      const set = proseByBoard.get(boardId) ?? new Set<string>();
+      for (const type of boardTypesFromProse(description)) set.add(type);
+      proseByBoard.set(boardId, set);
+    }
+  }
+
+  const { data: boards, error: boardsError } = await client
+    .from("boards")
+    .select("id, model_name, board_type, board_types, brand:brands(name)")
+    .eq("kind", "board")
+    .in("id", [...proseByBoard.keys()]);
+  if (boardsError) throw new Error(`boards: ${boardsError.message}`);
+
+  let changed = 0;
+  for (const board of boards ?? []) {
+    const current = ((board.board_types ?? []) as string[]).length > 0
+      ? (board.board_types as string[])
+      : [board.board_type as string];
+    const proposed = [...(proseByBoard.get(board.id as string) ?? [])].filter(
+      (type) => !current.includes(type),
+    );
+    if (proposed.length === 0) continue;
+    changed += 1;
+    const brand = (board as { brand?: { name?: string } }).brand?.name ?? "";
+    console.log(
+      `+ ${brand} ${board.model_name}: ${current.join(", ")} → ${[...current, ...proposed].join(", ")}`,
+    );
+    if (!apply) continue;
+    const { error: updateError } = await client
+      .from("boards")
+      .update({ board_types: [...current, ...proposed] })
+      .eq("id", board.id);
+    if (updateError) throw new Error(`${String(board.model_name)}: ${updateError.message}`);
+  }
+
+  console.log(`\n${changed} deszka kapna további kategóriát a gyártói leírásból`);
+  if (changed > 0 && !apply) console.log("DRY-RUN — írni --apply-vel ír.");
 }
 
 /**
@@ -1439,6 +1545,8 @@ async function main(): Promise<void> {
       return commandSyncSources(args);
     case "sync-unpublished":
       return commandSyncUnpublished(args);
+    case "suggest-categories":
+      return commandSuggestCategories(args);
     case "capture-fixture":
       return commandCaptureFixture(args);
     case "add-source":

@@ -1051,7 +1051,7 @@ export function guessBoardType(text: string): BoardType | null {
  * főnév a kulcsszó UTÁN áll, és a ragozott alak (`folyó**ra**`, `tó**ra**`)
  * nem illeszkedik — a kategóriát jelentő alak `folyami`/`vadvízi`.
  */
-export function boardTypeFromProse(text: string): BoardType | null {
+export function boardTypesFromProse(text: string): BoardType[] {
   const folded = foldText(text);
   // A kategória-szó és a főnév közé JELZŐK ékelődhetnek („all-round
   // **inflatable** paddleboard"), ezért legfeljebb három szó átugorható —
@@ -1070,13 +1070,22 @@ export function boardTypeFromProse(text: string): BoardType | null {
     ["touring", String.raw`(?:tura|touring|explorer)`],
     ["allround", String.raw`(?:allround|all-round|all round|univerzalis)`],
   ];
-  const found = new Set<BoardType>();
+  const found: BoardType[] = [];
   for (const [type, keyword] of rules) {
-    if (new RegExp(`\\b${keyword}${noun}\\b`, "i").test(folded)) found.add(type);
+    if (new RegExp(`\\b${keyword}${noun}\\b`, "i").test(folded)) found.push(type);
   }
-  // TÖBB TALÁLAT = NINCS DÖNTÉS. Ugyanaz az elv, mint az angol ágon: ha a
-  // szöveg két kategóriát is kimond, a moderátoré a döntés.
-  return found.size === 1 ? [...found][0]! : null;
+  return found;
+}
+
+/**
+ * A prózából kiolvasott EGYETLEN kategória — akkor, ha a szöveg pontosan egyet
+ * mond ki. Több találatnál `null`: az EGYÉRTÉKŰ ág nem dönthet a moderátor
+ * helyett arról, melyik a „fő" — épp ez a korlát vezetett a halmaz-modellhez
+ * (F2.1-utó-41).
+ */
+export function boardTypeFromProse(text: string): BoardType | null {
+  const found = boardTypesFromProse(text);
+  return found.length === 1 ? found[0]! : null;
 }
 
 /**
@@ -2319,4 +2328,74 @@ function sizeSlug(label: string): string {
       .replace(/^-+|-+$/g, "")
       .slice(0, 40) || "1"
   );
+}
+
+/**
+ * TÖBBES HASZNÁLAT a gyártói prózából (F2.1-utó-44).
+ *
+ * MIÉRT KÜLÖN FÜGGVÉNY, és miért nem a teljes oldalszövegre eresztjük rá a
+ * `boardTypesFromProse`-t: a NAVIGÁCIÓS MENÜ minden termékoldalon felsorolja a
+ * gyártó ÖSSZES kategóriáját („Paddleboards All-round / Wave … Touring …
+ * Race"). Egy kulcsszó-alapú olvasó ott mindent megtalálna, és minden deszka
+ * minden kategóriát megkapna — ez a katalógus leggyorsabb elrontása lenne.
+ *
+ * AMIT KERESÜNK, az egy ÁLLÍTÁS a termékről, nem egy menüpont:
+ *
+ *   „Ideal for both **all-around** paddling **and** **touring**, it features…"
+ *
+ * Három feltétel együtt — mindhárom a menü ellen véd:
+ *  1. EGY MONDATON belül áll a két kategória-szó (a menü nem mondat);
+ *  2. KÖTŐSZÓ van közöttük (`and`, `és`, `valamint`, `both … and`);
+ *  3. a mondat rövid (a menü-blokk hosszú, mert nincs benne mondatvég).
+ *
+ * A találat CSAK JAVASLAT: a moderátor hagyja jóvá. Egy téves plusz kategória
+ * ugyanis nem hiány, hanem HAMIS ajánlás — a deszka olyan célnál jönne elő,
+ * amire a gyártó nem szánta.
+ */
+const MULTI_USE_MAX_SENTENCE = 300;
+/** A két kategória-szó legfeljebb ennyi karakterre álljon egymástól. */
+const MULTI_USE_MAX_GAP = 70;
+
+export function multiUseFromProse(text: string): BoardType[] {
+  const folded = foldText(text);
+  const keywords: [BoardType, RegExp][] = [
+    ["kids", /\b(?:gyerek|junior|kids|youth)/g],
+    ["fishing", /\b(?:horgasz|fishing|angler)/g],
+    // A `river` az EGYETLEN típusunk, ami HELYNÉV is: a „choppy waters or
+    // rivers" mondatban a folyó víz, nem besorolás. Élesben (fanatic.com,
+    // BLITZ AIR) ebből lett volna vadvízi deszka egy túradeszkából. Ezért itt
+    // csak a jelzős/összetett alak számít — a puszta „river(s)" nem.
+    ["river", /\b(?:folyami|vadvizi|whitewater|river[ -]?(?:sup|board|deszka))/g],
+    ["race", /\b(?:verseny|racing|race)/g],
+    ["yoga", /\b(?:joga|yoga|pilates)/g],
+    ["touring", /\b(?:tura|touring|explor)/g],
+    ["allround", /\b(?:allround|all-round|all round|all-around|all around|univerzalis)/g],
+  ];
+  const conjunction = /\b(?:and|es|valamint|vagy|or)\b/;
+
+  const found = new Set<BoardType>();
+  for (const sentence of folded.split(/[.!?]+|\n/)) {
+    const trimmed = sentence.trim();
+    if (trimmed.length === 0 || trimmed.length > MULTI_USE_MAX_SENTENCE) continue;
+
+    const hits: { type: BoardType; at: number }[] = [];
+    for (const [type, pattern] of keywords) {
+      pattern.lastIndex = 0;
+      const match = pattern.exec(trimmed);
+      if (match) hits.push({ type, at: match.index });
+    }
+    if (hits.length < 2) continue;
+
+    hits.sort((a, b) => a.at - b.at);
+    for (let i = 0; i < hits.length - 1; i += 1) {
+      const left = hits[i]!;
+      const right = hits[i + 1]!;
+      if (right.at - left.at > MULTI_USE_MAX_GAP) continue;
+      // A KÖTŐSZÓ a kettő KÖZÖTT álljon — ez köti össze őket állítássá.
+      if (!conjunction.test(trimmed.slice(left.at, right.at))) continue;
+      found.add(left.type);
+      found.add(right.type);
+    }
+  }
+  return [...found];
 }

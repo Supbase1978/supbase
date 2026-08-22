@@ -13,6 +13,7 @@ import {
   boardTypeFromProse,
   guessBoardType,
   modelYearFromProductCode,
+  multiUseFromProse,
   normalizeBrandName,
   parseAvailability,
   parseDimensionCm,
@@ -431,6 +432,70 @@ describe("modelYearFromProductCode", () => {
   it("a jövőbeli és a túl régi évet elveti", () => {
     expect(modelYearFromProductCode("BT-99XY", "Aqua Marina")).toBeNull();
     expect(modelYearFromProductCode("BT-05XY", "Aqua Marina")).toBeNull();
+  });
+});
+
+/**
+ * TÖBBES HASZNÁLAT a gyártói prózából (F2.1-utó-44). „Ahol a leírás többféle
+ * használatot tesz lehetővé, ott már előre jelöljük" (felhasználói kérés,
+ * 2026-08-22) — a gyártók ezt a PRÓZÁBAN mondják ki, nem a spec-táblában.
+ *
+ * A LEGFONTOSABB TESZT itt a navigációs menü: minden termékoldal felsorolja a
+ * gyártó ÖSSZES kategóriáját, és egy kulcsszó-alapú olvasó ott mindent
+ * megtalálna — így minden deszka minden kategóriát megkapna.
+ */
+describe("multiUseFromProse", () => {
+  it("a gyártó KETTŐS állítását megtalálja (a felhasználó Jobe-példája)", () => {
+    expect(
+      multiUseFromProse(
+        "Ideal for both all-around paddling and touring, it features a 3mm EVA deckpad.",
+      ),
+    ).toEqual(["allround", "touring"]);
+  });
+
+  it("magyarul is", () => {
+    expect(multiUseFromProse("Kiváló választás túrázásra és versenyre egyaránt.")).toEqual([
+      "touring",
+      "race",
+    ]);
+  });
+
+  it("a NAVIGÁCIÓS MENÜRE nem ugrik rá", () => {
+    // Élesben (star-board.com) minden termékoldalon ott áll ez a blokk.
+    expect(
+      multiUseFromProse(
+        "Paddleboards All-round / Wave GO Best Seller GO Surf Whopper Adventure Roamer " +
+          "NEW Touring Generation Surf Spice Best Seller TwinFin NEW Pro Wedge Longboard Race All Star",
+      ),
+    ).toEqual([]);
+  });
+
+  it("EGY kategóriából nem csinál kettőt", () => {
+    expect(multiUseFromProse("A perfect all-around board for beginners.")).toEqual([]);
+  });
+
+  it("a VÍZNEVEK sorolása nem kategória", () => {
+    expect(multiUseFromProse("ideális tengerre, tóra vagy folyóra")).toEqual([]);
+  });
+
+  it("a FOLYÓ mint VÍZ nem kategória, mint JELZŐ igen", () => {
+    // Élesben (fanatic.com, BLITZ AIR): „the new touring sensation especially
+    // in choppy waters or rivers" — ebből vadvízi deszka lett volna egy
+    // túradeszkából. A `river` az egyetlen típusunk, ami helynév is.
+    expect(
+      multiUseFromProse("the new touring sensation especially in choppy waters or rivers"),
+    ).toEqual([]);
+    expect(
+      multiUseFromProse("a dedicated river board and a capable touring platform"),
+    ).toEqual(["river", "touring"]);
+  });
+
+  it("a TÁVOLI szavak nem alkotnak állítást", () => {
+    expect(
+      multiUseFromProse(
+        "A touring board, és itt jön még nagyon sok kitöltő szöveg ami elválasztja őket, race.",
+      ),
+    ).toEqual([]);
   });
 });
 
