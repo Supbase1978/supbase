@@ -76,6 +76,19 @@ export interface AdvisorInputs {
 export interface BoardForAdvisor {
   id: string;
   boardType: AdvisorBoardType;
+  /**
+   * A deszka ÖSSZES használati kategóriája, egyenrangúan (F2.1-utó-43).
+   *
+   * MIÉRT: a gyártók okkal ajánlanak egy deszkát több felhasználásra — a
+   * Fanatic `TOURING / FREERACING`-et ír, a Jobe „all-around AND touring"-ot,
+   * a Gladiatornál 82 termékből 25 több aktivitás-kategóriában szerepel.
+   * Amíg a cél-illesztés egyetlen értéket nézett, egy „allround + túra"
+   * deszka a túra-célnál láthatatlan maradt, pedig a GYÁRTÓ ajánlja rá.
+   *
+   * A `boardType` az átmenet idejére megmarad, és a tömb ELSŐ elemével
+   * azonos. Hiányzó/üres tömb esetén a hívó abból képez egyeleműt.
+   */
+  boardTypes: AdvisorBoardType[];
   volumeL: number | null;
   widthCm: number | null;
   /** Deszka-hossz cm — a testmagassághoz illesztéshez (`lengthFitScore`). */

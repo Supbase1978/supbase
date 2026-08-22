@@ -116,6 +116,10 @@ export async function loader({ request }: Route.LoaderArgs) {
     return {
       id: board.id,
       boardType: board.board_type,
+      // A deszka MINDEN kategóriája (F2.1-utó-43). Üres tömb = a
+      // `board_types` bevezetése előttről származó sor: onnan az egyértékű
+      // besorolás az egyetlen elem.
+      boardTypes: board.board_types.length > 0 ? board.board_types : [board.board_type],
       volumeL: board.volume_l,
       widthCm: board.width_cm,
       lengthCm: board.length_cm,

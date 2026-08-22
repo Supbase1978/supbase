@@ -25,9 +25,10 @@ import type { AdvisorInputs, BoardForAdvisor } from "./types";
 const CFG = DEFAULT_ADVISOR_CONFIG;
 
 function makeBoard(overrides: Partial<BoardForAdvisor> = {}): BoardForAdvisor {
-  return {
+  const board: BoardForAdvisor = {
     id: "b1",
     boardType: "allround",
+    boardTypes: ["allround"],
     volumeL: 280,
     widthCm: 81,
     lengthCm: 320,
@@ -42,6 +43,11 @@ function makeBoard(overrides: Partial<BoardForAdvisor> = {}): BoardForAdvisor {
     ratingValueAvg: 4,
     ...overrides,
   };
+  // A HALMAZ a `boardType`-ból vezetődik le, ha a teszt csak azt állítja be —
+  // ez maga az invariáns: a `board_type` a `board_types` ELSŐ eleme. Így a
+  // korábbi, egyértékű tesztek változatlanul értelmesek maradnak, és épp az
+  // átmeneti viselkedést hitelesítik.
+  return overrides.boardTypes ? board : { ...board, boardTypes: [board.boardType] };
 }
 
 function makeInputs(overrides: Partial<AdvisorInputs> = {}): AdvisorInputs {
@@ -120,6 +126,55 @@ describe("passesHardFilter — 1. réteg kizárások", () => {
     expect(passesHardFilter(river, makeInputs({ water: "to" }), CFG)).toBe(false);
     // folyón viszont igen:
     expect(passesHardFilter(river, makeInputs({ water: "folyo" }), CFG)).toBe(true);
+  });
+});
+
+/**
+ * TÖBB KATEGÓRIA (F2.1-utó-43). A gyártók okkal ajánlanak egy deszkát több
+ * felhasználásra — a Fanatic `TOURING / FREERACING`-et ír, a Jobe „all-around
+ * AND touring"-ot. Amíg a cél-illesztés EGYETLEN értéket nézett, az ilyen
+ * deszka a második célnál láthatatlan maradt, pedig a gyártó ajánlja rá.
+ */
+describe("cél-illesztés a kategória-HALMAZRA", () => {
+  const multi = () =>
+    makeBoard({ boardType: "allround", boardTypes: ["allround", "touring"] });
+
+  it("az allround + túra deszka MINDKÉT célnál átmegy", () => {
+    expect(passesHardFilter(multi(), makeInputs({ use: "allround" }), CFG)).toBe(true);
+    expect(passesHardFilter(multi(), makeInputs({ use: "tura" }), CFG)).toBe(true);
+  });
+
+  it("a MÁSODIK kategória önmagában is elég a szűréshez", () => {
+    // A „verseny" célnál csak a `race` engedett; az elsődleges besorolás
+    // allround, a halmaz második eleme viszont race.
+    const board = makeBoard({
+      boardType: "allround",
+      boardTypes: ["allround", "race"],
+      widthCm: 66,
+    });
+    expect(passesHardFilter(board, makeInputs({ use: "verseny" }), CFG)).toBe(true);
+  });
+
+  it("a TISZTÁN illeszkedő deszka cél-pontja nem rosszabb a többkategóriásénál", () => {
+    // A halmazból a LEGJOBBAN illeszkedő tag dönt, tehát a többkategóriás nem
+    // kap büntetést — de előnyt sem: a tiszta túradeszka ugyanazt a 1,0-t kapja.
+    const inputs = makeInputs({ use: "tura" });
+    const pure = makeBoard({ boardType: "touring", boardTypes: ["touring"] });
+    expect(purposeFitScore(multi(), inputs)).toBeLessThanOrEqual(purposeFitScore(pure, inputs));
+  });
+
+  it("a halmazon KÍVÜLI cél továbbra is kizár", () => {
+    // A „verseny" az EGYETLEN cél, ami csak egy típust enged (`race`) — a
+    // többinél az allround másodlagosként amúgy is bejön, tehát ott nem
+    // lehetne kizárást mérni.
+    const board = makeBoard({ boardType: "allround", boardTypes: ["allround", "touring"] });
+    expect(passesHardFilter(board, makeInputs({ use: "verseny" }), CFG)).toBe(false);
+  });
+
+  it("ÜRES halmaznál a régi egyértékű besorolás dönt (átmenet)", () => {
+    const legacy = makeBoard({ boardType: "race", boardTypes: [], widthCm: 66 });
+    expect(passesHardFilter(legacy, makeInputs({ use: "verseny" }), CFG)).toBe(true);
+    expect(passesHardFilter(legacy, makeInputs({ use: "joga" }), CFG)).toBe(false);
   });
 });
 

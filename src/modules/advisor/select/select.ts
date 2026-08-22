@@ -182,7 +182,12 @@ export function passesHardFilter(
     return false;
   }
   // (f) cél-mapping (víz- és nehéz-evezős kiterjesztéssel)
-  if (!allowedBoardTypes(inputs, config).includes(board.boardType)) return false;
+  //
+  // A deszka MINDEN kategóriája számít (F2.1-utó-43), nem csak az első: a
+  // gyártó okkal ajánl egy deszkát több felhasználásra. Egy „allround + túra"
+  // deszka eddig a túra-célnál láthatatlan maradt, pedig a GYÁRTÓ ajánlja rá.
+  const allowed = allowedBoardTypes(inputs, config);
+  if (!boardTypesOf(board).some((type) => allowed.includes(type))) return false;
 
   return true;
 }
@@ -204,7 +209,7 @@ export function explainNoMatch(
   if (boards.length === 0) return "noBoards";
 
   const allowed = allowedBoardTypes(inputs, config);
-  const byType = boards.filter((b) => allowed.includes(b.boardType));
+  const byType = boards.filter((b) => boardTypesOf(b).some((type) => allowed.includes(type)));
   if (byType.length === 0) return "type";
 
   // A többszemélyes „mega" deszkák kiszűrése ITT, az elérhetőség ELŐTT: az
@@ -391,9 +396,25 @@ function waterFit(bt: AdvisorBoardType, water: WaterChoice): number {
  */
 export function purposeFitScore(board: BoardForAdvisor, inputs: AdvisorInputs): number {
   const pref = USE_BOARD_TYPES[inputs.use];
-  const idx = pref.indexOf(board.boardType);
-  const typeScore = idx === 0 ? 1.0 : idx > 0 ? 0.7 : 0.5;
-  return clamp(typeScore * waterFit(board.boardType, inputs.water), 0, 1);
+  // A LEGJOBBAN illeszkedő kategória dönt (F2.1-utó-43). Egy „allround + túra"
+  // deszka a túra-célnál a TÚRA szerint pontozódik — de a tisztán túrás
+  // megfelelője így is megelőzi, ha annak minden más mutatója egyezik.
+  let best = 0;
+  for (const type of boardTypesOf(board)) {
+    const idx = pref.indexOf(type);
+    const typeScore = idx === 0 ? 1.0 : idx > 0 ? 0.7 : 0.5;
+    best = Math.max(best, typeScore * waterFit(type, inputs.water));
+  }
+  return clamp(best, 0, 1);
+}
+
+/**
+ * A deszka kategóriái, az ÁTMENET kezelésével: üres tömb esetén a régi
+ * egyértékű `boardType` az egyetlen elem. Így a `board_types` bevezetése
+ * előttről származó sorok és a tesztek is helyesen viselkednek.
+ */
+function boardTypesOf(board: BoardForAdvisor): AdvisorBoardType[] {
+  return board.boardTypes.length > 0 ? board.boardTypes : [board.boardType];
 }
 
 /**
