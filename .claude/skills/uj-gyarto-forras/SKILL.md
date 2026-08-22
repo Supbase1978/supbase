@@ -150,6 +150,26 @@ Mind élesben mért eset. Ha valamelyik mező üres vagy gyanús, itt keresd:
   **Kettőspontnál (`Capacity:`) az „előtte" ág nem él** — a kettőspont maga
   mondja ki, hogy az érték utána jön.
 
+**TÖBBES használat a prózából — és a menü-csapda**
+- A gyártók a PRÓZÁBAN mondják ki, ha egy deszka többféle célra jó („Ideal for
+  both **all-around** paddling **and touring**"), a spec-táblában soha. A
+  katalógus halmaz-modellje (`board_types`) ezt el is tudja tárolni.
+- **A tárolt `raw.description` erre kevés**: rövid SEO-blurb, medián 196
+  karakter — mérve 210-ből 195 semmit nem ad. A teljes termékoldalt kell
+  olvasni (`suggest-categories --from-pages`).
+- **A TELJES OLDALSZÖVEGRE viszont TILOS kulcsszó-olvasót ereszteni.** A
+  navigációs menü minden termékoldalon felsorolja a gyártó ÖSSZES
+  kategóriáját („Paddleboards All-round / Wave … Touring … Race"), tehát egy
+  ilyen menet MINDEN deszkára MINDEN kategóriát ráírna. Ez a katalógus
+  leggyorsabb elrontása.
+- A `multiUseFromProse` ezért a MONDAT SZERKEZETÉRE szűr: két kategória-szó,
+  **közöttük kötőszó**, egy rövid mondaton belül. A menü nem mondat, és nincs
+  benne kötőszó — így nem ugrik rá.
+- `river`: az EGYETLEN típus, ami helynév is. „choppy waters or **rivers**" =
+  víz, nem besorolás (élesben ebből lett volna vadvízi deszka egy
+  túradeszkából). Csak a jelzős alak számít: `river board`, `whitewater`,
+  `folyami`.
+
 **Kategória PRÓZÁBÓL**
 - `ideális tengerre, tóra vagy folyóra` — a kategória-szó **prózában úti célt
   jelenthet**, nem besorolást. Élesben (sup-deszka.hu) ebből VADVÍZI deszka
