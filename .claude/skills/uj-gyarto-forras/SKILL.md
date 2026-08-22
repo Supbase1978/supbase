@@ -273,6 +273,47 @@ Ha gyanú-jelet látsz, **először a termékoldalt nézd meg**: gyakran egyetle
 modell HTML-je tér el a többitől. Ha viszont sok terméknél jön, akkor a recept
 vagy a kinyerés a hibás.
 
+## NYISS BÖNGÉSZŐT, mielőtt tovább próbálkozol a crawlerrel
+
+**Ha a forrás kizár (`429`), vagy a keresett adat JS-ből épül, a következő
+lépés a böngésző — nem a crawler újrafuttatása.** Élesben (zraysports.com,
+2026-08-22) ezt elmulasztottam: a felhasználó kétszer is jelezte, hogy van
+böngésző, én mégis a crawlerrel próbálkoztam tovább, amíg a forrás
+`429 Too Many Requests`-tel ki nem zárt minket. A böngésző UGYANAKKOR
+gond nélkül betöltötte ugyanazt az oldalt.
+
+```
+mcp__playwright__browser_navigate  → betölti az oldalt JS-sel együtt
+mcp__playwright__browser_evaluate  → kiolvassa, amit a crawler nem lát
+```
+
+Az `evaluate`-en belül **`fetch` is használható**: az oldal saját eredetéből
+kérve egyetlen hívással végigjárható az összes kategória-oldal, DOM-mal
+együtt (`new DOMParser().parseFromString(html, "text/html")`).
+
+### A taxonómia kiolvasása többet ér, mint egy rendereléses menet
+
+Ha a kategória JS-ből jön, két út van:
+
+| | költség | tartósság |
+|---|---|---|
+| rendereléses crawl-menet (`renderWhenEmpty`) | MINDEN futásnál böngésző | a forrás bármikor kizárhat |
+| a **taxonómia** egyszeri kiolvasása → `boardTypeByUrl` | egyszeri | a receptben marad, verziózva |
+
+A második a jobb, és háromszor bizonyított: **Gladiator**
+(`/catalog_activity/…`), **Zray** (`/ProductInfoCategory?categoryId=…`),
+**Starboard** (a fejléc-menü modellcsalád→kategória bontása).
+
+A menetrend: nyisd meg a kategória-oldalt böngészővel → gyűjtsd ki a
+`termék-URL → kategória` párokat → írd be a recept `boardTypeByUrl`
+mezőjébe, a leképezés INDOKLÁSÁVAL (mit jelent a gyártó saját kategóriája a
+mi taxonómiánkban).
+
+**A gyártó kategórianeve nem mindig a használat.** A Zray „Vigour"
+kollekciója a saját leírása szerint „balance training… for fitness and yoga
+enthusiasts" — az `yoga`, nem egy „vigour" nevű új típus. Olvasd el a
+kollekció leírását, mielőtt leképezed.
+
 ## „Nem találom" kontra „a gyártó nem közli"
 
 **Mielőtt egy hiányzó mezőt hibaként kezdesz javítani, nézd meg a gyártó
