@@ -1955,6 +1955,46 @@ function resolveBoardType(
   return { boardType: null, boardTypeSource: null };
 }
 
+/** A rögzítés legalább ennyi karakter legyen, hogy a záró-illesztés ne tévedjen. */
+const MIN_PIN_SLUG_LENGTH = 6;
+
+/**
+ * MODERÁTORI RÖGZÍTÉS illesztése az URL-re (`crawl_config.boardTypeByUrl`).
+ *
+ * Elsőként a régi, egyszerű részstring-egyezés — ez viszi az esetek zömét.
+ *
+ * ALIAS-URL-EK: van forrás, ami UGYANAZT a terméket két címen szolgálja ki,
+ * márkanév-előtaggal és anélkül. Élesben mérve (gladiatorsup.com): a
+ * rögzítések a kanonikus `/catalog/elite-11-6/` alakra készültek (a gyártó
+ * kategória-oldalairól), a jelöltek egy része viszont
+ * `/catalog/gladiator-elite-11-6/` címen érkezett — és ott a moderátori döntés
+ * NEM érvényesült, pedig ugyanarról a deszkáról van szó. 8 jelölt.
+ *
+ * A záró-illesztés KÖTŐJEL-HATÁRON megy és minimális hosszt követel, hogy egy
+ * rövid rögzítés ne fogjon meg idegen terméket (`pro-11-6` és `elite-11-6`
+ * nem téveszthető össze).
+ */
+function matchPinnedType(
+  sourceUrl: string,
+  boardTypeByUrl: Readonly<Record<string, BoardType>>,
+): BoardType | null {
+  const entries = Object.entries(boardTypeByUrl);
+  const direct = entries.find(([needle]) => sourceUrl.includes(needle));
+  if (direct) return direct[1];
+
+  const lastSegment = (value: string): string =>
+    value.split("?")[0]!.split("/").filter(Boolean).pop() ?? "";
+  const urlSlug = lastSegment(sourceUrl);
+  if (urlSlug === "") return null;
+
+  const alias = entries.find(([needle]) => {
+    const pinSlug = lastSegment(needle);
+    if (pinSlug.length < MIN_PIN_SLUG_LENGTH || pinSlug === urlSlug) return false;
+    return urlSlug.endsWith(`-${pinSlug}`);
+  });
+  return alias?.[1] ?? null;
+}
+
 export interface PageExtractionOptions {
   /**
    * Kézi kategória-rögzítés (`crawl_config.boardTypeByUrl`): URL-részlet →
@@ -2045,10 +2085,7 @@ export function extractProductFromPage(
   const usageType = usage;
 
   // Moderátori rögzítés (a legerősebb jel): URL-részlet szerint.
-  const pinnedType =
-    Object.entries(boardTypeByUrl).find(([needle]) =>
-      sourceUrl.includes(needle),
-    )?.[1] ?? null;
+  const pinnedType = matchPinnedType(sourceUrl, boardTypeByUrl);
 
   const extracted: ExtractedProduct = {
     sourceUrl,

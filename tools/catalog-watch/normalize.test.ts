@@ -1462,6 +1462,46 @@ describe("morzsamenü mint kategória-forrás", () => {
 });
 
 /**
+ * ALIAS-URL-EK ÉS A MODERÁTORI RÖGZÍTÉS (F2.1-utó-39).
+ *
+ * Élesben (gladiatorsup.com) ugyanaz a termék KÉT címen áll: a kanonikus
+ * `/catalog/elite-11-6/` és a márkanév-előtagos `/catalog/gladiator-elite-11-6/`.
+ * A rögzítések a gyártó kategória-oldalairól származnak, tehát a kanonikus
+ * alakot viselik — az alias-címen érkező jelöltnél a moderátori döntés
+ * elveszett. 8 jelöltet érintett.
+ */
+describe("boardTypeByUrl — alias-URL", () => {
+  const page = (body: string, title = "ELITE 11.6") =>
+    `<html><head><title>${title}</title></head><body><p>SIZES AND SPECS</p><p>${body
+      .split("\n")
+      .join("</p><p>")}</p></body></html>`;
+  const SPEC = [
+    "BOARD", "VOLUME (L)", "LENGTH (IN / CM)", "WIDTH (IN / CM)", "REC. USER WEIGHT",
+    "ELITE 11.6", "330", `11'6'' / 354`, `34" / 86`, "UP TO 140 KG",
+  ].join("\n");
+  const pins = { "/catalog/elite-11-6/": "touring" } as const;
+  const opts = { boardTypeByUrl: pins, titleSuffixes: [], titleCutAfter: [] };
+
+  it("a KANONIKUS URL-en él a rögzítés", () => {
+    const p = extractProductsFromPage(page(SPEC), "https://x.com/catalog/elite-11-6/", "Gladiator", opts)[0];
+    expect(p?.boardType).toBe("touring");
+    expect(p?.boardTypeSource).toBe("pinned");
+  });
+
+  it("az ALIAS URL-en is (márkanév-előtag)", () => {
+    const p = extractProductsFromPage(page(SPEC), "https://x.com/catalog/gladiator-elite-11-6/", "Gladiator", opts)[0];
+    expect(p?.boardType).toBe("touring");
+    expect(p?.boardTypeSource).toBe("pinned");
+  });
+
+  it("IDEGEN modellre NEM ragad rá", () => {
+    // A záró-illesztés kötőjel-határon megy: a `pro-11-6` nem `elite-11-6`.
+    const p = extractProductsFromPage(page(SPEC, "PRO 11.6"), "https://x.com/catalog/pro-11-6/", "Gladiator", opts)[0];
+    expect(p?.boardTypeSource).not.toBe("pinned");
+  });
+});
+
+/**
  * MÉRETENKÉNTI BONTÁS (F2.1-utó-35, fanatic.com). A gyártó EGY oldalon
  * sorolja fel a modellcsalád minden méretét, egyetlen spec-táblában. A SUP-nál
  * a MÉRET maga a termék (a Deszkaválasztó hossz/szélesség alapján pontoz),
