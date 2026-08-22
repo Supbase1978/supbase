@@ -820,6 +820,22 @@ describe("classifyProduct — ami SOSEM deszka", () => {
     ).toEqual({ kind: "ignore" });
   });
 
+  it("a BODYBOARD sem deszka, pedig a nevében ott van a board szó", () => {
+    // Élesben (zraysports.com): „Marine Bodyboard - B1", 122×71×10 cm,
+    // teherbírás 160 kg. A deszka-főnév szabály átengedte (van benne „board"),
+    // a méret-tartomány pedig nem védett, mert a teherbírást kiírják.
+    // A hason fekve használt hullámdeszka nem SUP — a szörf-kizárással egy
+    // döntés alá esik.
+    expect(
+      classifyProduct({
+        rawTitle: "Marine Bodyboard - B1",
+        modelName: "Marine Bodyboard B1",
+        boardType: null,
+        specs: { ...kayakSpecs, lengthCm: 122, widthCm: 71, thicknessCm: 10, maxLoadKg: 160 },
+      }),
+    ).toEqual({ kind: "ignore" });
+  });
+
   it("az URL-ből jövő kategória-jel is elég a kizáráshoz", () => {
     // A cím önmagában ártatlan („Halve"), a kategória viszont árulkodó.
     expect(

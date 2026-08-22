@@ -1184,6 +1184,13 @@ const NEVER_BOARD_KEYWORDS = [
   // Gyűjtő-/kategórialap, nem termék („SUP Equipment").
   "equipment",
   "felszereles",
+  // BODYBOARD: hason fekve használt hullámdeszka, nem SUP (élesben:
+  // zraysports.com „Marine/Grain/Flower Bodyboard B1-B3", 122×71 cm). A
+  // nevében ott a „board", ezért a deszka-főnév szabály átengedi — és a
+  // méret-tartomány sem véd, mert a teherbírását kiírják. A szörf-kizárással
+  // egy döntés alá esik (2026-08-19: „a surf egy teljesen más dolog").
+  "bodyboard",
+  "body board",
 ];
 
 /** A deszka-mivolt pozitív jelei a névben/leírásban. */
