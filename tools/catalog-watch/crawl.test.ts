@@ -43,6 +43,8 @@ function makeStore(boards: BoardForMatch[] = BOARDS) {
   const prices: { boardId: string; priceHuf: number }[] = [];
   const seen: { boardId: string; inStock: boolean | null }[] = [];
   const candidates: CandidateInput[] = [];
+  /** MINDEN saveCandidate hívás — a csak-frissítő is (`refreshOnly`). */
+  const savedInputs: CandidateInput[] = [];
   const crawled: string[] = [];
   const store: CrawlStore = {
     listBoardsForMatch: async () => boards,
@@ -53,6 +55,11 @@ function makeStore(boards: BoardForMatch[] = BOARDS) {
       seen.push({ boardId: input.boardId, inStock: input.inStock });
     },
     saveCandidate: async (input) => {
+      savedInputs.push(input);
+      // A `refreshOnly` hívás a MEGLÉVŐ jelöltet frissítené — ez a hamis
+      // tároló üresen indul, tehát ott nincs mit frissíteni. Ugyanaz a
+      // szemantika, mint az éles tárolóban: újat NEM hoz létre.
+      if (input.refreshOnly) return false;
       candidates.push(input);
       return true;
     },
@@ -60,7 +67,7 @@ function makeStore(boards: BoardForMatch[] = BOARDS) {
       crawled.push(sourceId);
     },
   };
-  return { store, prices, seen, candidates, crawled };
+  return { store, prices, seen, candidates, crawled, savedInputs };
 }
 
 /** Hálózat-imitáció URL→(status, text) térképpel; a lekért URL-eket rögzíti. */
@@ -89,7 +96,7 @@ const HAPPY_NETWORK = {
 describe("crawlSource — teljes menet", () => {
   it("ismert deszkára árat ír, ismeretlenre jelöltet készít", async () => {
     const network = makeNetwork(HAPPY_NETWORK);
-    const { store, prices, seen, candidates, crawled } = makeStore();
+    const { store, prices, seen, candidates, crawled, savedInputs } = makeStore();
 
     const summary = await crawlSource(SOURCE, { fetchText: network.fetchText, store });
 
@@ -104,6 +111,12 @@ describe("crawlSource — teljes menet", () => {
     expect(candidates[0]?.extracted.modelName).toBe("Origin Pro");
     expect(candidates[0]?.extracted.specs.maxLoadKg).toBe(140);
     expect(crawled).toEqual(["src-1"]);
+    // Az ISMERT deszkára is megy `saveCandidate` hívás, de CSAK FRISSÍTÉSKÉNT
+    // (F2.1-utó-39). Enélkül egy régi, még elbírálatlan jelölt örökre a régi
+    // adatával marad a moderátor előtt, hiába javítottuk azóta a kinyerést —
+    // élesben ez a 210 cm-es ATLAS-t és 27 Gladiator-jelöltet érintette.
+    expect(savedInputs.filter((input) => input.refreshOnly)).toHaveLength(1);
+    expect(savedInputs.find((input) => input.refreshOnly)?.matchedBoardId).toBe("b-vapor");
   });
 
   it("a blog-URL-t meg sem kéri (udvarias crawl)", async () => {

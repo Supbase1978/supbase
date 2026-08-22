@@ -71,6 +71,19 @@ export interface CandidateInput {
   extracted: ExtractedProduct;
   matchedBoardId: string | null;
   confidence: number;
+  /**
+   * CSAK FRISSÍTÉS: ha ehhez az URL-hez nincs jelölt-sor, NE hozzon létre újat.
+   *
+   * MIÉRT KELL (F2.1-utó-39): ha egy termék már ISMERT deszkára illeszkedik, a
+   * figyelő ársort ír és a jelölt-sorhoz hozzá sem nyúl. Így viszont egy még
+   * elbírálatlan, RÉGI jelölt örökre a régi — és rosszabb — adatával marad,
+   * hiába javítottuk azóta a kinyerést. Élesben kétszer is ez fogott meg:
+   * a 210 cm-es ATLAS és 27 kategória nélküli Gladiator-jelölt.
+   *
+   * Újat azért nem hozunk létre, mert az ismert deszkához nem KELL jelölt — az
+   * ár és a láthatóság a `board_prices`/`last_seen_at` útján megy.
+   */
+  refreshOnly?: boolean;
 }
 
 /** Az írási oldal — valós Supabase-store vagy dry-run gyűjtő implementálja. */
@@ -312,6 +325,19 @@ async function persistExtracted(input: {
       });
       summary.pricesRecorded += 1;
     }
+    // A MÉG ELBÍRÁLATLAN jelölt-sort akkor is frissítjük, ha a termék közben
+    // ismert deszkára illeszkedik. Enélkül a régi jelölt örökre a régi
+    // adatával marad a moderátor előtt — élesben 27 kategória nélküli
+    // Gladiator-jelöltet és a 210 cm-es ATLAS-t érintette. Újat nem hoz létre.
+    await deps.store.saveCandidate({
+      sourceId: source.id,
+      url,
+      raw,
+      extracted: product,
+      matchedBoardId: match.boardId,
+      confidence: match.confidence,
+      refreshOnly: true,
+    });
     return;
   }
 

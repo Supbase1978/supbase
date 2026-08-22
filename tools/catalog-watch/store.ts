@@ -311,6 +311,11 @@ export function createSupabaseStore(client: SupabaseClient): CrawlStore {
         return false;
       }
 
+      // CSAK FRISSÍTÉS (F2.1-utó-39): ismert deszkánál a meglévő, elbírálatlan
+      // jelöltet frissítjük, de ÚJAT nem hozunk létre — az ismert deszkához
+      // nem kell jelölt, az ár és a láthatóság külön úton megy.
+      if (input.refreshOnly) return false;
+
       const payload = {
         source_id: input.sourceId,
         url: input.url,
@@ -377,6 +382,9 @@ export function createDryRunStore(client: SupabaseClient): {
         log.seen.push({ boardId: input.boardId, inStock: input.inStock });
       },
       async saveCandidate(input) {
+        // Csak-frissítés: dry-runban nem tudjuk, van-e meglévő sor, és a
+        // kimenet arról szól, mi JÖNNE LÉTRE — a frissítés nem tartozik ide.
+        if (input.refreshOnly) return false;
         log.candidates.push({
           url: input.url,
           modelName: input.extracted.modelName,
