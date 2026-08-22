@@ -6,6 +6,17 @@
  *  * A termék-URL puszta sorszám (`/productinfo/854740.html`), a leírás nem
  *    mond kategóriát — a besorolás a MORZSAMENÜBŐL jön
  *    (`HOME › EVO COLLECTION › ALL AROUND EVO`).
+ *  * KÉTFÉLE OLDALSABLON (2026-08-22). A régebbi modelleknél a morzsamenü ott
+ *    van a nyers HTML-ben; az ÚJABBAKNÁL (VIGOUR, SUPER, WINDSURF PRO) csak
+ *    JS-futás után jelenik meg — a nyers HTML-ben egyetlen kategória-szó
+ *    sincs. A felhasználó a böngészőben mindet látja
+ *    (`HOME › Product - Zray | SUP & KAYAK › SUP › Touring › GRAIN 10'8"`),
+ *    a crawler viszont nem.
+ *
+ *    A böngésző-renderelés NEM ellenőrizhető rajta: a forrás agresszíven
+ *    korlátoz, és a próba `429 Too Many Requests`-et adott. 4 terméket érint,
+ *    ezért a moderátori rögzítés (`boardTypeByUrl`) olcsóbb, mint egy
+ *    renderelős menetet építeni rá.
  *  * Az ikonjaihoz HANGUL karaktereket használ, ami az NFD-hajtásnál
  *    index-csúszást okozott: a „Volume: 379L" ablak „9L"-ként indult.
  *  * A cím utótagja minden oldalon `-Zray Official Site`.
