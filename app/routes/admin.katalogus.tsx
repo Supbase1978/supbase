@@ -25,12 +25,14 @@ import {
   listBoardsForLifecycle,
   listBoardsWithGallery,
   listPendingCandidates,
+  loadFamilyTypeMap,
   mergeCandidate,
   rejectCandidate,
   setBoardDiscontinued,
   setBoardGallery,
 } from "@modules/catalog/data/candidates.server";
 import { findDuplicateHints } from "@modules/catalog/data/duplicate-hints";
+import { inferBoardType } from "@modules/catalog/family-type";
 import { GEAR_CATEGORIES, isGearCategory, type GearCategory } from "@modules/catalog/gear";
 import { DEFAULT_UNSEEN_DAYS, findDiscontinuedCandidates } from "@modules/catalog/lifecycle";
 import { BOARD_TYPES, type BoardType } from "@modules/catalog/types";
@@ -41,13 +43,17 @@ export async function loader({ request }: Route.LoaderArgs) {
   await requireRole(request, "moderator");
   const { supabase } = createSupabaseServerClient(request);
 
-  const [candidates, boardChoices, accessoryChoicesByCategory, boards, galleries] =
+  const [candidates, boardChoices, accessoryChoicesByCategory, boards, galleries, familyTypes] =
     await Promise.all([
       listPendingCandidates(supabase),
       listBoardChoices(supabase),
       listAccessoryChoicesByCategory(supabase),
       listBoardsForLifecycle(supabase),
       listBoardsWithGallery(supabase),
+      // CSALÁD → KATEGÓRIA a már jóváhagyott deszkákból (F2.1-utó-40): a
+      // gyártói kollekciók csak az aktuális évjáratot sorolják be, a régebbi
+      // példányok kategória nélkül érkeznek — pedig ugyanaz a deszka.
+      loadFamilyTypeMap(supabase),
     ]);
 
   // Jelölt↔jelölt duplikátum-gyanú (F2.1-utó-8): a `matchedBoardLabel` csak
@@ -77,6 +83,7 @@ export async function loader({ request }: Route.LoaderArgs) {
   return {
     candidates: candidates.map(({ candidate, sourceName, matchedBoardLabel }) => {
       const hint = duplicateHints.get(candidate.id);
+      const extracted = candidate.extracted;
       return {
         id: candidate.id,
         url: candidate.url,
@@ -84,6 +91,12 @@ export async function loader({ request }: Route.LoaderArgs) {
         matchedBoardId: candidate.matched_board_id,
         matchedBoardLabel,
         confidence: candidate.match_confidence,
+        // A MODELLCSALÁDBÓL örökölhető kategória, ha a kinyerés nem talált.
+        // A felület előre bejelöli, de MEGMONDJA, hogy örökölt — nem mérés.
+        inheritedType:
+          extracted !== null && extracted.boardType === null
+            ? inferBoardType(familyTypes, extracted.brandName, extracted.modelName)
+            : null,
         extracted: candidate.extracted,
         duplicateHint: hint
           ? {
@@ -493,11 +506,15 @@ function CandidateCard({
               // olyanból, amiről semmit nem tudtunk. Ez a felület által
               // GYÁRTOTT hamis adat, a legrosszabb fajta: úgy néz ki, mint egy
               // mérés. Üresen hagyva a moderátornak választania KELL.
-              defaultValue={extracted.boardType ?? ""}
+              // ÖRÖKLÉS a modellcsaládból, ha a kinyerés nem talált kategóriát
+              // (felhasználói döntés, 2026-08-21: „előválasztva, de jelölve").
+              // A felirat megmondja, hogy ez ÖRÖKÖLT érték — nem a
+              // termékoldalon mért adat.
+              defaultValue={extracted.boardType ?? candidate.inheritedType ?? ""}
               required
               className="rounded-lg border border-line bg-surface px-2 py-1.5 text-sm text-text"
             >
-              {extracted.boardType === null ? (
+              {extracted.boardType === null && candidate.inheritedType === null ? (
                 <option value="">{t("admin.typeChoose")}</option>
               ) : null}
               {BOARD_TYPES.map((type) => (
@@ -516,7 +533,9 @@ function CandidateCard({
           Kategória nélküli jelöltnél a moderátornak azt kell tudnia, hogy a
           figyelő NEM talált semmit — nem azt, hogy „nézd át a tippet". */}
       <p className="mt-1 text-xs text-text-3">
-        {extracted.boardType === null
+        {extracted.boardType === null && candidate.inheritedType !== null
+          ? t("admin.typeInherited")
+          : extracted.boardType === null
           ? t("admin.typeUnknown")
           : t("admin.typeHint", {
               source: t(`admin.typeSource.${extracted.boardTypeSource ?? "unknown"}`),

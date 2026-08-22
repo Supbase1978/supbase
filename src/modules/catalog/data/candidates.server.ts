@@ -14,6 +14,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { slugify } from "@core/text/slug";
 
+import { buildFamilyTypeMap, type TypedExample } from "../family-type";
 import { GEAR_CATEGORIES, type GearCategory } from "../gear";
 import type {
   BoardImage,
@@ -586,4 +587,44 @@ export async function setBoardGallery(
  */
 function galleryImagesPayload(extracted: ExtractedBoardData): { url: string; source: "brand" }[] {
   return (extracted.imageUrls ?? []).map((url) => ({ url, source: "brand" as const }));
+}
+
+/**
+ * CSALÁD → KATEGÓRIA a már JÓVÁHAGYOTT deszkákból (F2.1-utó-40).
+ *
+ * MIÉRT KELL A MODERÁCIÓS FELÜLETNEK: a gyártói kollekciók csak az aktuális
+ * évjáratot sorolják be, a régebbi példányok kategória nélkül érkeznek — pedig
+ * ugyanaz a deszka. Eddig ezt csak a parancssori tömeges jóváhagyó tudta, a
+ * moderátornak tehát magának kellett kitalálnia. Mérve (2026-08-22): a 74
+ * kategória nélküli Starboard-jelöltből 37 örökölhető.
+ *
+ * CSAK ÉLŐ, JÓVÁHAGYOTT deszka a forrás (`trusted: true`): azokat moderátor
+ * nézte át. Egy bolti tipp NEM kerülhet ide — élesben a `sup-deszka.hu` a
+ * „FUSION 10'10" 150 kg" címből `kids`-et vezetett le, és az a téves érték a
+ * család MINDEN tagjára rákerült volna.
+ */
+export async function loadFamilyTypeMap(
+  supabase: SupabaseClient,
+): Promise<ReadonlyMap<string, BoardType>> {
+  const { data, error } = await supabase
+    .from("boards")
+    .select("model_name, board_type, brand:brands(name)")
+    .eq("kind", "board")
+    .not("board_type", "is", null);
+  if (error || !data) return new Map();
+
+  const examples: TypedExample[] = (data as unknown[]).map((row) => {
+    const typed = row as {
+      model_name: string;
+      board_type: BoardType;
+      brand: { name: string } | null;
+    };
+    return {
+      brandName: typed.brand?.name ?? null,
+      modelName: typed.model_name,
+      boardType: typed.board_type,
+      trusted: true,
+    };
+  });
+  return buildFamilyTypeMap(examples).byFamily;
 }

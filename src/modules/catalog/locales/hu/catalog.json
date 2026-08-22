@@ -107,7 +107,8 @@
       "description": "a gyártó leírásából következtetve",
       "family": "a modellcsaládból örökölve",
       "unknown": "ismeretlen"
-    }
+    },
+    "typeInherited": "A MODELLCSALÁDBÓL örökölve (ugyanez a modell más évjárata már be van sorolva) — nem a termékoldalon mért adat, ezért nézd át."
   },
   "gear": {
     "seo": {

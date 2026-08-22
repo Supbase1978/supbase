@@ -107,7 +107,8 @@
       "description": "inferred from the maker's description",
       "family": "inherited from the model family",
       "unknown": "unknown"
-    }
+    },
+    "typeInherited": "Inherited from the MODEL FAMILY (another year of this model is already classified) — not measured on the product page, so review it."
   },
   "gear": {
     "seo": {
