@@ -1982,17 +1982,38 @@ function matchPinnedType(
   const direct = entries.find(([needle]) => sourceUrl.includes(needle));
   if (direct) return direct[1];
 
-  const lastSegment = (value: string): string =>
-    value.split("?")[0]!.split("/").filter(Boolean).pop() ?? "";
-  const urlSlug = lastSegment(sourceUrl);
+  const urlSlug = normalizePinSlug(sourceUrl);
   if (urlSlug === "") return null;
 
   const alias = entries.find(([needle]) => {
-    const pinSlug = lastSegment(needle);
-    if (pinSlug.length < MIN_PIN_SLUG_LENGTH || pinSlug === urlSlug) return false;
-    return urlSlug.endsWith(`-${pinSlug}`);
+    const pinSlug = normalizePinSlug(needle);
+    if (pinSlug.length < MIN_PIN_SLUG_LENGTH) return false;
+    return urlSlug === pinSlug || urlSlug.endsWith(pinSlug);
   });
   return alias?.[1] ?? null;
+}
+
+/**
+ * URL → összehasonlítható modell-szlug.
+ *
+ * Három zajforrást tüntet el, mind élesben mérve (gladiatorsup.com):
+ *
+ *  * CSOMAG-VÁLTOZAT: `…-elite-12-6t-without-a-paddle`. Az evező a csomag
+ *    tartozéka — a DESZKA besorolása ettől nem változik (felhasználói
+ *    észrevétel, 2026-08-22). 6 jelöltet érintett.
+ *  * ÉVJÁRAT-UTÓTAG: `…-elite-14-0gt-2026`.
+ *  * ELVÁLASZTÁS: a rögzítés `elite-12-6-s`, a jelölt URL-je `elite-12-6s`.
+ *    Ugyanaz a modell, kétféle írásmóddal — ezért esik ki minden kötőjel.
+ *
+ * A márkanév-előtagot (`gladiator-…`) a hívó záró-illesztése kezeli.
+ */
+function normalizePinSlug(value: string): string {
+  const segment = value.split("?")[0]!.split("/").filter(Boolean).pop() ?? "";
+  return segment
+    .toLowerCase()
+    .replace(/-(?:with|without)-a-paddle$/, "")
+    .replace(/-20\d{2}$/, "")
+    .replace(/-/g, "");
 }
 
 export interface PageExtractionOptions {

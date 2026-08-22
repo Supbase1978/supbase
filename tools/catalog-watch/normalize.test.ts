@@ -1494,6 +1494,43 @@ describe("boardTypeByUrl — alias-URL", () => {
     expect(p?.boardTypeSource).toBe("pinned");
   });
 
+  it("a CSOMAG-VÁLTOZAT ugyanazt a besorolást kapja", () => {
+    // Felhasználói észrevétel (2026-08-22): „amennyiben tudjuk, hogy az Elite
+    // 12.6T a touring, akkor nem mindegy hogy a without paddle vagy azzal
+    // együtt? ettől még a deszka besorolása nem változik." Az evező a CSOMAG
+    // tartozéka — 6 jelöltet érintett.
+    const p = extractProductsFromPage(
+      page(SPEC),
+      "https://x.com/catalog/gladiator-elite-11-6-without-a-paddle/",
+      "Gladiator",
+      opts,
+    )[0];
+    expect(p?.boardType).toBe("touring");
+    expect(p?.boardTypeSource).toBe("pinned");
+  });
+
+  it("az ÉVJÁRAT-utótag sem számít külön modellnek", () => {
+    const p = extractProductsFromPage(
+      page(SPEC),
+      "https://x.com/catalog/elite-11-6-2026/",
+      "Gladiator",
+      opts,
+    )[0];
+    expect(p?.boardTypeSource).toBe("pinned");
+  });
+
+  it("az ELVÁLASZTÁS különbsége sem: `elite-11-6` = `elite-116`", () => {
+    // A rögzítések egy része `gladiator-elite-12-6-s`, a jelölt URL-je
+    // `elite-12-6s` — ugyanaz a modell, kétféle írásmóddal.
+    const p = extractProductsFromPage(
+      page(SPEC),
+      "https://x.com/catalog/elite-116/",
+      "Gladiator",
+      opts,
+    )[0];
+    expect(p?.boardTypeSource).toBe("pinned");
+  });
+
   it("IDEGEN modellre NEM ragad rá", () => {
     // A záró-illesztés kötőjel-határon megy: a `pro-11-6` nem `elite-11-6`.
     const p = extractProductsFromPage(page(SPEC, "PRO 11.6"), "https://x.com/catalog/pro-11-6/", "Gladiator", opts)[0];
