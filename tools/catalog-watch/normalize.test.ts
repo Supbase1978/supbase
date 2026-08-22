@@ -836,6 +836,40 @@ describe("classifyProduct — ami SOSEM deszka", () => {
     ).toEqual({ kind: "ignore" });
   });
 
+  it("az úszó MATRAC és PLATFORM sem deszka, a WINDSURF viszont igen", () => {
+    // Felhasználói döntés (2026-08-22): „a windsurf maradjon, a matrac ne
+    // maradjon akárcsak a platform se". Amit nem evezünk, hanem fekszünk vagy
+    // állunk rajta, az nem SUP; a windsurf-deszka viszont sík vízen az.
+    const platformSpecs = { ...kayakSpecs, lengthCm: 305, widthCm: 183, maxLoadKg: 374 };
+    for (const title of ["VIGOUR AIRMAT", "AirDock", "Yoga Dock platform BT 19YD"]) {
+      expect(
+        classifyProduct({ rawTitle: title, modelName: title, boardType: null, specs: platformSpecs }),
+        title,
+      ).toEqual({ kind: "ignore" });
+    }
+    expect(
+      classifyProduct({
+        rawTitle: "ZRAY WINDSURF PRO W2",
+        modelName: "WINDSURF PRO W2",
+        boardType: null,
+        specs: { ...kayakSpecs, lengthCm: 320, widthCm: 81, volumeL: 333, maxLoadKg: 150 },
+      }).kind,
+    ).toBe("board");
+  });
+
+  it("a leírásbeli platform szó NEM zár ki (csak a cím és az URL számít)", () => {
+    // Marketing-próza: „a wide, stable platform for yoga" — ettől még deszka.
+    expect(
+      classifyProduct({
+        rawTitle: "Aqua Marina Dhyana",
+        modelName: "Dhyana",
+        boardType: "yoga",
+        specs: { ...kayakSpecs, lengthCm: 325, widthCm: 90, volumeL: 440, maxLoadKg: 150 },
+        classificationHint: "/products/yoga/dhyana/",
+      }).kind,
+    ).toBe("board");
+  });
+
   it("az URL-ből jövő kategória-jel is elég a kizáráshoz", () => {
     // A cím önmagában ártatlan („Halve"), a kategória viszont árulkodó.
     expect(

@@ -1191,6 +1191,23 @@ const NEVER_BOARD_KEYWORDS = [
   // egy döntés alá esik (2026-08-19: „a surf egy teljesen más dolog").
   "bodyboard",
   "body board",
+  // ÚSZÓ MATRAC ÉS PLATFORM (felhasználói döntés, 2026-08-22: „a matrac ne
+  // maradjon, akárcsak a platform se"). Élesben: `VIGOUR AIRMAT` (249×89) és
+  // `AirDock` (305×183) — ezeket nem evezik, hanem fekszenek/állnak rajtuk. A
+  // méret-alapú rövidzár nem véd, mert a teherbírásukat kiírják.
+  //
+  // A WINDSURF-deszka ELLENBEN MARAD (ugyanaz a döntés): sík vízen az is SUP,
+  // és a katalógusban már bent van ilyen (Fanatic Viper Air, a gyártó saját
+  // felirata szerint `ALL-AROUND / WINDSURF`).
+  //
+  // A „platform" és a „dock" csak a CÍMBEN és az URL-ben számít, a leírásban
+  // nem — különben minden „stable platform for yoga" mondat kiejtene egy
+  // legitim deszkát.
+  "airmat",
+  "air mat",
+  "matrac",
+  "platform",
+  "dock",
 ];
 
 /** A deszka-mivolt pozitív jelei a névben/leírásban. */
