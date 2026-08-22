@@ -208,7 +208,18 @@ async function resolveUniqueSlug(supabase: SupabaseClient, base: string): Promis
  */
 export function buildBoardInsert(
   extracted: ExtractedBoardData,
-  options: { brandId: string; boardType: BoardType; slug: string; seenAt: string },
+  options: {
+    brandId: string;
+    boardType: BoardType;
+    /**
+     * A deszka ÖSSZES kategóriája (F2.1-utó-41). Egyenrangúak: a gyártók sem
+     * jelölnek ki fő kategóriát. A `board_type` az átmenet idejére a tömb
+     * ELSŐ eleme marad, hogy a Deszkaválasztó és a lista lépésenként állhasson át.
+     */
+    boardTypes?: readonly BoardType[];
+    slug: string;
+    seenAt: string;
+  },
 ): Record<string, unknown> {
   const specs: ExtractedBoardSpecs = extracted.specs;
   return {
@@ -221,6 +232,10 @@ export function buildBoardInsert(
     // a terv 3. szakaszában ide `kind: "accessory"` + `accessory_type` párt tesz).
     kind: "board",
     board_type: options.boardType,
+    board_types:
+      options.boardTypes && options.boardTypes.length > 0
+        ? [...options.boardTypes]
+        : [options.boardType],
     length_cm: specs.lengthCm === null ? null : Math.round(specs.lengthCm),
     width_cm: specs.widthCm === null ? null : Math.round(specs.widthCm),
     thickness_cm: specs.thicknessCm === null ? null : Math.round(specs.thicknessCm),
@@ -316,7 +331,7 @@ async function recordCandidatePrice(
 export async function approveCandidate(
   supabase: SupabaseClient,
   input: { candidateId: string; reviewerId: string } & (
-    | { kind: "board"; boardType: BoardType }
+    | { kind: "board"; boardType: BoardType; boardTypes?: readonly BoardType[] }
     | { kind: "accessory"; accessoryType: GearCategory }
   ),
 ): Promise<ModerationResult> {
@@ -342,7 +357,13 @@ export async function approveCandidate(
 
   const insertPayload =
     input.kind === "board"
-      ? buildBoardInsert(extracted, { brandId, boardType: input.boardType, slug, seenAt })
+      ? buildBoardInsert(extracted, {
+          brandId,
+          boardType: input.boardType,
+          boardTypes: input.boardTypes,
+          slug,
+          seenAt,
+        })
       : buildAccessoryInsert(extracted, {
           brandId,
           accessoryType: input.accessoryType,

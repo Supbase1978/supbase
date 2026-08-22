@@ -17,6 +17,12 @@
       "imageUrls": [],
       "boardType": "allround",
       "boardTypeSource": "pinned",
+      "boardTypes": [
+        {
+          "type": "allround",
+          "source": "pinned"
+        }
+      ],
       "specs": {
         "lengthCm": 354,
         "widthCm": 86,

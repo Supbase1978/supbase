@@ -17,6 +17,12 @@
       "imageUrls": [],
       "boardType": "allround",
       "boardTypeSource": "category",
+      "boardTypes": [
+        {
+          "type": "allround",
+          "source": "category"
+        }
+      ],
       "specs": {
         "lengthCm": 335.3,
         "widthCm": 85.1,

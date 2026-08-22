@@ -148,15 +148,20 @@ export async function action({ request }: Route.ActionArgs) {
         });
         break;
       }
-      const rawType = String(formData.get("boardType") ?? "");
-      if (!isBoardType(rawType)) {
-        result = { ok: false, errorKey: "admin.error.updateFailed" };
+      // TÖBB KATEGÓRIA (F2.1-utó-41). A sorrend a jelölőnégyzetek sorrendje;
+      // az ELSŐ elem megy a `board_type` oszlopba is, amíg az átmenet tart.
+      // Üres választás nem mehet át: kategória nélkül a deszka se a
+      // Deszkaválasztóban, se a szűrőkben nem jelenne meg — csendben eltűnne.
+      const rawTypes = formData.getAll("boardTypes").map(String).filter(isBoardType);
+      if (rawTypes.length === 0) {
+        result = { ok: false, errorKey: "admin.error.noBoardType" };
         break;
       }
       result = await approveCandidate(supabase, {
         candidateId,
         kind: "board",
-        boardType: rawType,
+        boardType: rawTypes[0]!,
+        boardTypes: rawTypes,
         reviewerId: user.id,
       });
       break;
@@ -384,6 +389,23 @@ function CandidateCard({
     extracted?.accessoryType ?? GEAR_CATEGORIES[0],
   );
 
+  // A KEZDŐ VÁLASZTÁS: amit a kinyerés talált, vagy amit a modellcsaládból
+  // örököltünk. Ha egyik sincs, ÜRESEN indul — a felület nem talál ki
+  // kategóriát (2026-08-21). Több is bejelölhető: a gyártók sem jelölnek ki
+  // fő kategóriát, és a deszka így több helyen is előjön a Deszkaválasztóban.
+  const [chosenTypes, setChosenTypes] = useState<BoardType[]>(() => {
+    const fromExtraction = (extracted?.boardTypes ?? [])
+      .map((item) => item.type)
+      .filter((type): type is BoardType => (BOARD_TYPES as readonly string[]).includes(type));
+    if (fromExtraction.length > 0) return fromExtraction;
+    if (extracted?.boardType) return [extracted.boardType];
+    return candidate.inheritedType ? [candidate.inheritedType] : [];
+  });
+  // A jóváhagyás KÉTLÉPCSŐS: a második lépés felsorolja, hol fog megjelenni a
+  // deszka. A besorolás vezérli a Deszkaválasztó cél-illesztését, ezért nem
+  // maradhat egy legördülő véletlen maradéka.
+  const [confirming, setConfirming] = useState(false);
+
   if (!extracted) {
     return null;
   }
@@ -487,61 +509,82 @@ function CandidateCard({
         ) : null}
       </div>
 
-      {/* Jóváhagyás — a típus/kategória a moderátoré (a figyelő tippje csak előválasztás). */}
-      <Form method="post" className="mt-3 flex flex-wrap items-end gap-2">
+      {/* JÓVÁHAGYÁS. A deszkánál TÖBB kategória is választható (F2.1-utó-41),
+          és a beküldés KÉTLÉPCSŐS: a megerősítő lépés felsorolja, hol fog
+          megjelenni a deszka. Ez felhasználói kérés (2026-08-22), és jó oka
+          van: a besorolás vezérli a Deszkaválasztó cél-illesztését, tehát nem
+          egy legördülő maradéka, hanem tudatos döntés. */}
+      <Form method="post" className="mt-3 flex flex-col gap-2">
         <input type="hidden" name="intent" value="approve" />
         <input type="hidden" name="candidateId" value={candidate.id} />
         <input type="hidden" name="kind" value={kind} />
         {kind === "accessory" ? (
-          <input type="hidden" name="accessoryType" value={category} />
+          <>
+            <input type="hidden" name="accessoryType" value={category} />
+            <Button type="submit" variant="primary" className="self-start">
+              {t("admin.approve")}
+            </Button>
+          </>
         ) : (
-          <label className="flex flex-col gap-1 text-sm">
-            <span className="font-medium text-text">{t("admin.typeLabel")}</span>
-            <select
-              name="boardType"
-              // NINCS KITALÁLT ALAPÉRTÉK (2026-08-21). Korábban `?? "allround"`
-              // állt itt: ha a figyelő NEM talált kategóriát, a felület akkor is
-              // magabiztosan „Allround"-ot mutatott — 255 jelöltből 194-nél.
-              // Egy jóváhagyó kattintás így némán ALLROUND deszkát csinált
-              // olyanból, amiről semmit nem tudtunk. Ez a felület által
-              // GYÁRTOTT hamis adat, a legrosszabb fajta: úgy néz ki, mint egy
-              // mérés. Üresen hagyva a moderátornak választania KELL.
-              // ÖRÖKLÉS a modellcsaládból, ha a kinyerés nem talált kategóriát
-              // (felhasználói döntés, 2026-08-21: „előválasztva, de jelölve").
-              // A felirat megmondja, hogy ez ÖRÖKÖLT érték — nem a
-              // termékoldalon mért adat.
-              defaultValue={extracted.boardType ?? candidate.inheritedType ?? ""}
-              required
-              className="rounded-lg border border-line bg-surface px-2 py-1.5 text-sm text-text"
-            >
-              {extracted.boardType === null && candidate.inheritedType === null ? (
-                <option value="">{t("admin.typeChoose")}</option>
-              ) : null}
-              {BOARD_TYPES.map((type) => (
-                <option key={type} value={type}>
-                  {t(`boardType.${type}`)}
-                </option>
-              ))}
-            </select>
-          </label>
-        )}
-        <Button type="submit" variant="primary">
-          {t("admin.approve")}
-        </Button>
-      </Form>
-      {/* A felirat IGAZAT mondjon: tippről csak akkor beszélünk, ha van tipp.
-          Kategória nélküli jelöltnél a moderátornak azt kell tudnia, hogy a
-          figyelő NEM talált semmit — nem azt, hogy „nézd át a tippet". */}
-      <p className="mt-1 text-xs text-text-3">
-        {extracted.boardType === null && candidate.inheritedType !== null
-          ? t("admin.typeInherited")
-          : extracted.boardType === null
-          ? t("admin.typeUnknown")
-          : t("admin.typeHint", {
-              source: t(`admin.typeSource.${extracted.boardTypeSource ?? "unknown"}`),
-            })}
-      </p>
+          <>
+            <fieldset className="flex flex-col gap-1.5">
+              <legend className="text-sm font-medium text-text">
+                {t("admin.typeLabel")}
+              </legend>
+              <div className="flex flex-wrap gap-x-4 gap-y-1.5">
+                {BOARD_TYPES.map((type) => (
+                  <label key={type} className="flex items-center gap-1.5 text-sm text-text">
+                    <input
+                      type="checkbox"
+                      name="boardTypes"
+                      value={type}
+                      checked={chosenTypes.includes(type)}
+                      onChange={(event) =>
+                        setChosenTypes((prev) =>
+                          event.target.checked
+                            ? [...prev, type]
+                            : prev.filter((item) => item !== type),
+                        )
+                      }
+                      className="h-4 w-4 accent-petrol"
+                    />
+                    {t(`boardType.${type}`)}
+                  </label>
+                ))}
+              </div>
+            </fieldset>
 
+            {/* A MÁSODIK lépés: a moderátor lássa, mit állít, mielőtt véglegesíti. */}
+            {confirming ? (
+              <div className="rounded-lg border border-caution bg-caution-bg p-3 text-sm">
+                <p className="text-caution-text">
+                  {t("admin.approveConfirm", {
+                    types: chosenTypes.map((type) => t(`boardType.${type}`)).join(", "),
+                  })}
+                </p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <Button type="submit" variant="primary">
+                    {t("admin.approveFinal")}
+                  </Button>
+                  <Button type="button" variant="secondary" onClick={() => setConfirming(false)}>
+                    {t("admin.approveBack")}
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <Button
+                type="button"
+                variant="primary"
+                className="self-start"
+                disabled={chosenTypes.length === 0}
+                onClick={() => setConfirming(true)}
+              >
+                {t("admin.approve")}
+              </Button>
+            )}
+          </>
+        )}
+      </Form>
       {/* Összefésülés meglévő deszkába/kiegészítőbe — a dupla-név elleni védelem. */}
       <Form method="post" className="mt-3 flex flex-wrap items-end gap-2">
         <input type="hidden" name="intent" value="merge" />

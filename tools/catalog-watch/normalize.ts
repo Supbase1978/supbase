@@ -12,7 +12,7 @@ import type { GearCategory } from "../../src/modules/catalog/gear.ts";
 import { decodeEntities, htmlToText } from "./html.ts";
 import { displayImageUrl, MAX_GALLERY_CANDIDATES } from "./images.ts";
 import {
-  boardTypeFromCategoryLine,
+  boardTypesFromCategoryLine,
   boardTypeFromDescription,
   boardTypeFromUsage,
   findModelCode,
@@ -1546,7 +1546,7 @@ export function extractProduct(
   // A `boardTypeFromDescription` az angol „versatile/entry-level model" alakot
   // ismeri (a Gladiatorért készült), a `boardTypeFromProse` a magyar szórendet
   // és a ragozást — a kettő kiegészíti egymást, és mindkettő főnevet követel.
-  const { boardType, boardTypeSource } = resolveBoardType({
+  const { boardType, boardTypeSource, boardTypes } = resolveBoardType({
     pinned: null,
     name: guessBoardType(rawTitle),
     category: null,
@@ -1580,6 +1580,7 @@ export function extractProduct(
     imageUrl: displayImageUrl(firstString(node.image)),
     boardType,
     boardTypeSource,
+    boardTypes,
     specs,
     accessoryType:
       classification.kind === "accessory" ? classification.accessoryType : null,
@@ -1968,8 +1969,12 @@ export type BoardTypeSource =
  * hogy honnan jött.
  */
 function resolveBoardType(
-  candidates: Record<BoardTypeSource, BoardType | null>,
-): { boardType: BoardType | null; boardTypeSource: BoardTypeSource | null } {
+  candidates: Record<BoardTypeSource, BoardType | BoardType[] | null>,
+): {
+  boardType: BoardType | null;
+  boardTypeSource: BoardTypeSource | null;
+  boardTypes: { type: BoardType; source: BoardTypeSource }[];
+} {
   const order: BoardTypeSource[] = [
     "pinned",
     "name",
@@ -1978,11 +1983,37 @@ function resolveBoardType(
     "usage",
     "description",
   ];
+
+  // MINDEN forrás találata megmarad, nem csak az elsőé (F2.1-utó-41). A
+  // gyártók okkal sorolnak egy deszkát több kategóriába — öt forráson mérve —,
+  // és eddig épp az veszett el, amit kimondtak: a Fanatic
+  // `TOURING / FREERACING` feliratának a második fele, a Starboard második
+  // kollekciója, a Jobe „all-around AND touring" mondatának egyik tagja.
+  //
+  // A SORREND MEGMARAD: a `boardTypes` első eleme ugyanaz, ami korábban az
+  // egyetlen `boardType` volt, és a `board_type` oszlop is ezt kapja. Így a
+  // Deszkaválasztó és a katalógus-lista lépésenként állhat át.
+  const boardTypes: { type: BoardType; source: BoardTypeSource }[] = [];
+  const seen = new Set<BoardType>();
   for (const source of order) {
     const value = candidates[source];
-    if (value !== null) return { boardType: value, boardTypeSource: source };
+    if (value === null) continue;
+    // EGY FORRÁS TÖBBET IS ADHAT: a gyártó kategória-felirata gyakran kettős
+    // (`TOURING / FREERACING`), és a Shopify-termék több kollekcióban is
+    // szerepelhet. A felirat/kollekció SAJÁT sorrendje marad érvényben.
+    for (const type of Array.isArray(value) ? value : [value]) {
+      if (seen.has(type)) continue;
+      seen.add(type);
+      boardTypes.push({ type, source });
+    }
   }
-  return { boardType: null, boardTypeSource: null };
+
+  const first = boardTypes[0];
+  return {
+    boardType: first?.type ?? null,
+    boardTypeSource: first?.source ?? null,
+    boardTypes,
+  };
 }
 
 /** A rögzítés legalább ennyi karakter legyen, hogy a záró-illesztés ne tévedjen. */
@@ -2196,7 +2227,9 @@ export function extractProductFromPage(
       // A gyártó SAJÁT kategória-felirata a termékfejlécben. A SORRENDJE
       // számít („TOURING / FREERACING" → túra, nem race), ezért nem a
       // szabály-prioritásos `guessBoardType` olvassa.
-      category: boardTypeFromCategoryLine(elementTextByClass(html, categoryClass)),
+      // A felirat MINDEN tagja (F2.1-utó-41): a `TOURING / FREERACING` eddig
+      // csak túrát adott, a második felét eldobtuk.
+      category: boardTypesFromCategoryLine(elementTextByClass(html, categoryClass)),
       breadcrumb: guessBoardType(breadcrumbText(html)),
       usage: usageType,
       description: boardTypeFromDescription(pageText),

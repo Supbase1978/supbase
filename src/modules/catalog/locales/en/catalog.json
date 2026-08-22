@@ -83,7 +83,8 @@
       "brandFailed": "Could not create the brand.",
       "insertFailed": "Could not create the board.",
       "updateFailed": "Could not save.",
-      "noBoard": "Pick a board to merge into."
+      "noBoard": "Pick a board to merge into.",
+      "noBoardType": "Pick at least one category — without it the board would appear neither in the Board selector nor in the filters."
     },
     "done": "Done.",
     "gallery": {
@@ -108,7 +109,10 @@
       "family": "inherited from the model family",
       "unknown": "unknown"
     },
-    "typeInherited": "Inherited from the MODEL FAMILY (another year of this model is already classified) — not measured on the product page, so review it."
+    "typeInherited": "Inherited from the MODEL FAMILY (another year of this model is already classified) — not measured on the product page, so review it.",
+    "approveConfirm": "The board will appear in these categories in the Board selector and filters: {{types}}. You can still edit this after approval.",
+    "approveFinal": "Yes, approve",
+    "approveBack": "Back, let me fix it"
   },
   "gear": {
     "seo": {

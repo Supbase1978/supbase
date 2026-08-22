@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   boardTypeFromCategoryLine,
+  boardTypesFromCategoryLine,
   boardTypeFromDescription,
   boardTypeFromUsage,
   findModelCode,
@@ -292,6 +293,32 @@ describe("boardTypeFromCategoryLine — a felirat SORRENDJE dönt", () => {
   it("ismeretlen feliratra null (nem tippel)", () => {
     expect(boardTypeFromCategoryLine("WAVE / SURF")).toBeNull();
     expect(boardTypeFromCategoryLine("")).toBeNull();
+  });
+});
+
+/**
+ * A gyártó KETTŐT mond — és eddig a második felét eldobtuk (F2.1-utó-41).
+ * A `boardTypeFromCategoryLine` az elsőt adja (az egyértékű ág változatlan),
+ * a `boardTypesFromCategoryLine` viszont MINDET, a felirat sorrendjében.
+ */
+describe("boardTypesFromCategoryLine — a felirat MINDEN tagja", () => {
+  it("a kettős feliratból KÉT kategória lesz", () => {
+    expect(boardTypesFromCategoryLine("TOURING / FREERACING")).toEqual(["touring", "race"]);
+  });
+
+  it("az ELSŐ elem ugyanaz, amit az egyértékű ág ad", () => {
+    for (const line of ["TOURING / FREERACING", "ALL-AROUND / WINDSURF", "RACE / FREERACE"]) {
+      expect(boardTypesFromCategoryLine(line)[0]).toBe(boardTypeFromCategoryLine(line));
+    }
+  });
+
+  it("a nem a mi taxonómiánkba tartozó tag kimarad", () => {
+    // A „WINDSURF" nálunk nem külön típus — a deszka attól még allround.
+    expect(boardTypesFromCategoryLine("ALL-AROUND / WINDSURF")).toEqual(["allround"]);
+  });
+
+  it("ismeretlen feliratra üres (nem tippel)", () => {
+    expect(boardTypesFromCategoryLine("WAVE / SURF")).toEqual([]);
   });
 });
 

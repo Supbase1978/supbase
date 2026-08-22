@@ -25,6 +25,7 @@
       ],
       "boardType": null,
       "boardTypeSource": null,
+      "boardTypes": [],
       "specs": {
         "lengthCm": 350,
         "widthCm": 78.8,

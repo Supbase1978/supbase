@@ -16,6 +16,12 @@
       "imageUrl": "https://bluefinsupboards.eu/cdn/shop/files/Main-Images_Gecko-Cruise_5baac709-3ae9-474f-892e-f75799879127.png?v=1782737983&width=768",
       "boardType": "allround",
       "boardTypeSource": "description",
+      "boardTypes": [
+        {
+          "type": "allround",
+          "source": "description"
+        }
+      ],
       "specs": {
         "lengthCm": 325,
         "widthCm": 82,

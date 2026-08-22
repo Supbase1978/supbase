@@ -83,7 +83,8 @@
       "brandFailed": "A márka létrehozása nem sikerült.",
       "insertFailed": "A deszka létrehozása nem sikerült.",
       "updateFailed": "A mentés nem sikerült.",
-      "noBoard": "Válassz deszkát az összefésüléshez."
+      "noBoard": "Válassz deszkát az összefésüléshez.",
+      "noBoardType": "Válassz legalább egy kategóriát — enélkül a deszka nem jelenne meg sem a Deszkaválasztóban, sem a szűrőkben."
     },
     "done": "Kész.",
     "gallery": {
@@ -108,7 +109,10 @@
       "family": "a modellcsaládból örökölve",
       "unknown": "ismeretlen"
     },
-    "typeInherited": "A MODELLCSALÁDBÓL örökölve (ugyanez a modell más évjárata már be van sorolva) — nem a termékoldalon mért adat, ezért nézd át."
+    "typeInherited": "A MODELLCSALÁDBÓL örökölve (ugyanez a modell más évjárata már be van sorolva) — nem a termékoldalon mért adat, ezért nézd át.",
+    "approveConfirm": "A deszka ezekben a kategóriákban fog megjelenni a Deszkaválasztóban és a szűrőkben: {{types}}. Jóváhagyás után is szerkesztheted.",
+    "approveFinal": "Igen, jóváhagyom",
+    "approveBack": "Mégse, javítok"
   },
   "gear": {
     "seo": {

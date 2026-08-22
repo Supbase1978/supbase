@@ -312,3 +312,40 @@ export function boardTypeFromCategoryLine(text: string): BoardType | null {
   }
   return best?.type ?? null;
 }
+
+/**
+ * A kategória-felirat MINDEN tagja, a felirat sorrendjében (F2.1-utó-41).
+ *
+ * MIÉRT: a gyártó KETTŐT mond (`ALL-AROUND / WINDSURF`,
+ * `TOURING / FREERACING`), és eddig a második felét eldobtuk. Ez volt az
+ * egyik olyan hely, ahol a MI adatmodellünk vesztett el gyártói információt —
+ * nem a forrás hallgatott.
+ *
+ * A sorrend a feliraté marad: az első tag ugyanaz, amit a
+ * `boardTypeFromCategoryLine` ad, tehát az egyértékű ág változatlan.
+ */
+export function boardTypesFromCategoryLine(text: string): BoardType[] {
+  const folded = text
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .toLowerCase();
+  const rules: [BoardType, string[]][] = [
+    ["kids", ["kids", "junior", "youth"]],
+    ["fishing", ["fishing", "angler"]],
+    ["river", ["river", "whitewater", "rapid"]],
+    ["race", ["race", "racing"]],
+    ["yoga", ["yoga", "fitness", "pilates"]],
+    ["touring", ["touring", "tura", "explore", "adventure"]],
+    ["allround", ["all-around", "all around", "allround", "all-round", "all round"]],
+  ];
+  const found: { at: number; type: BoardType }[] = [];
+  for (const [type, needles] of rules) {
+    let earliest: number | null = null;
+    for (const needle of needles) {
+      const at = folded.indexOf(needle);
+      if (at >= 0 && (earliest === null || at < earliest)) earliest = at;
+    }
+    if (earliest !== null) found.push({ at: earliest, type });
+  }
+  return found.sort((a, b) => a.at - b.at).map((f) => f.type);
+}

@@ -23,7 +23,14 @@ import type { BoardType, ExtractedProduct } from "./types.ts";
  */
 export function buildBoardInsertPayload(
   extracted: ExtractedProduct,
-  options: { brandId: string; boardType: BoardType; slug: string; seenAt: string },
+  options: {
+    brandId: string;
+    boardType: BoardType;
+    /** A deszka ÖSSZES kategóriája — ld. az app-oldali párját. */
+    boardTypes?: readonly BoardType[];
+    slug: string;
+    seenAt: string;
+  },
 ): Record<string, unknown> {
   const specs = extracted.specs;
   return {
@@ -33,6 +40,10 @@ export function buildBoardInsertPayload(
     slug: { hu: options.slug, en: options.slug },
     kind: "board",
     board_type: options.boardType,
+    board_types:
+      options.boardTypes && options.boardTypes.length > 0
+        ? [...options.boardTypes]
+        : [options.boardType],
     length_cm: specs.lengthCm === null ? null : Math.round(specs.lengthCm),
     width_cm: specs.widthCm === null ? null : Math.round(specs.widthCm),
     thickness_cm: specs.thicknessCm === null ? null : Math.round(specs.thicknessCm),

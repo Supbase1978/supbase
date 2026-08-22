@@ -108,6 +108,21 @@ export interface CatalogItemRowBase {
 }
 
 /**
+ * HONNAN származik egy kinyert kategória. A sorrend a MEGBÍZHATÓSÁG sorrendje
+ * is: a `pinned` moderátori/taxonómia-döntés, a `category` és a `breadcrumb` a
+ * gyártó SAJÁT besorolása, a `name` és a `description` viszont következtetés.
+ * A `family` nem a kinyerésből jön, hanem a modellcsaládból örökölve.
+ */
+export type ExtractedBoardTypeSource =
+  | "pinned"
+  | "name"
+  | "category"
+  | "breadcrumb"
+  | "usage"
+  | "description"
+  | "family";
+
+/**
  * `public.boards` DESZKA-sor (`kind = 'board'`) — minden oszlop.
  *
  * A `board_type` itt SZÁNDÉKOSAN nem-null, noha az oszlop az adatbázisban már
@@ -205,15 +220,19 @@ export interface ExtractedBoardData {
    *
    * `null`, ha nincs kategória — ilyenkor a felület NEM választ előre semmit.
    */
-  boardTypeSource?:
-    | "pinned"
-    | "name"
-    | "category"
-    | "breadcrumb"
-    | "usage"
-    | "description"
-    | "family"
-    | null;
+  boardTypeSource?: ExtractedBoardTypeSource | null;
+  /**
+   * A deszka ÖSSZES kinyert kategóriája, forrásonként (F2.1-utó-41).
+   *
+   * MIÉRT NEM EGY: a gyártók okkal sorolnak egy deszkát több felhasználásra,
+   * és eddig épp azt dobtuk el, amit kimondtak — a Fanatic
+   * `TOURING / FREERACING` feliratának második felét, a Starboard második
+   * kollekcióját, a Jobe „all-around AND touring" mondatának egyik tagját.
+   *
+   * A SORREND a lánc elsőbbségi sorrendje: az első elem ugyanaz, ami a
+   * `boardType` mezőben áll, tehát az egyértékű olvasók változatlanok.
+   */
+  boardTypes?: { type: BoardType; source: ExtractedBoardTypeSource }[];
   specs: ExtractedBoardSpecs;
   /**
    * Felszerelés-kategória, ha a figyelő `classifyProduct` döntése `accessory`
