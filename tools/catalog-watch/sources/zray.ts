@@ -9,6 +9,10 @@
  *  * Az ikonjaihoz HANGUL karaktereket használ, ami az NFD-hajtásnál
  *    index-csúszást okozott: a „Volume: 379L" ablak „9L"-ként indult.
  *  * A cím utótagja minden oldalon `-Zray Official Site`.
+ *  * A DESZKA SÚLYÁT egyetlen modellnél sem közli (ellenőrizve 2026-08-22, a
+ *    mezőlefedettségi jelentés `súly 0/74` sora nyomán). A termékoldalakon
+ *    csak TEHERBÍRÁS szerepel („weight capacity", „Capacity: up to 220kg") —
+ *    nettó tömeg sehol. Ezért `unpublishedFields`, nem javítandó hiba.
  */
 import type { SourceRecipe } from "./index.ts";
 
@@ -18,7 +22,8 @@ export const recipe: SourceRecipe = {
   kind: "brand_site",
   country: "EU",
   crawlConfig: {
-      "notes": "Erősen korlátozott (429 Too Many Requests) — nagy szünet kell. A spec-blokk címkézett, kettősponttal.",
+      "notes": "Erősen korlátozott (429 Too Many Requests) — nagy szünet kell. A spec-blokk címkézett, kettősponttal. A DESZKA SÚLYÁT nem közli (2026-08-22, gyártói oldalon ellenőrizve) — csak teherbírást ad.",
+      "unpublishedFields": ["weightKg"],
       "htmlOnly": true,
       "minDelayMs": 3000,
       "titleSuffixes": [
