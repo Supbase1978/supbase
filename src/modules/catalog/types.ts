@@ -134,6 +134,16 @@ export type ExtractedBoardTypeSource =
 export interface BoardRow extends CatalogItemRowBase {
   kind: "board";
   board_type: BoardType;
+  /**
+   * A deszka ÖSSZES használati kategóriája, egyenrangúan (migráció
+   * 20260717092700). Nincs kijelölt fő kategória — a gyártók sem jelölnek ki,
+   * öt forráson mérve (2026-08-21).
+   *
+   * A `board_type` az ÁTMENET idejére megmarad, és a tömb ELSŐ elemével
+   * azonos: így a Deszkaválasztó és a katalógus-lista lépésenként állhat át.
+   * Új olvasó MINDIG ezt a tömböt nézze.
+   */
+  board_types: BoardType[];
   accessory_type: null;
 }
 

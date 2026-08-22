@@ -84,7 +84,8 @@
       "insertFailed": "Could not create the board.",
       "updateFailed": "Could not save.",
       "noBoard": "Pick a board to merge into.",
-      "noBoardType": "Pick at least one category — without it the board would appear neither in the Board selector nor in the filters."
+      "noBoardType": "Pick at least one category — without it the board would appear neither in the Board selector nor in the filters.",
+      "noModelName": "The model name cannot be empty."
     },
     "done": "Done.",
     "gallery": {
@@ -112,7 +113,15 @@
     "typeInherited": "Inherited from the MODEL FAMILY (another year of this model is already classified) — not measured on the product page, so review it.",
     "approveConfirm": "The board will appear in these categories in the Board selector and filters: {{types}}. You can still edit this after approval.",
     "approveFinal": "Yes, approve",
-    "approveBack": "Back, let me fix it"
+    "approveBack": "Back, let me fix it",
+    "edit": {
+      "save": "Save",
+      "saved": "Saved — the correction is live in the catalogue.",
+      "modelName": "Model name",
+      "viewPublic": "Open the public page →",
+      "emptyMeansUnknown": "An empty field means “no data”, not zero.",
+      "link": "Edit"
+    }
   },
   "gear": {
     "seo": {

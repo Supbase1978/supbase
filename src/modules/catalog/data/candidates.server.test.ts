@@ -41,6 +41,11 @@ describe("buildBoardInsert", () => {
       slug: { hu: "aqua-marina-vapor", en: "aqua-marina-vapor" },
       kind: "board",
       board_type: "allround",
+      // TÖBB KATEGÓRIA (F2.1-utó-41): a `board_types` tömb az elsődleges, a
+      // `board_type` az átmenet idejére az ELSŐ elemével azonos. Halmaz híján
+      // az egyértékű besorolásból lesz egyelemű tömb — így a régi hívók
+      // változtatás nélkül helyes sort írnak.
+      board_types: ["allround"],
       length_cm: 315,
       width_cm: 81, // a séma int oszlopai kerekítve kapják a cm-t
       thickness_cm: 15,

@@ -32,7 +32,14 @@ export const catalogModule: ModuleManifest = {
   ],
   i18nNamespace: "catalog",
   // catalog-watch moderáció (F2): a piacfigyelő jelöltjeinek elbírálása.
-  adminPanels: [{ path: "katalogus", file: "routes/admin.katalogus.tsx" }],
+  adminPanels: [
+    { path: "katalogus", file: "routes/admin.katalogus.tsx" },
+    // Egy jóváhagyott deszka ADATAINAK javítása (F2.1-utó-42). A moderálás
+    // során óhatatlanul becsúszik hiba, és sokszor csak később derül ki —
+    // enélkül a javítás csak közvetlen adatbázis-hozzáféréssel lenne
+    // lehetséges (felhasználói kérés, 2026-08-22).
+    { path: "deszka/:slug", file: "routes/admin.deszka.$slug.tsx" },
+  ],
 };
 
 export default catalogModule;

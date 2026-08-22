@@ -19,6 +19,7 @@ import { GEAR_CATEGORIES, type GearCategory } from "../gear";
 import type {
   BoardImage,
   BoardType,
+  BoardWithBrand,
   CatalogCandidateRow,
   ExtractedBoardData,
   ExtractedBoardSpecs,
@@ -648,4 +649,78 @@ export async function loadFamilyTypeMap(
     };
   });
   return buildFamilyTypeMap(examples).byFamily;
+}
+
+/**
+ * Egy JÓVÁHAGYOTT deszka adatainak javítása (F2.1-utó-42).
+ *
+ * MIÉRT KELL: a moderálás során óhatatlanul becsúszik hiba, és sokszor csak
+ * később derül ki — „előfordulhat, hogy valamit rosszul moderálok és csak
+ * később veszem észre" (felhasználói kérés, 2026-08-22). Enélkül a javítás
+ * csak közvetlen adatbázis-hozzáféréssel lenne lehetséges.
+ *
+ * A KÉZI ÉRTÉK BIZTONSÁGBAN VAN: ellenőrizve (2026-08-22), hogy a figyelő és
+ * az összefésülés a `boards` sorból KIZÁRÓLAG a `last_seen_at`, az
+ * `availability_hu`, illetve a képmezőket írja — a méretekhez, a névhez és a
+ * kategóriákhoz egyik sem nyúl. Amit itt javítasz, az marad.
+ *
+ * A `board_type` a `board_types` ELSŐ elemével mozog együtt, amíg az átmenet
+ * tart (migráció 20260717092700 fejléce).
+ */
+export async function updateBoardData(
+  supabase: SupabaseClient,
+  input: {
+    boardId: string;
+    modelName: string;
+    modelYear: number | null;
+    boardTypes: readonly BoardType[];
+    lengthCm: number | null;
+    widthCm: number | null;
+    thicknessCm: number | null;
+    volumeL: number | null;
+    weightKg: number | null;
+    maxLoadKg: number | null;
+    inflatable: boolean;
+  },
+): Promise<ModerationResult> {
+  if (input.modelName.trim() === "") {
+    return { ok: false, errorKey: "admin.error.noModelName" };
+  }
+  if (input.boardTypes.length === 0) {
+    return { ok: false, errorKey: "admin.error.noBoardType" };
+  }
+
+  const { error } = await supabase
+    .from("boards")
+    .update({
+      model_name: input.modelName.trim(),
+      model_year: input.modelYear,
+      board_type: input.boardTypes[0],
+      board_types: [...input.boardTypes],
+      length_cm: input.lengthCm,
+      width_cm: input.widthCm,
+      thickness_cm: input.thicknessCm,
+      volume_l: input.volumeL,
+      weight_kg: input.weightKg,
+      max_load_kg: input.maxLoadKg,
+      inflatable: input.inflatable,
+    })
+    .eq("id", input.boardId)
+    .eq("kind", "board");
+  return error ? { ok: false, errorKey: "admin.error.updateFailed" } : { ok: true };
+}
+
+/** Egy deszka a szerkesztő űrlaphoz, slug szerint. */
+export async function loadBoardForEdit(
+  supabase: SupabaseClient,
+  slug: string,
+): Promise<BoardWithBrand | null> {
+  const { data, error } = await supabase
+    .from("boards")
+    .select("*, brand:brands(*)")
+    .eq("kind", "board")
+    .or(`slug->>hu.eq.${slug},slug->>en.eq.${slug}`)
+    .maybeSingle();
+  if (error || !data) return null;
+  return data as unknown as BoardWithBrand;
 }

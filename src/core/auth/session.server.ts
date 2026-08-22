@@ -90,6 +90,24 @@ export async function requireUser(request: Request): Promise<User> {
  * ami eltérhetett a profiles-tól). Ismeretlen/hibás RPC-válasz → fail-closed
  * `defaultRole` (ismeretlen SOHA nem ad emelt jogot).
  */
+/**
+ * A belépett felhasználó szerepe — DOBÁS NÉLKÜL, `null`-lal kilépve, ha nincs
+ * bejelentkezve. A `requireRole` párja olyan helyekre, ahol a szerep csak
+ * MEGJELENÍTÉST befolyásol (pl. moderátori szerkesztő-link a nyilvános
+ * adatlapon), nem hozzáférést.
+ *
+ * Ugyanabból az AUTORITATÍV forrásból (`current_user_role()`) olvas, mint a
+ * `requireRole` és az RLS — így a látható link és a tényleges jogosultság nem
+ * divergálhat. Ismeretlen/hibás válasz → `defaultRole` (fail-closed).
+ */
+export async function getUserRole(request: Request): Promise<Role | null> {
+  const user = await getUser(request);
+  if (!user) return null;
+  const { supabase } = createSupabaseServerClient(request);
+  const { data, error } = await supabase.rpc("current_user_role");
+  return !error && isRole(data) ? data : defaultRole;
+}
+
 export async function requireRole(request: Request, required: Role): Promise<User> {
   const user = await requireUser(request);
   const { supabase } = createSupabaseServerClient(request);

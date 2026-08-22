@@ -11,7 +11,7 @@ import { useTranslation } from "react-i18next";
 import { data, Form, Link } from "react-router";
 
 import { recordEvent } from "@core/analytics/analytics.server";
-import { getUser, requireUser } from "@core/auth/session.server";
+import { getUser, getUserRole, requireUser } from "@core/auth/session.server";
 import { createSupabaseServerClient } from "@core/auth/supabase.server";
 import { isEmailConfirmed } from "@core/auth/email-confirmed";
 import { getLocaleFromPath, pickTranslated, serverT } from "@core/i18n";
@@ -76,9 +76,12 @@ export async function loader({ request, params }: Route.LoaderArgs) {
     throw new Response("Not Found", { status: 404 });
   }
 
-  const [reviewRows, user] = await Promise.all([
+  const [reviewRows, user, role] = await Promise.all([
     listReviews(supabase, board.id, { publishedOnly: true }),
     getUser(request),
+    // A moderátori szerkesztő-link CSAK megjelenítés: a jogosultságot a
+    // /admin/deszka route ellenőrzi újra, az RLS pedig a védőháló.
+    getUserRole(request),
   ]);
 
   const aggregate = computeReviewAggregate(reviewRows);
@@ -119,6 +122,10 @@ export async function loader({ request, params }: Route.LoaderArgs) {
   return {
     seo,
     jsonLd,
+    // MODERÁTORI JAVÍTÁS: a moderálás során becsúszó hiba sokszor csak később
+    // derül ki, és a hibás sort ott érdemes javítani, ahol észreveszik — az
+    // adatlapon. A link csak megjelenítés; a jogot a cél-route ellenőrzi.
+    canEdit: role === "moderator" || role === "admin",
     board: {
       id: board.id,
       slug: pickTranslated(board.slug, locale),
@@ -250,7 +257,8 @@ const RATING_OPTIONS = [1, 2, 3, 4, 5] as const;
 export default function BoardDetailRoute({ loaderData, actionData }: Route.ComponentProps) {
   const { t } = useTranslation("catalog");
   const { t: tr } = useTranslation("reviews");
-  const { board, aggregate, dimensionsTen, overallTen, reviews, reviewForm, jsonLd } = loaderData;
+  const { board, aggregate, dimensionsTen, overallTen, reviews, reviewForm, jsonLd, canEdit } =
+    loaderData;
 
   const canFlag = reviewForm.isLoggedIn && reviewForm.isEmailConfirmed;
 
@@ -270,6 +278,16 @@ export default function BoardDetailRoute({ loaderData, actionData }: Route.Compo
           >
             {board.modelName}
           </h1>
+          {/* MODERÁTORI JAVÍTÁS ott, ahol a hibát észreveszik. Csak moderátornak
+              látszik; a jogosultságot a cél-route ellenőrzi újra. */}
+          {canEdit ? (
+            <Link
+              className="text-sm text-petrol underline"
+              to={`/admin/deszka/${board.slug}`}
+            >
+              {t("admin.edit.link")}
+            </Link>
+          ) : null}
         </div>
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-text-2">
           {board.brandName ? <span>{board.brandName}</span> : null}

@@ -84,7 +84,8 @@
       "insertFailed": "A deszka létrehozása nem sikerült.",
       "updateFailed": "A mentés nem sikerült.",
       "noBoard": "Válassz deszkát az összefésüléshez.",
-      "noBoardType": "Válassz legalább egy kategóriát — enélkül a deszka nem jelenne meg sem a Deszkaválasztóban, sem a szűrőkben."
+      "noBoardType": "Válassz legalább egy kategóriát — enélkül a deszka nem jelenne meg sem a Deszkaválasztóban, sem a szűrőkben.",
+      "noModelName": "A modellnév nem lehet üres."
     },
     "done": "Kész.",
     "gallery": {
@@ -112,7 +113,15 @@
     "typeInherited": "A MODELLCSALÁDBÓL örökölve (ugyanez a modell más évjárata már be van sorolva) — nem a termékoldalon mért adat, ezért nézd át.",
     "approveConfirm": "A deszka ezekben a kategóriákban fog megjelenni a Deszkaválasztóban és a szűrőkben: {{types}}. Jóváhagyás után is szerkesztheted.",
     "approveFinal": "Igen, jóváhagyom",
-    "approveBack": "Mégse, javítok"
+    "approveBack": "Mégse, javítok",
+    "edit": {
+      "save": "Mentés",
+      "saved": "Mentve — a javítás azonnal él a katalógusban.",
+      "modelName": "Modellnév",
+      "viewPublic": "Megnézem az adatlapot →",
+      "emptyMeansUnknown": "Az üres mező „nincs adat”-ot jelent, nem nullát.",
+      "link": "Szerkesztés"
+    }
   },
   "gear": {
     "seo": {
