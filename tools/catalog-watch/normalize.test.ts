@@ -838,8 +838,9 @@ describe("classifyProduct — ami SOSEM deszka", () => {
 
   it("az úszó MATRAC és PLATFORM sem deszka, a WINDSURF viszont igen", () => {
     // Felhasználói döntés (2026-08-22): „a windsurf maradjon, a matrac ne
-    // maradjon akárcsak a platform se". Amit nem evezünk, hanem fekszünk vagy
-    // állunk rajta, az nem SUP; a windsurf-deszka viszont sík vízen az.
+    // maradjon akárcsak a platform se". A határvonal az EVEZÉS, nem a
+    // testhelyzet — a SUP nevében is ott van, hogy állva használjuk. A
+    // matracot és a platformot nem evezik; a windsurf-deszkát sík vízen igen.
     const platformSpecs = { ...kayakSpecs, lengthCm: 305, widthCm: 183, maxLoadKg: 374 };
     for (const title of ["VIGOUR AIRMAT", "AirDock", "Yoga Dock platform BT 19YD"]) {
       expect(

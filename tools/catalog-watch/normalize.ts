@@ -1193,8 +1193,14 @@ const NEVER_BOARD_KEYWORDS = [
   "body board",
   // ÚSZÓ MATRAC ÉS PLATFORM (felhasználói döntés, 2026-08-22: „a matrac ne
   // maradjon, akárcsak a platform se"). Élesben: `VIGOUR AIRMAT` (249×89) és
-  // `AirDock` (305×183) — ezeket nem evezik, hanem fekszenek/állnak rajtuk. A
-  // méret-alapú rövidzár nem véd, mert a teherbírásukat kiírják.
+  // `AirDock` (305×183). A méret-alapú rövidzár nem véd, mert a
+  // teherbírásukat kiírják.
+  //
+  // A HATÁRVONAL AZ EVEZÉS, nem a testhelyzet: a SUP nevében is ott van, hogy
+  // ÁLLVA használjuk (Stand Up Paddleboard), tehát az „állunk rajta" nem
+  // különböztet meg semmit. Az számít, hogy EVEZŐVEL hajtjuk-e: a matracot és
+  // a platformot nem, azok egy helyben úsznak. A jógadeszka (Dhyana, Peace)
+  // ezért MARAD — azt evezik is.
   //
   // A WINDSURF-deszka ELLENBEN MARAD (ugyanaz a döntés): sík vízen az is SUP,
   // és a katalógusban már bent van ilyen (Fanatic Viper Air, a gyártó saját
