@@ -92,12 +92,45 @@ select is((select user_id from public.push_subscriptions where endpoint='https:/
 -- ===========================================================================
 -- Anon nem iratkozhat fel
 -- ===========================================================================
-set local role anon;
-select set_config('request.jwt.claims','{"role":"anon"}', true);
+-- FIGYELEM — EZT A SZABÁLYT NEM SZABAD HÍVÁSSAL MÉRNI (F2.4-03).
+--
+-- Az eredeti állítás `anon` szerep alatt HÍVTA a függvényt, és azt várta, hogy
+-- 42501-gyel elutasítson. Ehelyett a Postgres `signal 11: Segmentation
+-- fault`-tal LEÁLLT, magával vitte az egész tesztfutást (a maradék nyolc fájl
+-- már csak „recovery mode"-ot látott), és ez pirosította a CI-t 2026-07-31 óta.
+--
+-- A hiba NEM a mi kódunké, és nem is ezé a függvényé: a Supabase helyi
+-- Postgres 17.6 képében BÁRMELY függvény-szintű jogosultság-megtagadás
+-- összeomlasztja a backendet az `anon` szerepnél. Külön mérésekkel igazolva —
+-- egy triviális `create function probe() returns int as 'select 1'`, amiről az
+-- anon jogát elvettük, ugyanígy szegfaultol; ha viszont MEGADJUK neki a jogot,
+-- a hívás szabályosan lefut. Nem a pgTAP és nem a pgaudit okozza.
+--
+-- Ezért a szabályt a KÉT alkotórészére bontva mérjük, a megtagadási útvonal
+-- érintése nélkül. Együtt ugyanazt fedik le, sőt élesebben: külön látszik a
+-- jogosultsági és a viselkedési garancia.
+
+-- 1. JOGOSULTSÁG: az anon meg sem hívhatja. A GRANT-ok a migrációban
+--    kifejezetten csak `authenticated`-nek szólnak; ez az állítás őrzi, hogy
+--    egy későbbi `grant execute ... to anon` ne csússzon át észrevétlenül.
+reset role;
+select ok(not has_function_privilege('anon',
+    'public.upsert_push_subscription(jsonb, uuid[])', 'execute'),
+  'push: az anonnak NINCS EXECUTE joga az RPC-re (meg sem hívhatja)');
+select ok(has_function_privilege('authenticated',
+    'public.upsert_push_subscription(jsonb, uuid[])', 'execute'),
+  'push: a bejelentkezett felhasználónak VAN joga (a fenti nem elgépelés)');
+
+-- 2. VISELKEDÉS: `auth.uid()` nélkül a függvény maga utasít el. Ezt
+--    `authenticated` szerepből mérjük, `sub` NÉLKÜLI claimsszel — ott van
+--    EXECUTE-jog, tehát a hívás eljut a törzsig, és épp azt az ágat járja be,
+--    ami anonim hívásnál is védene. Ez a védelem tehát mérve marad.
+set local role authenticated;
+select set_config('request.jwt.claims','{"role":"authenticated"}', true);
 select throws_ok(
   $$ select public.upsert_push_subscription(
        '{"endpoint":"https://push.example/ccc","keys":{"p256dh":"P","auth":"A"}}'::jsonb, '{}'::uuid[]) $$,
-  '42501', NULL, 'push: anon NEM iratkozhat fel (nincs auth.uid())');
+  '42501', NULL, 'push: auth.uid() nélkül a függvény elutasít (bejelentkezés szükséges)');
 
 -- ===========================================================================
 -- Leiratkozás: a user a SAJÁTJÁT törölheti endpoint alapján, a másét nem
