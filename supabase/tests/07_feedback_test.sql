@@ -30,8 +30,16 @@ select lives_ok(
              'A Suptime-ból hiányzik a helyi SUP-bolt, érdemes lenne felvenni.','/deszkak') $$,
   'feedback: bejelentkezett user beküldhet a saját nevében');
 
+-- A SZÁMLÁLÁS SUPERUSERKÉNT megy, és ez nem kényelmi rövidítés: a `feedback`
+-- SELECT-je SZÁNDÉKOSAN admin-only (`feedback_admin_read`), tehát a beküldő a
+-- SAJÁT sorát sem olvashatja vissza. Ha itt `authenticated` maradna, a lekérdezés
+-- 0-t adna — nem azért, mert a beszúrás nem sikerült, hanem mert az RLS elrejti.
+-- Magát az elzárást a lentebbi „a beküldő nem olvassa vissza a saját
+-- visszajelzését sem" állítás méri, ott ez a 0 a VÁRT eredmény.
+reset role;
 select is((select count(*)::int from public.feedback), 1,
   'feedback: pontosan egy sor jött létre');
+set local role authenticated;
 
 -- A beküldő NEM állíthat állapotot: a trigger visszaírja az alapértelmezettet.
 select lives_ok(
@@ -39,9 +47,18 @@ select lives_ok(
      values ('f1111111-1111-1111-1111-111111111111','bug',
              'A spot-adatlapon elcsúszik a vízmérce mobilon.','done','saját jegyzet') $$,
   'feedback: a status/admin_note megadása nem hiúsítja meg a beküldést');
+-- SZINTÉN superuserként: `authenticated`-ként ez az állítás ÜRESEN futna. Az
+-- RLS minden sort elrejt a beküldő elől, tehát a szűrt darabszám akkor is 0
+-- lenne, ha a trigger egyáltalán nem működne — vagyis rossz okból lenne zöld.
+-- Superuserként viszont látszik mind a két beszúrt sor, és tényleg azt méri,
+-- hogy a trigger visszaírta-e az alapértelmezést.
+reset role;
 select is(
   (select count(*)::int from public.feedback where status <> 'new' or admin_note is not null), 0,
   'feedback: a beküldő állapota MINDIG new, admin-jegyzet nélkül (oszlop-védő trigger)');
+select is((select count(*)::int from public.feedback), 2,
+  'feedback: a második beküldés is létrejött (a fenti 0 nem üres halmazon mért)');
+set local role authenticated;
 
 -- IDEGEN néven beküldeni tilos (RLS with check).
 select throws_ok(

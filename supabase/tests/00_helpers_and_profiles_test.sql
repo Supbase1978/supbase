@@ -52,8 +52,27 @@ select is(public.current_user_role(), 'anon', 'current_user_role: anon (nincs au
 -- ===========================================================================
 -- profiles — RLS
 -- ===========================================================================
--- Publikus olvasás (anon).
-select cmp_ok((select count(*)::int from public.profiles), '>=', 5, 'profiles: anon publikus olvasás');
+-- PUBLIKUS OLVASÁS: a TÁBLÁBÓL semmi, a NÉZETBŐL a név (20260717092800).
+--
+-- Korábban itt `profiles`-ból vártunk >= 5 sort, mert a `profiles_public_read`
+-- policy `using (true)` volt — vagyis anonim kulccsal a `role`, a
+-- `rider_weight_kg` és az `experience` is olvasható volt. A szűkítés óta a
+-- tábla anonim olvasása 0 sor, a megjelenítendő nevet pedig a `profiles_public`
+-- nézet adja. A két állítás EGYÜTT írja le a szabályt: elzárva, de a név
+-- elérhető — enélkül a véleményszerzők neve nem jelenhetne meg.
+select is((select count(*)::int from public.profiles), 0,
+  'profiles: anon a TÁBLÁBÓL egyetlen sort sem lát');
+select cmp_ok((select count(*)::int from public.profiles_public), '>=', 5,
+  'profiles_public: anon a nevekhez hozzáfér (véleményszerzők megjelenítése)');
+
+-- A NÉZET OSZLOPKÉSZLETE kényszerként: a migráció kimondja, hogy a nézet a
+-- definiálója jogaival fut, tehát átlát a sor-szintű policy-n — egy ide
+-- felvett új oszlop AZONNAL publikussá válna. Ez az állítás azért van itt,
+-- hogy a bővítés ne csúszhasson át észrevétlenül: aki oszlopot tesz bele,
+-- annak ezt a listát is módosítania kell, és akkor szembesül a döntéssel.
+select columns_are('public'::name, 'profiles_public'::name,
+  array['id','display_name']::name[],
+  'profiles_public: KIZÁRÓLAG id + display_name (a bővítés biztonsági döntés)');
 
 -- Saját profil szerkesztése (user1).
 set local role authenticated;

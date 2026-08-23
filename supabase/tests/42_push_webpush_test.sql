@@ -19,6 +19,12 @@ alter table public.profiles enable trigger protect_profile_columns_trg;
 create temporary table t_spots on commit drop as
   select id, row_number() over (order by id) as rn from public.spots limit 2;
 
+-- A temp táblát a SESSION-USER (superuser) hozza létre, és alapból csak ő
+-- olvashatja. A lenti állítások viszont `set local role authenticated` alatt
+-- hivatkoznak rá, ezért enélkül 42501-gyel („permission denied for table
+-- t_spots") halnak el — nem a mért RLS-szabály miatt, hanem a fixtúra miatt.
+grant select on t_spots to authenticated;
+
 -- ===========================================================================
 -- upsert_push_subscription — saját feliratkozás létrehozása
 -- ===========================================================================

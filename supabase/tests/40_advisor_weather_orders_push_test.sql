@@ -94,9 +94,16 @@ select throws_ok($$ insert into public.weather_snapshots (spot_id, source) value
 -- ---------------------------------------------------------------------------
 reset role;
 select set_config('request.jwt.claims','', true);
+-- A `fetched_at` ITT EXPLICIT, és ez nem díszítés: a PK `(spot_id, fetched_at)`,
+-- az oszlop alapértelmezése pedig `now()` — ami TRANZAKCIÓN BELÜL ÁLLANDÓ. A
+-- teszt egyetlen tranzakcióban fut, tehát a fenti fixtúra-sor és minden további
+-- beszúrás UGYANARRA a spotra ugyanazt a kulcsot kapná, és 23505-tel halna el —
+-- nem a mért szabály miatt, hanem a teszt felépítése miatt. Élesben ez nem áll
+-- fenn: ott minden lekérés külön tranzakció, saját `now()`-val.
 select lives_ok($$ insert into public.weather_snapshots
-    (spot_id, source, water_level_cm, water_level_at, water_trend, river_alert_level)
-  values ('d0000001-0000-0000-0000-000000000000','vizugy', 712, now(), 'rising', 2) $$,
+    (spot_id, fetched_at, source, water_level_cm, water_level_at, water_trend, river_alert_level)
+  values ('d0000001-0000-0000-0000-000000000000', now() + interval '1 minute',
+          'vizugy', 712, now(), 'rising', 2) $$,
   'weather: érvényes vízállás-sor beszúrható (service_role)');
 select throws_ok($$ insert into public.weather_snapshots (spot_id, source, water_trend)
   values ('d0000001-0000-0000-0000-000000000000','vizugy','rise') $$, '23514', NULL,
@@ -104,8 +111,8 @@ select throws_ok($$ insert into public.weather_snapshots (spot_id, source, water
 select throws_ok($$ insert into public.weather_snapshots (spot_id, source, river_alert_level)
   values ('d0000001-0000-0000-0000-000000000000','vizugy', 4) $$, '23514', NULL,
   'weather: 3-nál magasabb készültségi fok elutasítva');
-select lives_ok($$ insert into public.weather_snapshots (spot_id, source, river_alert_level)
-  values ('d0000001-0000-0000-0000-000000000000','vizugy', null) $$,
+select lives_ok($$ insert into public.weather_snapshots (spot_id, fetched_at, source, river_alert_level)
+  values ('d0000001-0000-0000-0000-000000000000', now() + interval '2 minutes','vizugy', null) $$,
   'weather: a NULL fok megengedett — az adathiány nem ugyanaz, mint a 0. fok');
 
 -- A spot→mérce hozzárendelés a seedből jön (3 folyó-spot).
