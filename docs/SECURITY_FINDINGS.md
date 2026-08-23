@@ -66,6 +66,24 @@ npm audit --omit=dev
 - **Karbantartási teher:** frissítéskor a SHA-t is cserélni kell — F2-ben
   Dependabotra bízandó.
 
+### F2.1-01 · Shell-injekció a crawl-workflow-ban — **JAVÍTVA**
+
+- **Súlyosság:** high — Semgrep `yaml.github-actions.security.run-shell-injection`
+  (CWE-78). A CI `semgrep` jobját 2026-07-31 óta EZ pirosította.
+- **Triage:** a `.github/workflows/catalog-watch.yml` `run:` blokkja
+  `${{ inputs.* }}` interpolációval hívta a crawlert. A `max_products`
+  **szabad szöveges** workflow-bemenet, tehát aki el tudta indítani a
+  workflow-t, tetszőleges parancsot futtathatott a runneren — és onnan a
+  `SUPABASE_SERVICE_ROLE_KEY`-hez fért volna hozzá. Nem elméleti: a workflow
+  `workflow_dispatch`-csel kézzel indítható.
+- **Javítás:** a bemenetek KÖZTES `env:` változóba kerülnek
+  (`DRY_RUN`, `MAX_PRODUCTS`), a `run:` blokk pedig idézőjelezett shell-
+  változóként használja őket, tömb-argumentumokkal. A `max_products` ezen
+  felül SZÁM-ellenőrzésen megy át: hibás értéknél a lépés megáll, nem pedig
+  csendben végigjárja az egész katalógust.
+- **Ellenőrizve:** a teljes Semgrep-menet (144 szabály, 445 fájl) a javítás
+  után **0 találat**.
+
 ### F1.10-04 · Snyk nincs bekötve — **NYITOTT**
 
 - A 10. fejezet heti Snyk függőség-auditot ír elő. A CLI/MCP

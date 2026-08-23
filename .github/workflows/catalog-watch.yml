@@ -57,10 +57,27 @@ jobs:
           # változók élnek (tools/catalog-watch/env.ts feloldási sorrendje).
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          # A WORKFLOW-BEMENETEK IS KÖRNYEZETI VÁLTOZÓBAN (Semgrep
+          # `run-shell-injection`, 2026-08-23). Korábban `${{ inputs.* }}`
+          # interpolációval kerültek a `run:` blokkba — a `max_products`
+          # SZABAD SZÖVEGES bemenet, tehát aki el tudta indítani a
+          # workflow-t, tetszőleges parancsot futtathatott a runneren, és
+          # onnan a SERVICE-ROLE KULCSHOZ fért volna.
+          DRY_RUN: ${{ inputs.dry_run }}
+          MAX_PRODUCTS: ${{ inputs.max_products }}
         run: |
-          node tools/catalog-watch/cli.ts crawl \
-            ${{ inputs.dry_run && '--dry-run' || '' }} \
-            ${{ inputs.max_products && format('--max {0}', inputs.max_products) || '' }}
+          args=()
+          if [ "$DRY_RUN" = "true" ]; then args+=(--dry-run); fi
+          if [ -n "$MAX_PRODUCTS" ]; then
+            # SZÁMKÉNT ellenőrizve: a szabad szöveges bemenetből így semmi más
+            # nem kerülhet a parancssorba. Hibás értéknél inkább megállunk,
+            # mint hogy csendben az egész katalógust végigjárjuk.
+            case "$MAX_PRODUCTS" in
+              *[!0-9]*) echo "A --max csak szám lehet, ez érkezett: $MAX_PRODUCTS" >&2; exit 1 ;;
+              *) args+=(--max "$MAX_PRODUCTS") ;;
+            esac
+          fi
+          node tools/catalog-watch/cli.ts crawl "${args[@]}"
 
       - name: Kifutás-jelöltek jelentése
         if: ${{ !inputs.dry_run }}
