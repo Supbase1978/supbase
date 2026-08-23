@@ -70,7 +70,9 @@
       "emailLabel": "Email address",
       "emailPlaceholder": "you@example.com",
       "passwordLabel": "Password",
-      "or": "or"
+      "or": "or",
+      "displayNameLabel": "Username",
+      "displayNamePlaceholder": "Your reviews will appear under this name"
     },
     "turnstile": {
       "disabledNotice": "Bot protection (Turnstile) is disabled in development mode."
@@ -137,7 +139,8 @@
       "consentRequired": "To continue you must accept the Terms of Service and the Privacy Policy.",
       "oauthError": "Could not start social sign-in. Please try again later.",
       "passwordResetFailed": "Could not save the password. The link may have expired — request a new one.",
-      "unexpected": "An unexpected error occurred. Please try again."
+      "unexpected": "An unexpected error occurred. Please try again.",
+      "displayNameRequired": "Please enter a username of 3–40 characters."
     }
   },
   "safety": {

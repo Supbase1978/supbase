@@ -134,6 +134,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
       ratingOverall: r.rating_overall,
       textPros: r.text_pros,
       textCons: r.text_cons,
+      authorName: r.author?.display_name ?? null,
       verifiedOwner: r.verified_owner,
       createdAt: r.created_at,
     })),

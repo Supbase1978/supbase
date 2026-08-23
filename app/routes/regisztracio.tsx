@@ -32,6 +32,14 @@ function readCaptchaToken(formData: FormData): string | undefined {
   return typeof token === "string" && token.length > 0 ? token : undefined;
 }
 
+/**
+ * A megjelenítendő név hossz-korlátai. Az alsó határ a „a" jellegű,
+ * azonosításra alkalmatlan nevek ellen véd; a felső a felület tördelése miatt
+ * kell (a vélemény-kártyán egy sorban jelenik meg).
+ */
+const DISPLAY_NAME_MIN = 3;
+const DISPLAY_NAME_MAX = 40;
+
 export async function loader({ request }: Route.LoaderArgs) {
   const url = new URL(request.url);
   const redirectTo = safeRedirect(url.searchParams.get("redirectTo"), "/");
@@ -46,10 +54,23 @@ export async function action({ request }: Route.ActionArgs) {
   const formData = await request.formData();
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
+  const displayName = String(formData.get("displayName") ?? "").trim();
   const redirectTo = safeRedirect(formData.get("redirectTo"), "/");
 
   if (!email) {
     return { ok: false as const, errorKey: "auth.errors.emailRequired" };
+  }
+  // KÖTELEZŐ FELHASZNÁLÓNÉV (F2.4-01, felhasználói döntés 2026-08-23).
+  //
+  // MIÉRT: a vélemények a szerző neve alatt jelennek meg — aki a saját neve
+  // alatt ír, máshogy ír, és ez a gépi hozzászólások ellen is visszatartó erő.
+  //
+  // MIÉRT KÖTELEZŐ, ÉS NEM CSAK OPCIONÁLIS: a `profiles` trigger tartaléklánca
+  // eddig az E-MAIL @ ELŐTTI RÉSZÉT tette a névbe. Mivel a név publikus, ez
+  // azt jelentette, hogy mindenki e-mail-címének az első fele nyilvános lett.
+  // A bekért név ezt szünteti meg.
+  if (displayName.length < DISPLAY_NAME_MIN || displayName.length > DISPLAY_NAME_MAX) {
+    return { ok: false as const, errorKey: "auth.errors.displayNameRequired" };
   }
   if (!password) {
     return { ok: false as const, errorKey: "auth.errors.passwordRequired" };
@@ -77,7 +98,10 @@ export async function action({ request }: Route.ActionArgs) {
       emailRedirectTo,
       // A consent-szándék a metaadatban utazik; a trigger a user létrejöttekor
       // naplózza (az e-mail-megerősítés miatt itt még nincs aktív session).
-      data: { consent_version: CONSENT_VERSION },
+      // A `display_name` a metaadatban utazik: a `handle_new_user` trigger
+      // ebből tölti a `profiles.display_name` mezőt (a tartaléklánc első
+      // eleme). Az e-mail-alapú tartalék így soha nem sül el.
+      data: { consent_version: CONSENT_VERSION, display_name: displayName },
     },
   });
   if (error) {
@@ -117,6 +141,17 @@ export default function SignupRoute({ loaderData, actionData }: Route.ComponentP
         {!confirmationSent ? (
           <Form method="post" className="mt-1 flex flex-col gap-4">
             <input type="hidden" name="redirectTo" value={loaderData.redirectTo} />
+            <AuthField
+              id="displayName"
+              name="displayName"
+              type="text"
+              label={t("auth.common.displayNameLabel")}
+              placeholder={t("auth.common.displayNamePlaceholder")}
+              autoComplete="nickname"
+              minLength={DISPLAY_NAME_MIN}
+              maxLength={DISPLAY_NAME_MAX}
+              required
+            />
             <AuthField
               id="email"
               name="email"

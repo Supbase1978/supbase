@@ -29,7 +29,18 @@ export async function listReviews(
   boardId: string,
   { publishedOnly = true }: ListReviewsOptions = {},
 ): Promise<BoardReviewRow[]> {
-  let query = supabase.from("board_reviews").select("*").eq("board_id", boardId);
+  // A SZERZŐ NEVE a `profiles_public` NÉZETBŐL jön (F2.4-02), nem a
+  // `profiles` tábláról: a nézet kizárólag az azonosítót és a nevet adja, a
+  // szerepet és a testsúlyt a tábla policy-ja mögött hagyja.
+  //
+  // MIÉRT MUTATJUK A NEVET (felhasználói döntés, 2026-08-23): aki a saját
+  // neve alatt ír, máshogy ír — ez társas visszatartó erő a gépi
+  // hozzászólások ellen. A gépi kitöltést maga a Turnstile állítja meg; ez a
+  // másik fele ugyanannak a védelemnek.
+  let query = supabase
+    .from("board_reviews")
+    .select("*, author:profiles_public(display_name)")
+    .eq("board_id", boardId);
   if (publishedOnly) {
     query = query.eq("status", "published");
   }

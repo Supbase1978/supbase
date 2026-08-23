@@ -12,6 +12,11 @@ import { Card, StatusBadge } from "@core/ui";
 
 export interface ReviewCardData {
   id: string;
+  /**
+   * A szerző neve. `null` = törölt profil — ilyenkor a kártya a „törölt
+   * felhasználó" feliratot mutatja, a vélemény viszont megmarad.
+   */
+  authorName: string | null;
   ratingOverall: number;
   textPros: string | null;
   textCons: string | null;
@@ -36,11 +41,16 @@ export function ReviewCard({ review, children }: ReviewCardProps) {
   return (
     <Card className="flex flex-col gap-2">
       <div className="flex items-center justify-between gap-2">
-        {review.verifiedOwner ? (
-          <StatusBadge status="safe" label={t("verifiedOwner")} />
-        ) : (
-          <span aria-hidden="true" />
-        )}
+        {/* A SZERZŐ NEVE (F2.4-02). Aki a saját neve alatt ír, máshogy ír —
+            ez a gépi hozzászólások elleni védelem társas fele. */}
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-medium text-text">
+            {review.authorName ?? t("deletedAuthor")}
+          </span>
+          {review.verifiedOwner ? (
+            <StatusBadge status="safe" label={t("verifiedOwner")} />
+          ) : null}
+        </div>
         <span className="text-sm font-semibold text-text">★ {review.ratingOverall}</span>
       </div>
 

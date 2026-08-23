@@ -67,5 +67,6 @@
     "empty": "Nothing to moderate.",
     "reasonLabel": "Reason",
     "statusLabel": "Status"
-  }
+  },
+  "deletedAuthor": "Deleted user"
 }

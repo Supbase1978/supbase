@@ -29,6 +29,17 @@ export interface BoardReviewRow {
   id: string;
   board_id: string;
   user_id: string;
+  /**
+   * A szerző MEGJELENÍTENDŐ NEVE, a `profiles_public` nézetből (F2.4-02).
+   *
+   * MIÉRT A NÉZETBŐL: a `profiles` tábla anonim módon már nem olvasható — a
+   * szerep és a testsúly a policy mögött maradt. A nézet kizárólag az
+   * azonosítót és a nevet adja.
+   *
+   * `null`, ha a szerző profilja időközben törlődött (GDPR-törlés) — a
+   * vélemény ilyenkor is megmarad, csak név nélkül.
+   */
+  author?: { display_name: string } | null;
   rating_overall: number;
   rating_stability: number | null;
   rating_glide: number | null;

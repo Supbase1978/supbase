@@ -70,7 +70,9 @@
       "emailLabel": "E-mail-cím",
       "emailPlaceholder": "te@pelda.hu",
       "passwordLabel": "Jelszó",
-      "or": "vagy"
+      "or": "vagy",
+      "displayNameLabel": "Felhasználónév",
+      "displayNamePlaceholder": "Ezen a néven jelennek meg a véleményeid"
     },
     "turnstile": {
       "disabledNotice": "Bot-védelem (Turnstile) fejlesztői módban kikapcsolva."
@@ -137,7 +139,8 @@
       "consentRequired": "A folytatáshoz el kell fogadnod az ÁSZF-et és az adatvédelmi tájékoztatót.",
       "oauthError": "A közösségi belépés nem indítható. Kérjük, próbáld újra később.",
       "passwordResetFailed": "A jelszó mentése nem sikerült. A link lejárhatott — kérj újat.",
-      "unexpected": "Váratlan hiba történt. Kérjük, próbáld újra."
+      "unexpected": "Váratlan hiba történt. Kérjük, próbáld újra.",
+      "displayNameRequired": "Adj meg egy 3–40 karakteres felhasználónevet."
     }
   },
   "safety": {

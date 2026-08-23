@@ -67,5 +67,6 @@
     "empty": "Nincs moderálandó elem.",
     "reasonLabel": "Ok",
     "statusLabel": "Állapot"
-  }
+  },
+  "deletedAuthor": "Törölt felhasználó"
 }
