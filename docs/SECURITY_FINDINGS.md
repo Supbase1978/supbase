@@ -131,6 +131,28 @@ TypeScript), a Snyk-lépéssel együtt.
   localhostról (pl. előnézeti környezet), mind a három tétel AZONNAL valódivá
   válik.
 
+### F2.4-02 · A `profiles` teljes egészében publikus volt — **JAVÍTVA**
+
+- **Súlyosság:** medium (információ-kiszivárgás, CWE-200) + adatvédelmi
+  kitettség.
+- **Mit mértünk (2026-08-23, VALÓS anonim kulccsal):** a
+  `profiles_public_read` policy `using (true)` volt, tehát bejelentkezés
+  nélkül minden oszlop olvasható: `id, display_name, role, rider_weight_kg,
+  experience, locale, created_at`.
+- **Miért nem volt ez elméleti:** a regisztráció NEM kérte be a nevet, ezért a
+  `profiles` trigger tartaléklánca az **e-mail @ előtti részét** tette a
+  `display_name`-be. A publikus olvasással így mindenki e-mail-címének az
+  első fele nyilvános volt.
+- **A `role` külön kockázat:** elárulja, ki az admin — célzott adathalászathoz
+  ad kiindulópontot.
+- **Javítás:** `profiles_public` NÉZET (`id`, `display_name`), a táblán pedig
+  saját sor + moderátor policy. A név publikus KELL maradjon, mert a
+  vélemények a szerző neve alatt jelennek meg.
+- **Ellenőrizve:** anonim kulccsal a tábla 0 sort ad, a nézet 3-at két
+  oszloppal, a `role` a nézeten át sem érhető el.
+- **Újraértékelés kiváltó oka:** a `profiles_public` nézet BŐVÍTÉSE — a nézet
+  a definiálója jogaival fut, tehát bármely új oszlop azonnal publikussá válna.
+
 ### F1.10-05 · Captcha (bot-védelem) nincs élesítve — **ELFOGADOTT KOCKÁZAT a jelszó-kapu mögött**
 
 - **Állapot:** a Turnstile-integráció KÉSZ (`@core/auth/turnstile.tsx`, 3 űrlap:
