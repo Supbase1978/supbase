@@ -20,7 +20,7 @@
     "e2e:visual:update": "playwright test --project=visual --update-snapshots"
   },
   "dependencies": {
-    "@react-router/node": "^7.6.0",
+    "@react-router/node": "^7.18.2",
     "@supabase/ssr": "^0.12.3",
     "@supabase/supabase-js": "^2.110.7",
     "i18next": "^26.3.6",
@@ -29,13 +29,13 @@
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-i18next": "^17.0.10",
-    "react-router": "7.18.2"
+    "react-router": "^7.18.2"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.12.1",
     "@netlify/vite-plugin-react-router": "^3.1.1",
     "@playwright/test": "^1.62.0",
-    "@react-router/dev": "^7.6.0",
+    "@react-router/dev": "^7.18.2",
     "@tailwindcss/vite": "^4.1.0",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",
