@@ -63,11 +63,51 @@ működő nyer**:
 | 3 | a spec címkézett szövegként ott van | `--html-only` — ez **ÜT** a JSON-LD-n |
 | 4 | a spec csak renderelés után létezik | `--render-when-empty` (a fallback görget is) |
 | 5 | egy oldal több méretet ad | méretenkénti bontás, `?size=…` egyedi URL-lel |
-| 6 | a kategória sehol nem egyértelmű | a lánc: URL-szegmens → kategória-felirat (`--category-class`) → morzsamenü → leírás → `boardTypeByUrl` rögzítés |
+| 6 | a kategória | KÜLÖN katalógusa van — ld. a következő szakaszt |
 
 A 2. pontnál **nézd meg, hogy a JSON-LD tényleg ad-e méretet.** Élesben
 (fanatic.com) kitesz nevet és árat, de egyetlen méretet sem — ott a `--html-only`
 kellett, különben a féladat nyert volna.
+
+## 2/b lépés — a KATEGÓRIA módszerei: próbáld végig
+
+**Ne találgass, mérj.** Egyetlen paranccsal végigfut mind a hét módszer, és
+mindegyik BIZONYÍTÉKKAL válaszol:
+
+```bash
+node tools/catalog-watch/cli.ts probe-methods --source "Márka" --url "<TERMÉK-URL>"
+```
+
+```
+  pinnedUrl        —
+  nameAndUrl       —
+  categoryLine     —
+  breadcrumb       —
+  usageBars        —
+  prose            —
+  multiUseProse    allround, touring    Ideal for both all-around paddling and touring…
+```
+
+Ami talált, azt írd a receptbe (`categoryMethods`), a MEGBÍZHATÓSÁG
+sorrendjében. **Lista hiányában mind fut** — a szűkítés mérés után történik,
+nem előre.
+
+### A módszer-katalógus
+
+| Módszer | Mit feltételez | Kinél vált be | Tipikus csapdája |
+|---|---|---|---|
+| `pinnedUrl` | a gyártónak van külön aktivitás-taxonómiája, amit böngészővel ki lehet olvasni | **Gladiator**, **Zray** | az alias-URL-ek (`gladiator-elite-11-6` vs `elite-11-6`) és a csomag-utótagok |
+| `nameAndUrl` | a kategória-szó a névben vagy az URL-szegmensben áll | **Aqua Marina** (`/products/all-around/`) | a marketing-slug (`/products/glowing/`) semmit nem mond a használatról |
+| `categoryLine` | a termékfejlécben ott a gyártó saját felirata | **Fanatic** (`ALL-AROUND / WINDSURF`) | a felirat SORRENDJE dönt, és MINDEN tagja számít |
+| `breadcrumb` | a morzsamenü kimondja a kategóriát | **Zray** | JS-ből épülő morzsamenüt a crawler nem lát (Zray új modelljei) |
+| `usageBars` | a gyártó pontozza a használatot | **Aqua Marina** (4 sáv) | ha a SZÖRF vezet, a termék kimarad — az nem a mi taxonómiánk |
+| `prose` | a leírás kimondja, FŐNÉVVEL | Gladiator régi modelljei | a teljes oldalszövegen fut, tehát hosszú navigációs blokkon is |
+| `multiUseProse` | a gyártó KETTŐT mond egy mondatban | **Jobe**, **Gladiator**, Starboard, Bluefin | a `river` helynév is: „choppy waters or rivers" ≠ vadvízi deszka |
+
+**A mérés eredménye, amit ne feledj:** öt gyártó — öt különböző út. Egyetlen
+módszer sem működik mindenhol, ezért nincs univerzális megoldás. Ha egyik sem
+visz eredményre, **írj újat**, tedd a `methods/catalog.ts` polcra, és a
+következő gyártónál már próbálható lesz.
 
 ## A recept a REPÓBAN él
 

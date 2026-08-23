@@ -552,9 +552,10 @@ async function commandSuggestCategories(args: Args): Promise<void> {
   const apply = flag(args, "apply") !== undefined;
   const client = connect();
 
+  const sources = await listSources(client, { onlyActive: false });
   const { data: candidates, error } = await client
     .from("catalog_candidates")
-    .select("raw, url, extracted, matched_board_id, status")
+    .select("raw, url, source_id, extracted, matched_board_id, status")
     .not("matched_board_id", "is", null)
     .in("status", ["approved", "merged"]);
   if (error) throw new Error(`catalog_candidates: ${error.message}`);
@@ -572,20 +573,50 @@ async function commandSuggestCategories(args: Args): Promise<void> {
     // többes használatot a TELJES prózában mondják ki. Ezért itt újra
     // letöltjük az oldalt, és a `multiUseFromProse` mondat-szintű mintáját
     // eresztjük rá: az a navigációs menüre NEM ugrik rá.
-    const urls = new Map<string, string>();
+    const urls = new Map<string, { url: string; sourceId: string }>();
     for (const row of candidates ?? []) {
       const url = row.url as string | null;
-      if (url) urls.set(row.matched_board_id as string, url);
+      if (url) {
+        urls.set(row.matched_board_id as string, {
+          url,
+          sourceId: row.source_id as string,
+        });
+      }
     }
+    // CSAK AZOKNÁL A FORRÁSOKNÁL, amelyek receptje kéri a `multiUseProse`
+    // módszert (F2.1-utó-45). Univerzálisan futtatva a Fanaticnál a „choppy
+    // waters or rivers" fordulatból vadvízi deszka lett volna — ott a gyártó
+    // prózája nem így beszél a kategóriáról.
+    const proseSources = new Set(
+      (sources ?? [])
+        .filter((source) => {
+          const methods =
+            SOURCE_RECIPES.find((recipe) => recipe.name === source.name)?.crawlConfig
+              .categoryMethods;
+          // Lista hiánya = MIND fut, tehát a prózás módszer is szóba jön.
+          return !methods || methods.length === 0 || methods.includes("multiUseProse");
+        })
+        .map((source) => source.id),
+    );
     let done = 0;
-    for (const [boardId, url] of urls) {
-      const page = await fetchOrNull(url);
+    let skipped = 0;
+    for (const [boardId, entry] of urls) {
+      if (!proseSources.has(entry.sourceId)) {
+        skipped += 1;
+        continue;
+      }
+      const page = await fetchOrNull(entry.url);
       done += 1;
-      if (done % 25 === 0) console.log(`  … ${done}/${urls.size}`);
+      if (done % 25 === 0) console.log(`  … ${done}`);
       if (page === null || page.status !== 200) continue;
       const types = multiUseFromProse(htmlToText(page.text));
       if (types.length > 0) proseByBoard.set(boardId, new Set(types));
       await sleep(SUGGEST_DELAY_MS);
+    }
+    if (skipped > 0) {
+      console.log(
+        `  (${skipped} deszka kihagyva: a forrásuk receptje NEM kéri a multiUseProse módszert)`,
+      );
     }
   } else {
     for (const row of candidates ?? []) {
