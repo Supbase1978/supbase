@@ -8,6 +8,7 @@
     "build:native": "cross-env BUILD_TARGET=native react-router build",
     "typecheck": "react-router typegen && tsc --noEmit",
     "lint": "eslint .",
+    "security": "semgrep scan --error --metrics=off --config=p/typescript --config=p/react --config=p/secrets --config=p/owasp-top-ten --config=p/sql-injection --exclude=node_modules --exclude=build --exclude=.react-router && npm run typecheck && npm audit --omit=dev",
     "test": "vitest run --passWithNoTests",
     "sb": "bash scripts/sb.sh",
     "prepare": "git config core.hooksPath .githooks || true",
@@ -28,7 +29,7 @@
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-i18next": "^17.0.10",
-    "react-router": "^7.6.0"
+    "react-router": "7.18.2"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.12.1",

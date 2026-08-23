@@ -12,7 +12,7 @@
 | **pgTAP** | RLS-policy lefedettség | CI `rls-tests` job |
 | **Playwright + axe** | jogosultsági kapuk, a11y | CI `e2e` job |
 | **npm audit** | függőség-CVE | kézzel (`npm audit --omit=dev`) |
-| **Snyk** | függőség + SAST | **még nincs bekötve** — `SNYK_TOKEN` repository secret kell |
+| **Snyk** | függőség + SAST | MCP-n át, `snyk_auth` után (2026-08-23 óta fut); CI-ben még nincs — `SNYK_TOKEN` kell |
 
 Helyi futtatás:
 
@@ -21,11 +21,15 @@ semgrep scan --config=p/typescript --config=p/react --config=p/secrets \
   --config=p/owasp-top-ten --config=p/sql-injection \
   --exclude=node_modules --exclude=build --exclude=.react-router
 npm audit --omit=dev
+npm run typecheck
 ```
+
+A teljes menetet a `biztonsagi-ellenorzes` skill írja le (Semgrep + Snyk +
+TypeScript), a Snyk-lépéssel együtt.
 
 ## Findingok
 
-### F1.10-01 · react-router RSC-mód CSRF-megkerülés — **ELFOGADOTT KOCKÁZAT**
+### F1.10-01 · react-router RSC-mód CSRF-megkerülés — **JAVÍTVA**
 
 - **Súlyosság:** high (GHSA-qwww-vcr4-c8h2, CWE-352)
 - **Érintett:** `react-router >=7.12.0 <8.3.0` — a projekt 7.18.1-en van.
@@ -33,13 +37,13 @@ npm audit --omit=dev
   (React Server Components) él. A projekt framework-módú SSR-t használ, RSC
   nincs bekötve — sem `@react-router/rsc` függőség, sem `unstable_RSC` API
   nem fordul elő a kódbázisban (ellenőrizve grep-pel, 2026-07-25).
-- **Javítás elérhető?** Csak a **8.3.0** főverzióban. A 7.x ágon nincs
-  patch-kiadás (a legfrissebb 7.18.1).
-- **Döntés:** a főverzió-emelés F1 zárása előtt aránytalan kockázat (breaking
-  change-ek a route-konfigban és a típusokban). **F2-re ütemezve**, addig a
-  kitettség nulla.
-- **Újraértékelés kiváltó oka:** ha RSC-módot vezetünk be → AZONNAL frissíteni
-  kell 8.3.0+-ra, még a bevezetés ELŐTT.
+- **JAVÍTVA (2026-08-23).** A 7.x ágon időközben megjelent a patch: **7.18.2**.
+  A korábbi indoklás („csak a 8.3.0 főverzióban van javítás") elavult — a
+  frissítés főverzió-emelés nélkül, egy patch-lépéssel megtörtént.
+  Ellenőrizve: `npm audit --omit=dev` → **0 sebezhetőség**, 1170 teszt zöld.
+- **Tanulság:** az „elfogadott kockázat" nem örök állapot. Az elfogadás
+  indoklása („nincs javítás") elévülhet — az újraértékelést a rendszeres
+  Snyk-futás váltja ki, nem az emlékezet.
 
 ### F1.10-02 · `dangerouslySetInnerHTML` a JSON-LD-ben — **FALSE POSITIVE**
 
@@ -84,14 +88,48 @@ npm audit --omit=dev
 - **Ellenőrizve:** a teljes Semgrep-menet (144 szabály, 445 fájl) a javítás
   után **0 találat**.
 
-### F1.10-04 · Snyk nincs bekötve — **NYITOTT**
+### F1.10-04 · Snyk nincs bekötve — **LEZÁRVA (2026-08-23)**
 
-- A 10. fejezet heti Snyk függőség-auditot ír elő. A CLI/MCP
-  **fiók-hitelesítést** igényel (`snyk auth`), ami felhasználói döntés.
-- Amíg nincs: az `npm audit --omit=dev` a helyettesítő (ez fedte fel az
-  F1.10-01 findingot is).
-- **Teendő:** Snyk-fiók + `SNYK_TOKEN` repository secret → külön heti
-  ütemezett workflow.
+- A Snyk MCP (1.1303.1) telepítve van, és a `snyk_auth` után **lefutott**:
+  `snyk_sca_scan` (függőségek) + `snyk_code_scan` (SAST).
+- **Eredmény:** a TERMELÉSI függőségekben **0 HIGH/CRITICAL**. A fejlesztői
+  fában 14 tétel (ld. F2.1-03), a SAST-ban 4 (ld. F2.1-04).
+- **Marad nyitott részlet:** a `SNYK_TOKEN` repository secret és a heti
+  ütemezett workflow — a HELYI futtatás ettől függetlenül működik, és a
+  `biztonsagi-ellenorzes` skill rögzíti a menetét.
+
+### F2.1-03 · Fejlesztői függőségek: 1 kritikus + 5 magas — **ELFOGADOTT KOCKÁZAT, ütemezett frissítéssel**
+
+- **Forrás:** `snyk_sca_scan --dev` (2026-08-23), 14 tétel.
+- **A kritikus:** `esbuild@0.25.12` — „Resources Downloaded over Insecure
+  Protocol" (CWE-426/494). Javítás: `vite@7.3.6` (esbuild 0.28.1).
+- **Magas:** `brace-expansion` (×2), `browserslist` (prototype pollution +
+  DoS), `js-yaml`, `nanoid`, `undici` (×2).
+- **Miért elfogadható MOST:** mind BUILD-IDEJŰ eszköz. A termelési fába
+  egyik sem kerül be — ellenőrizve: `snyk_sca_scan` termelési fán
+  `severity_threshold=high` → **0 tétel**, `npm audit --omit=dev` → 0.
+- **A kockázat, ami MARAD:** ellátási lánc. Az `esbuild` telepítő-szkriptje
+  bináris letöltést végez; egy kompromittált CDN a FEJLESZTŐI gépet és a CI
+  runnert érinti, ahol a `SUPABASE_SERVICE_ROLE_KEY` is jelen van.
+- **Teendő:** `vite@7.3.6`+ frissítés a következő karbantartási körben; a
+  többi tétel a lockfile újragenerálásával rendeződik.
+
+### F2.1-04 · SAST a lokális build-kiszolgálóban — **ELFOGADOTT KOCKÁZAT**
+
+- **Forrás:** `snyk_code_scan` (2026-08-23), 4 tétel — HIGH egy sincs.
+- **Három tétel (medium) a `scripts/serve-build.mjs`-ben:** externally
+  controlled format string (CWE-134), HTTP HTTPS helyett (CWE-319), és
+  hiányzó ráta-korlát egy fájlrendszer-műveleten (CWE-770).
+- **Miért elfogadható:** ez a szkript KIZÁRÓLAG lokálisan fut, a Playwright
+  teljesítmény-mérése indítja (`playwright.config.ts`, `localhost:3100`).
+  Sosem néz ki az internetre, és nincs nem-megbízható hívója. A HTTPS itt
+  kifejezetten ROSSZ lenne: a TLS-többlet torzítaná a mért LCP-t, márpedig a
+  szkript LÉTOKA a valósághű mérés.
+- **A negyedik (low):** beégetett teszt-érték a
+  `notify.server.test.ts`-ben — fixtúra, nem titok.
+- **Újraértékelés kiváltó oka:** ha a `serve-build.mjs` valaha kilép a
+  localhostról (pl. előnézeti környezet), mind a három tétel AZONNAL valódivá
+  válik.
 
 ### F1.10-05 · Captcha (bot-védelem) nincs élesítve — **ELFOGADOTT KOCKÁZAT a jelszó-kapu mögött**
 
