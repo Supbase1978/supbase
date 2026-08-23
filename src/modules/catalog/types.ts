@@ -114,13 +114,20 @@ export interface CatalogItemRowBase {
  * A `family` nem a kinyerésből jön, hanem a modellcsaládból örökölve.
  */
 export type ExtractedBoardTypeSource =
-  | "pinned"
-  | "name"
-  | "category"
+  | "pinnedUrl"
+  | "nameAndUrl"
+  | "categoryLine"
   | "breadcrumb"
-  | "usage"
-  | "description"
-  | "family";
+  | "usageBars"
+  | "prose"
+  | "multiUseProse"
+  | "shopifyCollections"
+  | "family"
+  // ÚJ MÓDSZER bármikor kerülhet a polcra (F2.1-utó-45): a forrás neve a
+  // MÓDSZER neve, és a katalógus bővíthető. A zárt unió itt hazugság lenne —
+  // a felület a felsorolt nevekhez ad emberi feliratot, a többihez az
+  // általánosat.
+  | (string & {});
 
 /**
  * `public.boards` DESZKA-sor (`kind = 'board'`) — minden oszlop.

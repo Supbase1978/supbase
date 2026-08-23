@@ -16,11 +16,11 @@
       "imageUrl": "https://www.fanatic.com/system/product_hotspot_pictures/pictures/67c9/a247/364f/c600/c345/dc26/xxlarge/FANATIC-SUP_2025_Viper_Air_SLT_Top_Bottom_2500x2500px.png?width=768",
       "imageUrls": [],
       "boardType": "allround",
-      "boardTypeSource": "category",
+      "boardTypeSource": "categoryLine",
       "boardTypes": [
         {
           "type": "allround",
-          "source": "category"
+          "source": "categoryLine"
         }
       ],
       "specs": {

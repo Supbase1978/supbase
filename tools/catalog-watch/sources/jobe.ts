@@ -21,6 +21,10 @@ export const recipe: SourceRecipe = {
   kind: "brand_site",
   country: "EU",
   crawlConfig: {
+      // MÉRVE: a Jobe-nál a kategória KIZÁRÓLAG a prózában van — se
+      // kategória-felirat, se morzsamenü, se használat-sáv. A gyártó kettőt is
+      // kimond: „Ideal for both all-around paddling and touring".
+      "categoryMethods": ["pinnedUrl", "nameAndUrl", "multiUseProse"],
       "notes": "Nincs JSON-LD; a spec címkézett szövegként. A cikkszám az URL végén = a képfájlok neve. Teherbírás = Recommended rider weight (felhasználói döntés, 2026-08-20).",
       "htmlOnly": true,
       "sitemapUrl": "https://www.jobesports.com/sitemap_en.xml",

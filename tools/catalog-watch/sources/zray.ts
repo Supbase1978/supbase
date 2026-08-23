@@ -33,6 +33,10 @@ export const recipe: SourceRecipe = {
   kind: "brand_site",
   country: "EU",
   crawlConfig: {
+      // MÉRVE: a rögzítés (a gyártó SUP-taxonómiája) és a morzsamenü. Prózás
+      // módszer nem kell: a Zray leírásai a SZOMSZÉD termékekről is írnak
+      // („Related Products"), ott a mondat-szintű minta is félrevezethet.
+      "categoryMethods": ["pinnedUrl", "breadcrumb", "nameAndUrl"],
       "notes": "Erősen korlátozott (429 Too Many Requests) — nagy szünet kell. A spec-blokk címkézett, kettősponttal. A DESZKA SÚLYÁT nem közli (2026-08-22, gyártói oldalon ellenőrizve) — csak teherbírást ad.",
       "unpublishedFields": ["weightKg"],
       "htmlOnly": true,

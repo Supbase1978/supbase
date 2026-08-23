@@ -24,6 +24,12 @@ export const recipe: SourceRecipe = {
   kind: "brand_site",
   country: "EU",
   crawlConfig: {
+      // MÉRVE (2026-08-22, fixtúra-mátrix): itt CSAK a `categoryLine` ad
+      // találatot — a gyártó saját felirata a termékfejlécben.
+      // A `multiUseProse` SZÁNDÉKOSAN kimarad: ennek a forrásnak a prózájában
+      // tévedett („the new touring sensation especially in choppy waters or
+      // rivers" → vadvízi deszka lett volna egy túradeszkából).
+      "categoryMethods": ["pinnedUrl", "categoryLine", "nameAndUrl"],
       "notes": "Nincs JSON-LD; a SIZES AND SPECS tábla CSAK böngésző-renderelés + görgetés után létezik. Egy oldal a modellcsalád MINDEN méretét hozza — méretenkénti bontással.",
       "htmlOnly": true,
       "sitemapUrl": "https://www.fanatic.com/__sitemap__/products-eu-en-0.xml",

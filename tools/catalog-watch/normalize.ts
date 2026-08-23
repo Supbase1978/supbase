@@ -10,9 +10,10 @@
  */
 import type { GearCategory } from "../../src/modules/catalog/gear.ts";
 import { decodeEntities, htmlToText } from "./html.ts";
+import { buildCategoryMethods } from "./methods/catalog.ts";
+import type { CategoryMethod, MethodContext } from "./methods/index.ts";
 import { displayImageUrl, MAX_GALLERY_CANDIDATES } from "./images.ts";
 import {
-  boardTypesFromCategoryLine,
   boardTypeFromDescription,
   boardTypeFromUsage,
   findModelCode,
@@ -1953,6 +1954,80 @@ function absoluteUrl(raw: string | null, baseUrl: string): string | null {
 }
 
 /**
+ * A MÓDSZER-POLC példányosítva a `normalize.ts` saját függvényeivel
+ * (F2.1-utó-45). A körkörös import elkerülésére a `methods/catalog.ts` NEM
+ * importál innen — a szükséges függvényeket beadjuk neki.
+ */
+const CATEGORY_METHODS = buildCategoryMethods({
+  guessBoardType,
+  breadcrumbText,
+  elementTextByClass,
+  urlCategoryHint,
+  multiUseFromProse,
+  matchPinnedType,
+});
+
+/**
+ * A recept által KÉRT módszerek, a kért sorrendben — lista hiányában MIND, a
+ * katalógus sorrendjében.
+ *
+ * MIÉRT EZ AZ ALAPÉRTELMEZÉS: így a bevezetés viselkedés-őrző. Amíg egy forrás
+ * receptjébe nem írunk listát, pontosan a mai lánc fut le rá, és ezt a
+ * fixtúra-háló bizonyítja. A szűkítés forrásonként, MÉRÉS után történik
+ * (`probe-methods`).
+ */
+export function selectCategoryMethods(names?: readonly string[]): CategoryMethod[] {
+  if (!names || names.length === 0) return CATEGORY_METHODS;
+  const byName = new Map(CATEGORY_METHODS.map((method) => [method.name, method]));
+  return names.flatMap((name) => {
+    const method = byName.get(name);
+    return method ? [method] : [];
+  });
+}
+
+/** A teljes katalógus — a `probe-methods` végigpróbáláshoz. */
+export function allCategoryMethods(): CategoryMethod[] {
+  return CATEGORY_METHODS;
+}
+
+/**
+ * A KÉRT MÓDSZEREK lefuttatása, sorrendben (F2.1-utó-45).
+ *
+ * MINDEN módszer eredménye megmarad — a halmaz-modell óta a többes találat nem
+ * kétértelműség, hanem a válasz. A SORREND viszont számít: az első módszer
+ * első találata kerül a `boardType` mezőbe (és a `board_type` oszlopba),
+ * tehát a recept sorrendje = a megbízhatóság sorrendje.
+ *
+ * Ez váltja ki a korábbi, mindenkire egyformán lefutó `resolveBoardType`
+ * láncot: ott a módszerek NEVE elveszett, és egy forrásnál hasznos szabály
+ * (a prózás olvasó a Jobe-nál) máshol tévedett (a Fanaticnál).
+ */
+function runCategoryMethods(
+  methods: readonly CategoryMethod[],
+  ctx: MethodContext,
+): {
+  boardType: BoardType | null;
+  boardTypeSource: string | null;
+  boardTypes: { type: BoardType; source: string }[];
+} {
+  const boardTypes: { type: BoardType; source: string }[] = [];
+  const seen = new Set<BoardType>();
+  for (const method of methods) {
+    for (const type of method.run(ctx).types) {
+      if (seen.has(type)) continue;
+      seen.add(type);
+      boardTypes.push({ type, source: method.name });
+    }
+  }
+  const first = boardTypes[0];
+  return {
+    boardType: first?.type ?? null,
+    boardTypeSource: first?.source ?? null,
+    boardTypes,
+  };
+}
+
+/**
  * A KATEGÓRIA FORRÁSA — a moderátornak szól (felhasználói kérés, 2026-08-21).
  *
  * MIÉRT KELL: a moderációs felület eddig csak a VÉGEREDMÉNYT mutatta, azt is
@@ -2088,6 +2163,13 @@ function normalizePinSlug(value: string): string {
 
 export interface PageExtractionOptions {
   /**
+   * A KATEGÓRIA-MÓDSZEREK neve, a kért sorrendben
+   * (`crawl_config.categoryMethods`). Hiányában MIND fut, a katalógus
+   * sorrendjében — így egy recept bővítése nem változtat a viselkedésen,
+   * amíg listát nem ír bele.
+   */
+  categoryMethods?: readonly string[];
+  /**
    * Kézi kategória-rögzítés (`crawl_config.boardTypeByUrl`): URL-részlet →
    * típus. Ez ÜT minden automatikus tippen, mert moderátori döntés.
    */
@@ -2134,6 +2216,7 @@ export function extractProductFromPage(
     titleSuffixes = [],
     titleCutAfter = [],
     categoryClass,
+    categoryMethods,
     overrideText,
   } = options;
   const titleMatch = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
@@ -2171,12 +2254,10 @@ export function extractProductFromPage(
   // A gyártó használat-értékelése. Ha a SZÖRF vezet, a terméket NEM gyűjtjük
   // (2026-08-19-i döntés: „a surf egy teljesen más dolog, mi a SUP-okra
   // fókuszálunk") — ez a szörf-kizárás gyártói adatból, nem névlistából.
-  const usage = boardTypeFromUsage(html);
-  if (usage === "surf") return null;
-  const usageType = usage;
-
-  // Moderátori rögzítés (a legerősebb jel): URL-részlet szerint.
-  const pinnedType = matchPinnedType(sourceUrl, boardTypeByUrl);
+  // A SZÖRF-KIZÁRÁS itt marad, nem módszerként: ez nem besorolás, hanem a
+  // termék ELDOBÁSA. A `usageBars` módszer csak annyit mond, hogy nincs
+  // találata; a „ne is gyűjtsük" döntés a hívóé.
+  if (boardTypeFromUsage(html) === "surf") return null;
 
   const extracted: ExtractedProduct = {
     sourceUrl,
@@ -2230,18 +2311,16 @@ export function extractProductFromPage(
     // sávok viszont igen.
     //  3. a gyártó saját LEÍRÁSA („the perfect all-around board for…"), ha a
     //     használat-sávok más készletet mutatnak (NUTS: TRACKING/STABILITY).
-    ...resolveBoardType({
-      pinned: pinnedType,
-      name: guessBoardType(`${rawTitle} ${urlCategoryHint(sourceUrl)}`),
-      // A gyártó SAJÁT kategória-felirata a termékfejlécben. A SORRENDJE
-      // számít („TOURING / FREERACING" → túra, nem race), ezért nem a
-      // szabály-prioritásos `guessBoardType` olvassa.
-      // A felirat MINDEN tagja (F2.1-utó-41): a `TOURING / FREERACING` eddig
-      // csak túrát adott, a második felét eldobtuk.
-      category: boardTypesFromCategoryLine(elementTextByClass(html, categoryClass)),
-      breadcrumb: guessBoardType(breadcrumbText(html)),
-      usage: usageType,
-      description: boardTypeFromDescription(pageText),
+    // A recept által KÉRT módszerek, a kért sorrendben (F2.1-utó-45) — lista
+    // hiányában MIND, a mai sorrendben, tehát a viselkedés változatlan.
+    ...runCategoryMethods(selectCategoryMethods(categoryMethods), {
+      html,
+      pageText,
+      rawTitle,
+      sourceUrl,
+      categoryClass,
+      boardTypeByUrl,
+      description: "",
     }),
     specs,
     accessoryType: null,

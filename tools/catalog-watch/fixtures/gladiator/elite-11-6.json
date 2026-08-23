@@ -16,11 +16,15 @@
       "imageUrl": "https://gladiatorsup.com/wp-content/uploads/2024/11/elite-1.jpg",
       "imageUrls": [],
       "boardType": "allround",
-      "boardTypeSource": "pinned",
+      "boardTypeSource": "pinnedUrl",
       "boardTypes": [
         {
           "type": "allround",
-          "source": "pinned"
+          "source": "pinnedUrl"
+        },
+        {
+          "type": "touring",
+          "source": "multiUseProse"
         }
       ],
       "specs": {

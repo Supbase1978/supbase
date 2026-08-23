@@ -71,7 +71,11 @@ import {
 import { SOURCE_RECIPES } from "./sources/index.ts";
 import { planSourceSync } from "./sources/plan.ts";
 import { htmlToText } from "./html.ts";
-import { boardTypesFromProse, multiUseFromProse } from "./normalize.ts";
+import {
+  allCategoryMethods,
+  boardTypesFromProse,
+  multiUseFromProse,
+} from "./normalize.ts";
 import { findSuspicions, formatCoverage, type Suspicion } from "./suspicion.ts";
 import type { BoardType, CrawlConfig, ExtractedProduct, SourceKind } from "./types.ts";
 
@@ -454,6 +458,79 @@ async function commandSyncUnpublished(args: Args): Promise<void> {
 
   console.log(`\n${touched} deszka jelölendő`);
   if (touched > 0 && !apply) console.log("DRY-RUN — írni --apply-vel ír.");
+}
+
+/**
+ * VÉGIGPRÓBÁLJA az ÖSSZES kategória-módszert egy valós termékoldalon.
+ *
+ * Ez maga a munkafolyamat, amit a felhasználó leírt (2026-08-22): új gyártónál
+ * végigpróbálod a meglévő módszereket, a működőt beírod a receptbe. Ha egyik
+ * sem visz eredményre, ÚJ módszert írsz — és az is felkerül a polcra, tehát a
+ * következő gyártónál már próbálható.
+ *
+ * MINDEN módszer BIZONYÍTÉKKAL válaszol: melyik szövegrészlet/elem váltotta ki.
+ * Enélkül a találat ellenőrizhetetlen állítás lenne, és épp az ilyenből lett a
+ * Fanatic „choppy waters or rivers" mondatából vadvízi deszka.
+ */
+async function commandProbeMethods(args: Args): Promise<void> {
+  const url = flag(args, "url");
+  if (!url) throw new Error("Kötelező: --url");
+  const sourceName = flag(args, "source");
+  const recipe = sourceName
+    ? SOURCE_RECIPES.find((item) => item.name === sourceName)
+    : undefined;
+  if (sourceName && !recipe) {
+    throw new Error(
+      `Nincs recept ehhez: "${sourceName}". Ismert: ${SOURCE_RECIPES.map((r) => r.name).join(", ")}`,
+    );
+  }
+
+  const page = await realFetch(url);
+  if (page.status !== 200) throw new Error(`HTTP ${page.status}`);
+
+  // A RENDERELT szöveg is számít: van forrás, ahol a kategória csak JS után
+  // kerül a látható szövegbe (fanatic.com), és ott a nyers HTML semmit sem ad.
+  let pageText = htmlToText(page.text);
+  if (recipe?.crawlConfig.renderWhenEmpty || flag(args, "render") !== undefined) {
+    const fetcher = createRenderFetcher();
+    try {
+      const rendered = await fetcher.renderText(url);
+      if (rendered !== null) pageText = rendered;
+    } finally {
+      await fetcher.close();
+    }
+  }
+
+  const titleMatch = page.text.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
+  const context = {
+    html: page.text,
+    pageText,
+    rawTitle: htmlToText(titleMatch?.[1] ?? "").replace(/\s+/g, " ").trim(),
+    sourceUrl: url,
+    categoryClass: recipe?.crawlConfig.categoryClass,
+    boardTypeByUrl: recipe?.crawlConfig.boardTypeByUrl ?? {},
+    description: "",
+  };
+
+  const wanted = recipe?.crawlConfig.categoryMethods;
+  console.log(`\n${url}`);
+  if (wanted && wanted.length > 0) {
+    console.log(`recept szerinti sorrend: ${wanted.join(" → ")}\n`);
+  } else {
+    console.log("a recept NEM szűkít — mind fut, a katalógus sorrendjében\n");
+  }
+
+  for (const method of allCategoryMethods()) {
+    const result = method.run(context);
+    const inRecipe = !wanted || wanted.length === 0 || wanted.includes(method.name);
+    const mark = inRecipe ? " " : "·"; // a `·` = a recept NEM kéri
+    const types = result.types.length > 0 ? result.types.join(", ") : "—";
+    console.log(`${mark} ${method.name.padEnd(16)} ${types.padEnd(20)} ${result.evidence ?? ""}`);
+  }
+  console.log(
+    "\nA `·` jelölt módszereket a recept nem kéri. A leírásukat a " +
+      "`methods/catalog.ts` tartalmazza.",
+  );
 }
 
 /**
@@ -1545,6 +1622,8 @@ async function main(): Promise<void> {
       return commandSyncSources(args);
     case "sync-unpublished":
       return commandSyncUnpublished(args);
+    case "probe-methods":
+      return commandProbeMethods(args);
     case "suggest-categories":
       return commandSuggestCategories(args);
     case "capture-fixture":

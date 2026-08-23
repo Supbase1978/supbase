@@ -551,6 +551,9 @@ export function extractPageProducts(
     titleSuffixes: config.titleSuffixes ?? [],
     titleCutAfter: config.titleCutAfter ?? [],
     categoryClass: config.categoryClass,
+    // A recept által kért kategória-módszerek (F2.1-utó-45) — lista hiányában
+    // mind fut, tehát a viselkedés változatlan.
+    categoryMethods: config.categoryMethods,
     ...(overrideText === null ? {} : { overrideText }),
   };
   if (config.htmlOnly) {

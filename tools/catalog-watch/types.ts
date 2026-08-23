@@ -150,6 +150,24 @@ export interface CrawlConfig {
    * geometriából számolt űrtartalom KITALÁLT biztonsági adat lenne.
    */
   unpublishedFields?: ("volumeL" | "weightKg" | "maxLoadKg" | "thicknessCm")[];
+  /**
+   * A KATEGÓRIA-KINYERÉSI MÓDSZEREK, a kért sorrendben (F2.1-utó-45).
+   *
+   * MIÉRT FORRÁSONKÉNT: „univerzálisat nem lehet létrehozni… minden gyártónak
+   * egyedi megoldásai vannak" (felhasználói döntés, 2026-08-22). A kategóriát
+   * hét gyártónál hét különböző úton mondja ki a forrás, és egy máshol hasznos
+   * szabály itt téveszthet — a `multiUseProse` a Jobe-nál és a Gladiatornál a
+   * gyártó saját állítását adja, a Fanatic prózájában viszont a „choppy waters
+   * or rivers" fordulatból vadvízi deszka lett volna.
+   *
+   * A LISTA HIÁNYA = MINDEN módszer, a katalógus sorrendjében. Így egy recept
+   * bővítése nem változtat a viselkedésen, amíg listát nem írunk bele; a
+   * szűkítés MÉRÉS után történik (`probe-methods`).
+   *
+   * Ismert nevek: `pinnedUrl` · `nameAndUrl` · `categoryLine` · `breadcrumb` ·
+   * `usageBars` · `prose` · `multiUseProse`.
+   */
+  categoryMethods?: string[];
   /** Szabad szöveges megjegyzés az adminnak. */
   notes?: string;
 }

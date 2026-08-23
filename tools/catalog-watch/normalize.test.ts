@@ -1601,13 +1601,13 @@ describe("boardTypeByUrl — alias-URL", () => {
   it("a KANONIKUS URL-en él a rögzítés", () => {
     const p = extractProductsFromPage(page(SPEC), "https://x.com/catalog/elite-11-6/", "Gladiator", opts)[0];
     expect(p?.boardType).toBe("touring");
-    expect(p?.boardTypeSource).toBe("pinned");
+    expect(p?.boardTypeSource).toBe("pinnedUrl");
   });
 
   it("az ALIAS URL-en is (márkanév-előtag)", () => {
     const p = extractProductsFromPage(page(SPEC), "https://x.com/catalog/gladiator-elite-11-6/", "Gladiator", opts)[0];
     expect(p?.boardType).toBe("touring");
-    expect(p?.boardTypeSource).toBe("pinned");
+    expect(p?.boardTypeSource).toBe("pinnedUrl");
   });
 
   it("a CSOMAG-VÁLTOZAT ugyanazt a besorolást kapja", () => {
@@ -1622,7 +1622,7 @@ describe("boardTypeByUrl — alias-URL", () => {
       opts,
     )[0];
     expect(p?.boardType).toBe("touring");
-    expect(p?.boardTypeSource).toBe("pinned");
+    expect(p?.boardTypeSource).toBe("pinnedUrl");
   });
 
   it("az ÉVJÁRAT-utótag sem számít külön modellnek", () => {
@@ -1632,7 +1632,7 @@ describe("boardTypeByUrl — alias-URL", () => {
       "Gladiator",
       opts,
     )[0];
-    expect(p?.boardTypeSource).toBe("pinned");
+    expect(p?.boardTypeSource).toBe("pinnedUrl");
   });
 
   it("az ELVÁLASZTÁS különbsége sem: `elite-11-6` = `elite-116`", () => {
@@ -1644,13 +1644,13 @@ describe("boardTypeByUrl — alias-URL", () => {
       "Gladiator",
       opts,
     )[0];
-    expect(p?.boardTypeSource).toBe("pinned");
+    expect(p?.boardTypeSource).toBe("pinnedUrl");
   });
 
   it("IDEGEN modellre NEM ragad rá", () => {
     // A záró-illesztés kötőjel-határon megy: a `pro-11-6` nem `elite-11-6`.
     const p = extractProductsFromPage(page(SPEC, "PRO 11.6"), "https://x.com/catalog/pro-11-6/", "Gladiator", opts)[0];
-    expect(p?.boardTypeSource).not.toBe("pinned");
+    expect(p?.boardTypeSource).not.toBe("pinnedUrl");
   });
 });
 

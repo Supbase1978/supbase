@@ -16,11 +16,11 @@
       "imageUrl": "https://aquamarina.com/wp-content/uploads/2023/01/Coral-N-1.png",
       "imageUrls": [],
       "boardType": "allround",
-      "boardTypeSource": "name",
+      "boardTypeSource": "nameAndUrl",
       "boardTypes": [
         {
           "type": "allround",
-          "source": "name"
+          "source": "nameAndUrl"
         }
       ],
       "specs": {

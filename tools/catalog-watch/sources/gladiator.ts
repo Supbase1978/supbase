@@ -22,6 +22,12 @@ export const recipe: SourceRecipe = {
   kind: "brand_site",
   country: "EU",
   crawlConfig: {
+      // MÉRVE: a rögzítés (gyártói aktivitás-taxonómia) a fő forrás, mellette
+      // a próza KETTŐS állítást ad („successfully combines the advantages of
+      // touring and…"). A `prose` egyértékű ága SZÁNDÉKOSAN kimarad: a
+      // rögzítéshez képest nem ad újat, viszont a hosszú navigációs blokkon
+      // futna.
+      "categoryMethods": ["pinnedUrl", "multiUseProse", "nameAndUrl"],
       "notes": "Nincs JSON-LD; kétoszlopos spec-tábla mértékegység nélkül. A méret-sor CIRILL szorzójelet használ. A kategória a gyártó catalog_activity taxonómiájából rögzítve (all-round/turizm/sport); a TÖBB kategóriába sorolt termékek szándékosan kimaradtak.",
       "htmlOnly": true,
       "sitemapUrl": "https://gladiatorsup.com/wp-sitemap-posts-catalog-1.xml",

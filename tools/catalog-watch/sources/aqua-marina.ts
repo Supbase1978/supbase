@@ -21,6 +21,11 @@ export const recipe: SourceRecipe = {
   kind: "brand_site",
   country: "EU",
   crawlConfig: {
+      // MÉRVE: a gyártó SAJÁT használat-sávjai (ALL-AROUND 100% / GUIDE 60% /
+      // SURF 70% / RACE 30%) a jellemző jel, mellette a kategória-URL. A
+      // `multiUseProse` kimarad: ez a gyártó nem kettős mondatokban fogalmaz,
+      // a sávok pontosabbak nála.
+      "categoryMethods": ["pinnedUrl", "nameAndUrl", "usageBars", "prose"],
       "notes": "Gyártói oldal, nincs JSON-LD; a specifikáció címkézett szövegként (NET WEIGHT / MAX. PAYLOAD). Oldalanként egy deszka, a színváltozatok külön URL-en.",
       "htmlOnly": true,
       "minDelayMs": 1500,
