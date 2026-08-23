@@ -4168,3 +4168,81 @@ után ez ellentmondás lett volna: a Bluefin új modelljei sosem mehettek volna
 kötelező, ahol a recept szerint a gyártó nem közli — máshol változatlanul az.
 
 **Kapuk:** typecheck + lint zöld, 1133 teszt (83 fájl).
+
+## F2.4-utó — A CI helyreállítása: öt ok, köztük egy Postgres-szegfault (2026-08-24)
+
+A CI **2026-07-31 óta piros** volt, és közben ~110 commit ment fel mellette —
+holott a `CLAUDE.md` kimondja, hogy „piros CI-val nincs merge". Az öt piros láb
+öt KÜLÖNBÖZŐ okból bukott; egyik sem policy-hiba volt.
+
+### 1. `e2e` — a `db start` nem indít API-átjárót
+
+A job `supabase db start`-tal indult, ami KIZÁRÓLAG a Postgrest hozza fel:
+Kong, Auth és REST nélkül a `supabase status` „Stopped services"-t ír, az
+`API_URL=` sor meg sem jelenik, tehát a `VITE_SUPABASE_URL` ÜRESEN maradt, és a
+webszerver induláskor elszállt. Javítás: teljes `supabase start`, plusz egy
+fail-fast env-lépés — az üres érték most MEGÁLLÍTJA a futást, korábban csendben
+ment tovább, és a hiba csak három lépéssel később derült ki.
+
+Az `rls-tests`-nek viszont TÉNYLEG elég a `db start`: a pgTAP közvetlenül a
+Postgreshez csatlakozik.
+
+### 2. `gates` — a biztonsági javítás fél lépése
+
+Az F1.10-01 zárásakor a `react-router` 7.18.2-re ment, a `@react-router/*`
+család nem. A `@react-router/serve` PONTOS verziót vár, így a lock
+ellentmondásossá vált: az `npm install` még feloldotta, az `npm ci` nem.
+Tanulság a findingban rögzítve.
+
+### 3–4. Két teszt, ami ROSSZ KÉRDÉST tett fel
+
+* `feedback: pontosan egy sor jött létre` — a `count(*)` `authenticated` szerep
+  alatt futott, miközben a `feedback` SELECT-je szándékosan admin-only. A 0
+  helyes válasz volt egy rosszul feltett kérdésre.
+* `weather: duplicate key` — a PK `(spot_id, fetched_at)`, a `fetched_at`
+  alapértelmezése `now()`, ami TRANZAKCIÓN BELÜL ÁLLANDÓ. Egy tranzakcióban
+  futó teszt így ugyanarra a spotra mindig ütközött.
+
+Ugyanitt kiderült egy csendesebb baj: a `feedback` oszlop-védő triggerét mérő
+állítás **üresen futott** — `authenticated`-ként az RLS minden sort elrejt,
+tehát a szűrt darabszám akkor is 0, ha a trigger nem működik. Rossz okból volt
+zöld. Ez a fajta hiba veszélyesebb a pirosnál, mert nem tűnik fel.
+
+### 5. A `push`-teszt: a Postgres ÖSSZEOMLOTT
+
+A `42_push_webpush_test.sql` 94. soránál a szerver `signal 11: Segmentation
+fault`-tal leállt, és a maradék nyolc tesztfájl már csak „recovery mode"-ot
+látott. Ezt lokálisan nem lehetett reprodukálni: **ezen a gépen nincs Docker**,
+a pgTAP-készlet csak CI-ben fut. Ezért előbb a CI-t kellett rábírni, hogy
+bukáskor kiírja a Postgres naplóját — a `signal 11` sora kizárólag ott látszik,
+a kliensoldali kimenetből nem következtethető ki.
+
+Utána öt mérési kör, eldobható konténerben (a workflow a `ci/crash-probe` ágon
+élt, és a mérés után törlődött — a `main`-re sosem került fel):
+
+1. A crash a függvényhíváson van, `anon` szerep alatt.
+2. A pgTAP ÁRTATLAN; a NULL `auth.uid()` ÁRTATLAN; ha az anonnak GRANT-tal
+   megadjuk az EXECUTE-ot, a hívás TÚLÉLI.
+3. Az ACL tényleg nem tartalmazza az anont — a crash tehát a
+   JOGOSULTSÁG-MEGTAGADÁS útvonalán történik, hibaüzenet nélkül.
+4. **A döntő bizonyíték:** egy triviális `create function probe() returns int
+   as 'select 1'`, amiről az anon jogát elvettük, UGYANÍGY szegfaultol. Nem a
+   mi függvényünk, nem a mi kódunk — és nem is a pgaudit (kikapcsolva is).
+5. **A biztonsági kérdés:** kiváltható-e hitelesítés nélküli HTTP-kéréssel? Az
+   éles projekt ugyanazon a 17.6-os motoron fut, tehát ezt nem lehetett
+   feltételezéssel lezárni. Teljes stackkel (Kong + PostgREST), az éles
+   kérésúton mérve: tiszta `42501` + HTTP 401, az adatbázis a hívás után is
+   kiszolgált, a naplóban nincs crash-nyom. **Élesben szándékosan nem
+   próbáltuk ki — ott a mérés maga lenne a támadás.**
+
+Az összeomláshoz superuser-munkamenetből indított `SET ROLE` kell; azt a
+pgTAP-futtató psql csinálja, a PostgREST nem. Rögzítve: `F2.4-03`.
+
+A tesztet nem elnémítottuk: az anon elzárását mostantól
+`has_function_privilege` méri, a viselkedési ágat pedig `authenticated`
+szerepből, `sub` nélküli claimsszel — a megtagadási útvonal érintése nélkül,
+ugyanazzal a lefedettséggel, sőt élesebben, mert külön látszik a jogosultsági
+és a viselkedési garancia.
+
+**Kapuk:** a CI mind a négy lábon ZÖLD (`gates` · `rls-tests` · `e2e` ·
+`semgrep`) — 2026-07-31 óta először.

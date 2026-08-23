@@ -44,6 +44,14 @@ TypeScript), a Snyk-lépéssel együtt.
 - **Tanulság:** az „elfogadott kockázat" nem örök állapot. Az elfogadás
   indoklása („nincs javítás") elévülhet — az újraértékelést a rendszeres
   Snyk-futás váltja ki, nem az emlékezet.
+- **Utólagos korrekció (2026-08-24):** a frissítés ELSŐRE hiányos volt. Csak a
+  `react-router` ment 7.18.2-re, a `@react-router/*` család nem — a
+  `@react-router/serve` viszont PONTOS verziót vár, így a lock ellentmondásossá
+  vált. Lokálisan az `npm install` még feloldotta, a CI szigorúbb `npm ci`-je
+  ERESOLVE-val megállt, és ezzel a biztonsági javítás egy CI-lábat pirosított.
+  **Tanulság a tanulságon túl:** a rögzített verziójú társcsomagoknál a
+  frissítés a CSALÁDRA szól, és a biztonsági javítás sem kész addig, amíg a
+  kapuk nem zöldek — épp azért, mert az `npm install` engedékenyebb, mint a CI.
 
 ### F1.10-02 · `dangerouslySetInnerHTML` a JSON-LD-ben — **FALSE POSITIVE**
 
@@ -152,6 +160,47 @@ TypeScript), a Snyk-lépéssel együtt.
   oszloppal, a `role` a nézeten át sem érhető el.
 - **Újraértékelés kiváltó oka:** a `profiles_public` nézet BŐVÍTÉSE — a nézet
   a definiálója jogaival fut, tehát bármely új oszlop azonnal publikussá válna.
+
+### F2.4-03 · Postgres-szegfault jogosultság-megtagadáskor (upstream) — **NEM KIVÁLTHATÓ A HTTP-FELÜLETRŐL, MEGKERÜLVE**
+
+- **Súlyosság:** a rendelkezésre állás szempontjából elvben critical (egyetlen
+  hívás leállítja az adatbázist), a TÉNYLEGES kitettség viszont **nincs**: a
+  kiváltásához olyan adatbázis-hozzáférés kell, amivel a támadó amúgy is bármit
+  megtehetne. Lásd a mérést lentebb.
+- **Mit mértünk (2026-08-23/24, eldobható konténerben, öt körben):** ha egy
+  szerep EXECUTE-jog nélkül hív meg egy függvényt, a Postgres a „permission
+  denied" helyett `signal 11: Segmentation fault`-tal leáll, és az egész
+  példány helyreállításba megy. A `pgTAP`-készletben ez nyolc további
+  tesztfájlt vitt magával, és ez pirosította a CI-t 2026-07-31 óta.
+- **A hiba NEM a mi kódunké.** Leszűkítve: a pgTAP ártatlan (`throws_ok` anon
+  alatt önmagában elfut); a NULL `auth.uid()` ártatlan (`authenticated`
+  szerepből szabályosan 42501-et dob); a `pgaudit` ártatlan (kikapcsolva is
+  összeomlik); és a döntő bizonyíték: egy triviális, az anon elől elzárt
+  `create function probe() returns int as 'select 1'` UGYANÍGY szegfaultol.
+  Vagyis bármely függvény-szintű megtagadás elég hozzá.
+- **Környezet:** Supabase helyi kép, PostgreSQL 17.6. Az ÉLES projekt ugyanezen
+  a motoron fut (17.6.1.147, management API-ból lekérdezve), ezért a kérdést
+  nem lehetett „ez csak lokális" alapon lezárni.
+- **MIÉRT NEM KITETTSÉG — ez a lényegi mérés:** hitelesítés nélküli
+  PostgREST-hívással próbáltuk kiváltani, teljes stackkel (Kong + PostgREST),
+  vagyis pontosan az éles kérésúton. Az eredmény tiszta
+  `42501 permission denied for function` + HTTP 401, az adatbázis a hívás után
+  is kiszolgált (HTTP 200), és a szerver naplójában NINCS crash-nyom. Az
+  összeomláshoz superuser-munkamenetből indított `SET ROLE` kell — azt a
+  pgTAP-futtató psql csinálja, a PostgREST nem.
+  **Élesben SZÁNDÉKOSAN nem próbáltuk ki: ott a mérés maga lenne a támadás.**
+- **Megkerülés:** a `42_push_webpush_test.sql` az anon elzárását mostantól
+  `has_function_privilege`-dzsel méri, a viselkedési ágat pedig `authenticated`
+  szerepből, `sub` nélküli claimsszel — a megtagadási útvonal érintése nélkül,
+  ugyanazzal a lefedettséggel.
+- **Újraértékelés kiváltó oka:** Postgres-verzióváltás (a javítás felszabadít),
+  VAGY ha a PostgREST valaha superuser-jogú kapcsolattal futna — akkor a fenti
+  „nincs kitettség" indoklás elévül.
+- **Maradó kockázat, amit tudni kell:** aki közvetlen superuser-kapcsolatot kap
+  az adatbázishoz (pl. egy Studio SQL-editor munkamenet), egy `set role anon` +
+  elzárt függvényhívással le tudja állítani a példányt. Ez nem
+  jogosultság-emelés, csak rendelkezésre-állási bosszúság — de fejlesztés
+  közben érdemes rá emlékezni, ha az adatbázis „magától" újraindul.
 
 ### F1.10-05 · Captcha (bot-védelem) nincs élesítve — **ELFOGADOTT KOCKÁZAT a jelszó-kapu mögött**
 
