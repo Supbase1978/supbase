@@ -10,7 +10,7 @@
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router";
 
-import type { FeedbackKind } from "./feedback.server";
+import type { FeedbackKind } from "./feedback";
 
 export function FeedbackPrompt({ kind, path }: { kind: FeedbackKind; path: string }) {
   const { t } = useTranslation("core");

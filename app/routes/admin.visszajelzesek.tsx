@@ -17,10 +17,9 @@ import { APP_NAME } from "@core/brand";
 import {
   FEEDBACK_STATUSES,
   isFeedbackStatus,
-  listFeedback,
-  setFeedbackStatus,
   type FeedbackStatus,
-} from "@core/feedback/feedback.server";
+} from "@core/feedback/feedback";
+import { listFeedback, setFeedbackStatus } from "@core/feedback/feedback.server";
 import { Button, Card, StatusBadge } from "@core/ui";
 
 import type { Route } from "./+types/admin.visszajelzesek";

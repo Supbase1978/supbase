@@ -6,7 +6,7 @@ import {
   isFeedbackStatus,
   sanitizePagePath,
   validateFeedbackInput,
-} from "./feedback.server";
+} from "./feedback";
 
 describe("validateFeedbackInput", () => {
   it("elfogadja az érvényes beküldést és trimmel", () => {

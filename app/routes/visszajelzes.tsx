@@ -25,8 +25,8 @@ import {
   MESSAGE_MIN_LENGTH,
   isFeedbackKind,
   sanitizePagePath,
-  submitFeedback,
-} from "@core/feedback/feedback.server";
+} from "@core/feedback/feedback";
+import { submitFeedback } from "@core/feedback/feedback.server";
 import { notifyFeedback } from "@core/feedback/notify.server";
 import { Button, Card } from "@core/ui";
 

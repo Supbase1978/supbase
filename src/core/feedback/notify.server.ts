@@ -13,7 +13,7 @@
  * BIZTONSÁG: a levél a beküldött SZABAD SZÖVEGET tartalmazza, ezért minden
  * beillesztett érték HTML-escape-elve megy (a szöveg idegen bemenet).
  */
-import type { FeedbackKind } from "./feedback.server";
+import type { FeedbackKind } from "./feedback";
 
 const RESEND_ENDPOINT = "https://api.resend.com/emails";
 
