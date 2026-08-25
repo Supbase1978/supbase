@@ -4246,3 +4246,57 @@ ugyanazzal a lefedettséggel, sőt élesebben, mert külön látszik a jogosults
 
 **Kapuk:** a CI mind a négy lábon ZÖLD (`gates` · `rls-tests` · `e2e` ·
 `semgrep`) — 2026-07-31 óta először.
+
+## F2.1-03 zárása — vite 7, és amit a build közben kihozott (2026-08-25)
+
+A gép váratlanul újraindult; az állapotfelmérés szerint a repó ép volt (tiszta
+munkafa, `origin/main`-nel szinkronban, `git fsck` csak a törölt `ci/crash-probe`
+dangling objektumait mutatta), a négy CI-láb zöld. Egyetlen dolgot rontott el az
+újraindítás, azt sem a projektben: a shell rossz `TMPDIR`-t örökölt
+(`/var/folders/zz/…` = a root temp-je), amitől a vitest mind a 83 fájlon
+`EACCES`-szel elhasalt. Nem kódhiba — TMPDIR-átirányítással azonnal zöld.
+
+Maradt a nyitott F2.1-03: az `esbuild` kritikus a fejlesztői fában.
+
+### A frissítés maga: unalmas volt, és ez a jó hír
+
+`vite@^6.3.0` → `^7.3.6` (esbuild 0.28.2). A család peer-tartományai MÁR
+tartalmazták a 7-est, tehát a `@react-router/*`-hoz nem kellett nyúlni — az
+F1.10-01 csapdája (`npm install` feloldja, `npm ci` nem) nem ismétlődött,
+`npm ci`-vel is ellenőrizve. A 8-as két okból nem jött szóba: `vitest@3.2.7`
+peer-je `^7.0.0-0`-ig megy, a `@react-router/dev@8` pedig Node ≥22.22-t kér
+(itt 22.20).
+
+Utána a maradék tranzitív tételek relockolása (`brace-expansion`,
+`browserslist`, `nanoid`, `postcss`, `undici`, `js-yaml`). A `js-yaml`-nál a
+Snyk `eslint@10`-et javasolt — fölöslegesen: a követelő `@eslint/eslintrc`
+`^4.3.0`-t kér, amibe a javított 4.3.1 belefér. **Snyk-remediationt érdemes a
+tényleges peer-tartománnyal szemben ellenőrizni**, mert a legfelső szintű
+útvonalat preferálja.
+
+Végeredmény: `snyk_sca_scan --dev` **14 → 0**, `npm audit` teljes fán 0.
+
+### A valódi hozadék: a vite 7 elkapott egy leaket
+
+A build hibával állt meg: „Server-only module referenced by client" — a
+`@core/feedback/feedback.server` a `admin.visszajelzesek.tsx` kliens-oldaláról.
+Az ok: a `.server` fájl futásidejű konstansokat is exportált
+(`FEEDBACK_STATUSES`, `FEEDBACK_KINDS`, `MESSAGE_MIN_LENGTH`), amiket a
+komponensek használnak — és a React Router csak a `loader`/`action`/
+`middleware`/`headers` exportokból vágja ki a szerverkódot, a default export
+komponensből nem. A vite 6 ezt évekig átengedte volna.
+
+Titok nem szivárgott (a `.server` egyetlen importja egy TÍPUS), de az admin
+adatréteg alakja — táblanevek, oszlopok, a `feedback_rate_limit` jelzés —
+kikerülhetett a kliens-csomagba. Javítás: a modul kettévált kliens-biztos
+(`feedback.ts`) és szerver-only (`feedback.server.ts`) részre, a határ mindkét
+fejlécben kimondva. A `.server` szándékosan NEM re-exportál — az csendben
+visszahozná a hibát. Ellenőrizve: a `build/client`-ben a szerveroldali nevekre
+nulla találat. Rögzítve `F2.1-05` néven.
+
+Nyitva hagyva egy védőháló: ESLint-szabály, ami kliens-komponensből tiltja a
+`.server` importot. Most a vite-build a kapu, az viszont csak a route-okat
+fogja meg.
+
+**Kapuk:** `npm ci` · `typecheck` · `lint` · `test` (83 fájl / 1170 teszt) ·
+`build:web` — mind zöld.

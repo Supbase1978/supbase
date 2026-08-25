@@ -106,21 +106,32 @@ TypeScript), a Snyk-lépéssel együtt.
   ütemezett workflow — a HELYI futtatás ettől függetlenül működik, és a
   `biztonsagi-ellenorzes` skill rögzíti a menetét.
 
-### F2.1-03 · Fejlesztői függőségek: 1 kritikus + 5 magas — **ELFOGADOTT KOCKÁZAT, ütemezett frissítéssel**
+### F2.1-03 · Fejlesztői függőségek: 1 kritikus + 5 magas — **JAVÍTVA (2026-08-25)**
 
-- **Forrás:** `snyk_sca_scan --dev` (2026-08-23), 14 tétel.
-- **A kritikus:** `esbuild@0.25.12` — „Resources Downloaded over Insecure
-  Protocol" (CWE-426/494). Javítás: `vite@7.3.6` (esbuild 0.28.1).
-- **Magas:** `brace-expansion` (×2), `browserslist` (prototype pollution +
-  DoS), `js-yaml`, `nanoid`, `undici` (×2).
-- **Miért elfogadható MOST:** mind BUILD-IDEJŰ eszköz. A termelési fába
-  egyik sem kerül be — ellenőrizve: `snyk_sca_scan` termelési fán
-  `severity_threshold=high` → **0 tétel**, `npm audit --omit=dev` → 0.
-- **A kockázat, ami MARAD:** ellátási lánc. Az `esbuild` telepítő-szkriptje
-  bináris letöltést végez; egy kompromittált CDN a FEJLESZTŐI gépet és a CI
-  runnert érinti, ahol a `SUPABASE_SERVICE_ROLE_KEY` is jelen van.
-- **Teendő:** `vite@7.3.6`+ frissítés a következő karbantartási körben; a
-  többi tétel a lockfile újragenerálásával rendeződik.
+- **Forrás:** `snyk_sca_scan --dev` (2026-08-23), 14 tétel; ebből a kritikus az
+  `esbuild@0.25.12` volt („Resources Downloaded over Insecure Protocol",
+  CWE-426/494).
+- **A javítás:** `vite@^6.3.0` → **`vite@^7.3.6`** (esbuild 0.28.2), majd a
+  tranzitív tételek relockolása: `brace-expansion` 1.1.18 / 5.0.9,
+  `browserslist` 4.28.8, `nanoid` 3.3.18, `postcss` 8.5.26, `undici` 7.29.0,
+  `js-yaml` 4.3.1.
+- **Eredmény (újramérve 2026-08-25):** `snyk_sca_scan --dev` → **0 tétel**,
+  `npm audit` (teljes fa) → **0**, `npm audit --omit=dev` → 0.
+- **Miért nem kellett eslint-major:** a Snyk `eslint@10.0.0`-t javasolt a
+  `js-yaml`-hoz, de a követelő `@eslint/eslintrc@3.3.6` `^4.3.0`-t kér, amibe a
+  javított 4.3.1 belefér — egy `npm update js-yaml` elég volt. A Snyk
+  remediation-javaslata a legfelső szintű útvonalat preferálja; érdemes előbb a
+  tényleges peer-tartományt megnézni.
+- **Miért 7 és nem 8:** a `vitest@3.2.7` peer-je `^5 || ^6 || ^7.0.0-0`, a
+  `@react-router/dev@8` pedig Node ≥22.22-t kér (a gépen 22.20). A telepített
+  plugin-család (`@react-router/dev` 7.18.2, `@tailwindcss/vite` 4.3.3,
+  `@netlify/vite-plugin-react-router` 3.1.1, `vite-tsconfig-paths` 5.1.4) peer-
+  tartománya viszont MÁR tartalmazta a 7-est, így a családhoz nem kellett nyúlni
+  — az F1.10-01 lock-csapdája (`npm install` feloldja, `npm ci` nem) itt nem
+  ismétlődött, `npm ci`-vel is ellenőrizve.
+- **Kapuk a frissítés után:** `npm ci` · `typecheck` · `lint` · `test`
+  (83 fájl / 1170 teszt) · `build:web` — mind zöld.
+- **Amit a frissítés MELLESLEG kihozott:** ld. F2.1-05.
 
 ### F2.1-04 · SAST a lokális build-kiszolgálóban — **ELFOGADOTT KOCKÁZAT**
 
@@ -138,6 +149,43 @@ TypeScript), a Snyk-lépéssel együtt.
 - **Újraértékelés kiváltó oka:** ha a `serve-build.mjs` valaha kilép a
   localhostról (pl. előnézeti környezet), mind a három tétel AZONNAL valódivá
   válik.
+
+### F2.1-05 · Szerveroldali adatréteg a kliens-csomagban (`feedback.server`) — **JAVÍTVA (2026-08-25)**
+
+- **Hogyan került elő:** a `vite@7` build HIBAKÉNT állt meg ott, ahol a 6-os
+  csendben átengedte: „Server-only module referenced by client —
+  `@core/feedback/feedback.server` imported by route
+  `app/routes/admin.visszajelzesek.tsx`".
+- **Az ok:** a `feedback.server.ts` nem csak adatréteget exportált, hanem
+  FUTÁSIDEJŰ értékeket is (`FEEDBACK_KINDS`, `FEEDBACK_STATUSES`,
+  `MESSAGE_MIN_LENGTH`, `isFeedbackKind`, `sanitizePagePath`), amiket a
+  route-ok KLIENS-komponensei használnak (témaválasztó, admin-szűrő,
+  súgószöveg). A React Router csak a `loader`/`action`/`middleware`/`headers`
+  exportokból távolítja el a szerverkódot — a default export komponensből nem.
+  Ugyanez a minta a `visszajelzes.tsx`-ben is megvolt.
+- **Mekkora a kár:** titok NEM szivárgott. A `feedback.server.ts` egyetlen
+  importja `type SupabaseClient` (típus, lefordítva eltűnik), kulcs nincs
+  benne. Ami kikerülhetett: az admin adatréteg ALAKJA — `listFeedback` /
+  `setFeedbackStatus` táblanevekkel, oszlopnevekkel, a `feedback_rate_limit`
+  jelzéssel. Felderítési előny egy támadónak, nem közvetlen hozzáférés. Az
+  RLS (admin-only select) végig a valódi kapu volt és maradt.
+- **Javítás:** a modul kettévált. `src/core/feedback/feedback.ts` = kliens-biztos
+  réteg (típusok, a DB-kényszereket tükröző konstansok, tiszta validálók);
+  `feedback.server.ts` = KIZÁRÓLAG Supabase-t érintő kód. A határ kimondva
+  mindkét fájl fejlécében. A `.server` szándékosan NEM re-exportálja a
+  kliens-biztos szimbólumokat — a re-export csendben visszahozná a hibát.
+  A tiszta validálók tesztje `feedback.test.ts`-re költözött (a lefedettség
+  változatlan: 83 fájl / 1170 teszt zöld).
+- **Ellenőrizve:** a `build/client` fában a `listFeedback`, `setFeedbackStatus`
+  és `feedback_rate_limit` minta egyikére sincs találat.
+- **Tanulság:** a build-lánc frissítése nem csak CVE-t zár — ez a leak évekig
+  elfért volna a vite 6 alatt. Aki `.server` fájlba konstanst tesz, előbb-utóbb
+  kliensbe húzza az adatréteget.
+- **Újraértékelés kiváltó oka:** ESLint-szabály (`import/no-restricted-paths`
+  vagy `no-restricted-imports`) hiányzik, ami a `.server` importot kliens-
+  komponensből tiltaná. MOST a vite-build a kapu — az a route-okat fogja meg,
+  de egy sima `.tsx` komponensben ugyanez a hiba csak a csomagban derülne ki.
+  Felvéve a nyitott higiéniai tételek közé.
 
 ### F2.4-02 · A `profiles` teljes egészében publikus volt — **JAVÍTVA**
 
@@ -272,3 +320,7 @@ TypeScript), a Snyk-lépéssel együtt.
   kivehető, ha a régi projektekhez már nem kell.
 - Titkot tartalmazó CLI-parancsot **soha ne `npm run`-on át** (az npm kiírja a
   parancssort) — közvetlenül `bash scripts/sb.sh`, exportált env-változóval.
+- **ESLint-őr a `.server` importra** (F2.1-05 nyomán): jelenleg semmi nem tiltja,
+  hogy kliens-komponens `.server` modult importáljon — a vite-build csak a
+  route-okon fogja meg. Egy `no-restricted-imports` szabály a `src/**/*.tsx`
+  kliens-fájlokra olcsó védőháló lenne.
