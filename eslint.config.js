@@ -42,6 +42,13 @@ export default tseslint.config(
     rules: {
       ...reactHooks.configs.recommended.rules,
 
+      // A tsconfig `verbatimModuleSyntax: true`, ezért az `import { type X }`
+      // alak MEGTARTJA az import-utasítást (mérve: `import {} from "./x"`),
+      // vagyis a modul futásidőben betöltődik. Ez a `.server`-őr (lentebb)
+      // kerülőútja lenne, ezért a csak-típus importokat a teljes
+      // `import type { X }` alakra kényszerítjük — az nyomtalanul eltűnik.
+      "@typescript-eslint/no-import-type-side-effects": "error",
+
       // MODUL-SZERZŐDÉS (FEJLESZTESI_DOKUMENTACIO 1.3):
       // 1. modul → másik modul import TILOS (csak core + saját mappa);
       // 2. a core nem függhet moduloktól, sem az app rétegtől.
@@ -71,6 +78,44 @@ export default tseslint.config(
               except: [`./${mod}`],
               message: `Modul→modul import tilos (${mod}). Közös igény a core-ba kerül.`,
             })),
+          ],
+        },
+      ],
+    },
+  },
+  {
+    // SZERVER-ONLY MODULOK NEM SZIVÁROGHATNAK A KLIENSBE (F2.1-05).
+    //
+    // Előzmény: a `feedback.server.ts` futásidejű konstansokat is exportált
+    // (`FEEDBACK_STATUSES`, `MESSAGE_MIN_LENGTH`), amiket route-ok
+    // KLIENS-komponensei használtak — így a szerveroldali adatréteg bekerült
+    // volna a kliens-csomagba. A vite 7 buildje ezt hibaként állítja meg, a
+    // vite 6 még átengedte. A build viszont CSAK a route-okat fogja meg;
+    // egy sima `src/**` komponensben ugyanez csak a csomagban derülne ki.
+    //
+    // Kivételek (szándékosan):
+    //   *.server.ts   — maga a szerver-réteg, hívhat másik szerver-modult;
+    //   *.test.ts(x)  — a unit-tesztek közvetlenül a szerver-modult mérik;
+    //   app/**        — a route-réteg, ahonnan a React Router a loader/action
+    //                   szerverkódját eltávolítja (ott a build a kapu).
+    //
+    // A TÍPUS-import engedett (`allowTypeImports`), mert a fordító kidobja.
+    // FIGYELEM: a tsconfig `verbatimModuleSyntax: true`, ezért CSAK a teljes
+    // `import type { … } from` tűnik el nyomtalanul — az inline `{ type X }`
+    // alak megtartja az import-utasítást, tehát behúzná a modult.
+    files: ["src/**/*.{ts,tsx}"],
+    ignores: ["src/**/*.server.ts", "src/**/*.test.ts", "src/**/*.test.tsx"],
+    rules: {
+      "@typescript-eslint/no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              group: ["**/*.server", "*.server"],
+              allowTypeImports: true,
+              message:
+                "Kliens-oldali fájl nem importálhat `.server` modult (F2.1-05): a szerveroldali adatréteg belekerülne a kliens-csomagba. A közös típusokat, konstansokat és tiszta validálókat tedd kliens-biztos modulba (minta: `src/core/feedback/feedback.ts`).",
+            },
           ],
         },
       ],

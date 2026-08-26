@@ -181,11 +181,26 @@ TypeScript), a Snyk-lépéssel együtt.
 - **Tanulság:** a build-lánc frissítése nem csak CVE-t zár — ez a leak évekig
   elfért volna a vite 6 alatt. Aki `.server` fájlba konstanst tesz, előbb-utóbb
   kliensbe húzza az adatréteget.
-- **Újraértékelés kiváltó oka:** ESLint-szabály (`import/no-restricted-paths`
-  vagy `no-restricted-imports`) hiányzik, ami a `.server` importot kliens-
-  komponensből tiltaná. MOST a vite-build a kapu — az a route-okat fogja meg,
-  de egy sima `.tsx` komponensben ugyanez a hiba csak a csomagban derülne ki.
-  Felvéve a nyitott higiéniai tételek közé.
+- **Védőháló utólag (2026-08-26):** a build csak a route-okat fogja meg, ezért
+  ESLint-őr került a `src/**` kliens-fájlokra
+  (`@typescript-eslint/no-restricted-imports`, `**/*.server` mintára).
+  Kivétel szándékosan: `*.server.ts` (maga a szerver-réteg), `*.test.ts(x)`
+  (a unit-tesztek a szerver-modult mérik) és az `app/**` route-réteg, ahol a
+  React Router távolítja el a szerverkódot.
+- **A kerülőút, amit MÉRNI kellett:** a szabály `allowTypeImports`-szal engedi a
+  típus-importot, mert azt a fordító kidobja — DE a tsconfig
+  `verbatimModuleSyntax: true`, és ilyenkor az inline `{ type X }` alak
+  MEGTARTJA az import-utasítást. Lefordítva bizonyítva:
+  `import { type Foo } from "./mod.server"` → `import {} from "./mod.server";`
+  (a modul betöltődik), míg `import type { Foo } from …` → semmi.
+  Ezért az őr mellé `@typescript-eslint/no-import-type-side-effects` került az
+  EGÉSZ repóra, ami a csak-típus importokat a teljes `import type` alakra
+  kényszeríti. A kettő együtt zár; külön-külön egyik sem elég.
+  A kódbázisban egyetlen valós előfordulás volt
+  (`src/modules/weather/sup-index/reading.ts`), automatikusan javítva.
+- **Ellenőrizve négy import-alakon:** érték-import aliasból → hiba; relatív
+  érték-import → hiba; inline `{ type X }` → hiba (az új szabálytól);
+  `import type { … }` → átmegy. A próbafájlok a mérés után törölve.
 
 ### F2.4-02 · A `profiles` teljes egészében publikus volt — **JAVÍTVA**
 
@@ -320,7 +335,4 @@ TypeScript), a Snyk-lépéssel együtt.
   kivehető, ha a régi projektekhez már nem kell.
 - Titkot tartalmazó CLI-parancsot **soha ne `npm run`-on át** (az npm kiírja a
   parancssort) — közvetlenül `bash scripts/sb.sh`, exportált env-változóval.
-- **ESLint-őr a `.server` importra** (F2.1-05 nyomán): jelenleg semmi nem tiltja,
-  hogy kliens-komponens `.server` modult importáljon — a vite-build csak a
-  route-okon fogja meg. Egy `no-restricted-imports` szabály a `src/**/*.tsx`
-  kliens-fájlokra olcsó védőháló lenne.
+- ~~**ESLint-őr a `.server` importra**~~ — **KÉSZ (2026-08-26)**, ld. F2.1-05.

@@ -10,7 +10,7 @@
 import { isStale } from "@core/ui/data-age";
 
 import { computeSupIndex } from "./sup-index";
-import { type SupIndexConfig } from "./config";
+import type { SupIndexConfig } from "./config";
 import type { SupIndexInput, SupIndexReading } from "./types";
 
 export interface EvaluateSnapshotArgs {

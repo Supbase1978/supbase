@@ -4300,3 +4300,48 @@ fogja meg.
 
 **Kapuk:** `npm ci` · `typecheck` · `lint` · `test` (83 fájl / 1170 teszt) ·
 `build:web` — mind zöld.
+
+## F2.1-05 védőhálója — ESLint-őr a `.server` importra (2026-08-26)
+
+Az F2.1-05-öt a vite 7 buildje hozta ki: a `feedback.server` futásidejű
+konstansokat is exportált, amiket kliens-komponensek használtak. A javítás után
+maradt egy kérdés: **mi fogja meg legközelebb?** A build csak a route-okat
+vizsgálja — egy sima `src/**` komponensben ugyanez a hiba csak a kész
+csomagban derülne ki.
+
+### Az őr
+
+`@typescript-eslint/no-restricted-imports` a `src/**/*.{ts,tsx}` körre,
+`**/*.server` mintára. Kivételek szándékosan: `*.server.ts` (maga a
+szerver-réteg hívhat szerver-modult), `*.test.ts(x)` (a unit-tesztek
+közvetlenül a szerver-modult mérik), és az `app/**` route-réteg, ahol a React
+Router távolítja el a loader/action szerverkódját.
+
+### A kerülőút, ami majdnem átcsúszott
+
+A szabály `allowTypeImports`-szal engedi a típus-importot — logikusnak tűnik,
+hiszen a fordító kidobja. Csakhogy a tsconfig `verbatimModuleSyntax: true`,
+és ilyenkor az inline alak MÁSKÉNT viselkedik. Nem feltételeztem, lefordítottam:
+
+```
+import { type Foo } from "./mod.server";   →   import {} from "./mod.server";
+import type { Foo } from "./mod.server";   →   (semmi)
+```
+
+Az első tehát futásidőben betölti a modult — pontosan az, amit tiltani
+akarunk, csak más ruhában. Ezért az őr mellé
+`@typescript-eslint/no-import-type-side-effects` került az egész repóra, ami a
+csak-típus importokat a teljes `import type` alakra kényszeríti. A kettő
+EGYÜTT zár; külön-külön egyik sem elég. A kódbázisban egyetlen valós
+előfordulás volt (`sup-index/reading.ts`), automatikusan javítva.
+
+### Mérés, nem szemrevételezés
+
+Négy próbafájllal ellenőrizve, hogy a szabály tényleg fog: érték-import
+aliasból → hiba · relatív érték-import → hiba · inline `{ type X }` → hiba ·
+`import type { … }` → átmegy. A próbafájlok a mérés után törölve. A
+`@core/auth` barrelje eleve helyes volt (egyetlen `.server`-hivatkozása
+`export type`, ami nyomtalanul eltűnik) — ezt is ellenőriztem, mert egy
+értéket re-exportáló barrel minden importálójába behúzta volna a szerverkódot.
+
+**Kapuk:** typecheck · lint · test (83 fájl / 1170 teszt) · build:web — zöld.
