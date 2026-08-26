@@ -54,6 +54,39 @@ cron-beállítás).
 
 Site: **supperz.netlify.app** (repo: `github.com/Supbase1978/supbase`).
 
+**Domainek (2026-08-25 óta élnek).** Primary: **`suptime.app`** (Cloudflare-nél
+vásárolva; az apex CNAME-flatteninggel mutat a `supperz.netlify.app`-ra, ezért
+a `dig` EC2-IP-ket ad vissza 10 másodperces TTL-lel — ez NEM hiba).
+Aliasok: `suptime.hu` és `suptime.eu` (dns24.hu, A → `75.2.60.5` = Netlify apex
+LB), valamint `www.suptime.app`, ami a primaryre irányít. A Let's Encrypt
+tanúsítvány ezt a négy nevet fedi.
+**Ismert hiány:** a `www.suptime.eu` és `www.suptime.hu` DNS-ben létezik
+(CNAME → `suptime.app`), de a Netlify domain-listájában NINCS, így a
+tanúsítvány sem fedi — a HTTP→HTTPS átirányítás után a látogató
+tanúsítvány-hibát kap. Felvételük a Netlify UI-ban: `Add domain alias`.
+
+**A Netlify CLI-hez `scripts/ntl.sh` a wrapper** (mint a Supabase-nél az
+`sb.sh`): a `.env`-beli `NETLIFY_AUTH_TOKEN`-t emeli be, mert a gépre
+telepített CLI az `endre.sztellik@gmail.com` / `EndRemek` csapatba van
+bejelentkezve, a projekt viszont a `supbase1978` fiókban él. Azzal a
+bejelentkezéssel a projekt OLVASHATÓ (a `getSite` trimmelt választ ad: nincs
+`domain_aliases`, `ssl`, `account_id`), de minden ÍRÁS
+`JSONHTTPError: Not Found`-dal bukik — ami elsőre elgépelt azonosítónak
+látszik, pedig jogosultsági hiba. Ha valami „nincs ott" vagy „üres" a
+Netlify-on: előbb a FIÓKRA gyanakodj.
+
+```bash
+bash scripts/ntl.sh env:list --context production --json      # env-állapot
+bash scripts/ntl.sh env:set KULCS ertek --context production  # írás
+bash scripts/ntl.sh api createSiteBuild --data '{"site_id":"…"}'  # build indítás
+```
+
+**Env-változó módosítása után ÚJRA KELL BUILDELNI** — nem csak a `VITE_`
+prefixűeknél (azok build-időben égnek a bundle-be), hanem az Edge Function
+változóinál is: a `basic-auth.ts` a deploy env-PILLANATKÉPÉBŐL olvas, tehát a
+jelszó-csere önmagában, build nélkül NEM lép életbe (2026-08-26-án mérve:
+a régi jelszó maradt érvényben, amíg le nem futott az új build).
+
 **Az auto-deploy KI van kapcsolva.** Build csak akkor fut, ha a legutolsó commit
 üzenete tartalmazza a `[deploy]` jelölőt (`netlify.toml` `ignore` parancsa).
 Ellenőrizve (2026-07-26): a jelölő nélküli pushok a Netlify felületén
