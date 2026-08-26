@@ -60,10 +60,14 @@ a `dig` EC2-IP-ket ad vissza 10 másodperces TTL-lel — ez NEM hiba).
 Aliasok: `suptime.hu` és `suptime.eu` (dns24.hu, A → `75.2.60.5` = Netlify apex
 LB), valamint `www.suptime.app`, ami a primaryre irányít. A Let's Encrypt
 tanúsítvány ezt a négy nevet fedi.
-**Ismert hiány:** a `www.suptime.eu` és `www.suptime.hu` DNS-ben létezik
-(CNAME → `suptime.app`), de a Netlify domain-listájában NINCS, így a
-tanúsítvány sem fedi — a HTTP→HTTPS átirányítás után a látogató
-tanúsítvány-hibát kap. Felvételük a Netlify UI-ban: `Add domain alias`.
+A `www.suptime.eu` és `www.suptime.hu` 2026-08-26-án került be aliasként
+(előtte a DNS-ük létezett, a Netlify-listájuk nem — így a látogató nem 404-et,
+hanem TANÚSÍTVÁNY-HIBÁT kapott, mert a HTTP→HTTPS átirányítás után a szerver
+másik névre szóló certet mutatott). A cert azóta mind a hat nevet fedi.
+Tanulság: a `provisionSiteTLSCertificate` hívás `422 Unprocessable Entity`-t ad,
+ha a Netlify magától már elindította a megújítást — ez NEM hiba, a cert pár
+percen belül kibővül. Ellenőrzés:
+`echo | openssl s_client -connect suptime.hu:443 -servername suptime.hu 2>/dev/null | openssl x509 -noout -ext subjectAltName`
 
 **A Netlify CLI-hez `scripts/ntl.sh` a wrapper** (mint a Supabase-nél az
 `sb.sh`): a `.env`-beli `NETLIFY_AUTH_TOKEN`-t emeli be, mert a gépre
