@@ -509,8 +509,9 @@ export default function SpotDetailRoute({ loaderData, actionData }: Route.Compon
       ) : null}
 
       {/* Viharjelzés-értesítés (F1.9). CSAK ott ajánljuk fel, ahol van
-          viharjelzési körzet — máshonnan nincs mit riasztani (Fertő: nincs
-          HungaroMet-forrás, F1-korlát). A DB-írás a /api/push route-on megy. */}
+          viharjelzési körzet — máshonnan nincs mit riasztani. (A Fertő 2026-08-28
+          óta szintén fedve van: burgenlandi LSZ-forrás, ld. a functions
+          README-jét.) A DB-írás a /api/push route-on megy. */}
       {spot.stormWarningRegion ? (
         <section
           aria-label={t("detail.stormAlerts")}

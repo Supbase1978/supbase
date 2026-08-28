@@ -384,3 +384,93 @@ describe("runStormAlert — körzetenkénti források", () => {
     expect(summary.errors).toEqual([]); // egyedi küldés-hiba csak naplózódik
   });
 });
+
+/**
+ * FERTŐ — a burgenlandi (LSZ) forrás VÉGIG a pipeline-on (F1.3 óta nyitott).
+ *
+ * Nem a parsert méri (azt a `storm-scrape.test.ts` teszi), hanem azt, hogy a
+ * `runStormAlert` a forrás `parser` jelölése szerint választ szótárt — és hogy
+ * a met.hu-parser ugyanezen az oldalon NEM adna semmit.
+ */
+describe("runStormAlert — Fertő (burgenlandi LSZ-forrás)", () => {
+  const fertoState = (previousLevel: 0 | 1 | 2): RegionState[] => [
+    { region: "Fertő", previousLevel, spots: [spotState({ spotId: "fer-1" })] },
+  ];
+
+  const lszDeps = (file: string) => ({
+    sources: [
+      {
+        region: "Fertő",
+        url: "https://www.lsz-b.at/fuer-buergerinnen/sturmwarnung-webcams/",
+        parser: "lsz-burgenland" as const,
+      },
+    ],
+    fetchHtml: () => Promise.resolve(fixture(file)),
+  });
+
+  it("Sturmwarnung → 0→2 váltás, a Fertőrákos-spotra bm-okf sor", async () => {
+    const inserted: WeatherSnapshotRow[] = [];
+    const summary = await runStormAlert({
+      config: DEFAULT_SUPINDEX_CONFIG,
+      now: NOW,
+      ...lszDeps("lsz.ferto.sturm.html"),
+      getRegionStates: () => Promise.resolve(fertoState(0)),
+      insertSnapshot: (row) => {
+        inserted.push(row);
+        return Promise.resolve();
+      },
+    });
+    expect(summary.levels).toEqual({ "Fertő": 2 });
+    expect(summary.changes).toEqual([{ region: "Fertő", from: 0, to: 2 }]);
+    expect(inserted).toHaveLength(1);
+    expect(inserted[0]?.storm_level).toBe(2);
+    expect(inserted[0]?.sup_index).toBe(0);
+  });
+
+  it("Bereitschaft pozitívan minősít le (2→0) — ez már nem fail-safe unknown", async () => {
+    const summary = await runStormAlert({
+      config: DEFAULT_SUPINDEX_CONFIG,
+      now: NOW,
+      ...lszDeps("lsz.ferto.bereitschaft.html"),
+      getRegionStates: () => Promise.resolve(fertoState(2)),
+      insertSnapshot: () => Promise.resolve(),
+    });
+    expect(summary.changes).toEqual([{ region: "Fertő", from: 2, to: 0 }]);
+  });
+
+  /**
+   * Ez a RÉGI viselkedés őrzése: amíg nem volt forrás, a Fertő `unknown`-ban
+   * állt. Üzemen kívüli rendszernél ugyanígy kell viselkednie — a
+   * karbantartás nem „nincs veszély".
+   */
+  it("Außer Betrieb → nincs változás, az utolsó ismert szint marad", async () => {
+    const inserted: WeatherSnapshotRow[] = [];
+    const summary = await runStormAlert({
+      config: DEFAULT_SUPINDEX_CONFIG,
+      now: NOW,
+      ...lszDeps("lsz.ferto.ausser-betrieb.html"),
+      getRegionStates: () => Promise.resolve(fertoState(2)),
+      insertSnapshot: (row) => {
+        inserted.push(row);
+        return Promise.resolve();
+      },
+    });
+    expect(summary.levels).toEqual({});
+    expect(summary.changes).toEqual([]);
+    expect(inserted).toEqual([]);
+  });
+
+  it("a met.hu-parser ezen az oldalon NEM adna fokozatot (ezért kell a saját szótár)", async () => {
+    const summary = await runStormAlert({
+      config: DEFAULT_SUPINDEX_CONFIG,
+      now: NOW,
+      // `parser` NÉLKÜL → a default met.hu-ág fut a német oldalon.
+      sources: [{ region: "Fertő", url: "https://fixture.test/Fertő" }],
+      fetchHtml: () => Promise.resolve(fixture("lsz.ferto.sturm.html")),
+      getRegionStates: () => Promise.resolve(fertoState(0)),
+      insertSnapshot: () => Promise.resolve(),
+    });
+    expect(summary.levels).toEqual({});
+    expect(summary.changes).toEqual([]);
+  });
+});

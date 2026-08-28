@@ -6,8 +6,10 @@
  * tiszta szöveges jelzéssel („A Tisza tavon elsőfokú viharjelzés érvényes.") és
  * fokozat-képpel (`/images/elemek/viharjelzesN.png`). A Balaton-oldal
  * medencénként ad mondatot — körzet-szinten a LEGMAGASABB fokozat számít.
- * A Fertőre a HungaroMet NEM ad oldalt (más üzemeltető) — az F1-ben forrás
- * nélkül marad: unknown → az utolsó ismert szint él tovább (fail-safe).
+ * A Fertőre a HungaroMet NEM ad oldalt: azt a tavat a burgenlandi
+ * Landessicherheitszentrale (LSZ) viharjelző rendszere fedi, magyar oldali
+ * állomással együtt (Fertőrákos). Ez MÁS SZÓTÁR és más oldalszerkezet, ezért
+ * saját parsere van (`detectLszLevel`) — lásd ott az indoklást.
  *
  * A parser SZÖVEG-alapú és tag-toleráns (HTML-átrendezésre nem törik), a
  * fokozat-kép másodlagos jel: szöveg–kép eltérésnél a MAGASABB fokozat győz
@@ -19,17 +21,27 @@
  */
 import type { StormLevel } from "./types.ts";
 
+/**
+ * Melyik FORRÁS-SZÓTÁR szerint olvassuk az oldalt.
+ *
+ * Nem stílus-kérdés: a két rendszer más nyelven, más szerkezetben és más
+ * fokozat-skálán közli ugyanazt. Egy „mindent értő" parser vagy a magyar
+ * tagadás-kezelést, vagy a burgenlandi legenda-csapdát rontaná el.
+ */
+export type StormParser = "met-hu" | "lsz-burgenland";
+
 /** Egy viharjelzési körzet forrás-oldala. */
 export interface StormSource {
   /** Kanonikus körzetnév (== spots.storm_warning_region seed-érték). */
   region: string;
   /** A körzet tartalom-oldala (met.hu tavankénti main.php). */
   url: string;
+  /** Alapértelmezés: `met-hu`. */
+  parser?: StormParser;
 }
 
 /**
- * Default forrás-lista (env-ből felülírható: STORM_SOURCES JSON). A Fertő
- * szándékosan hiányzik: nincs HungaroMet-forrása (F1-korlát, README).
+ * Default forrás-lista (env-ből felülírható: STORM_SOURCES JSON).
  */
 export const DEFAULT_STORM_SOURCES: readonly StormSource[] = [
   {
@@ -43,6 +55,21 @@ export const DEFAULT_STORM_SOURCES: readonly StormSource[] = [
   {
     region: "Tisza-tó",
     url: "https://www.met.hu/idojaras/tavaink/tisza-to/viharjelzes/main.php",
+  },
+  {
+    // A Fertő viharjelzését a burgenlandi Landessicherheitszentrale üzemelteti,
+    // 11 állomással a tó körül — köztük FERTŐRÁKOS, a mi egyetlen Fertő-spotunk
+    // (`supabase/seed.sql`). A `robots.txt` engedi az oldalt.
+    //
+    // ÁR: az oldal 4,2 MB nyers / ~1,8 MB gzippel (a térkép inline SVG), és
+    // NINCS olcsóbb út — se `ETag`, se működő `If-Modified-Since` (304 helyett
+    // 200-at ad), se `Range` (206 helyett 200), a státusz pedig a fájl VÉGÉN
+    // van (4,19 MB-nál). Szezonban 5 perces cronnal ez ~500 MB/hó egyetlen
+    // körzetért; ha ez sok, ez a forrás a `STORM_SOURCES` env-ből kivehető
+    // vagy ritkább menetbe tehető.
+    region: "Fertő",
+    url: "https://www.lsz-b.at/fuer-buergerinnen/sturmwarnung-webcams/",
+    parser: "lsz-burgenland",
   },
 ];
 
@@ -199,6 +226,65 @@ export function detectPageLevel(html: string): DetectedLevel {
   if (textLevel === "unknown") return imageLevel;
   if (imageLevel === "unknown") return textLevel;
   return Math.max(textLevel, imageLevel) as StormLevel;
+}
+
+/**
+ * A BURGENLANDI (LSZ) viharjelző oldal fokozata — a Fertőre (F1.3 óta nyitott).
+ *
+ * MIÉRT NEM A `detectPageLevel`: az oldal németül közli a fokozatot, és a
+ * skálája négyállapotú (`Bereitschaft` · `Starkwindwarnung` · `Sturmwarnung` ·
+ * `Außer Betrieb`) — a magyar tagadás-kezelés itt nem fog semmit.
+ *
+ * MIÉRT NEM ELÉG A SZÖVEGKERESÉS (a csapda): az oldalon ott áll a TÉRKÉP
+ * JELMAGYARÁZATA, amely mind a négy szót kiírja. Aki a teljes oldalszövegben
+ * keresi a „Sturmwarnung"-ot, az MINDIG megtalálja — a tó örökre másodfokon
+ * állna. A tényleges állapotot csak az állomás-jelölők hordozzák:
+ *
+ *   <circle class="status" fill="…"><title>Fertoerakos<br />Bereitschaft</title></circle>
+ *
+ * Ezért KIZÁRÓLAG ezeket olvassuk. A `fill` szín MÁSODLAGOS jel lenne, de nem
+ * használjuk: a szöveg egyértelmű, a színkód pedig néma átfestéssel elromolhat.
+ *
+ * KÖRZET-SZINTEN A LEGMAGASABB FOKOZAT SZÁMÍT — ugyanaz az elv, mint a
+ * Balaton medencéinél: a 11 állomás egyetlen tavat ír le, és a szomszéd
+ * állomáson kiadott viharjelzés minket is érint.
+ *
+ * `Außer Betrieb` = az állomás nem üzemel: ez NEM nulla fok, hanem hiányzó
+ * adat — kimarad a maximumból. Ha EGYETLEN állomás sem ad értelmezhető
+ * státuszt, az eredmény `unknown`, és a hívó megtartja az utolsó ismert
+ * szintet (ugyanaz a fail-safe, mint a met.hu-ágon).
+ */
+export function detectLszLevel(html: string): DetectedLevel {
+  let max: DetectedLevel = "unknown";
+  for (const match of html.matchAll(LSZ_STATION_PATTERN)) {
+    const level = lszStatusLevel(match[1] ?? "");
+    if (level === "unknown") continue;
+    if (max === "unknown" || level > max) max = level;
+  }
+  return max;
+}
+
+/**
+ * Az állomás-jelölő és a benne álló `<title>`. Az attribútum-sorrend nem
+ * kötött (`class` a `fill` előtt vagy után is állhat), a `<title>` viszont a
+ * `circle` ELSŐ gyereke — az SVG-szabvány szerint is ott a helye.
+ */
+const LSZ_STATION_PATTERN = /<circle\b[^>]*\bclass="[^"]*\bstatus\b[^"]*"[^>]*>\s*<title>([\s\S]*?)<\/title>/gi;
+
+/** Egy állomás `<title>`-jének szövege → fokozat (`unknown` = nem üzemel/ismeretlen). */
+function lszStatusLevel(title: string): DetectedLevel {
+  const text = title
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/\s+/g, " ")
+    .toLowerCase();
+  // A SORREND SZÁMÍT: a `Starkwindwarnung` vizsgálata a `Sturmwarnung` ELŐTT,
+  // ugyanaz az elv, mint a magyar „ii. fok" / „i. fok" párnál — így egy
+  // esetleges összetett felirat sem csúszhat el.
+  if (text.includes("starkwindwarnung")) return 1;
+  if (text.includes("sturmwarnung")) return 2;
+  if (text.includes("bereitschaft")) return 0;
+  return "unknown";
 }
 
 /**

@@ -61,6 +61,8 @@ tavon elsőfokú viharjelzés érvényes." / 0-s állapotban: „…a viharjelz�
   (medencénként ad mondatot; körzet-szinten a LEGMAGASABB fokozat számít)
 - Velencei-tó → `https://www.met.hu/idojaras/tavaink/velencei-to/viharjelzes/main.php`
 - Tisza-tó → `https://www.met.hu/idojaras/tavaink/tisza-to/viharjelzes/main.php`
+- Fertő → `https://www.lsz-b.at/fuer-buergerinnen/sturmwarnung-webcams/`
+  (MÁS üzemeltető és MÁS szótár — saját parser, ld. lentebb)
 
 Felülírás a `STORM_SOURCES` env-vel (JSON: `{"Balaton":"https://..."}`).
 A parser (`_shared/storm-scrape.ts`, `detectPageLevel`) **szöveg-alapú és
@@ -69,10 +71,44 @@ MAGASABB fokozat győz (fail-safe felfelé); tagadás-tudatos (M1): leminősít�
 (→0) CSAK pozitív megerősítésre („alapon van" / „nincs viharjelzés" /
 „megszűnt"), egyébként `unknown` → az utolsó ismert szint él tovább.
 
-> ⚠️ **Fertő-korlát (F1):** a Fertőre a HungaroMet NEM ad viharjelzés-oldalt
-> (más üzemeltetőjű rendszer) — a körzet forrás nélkül `unknown`, azaz az
-> utolsó ismert szinten marad (leminősítés/riasztás nem történik). Fertő-forrás
-> bekötése: új bejegyzés a `STORM_SOURCES`-ben, ha lesz scrape-elhető forrás.
+### Fertő — burgenlandi (LSZ) forrás
+
+A Fertőre a HungaroMet nem ad viharjelzés-oldalt: a tavat a burgenlandi
+**Landessicherheitszentrale** viharjelző rendszere fedi, **11 állomással** a tó
+körül — köztük **Fertőrákos**, a mi egyetlen Fertő-spotunk. Az oldal
+szerveroldalon rendereli az állomások állapotát:
+
+```html
+<circle class="status" fill="#8BC53F"><title>Fertoerakos<br />Bereitschaft</title></circle>
+```
+
+A parser (`detectLszLevel`) **kizárólag ezeket az állomás-jelölőket** olvassa,
+és körzet-szinten a **legmagasabb** fokozatot veszi (ugyanaz az elv, mint a
+Balaton medencéinél). Fokozat-leképezés:
+
+| LSZ | fokozat |
+|---|---|
+| `Bereitschaft` | 0 |
+| `Starkwindwarnung` (6 Bft-től) | 1 |
+| `Sturmwarnung` | 2 |
+| `Außer Betrieb` | `unknown` → az utolsó ismert szint marad |
+
+> ⚠️ **A jelmagyarázat-csapda.** Az oldalon ott áll a térkép legendája, amely
+> mind a négy fokozat-szót kiírja — a teljes oldalszövegben keresve a
+> „Sturmwarnung" MINDIG megvan, tehát a tó örökre másodfokon állna. Ezért nem
+> szövegkeresés ez a parser. Regressziós teszt őrzi
+> (`storm-scrape.test.ts` → „a jelmagyarázat szavai NEM adnak fokozatot").
+
+> 💰 **A lekérés drága.** Az oldal 4,2 MB nyers / ~1,8 MB gzippel (a térkép
+> inline SVG), és nincs olcsóbb út: `ETag` nincs, az `If-Modified-Since`
+> 304 helyett 200-at ad, a `Range` 206 helyett 200-at, a státusz pedig a fájl
+> VÉGÉN van (4,19 MB-nál). Szezonban 5 perces cronnal ez ~500 MB/hó egyetlen
+> körzetért. Ha sok: a forrás a `STORM_SOURCES` env-ből kivehető (az URL-csere
+> a parsert nem érinti, az a körzetről öröklődik).
+
+> **A `Bereitschaft` = 0. fok feltevés** egy szeles napon még megerősítendő. A
+> leminősítés máshol is pozitív megerősítést kíván (M1) — ez a szabály védi
+> ezt is.
 
 ## Deploy (kézi — NE a CI-ból)
 

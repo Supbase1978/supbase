@@ -18,6 +18,7 @@ import {
 } from "./push-notify.ts";
 import { computeSupIndex, type SupIndexConfig } from "./sup-index.ts";
 import {
+  detectLszLevel,
   detectPageLevel,
   detectStormLevelChanges,
   type StormLevelChange,
@@ -204,9 +205,12 @@ export async function runStormAlert(deps: StormAlertDeps): Promise<StormAlertSum
   const errors: { region: string; message: string }[] = [];
 
   const current = new Map<string, StormLevel>();
-  for (const { region, url } of deps.sources) {
+  for (const { region, url, parser } of deps.sources) {
     try {
-      const level = detectPageLevel(await deps.fetchHtml(url));
+      const html = await deps.fetchHtml(url);
+      // A Fertőt a burgenlandi LSZ oldala fedi — más nyelv, más skála, más
+      // szerkezet, ezért saját parser (ld. `detectLszLevel` doc-ját).
+      const level = parser === "lsz-burgenland" ? detectLszLevel(html) : detectPageLevel(html);
       if (level !== "unknown") current.set(region, level);
     } catch (err) {
       errors.push({ region, message: errorMessage(err) });

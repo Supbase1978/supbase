@@ -73,8 +73,6 @@ felhasználó a HydroInfo-t választotta, majd az analitikát):
 4. **react-router 8 frissítés** — `SECURITY_FINDINGS.md` F1.10-01 (RSC-módú
    CSRF; minket NEM érint, de a 7.x ágon nincs patch). Kiváltó ok: ha RSC-t
    vezetnénk be.
-5. **Fertő-viharjelzés forrása** — nincs HungaroMet-forrása, ma fail-safe
-   „unknown". Nyitott kérdés F1.3 óta.
 
 **Nyitott kis tételek (nem blokkolók):**
 - **Advisor ár-padló** (domain-review 2.5): NEM ár-büntetés kell, hanem
@@ -1668,7 +1666,11 @@ javítva) · m6 (explicit verify_jwt=true a config.toml-ben — javítva).
   minták közé). Körzet→URL forráslista (`DEFAULT_STORM_SOURCES`,
   `STORM_SOURCES` env-felülírás), fokozat-ikon (`viharjelzesN.png`) másodlagos
   jelként, szöveg–kép eltérésnél a magasabb győz. Valódi letöltött fixture-ök.
-  **Fertő-korlát:** nincs HungaroMet-forrása → unknown/fail-safe (README).
+  **Fertő (2026-08-28-tól fedve):** nincs HungaroMet-forrása, a tavat a
+  burgenlandi Landessicherheitszentrale 11 állomása fedi (köztük Fertőrákos) —
+  saját parser (`detectLszLevel`), német négyállapotú skálával
+  (Bereitschaft/Starkwind/Sturm/Außer Betrieb → 0/1/2/unknown), körzet-szinten
+  a maximummal. A jelmagyarázat-csapdát regressziós teszt őrzi (README).
 
 **Megjegyzés:** az 1. kört az algo-engineer session-limit szakította meg (a
 hiányzó adapter-tesztet és az i18n-bekötést a karmester pótolta); a forrás-

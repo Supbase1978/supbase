@@ -12,7 +12,7 @@
  *
  * ENV: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, STORM_SOURCES (opcionális JSON:
  * {"Balaton":"https://...","Velencei-tó":"..."} — default: DEFAULT_STORM_SOURCES,
- * a met.hu tavankénti main.php oldalak; a Fertőnek nincs forrása, F1-korlát),
+ * a met.hu tavankénti main.php oldalak + a Fertő burgenlandi LSZ-oldala),
  * VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY / VAPID_SUBJECT (push; a privát TITOK).
  */
 import { createClient } from "jsr:@supabase/supabase-js@2";
@@ -35,15 +35,26 @@ import {
 import type { StormLevel, WaterType, WeatherSnapshotRow } from "../_shared/types.ts";
 import { sendWebPush, type VapidKeys } from "../_shared/web-push.ts";
 
-/** STORM_SOURCES env (JSON: körzet→URL) → forrás-lista; hibás JSON → default. */
+/**
+ * STORM_SOURCES env (JSON: körzet→URL) → forrás-lista; hibás JSON → default.
+ *
+ * A PARSER-VÁLASZTÁS a körzetről ÖRÖKLŐDIK, nem az env-ből jön: az override
+ * arra való, hogy egy körzet URL-jét cseréljük (tükör, teszt-oldal), nem arra,
+ * hogy a forrás szótárát átírjuk. Enélkül egy ártatlan URL-csere a Fertőn
+ * némán a met.hu-parserre váltana a német oldalon — és a körzet örökre
+ * `unknown` maradna.
+ */
 function resolveSources(): readonly StormSource[] {
   const raw = Deno.env.get("STORM_SOURCES");
   if (!raw) return DEFAULT_STORM_SOURCES;
+  const parserByRegion = new Map(
+    DEFAULT_STORM_SOURCES.map((source) => [source.region, source.parser]),
+  );
   try {
     const parsed = JSON.parse(raw) as Record<string, unknown>;
     const sources = Object.entries(parsed)
       .filter((e): e is [string, string] => typeof e[1] === "string")
-      .map(([region, url]) => ({ region, url }));
+      .map(([region, url]) => ({ region, url, parser: parserByRegion.get(region) }));
     return sources.length > 0 ? sources : DEFAULT_STORM_SOURCES;
   } catch {
     console.error("STORM_SOURCES: érvénytelen JSON — default forrás-lista él");

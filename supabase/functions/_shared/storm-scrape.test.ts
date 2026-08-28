@@ -7,8 +7,10 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 import {
+  DEFAULT_STORM_SOURCES,
   detectImageLevel,
   detectLevel,
+  detectLszLevel,
   detectPageLevel,
   detectStormLevelChanges,
   parseStormWarnings,
@@ -224,5 +226,72 @@ describe("detectPageLevel — met.hu tavankénti main.php", () => {
     expect(detectPageLevel("<p>ma nincs másodfokú viharjelzés kilátásban</p>")).toBe(
       "unknown",
     );
+  });
+});
+
+/**
+ * FERTŐ — burgenlandi LSZ-forrás (F1.3 óta nyitott tétel, bekötve 2026-08-28).
+ *
+ * A tavat 11 viharjelző állomás fedi a tó körül, köztük FERTŐRÁKOS, a mi
+ * egyetlen Fertő-spotunk. A fixtúrák a VALÓS oldal állomás-jelölőit viselik,
+ * és megtartják a térkép JELMAGYARÁZATÁT is — az a csapda, amiért ez a parser
+ * nem szövegkeresés.
+ */
+describe("detectLszLevel — burgenlandi (Fertő) viharjelző oldal", () => {
+  it("mind a 11 állomás Bereitschaft → 0. fok", () => {
+    expect(detectLszLevel(fixture("lsz.ferto.bereitschaft.html"))).toBe(0);
+  });
+
+  it("egyetlen állomás Starkwindwarnung → körzet-szinten I. fok", () => {
+    expect(detectLszLevel(fixture("lsz.ferto.starkwind.html"))).toBe(1);
+  });
+
+  it("vegyes állapotnál a LEGMAGASABB fokozat számít (Sturm + Starkwind) → 2", () => {
+    expect(detectLszLevel(fixture("lsz.ferto.sturm.html"))).toBe(2);
+  });
+
+  /**
+   * `Außer Betrieb` = nem üzemel. Ez HIÁNYZÓ ADAT, nem nulla fok — különben
+   * egy karbantartás alatt álló rendszer „nincs veszély"-t jelentene.
+   */
+  it("minden állomás Außer Betrieb → unknown, NEM 0 (nincs hamis leminősítés)", () => {
+    expect(detectLszLevel(fixture("lsz.ferto.ausser-betrieb.html"))).toBe("unknown");
+  });
+
+  /**
+   * A LEGMAGYARÁZAT-CSAPDA: mind a négy fokozat-szó ott áll az oldalon,
+   * függetlenül a tényleges állapottól. Enélkül a tó örökre másodfokon állna.
+   */
+  it("a jelmagyarázat szavai NEM adnak fokozatot (csak az állomás-jelölők)", () => {
+    const legendOnly =
+      '<ul class="legende"><li>Bereitschaft</li><li>Starkwindwarnung</li>' +
+      "<li>Sturmwarnung</li><li>Außer Betrieb</li></ul>";
+    expect(detectLszLevel(legendOnly)).toBe("unknown");
+  });
+
+  it("állomás-jelölő nélküli oldalra unknown (átalakított oldal nem minősít le)", () => {
+    expect(detectLszLevel("<p>Wartungsarbeiten</p>")).toBe("unknown");
+  });
+
+  it("az attribútum-sorrend nem számít (class a fill után is állhat)", () => {
+    const html = '<circle fill="#8BC53F" class="status"><title>Fertoerakos<br />Sturmwarnung</title></circle>';
+    expect(detectLszLevel(html)).toBe(2);
+  });
+
+  /**
+   * A `Starkwindwarnung` a `Sturmwarnung` ELŐTT vizsgálandó — ugyanaz az elv,
+   * mint a magyar „ii. fok" / „i. fok" párnál.
+   */
+  it("a Starkwindwarnung nem olvasódik Sturmwarnungként", () => {
+    const html = '<circle class="status"><title>Rust<br />Starkwindwarnung</title></circle>';
+    expect(detectLszLevel(html)).toBe(1);
+  });
+
+  it("a Fertő benne van az alapértelmezett forrás-listában, LSZ-parserrel", () => {
+    const ferto = DEFAULT_STORM_SOURCES.find((s) => s.region === "Fertő");
+    expect(ferto?.parser).toBe("lsz-burgenland");
+    expect(ferto?.url).toContain("lsz-b.at");
+    // A met.hu-forrásoknál nincs (és nem is kell) parser-jelölés.
+    expect(DEFAULT_STORM_SOURCES.find((s) => s.region === "Balaton")?.parser).toBeUndefined();
   });
 });
