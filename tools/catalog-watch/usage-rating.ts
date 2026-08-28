@@ -162,6 +162,17 @@ export function boardTypeFromDescription(text: string): BoardType | null {
  * látszik (megnéztük a képeket). 49 gyártói oldalon mérve: ahol mindkét
  * szabály adott képet, 30-szor UGYANAZT; a fallback pontosan ott szólal meg,
  * ahol a horgony néma (elgépelt vagy felcserélt fájlnév).
+ *
+ * A POZÍCIÓ-FALLBACK CSAK ÉRDEMI `alt`-OT VISELŐ KÉPET VEHET (F2.1-utó-46).
+ * Élesben mért kár (zraysports.com, felhasználói bejelentés 2026-08-28): ott a
+ * fájlnevek puszta sorszámok (`3865618.png`), tehát egyetlen horgony sem
+ * illeszkedik, a fájlnév-kizárás sem fog rajtuk — a fallback pedig mind a 41
+ * Zray-deszkára UGYANAZT a fejléc-logót adta (356×123 px). A `alt=""` a
+ * HTML-szabvány szerint azt jelenti, hogy a kép DÍSZÍTŐ, az `alt` teljes
+ * hiánya pedig azt, hogy a forrás semmit nem állít róla — egyik sem lehet
+ * termékkép. A Zray termékfotói `alt="sup-341961"`-et viselnek, a „Related
+ * Products" blokk képei viszont `alt` nélkül állnak: ugyanez a szabály zárja
+ * ki a szomszéd termék fotóját is (az „ALUMINUM OARS"-csapda).
  */
 export function findProductImage(html: string, ...anchors: (string | null)[]): string | null {
   const images = [...html.matchAll(/<img\s[^>]*>/gi)]
@@ -182,22 +193,29 @@ export function findProductImage(html: string, ...anchors: (string | null)[]): s
   for (const needle of needles) {
     const matches = images.filter((image) => normalizeFile(image.src).includes(needle));
     const best = matches.find((image) => isRenderFile(fileOf(image.src))) ?? matches[0];
-    if (best !== undefined) return displayVariant(best);
+    if (best !== undefined) return displayVariant(best, html);
   }
 
-  return images[0] === undefined ? null : displayVariant(images[0]);
+  const described = images.find((image) => image.alt !== null && image.alt.trim() !== "");
+  return described === undefined ? null : displayVariant(described, html);
 }
 
 interface PageImage {
   src: string;
   /** A gyártó SAJÁT méret-változatai (`… 679w, … 2762w`), ha kitette. */
   srcset: string | null;
+  /** `null` = nincs `alt` attribútum; `""` = kifejezetten díszítő kép. */
+  alt: string | null;
 }
 
 function parseImgTag(tag: string): PageImage | null {
   const src = tag.match(/\ssrc="([^"]+)"/i)?.[1];
   if (src === undefined || src.trim() === "") return null;
-  return { src, srcset: tag.match(/\ssrcset="([^"]+)"/i)?.[1] ?? null };
+  return {
+    src,
+    srcset: tag.match(/\ssrcset="([^"]+)"/i)?.[1] ?? null,
+    alt: tag.match(/\salt="([^"]*)"/i)?.[1] ?? null,
+  };
 }
 
 /**
@@ -239,9 +257,9 @@ function normalizeFile(src: string): string {
  */
 const DISPLAY_TARGET_WIDTH = 700;
 
-function displayVariant(image: PageImage): string {
+function displayVariant(image: PageImage, html: string): string {
   const entries = parseSrcset(image.srcset);
-  if (entries.length === 0) return fullSize(image.src);
+  if (entries.length === 0) return ossResized(image.src, html) ?? fullSize(image.src);
   const enough = entries
     .filter((entry) => entry.width >= DISPLAY_TARGET_WIDTH)
     .sort((a, b) => a.width - b.width)[0];
@@ -258,6 +276,23 @@ function parseSrcset(srcset: string | null): { url: string; width: number }[] {
     if (match) entries.push({ url: match[1] as string, width: Number(match[2]) });
   }
   return entries;
+}
+
+/**
+ * Alibaba-OSS méret-változat — csak akkor, ha az OLDAL MAGA BIZONYÍTJA, hogy a
+ * kiszolgáló érti a transzformációt EZEN a képen.
+ *
+ * Ugyanaz az elv, mint a `srcset`-nél: nem mi találunk ki egy méretet, hanem a
+ * forrás saját méret-változatát vesszük át. A Zray a bélyegképet
+ * `…6060423.jpg?x-oss-process=image/resize,m_lfit,h_200,w_200` alakban kéri;
+ * ha ez a minta ott áll a kiválasztott kép mellett, ugyanazzal a szintaxissal
+ * kérhetünk MEGJELENÍTÉSI méretet is. Enélkül a Zray-képek a nyers gyártói
+ * eredetik lennének (546 kB/kép, 41 deszkára), amit a katalógus-lista
+ * mobilon fizetne meg — pontosan az a kár, amit a `displayVariant` doc-ja ír.
+ */
+function ossResized(src: string, html: string): string | null {
+  if (!html.includes(`${src}?x-oss-process=image/resize`)) return null;
+  return `${src}?x-oss-process=image/resize,m_lfit,w_${DISPLAY_TARGET_WIDTH}`;
 }
 
 /** `-222x1024.png` → `.png` — csak `srcset` HIÁNYÁBAN (ld. `displayVariant`). */

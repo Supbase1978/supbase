@@ -2,7 +2,7 @@
   "source": "Zray",
   "url": "https://www.zraysports.com/productinfo/283788.html",
   "capturedAt": "2026-08-21",
-  "teaches": "Cimkezett, kettospontos spec; a kategoria a MORZSAMENUBOL jon (a termek-URL puszta sorszam); a -Zray Official Site utotag levagando; a Hangul ikonok NFD-indexcsuszast okoztak (379L helyett 9L).",
+  "teaches": "Cimkezett, kettospontos spec; a kategoria a MORZSAMENUBOL jon (a termek-URL puszta sorszam); a -Zray Official Site utotag levagando; a Hangul ikonok NFD-indexcsuszast okoztak (379L helyett 9L). A termekkep NEM a fejleclogo: a fajlnev puszta sorszam, ezert a pozicio-fallback dont, es az csak erdemi alt-ot viselo kepet vehet (2026-08-28).",
   "rendered": false,
   "expected": [
     {
@@ -13,7 +13,7 @@
       "modelYear": null,
       "priceHuf": null,
       "inStock": null,
-      "imageUrl": "https://img.website.xin/contents/sitefiles3603/18015719/images/3865618.png",
+      "imageUrl": "https://img.website.xin/contents/sitefiles3603/18015719/images/3469216.jpg?x-oss-process=image/resize,m_lfit,w_700",
       "imageUrls": [],
       "boardType": "allround",
       "boardTypeSource": "breadcrumb",

@@ -77,6 +77,17 @@ describe("imageFromPage", () => {
     expect(imageFromPage(html, "Coral Raspberry")).toBe("https://x.com/Coral-R-1.png");
   });
 
+  /**
+   * A `boards.image_url` ABSZOLÚT URL-t vár; az oldal `<img src>`-je viszont
+   * lehet relatív vagy protokoll-relatív (élesben: Zray `//img.website.xin/…`).
+   */
+  it("az oldal URL-jéhez képest feloldja a relatív képhivatkozást", () => {
+    const html = '<img src="//img.website.xin/images/1.jpg" alt="Coral Raspberry">';
+    expect(imageFromPage(html, "Coral", "https://www.zraysports.com/productinfo/1.html")).toBe(
+      "https://img.website.xin/images/1.jpg",
+    );
+  });
+
   it("kép nélküli oldalra null (nem tippel)", () => {
     expect(imageFromPage("<p>semmi</p>", "Coral")).toBeNull();
   });

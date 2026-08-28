@@ -146,6 +146,7 @@ Parancsok:
                                     DRY-RUN; írni csak --apply-vel ír.
   backfill-images [--apply]        TERMÉKKÉP-visszatöltés a már élő sorokra.
       [--all] [--limit N]           A crawl a JELÖLTET írja, a jóváhagyott
+      [--brand N] [--refetch]
                                     deszkát nem — a képet ezért a sor SAJÁT
                                     forrás-oldaláról szedjük, a
                                     matched_board_id kapcsolaton át (nem
@@ -155,6 +156,11 @@ Parancsok:
                                     próbálja, mint a boltit. Alapból csak a
                                     kép nélküli sorokat nézi (--all: mindet
                                     újraszámolja), és DRY-RUN; --apply ír.
+                                    --brand: csak az adott gyártó sorai.
+                                    --refetch: a jelöltben TÁROLT képet
+                                    átugorja, és az élő oldalról nyeri ki újra
+                                    — akkor kell, ha a képet egy AZÓTA
+                                    JAVÍTOTT szabály választotta rosszul.
   backfill-gallery [--apply]       A teljes képernyős nézet TOVÁBBI képei.
       [--all] [--limit N]           Forrása a Shopify termék saját JSON-ja
                                     (…/products/<handle>.json): ott a teljes
@@ -1447,9 +1453,18 @@ async function commandBackfillImages(args: Args): Promise<void> {
   const apply = flag(args, "apply") === "true";
   const all = flag(args, "all") === "true";
   const limit = flagNumber(args, "limit");
+  const brandFilter = flag(args, "brand")?.toLowerCase();
+  // ÚJRAKINYERÉS: a jelöltben TÁROLT kép átugrása. Akkor kell, ha a képet egy
+  // AZÓTA JAVÍTOTT szabály választotta rosszul — a tárolt URL ilyenkor nem
+  // gyorsítás, hanem a hiba konzerválása. Élesben (2026-08-28): a Zray-oldalak
+  // sorszám-fájlnevei miatt mind a 41 deszka a fejléc-logót kapta; a
+  // `--refetch` az élő oldalról szedi újra, a mostani szabállyal.
+  const refetch = flag(args, "refetch") === "true";
   const client = connect();
 
-  const rows = await listBoardsForImageBackfill(client, { includeWithImage: all });
+  const rows = (await listBoardsForImageBackfill(client, { includeWithImage: all })).filter(
+    (row) => brandFilter === undefined || row.brandName?.toLowerCase().includes(brandFilter),
+  );
   const targets = limit === undefined ? rows : rows.slice(0, limit);
   if (targets.length === 0) {
     console.log("Minden katalógus-sornak van képe — nincs mit pótolni.");
@@ -1493,7 +1508,7 @@ async function commandBackfillImages(args: Args): Promise<void> {
 
     let image: string | null = null;
     for (const source of ranked) {
-      if (source.storedImageUrl) {
+      if (source.storedImageUrl && !refetch) {
         // A TÁROLT URL is átmegy a megjelenítési normalizáláson: a jelölt-sor
         // a crawl idején keletkezett, esetleg még a méret-szabály előtt
         // (élesben: a Bluefin JSON-LD-je `width=1920`-at írt, 1656 kB/kép).
@@ -1503,7 +1518,7 @@ async function commandBackfillImages(args: Args): Promise<void> {
       const response = await fetchOrNull(source.url as string);
       await sleep(DEFAULT_MIN_DELAY_MS);
       if (response === null || response.status >= 400 || response.text === "") continue;
-      image = imageFromPage(response.text, row.modelName);
+      image = imageFromPage(response.text, row.modelName, source.url as string);
       if (image !== null) break;
     }
 

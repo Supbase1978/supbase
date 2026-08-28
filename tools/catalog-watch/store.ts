@@ -87,6 +87,8 @@ export interface BoardForImageBackfill {
   modelName: string;
   kind: string;
   imageUrl: string | null;
+  /** A `--brand` szűréshez (egy gyártó képeinek célzott újrakinyerése). */
+  brandName: string | null;
 }
 
 /**
@@ -98,16 +100,25 @@ export async function listBoardsForImageBackfill(
   client: SupabaseClient,
   options: { includeWithImage?: boolean } = {},
 ): Promise<BoardForImageBackfill[]> {
-  let query = client.from("boards").select("id, model_name, kind, image_url");
+  let query = client
+    .from("boards")
+    .select("id, model_name, kind, image_url, brand:brands(name)");
   if (options.includeWithImage !== true) query = query.is("image_url", null);
   const { data, error } = await query;
   fail("boards olvasás", error);
-  return (data ?? []).map((row) => ({
-    id: row.id as string,
-    modelName: row.model_name as string,
-    kind: row.kind as string,
-    imageUrl: (row.image_url as string | null) ?? null,
-  }));
+  return (data ?? []).map((row) => {
+    // A beágyazott kapcsolat objektumként ÉS egyelemű tömbként is érkezhet
+    // (ugyanaz a kettősség, amit a `list-incomplete` is kezel).
+    const brand = row.brand as { name?: string } | { name?: string }[] | null;
+    const brandName = Array.isArray(brand) ? (brand[0]?.name ?? null) : (brand?.name ?? null);
+    return {
+      id: row.id as string,
+      modelName: row.model_name as string,
+      kind: row.kind as string,
+      imageUrl: (row.image_url as string | null) ?? null,
+      brandName,
+    };
+  });
 }
 
 /**

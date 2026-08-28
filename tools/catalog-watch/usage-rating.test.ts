@@ -132,12 +132,15 @@ describe("boardTypeFromDescription", () => {
  * van — köztük a fejléc-logók.
  */
 describe("findProductImage", () => {
+  // Az `alt` NEM dísz a fixtúrában: a valós oldalakon a fejléc-logó `alt=""`-t
+  // visel (díszítő), a termékfotó viszont leírást — és a pozíció-fallback
+  // ezen a különbségen áll vagy bukik (ld. a `findProductImage` doc-ját).
   const page = `
-    <img src="https://x.com/uploads/white_LOGO-01.png">
-    <img src="https://x.com/uploads/DJI_0043-scaled.jpg">
-    <img src="https://x.com/uploads/AQUA-MARINA-SUP-construction-CORAL-Raspberry-2-small.png">
-    <img src="https://x.com/uploads/Coral-R-1.png">
-    <img src="https://x.com/uploads/AQUA-MARINA-SUP-BLAZEBT-26BZ-Ghost-White-222x1024.png">
+    <img src="https://x.com/uploads/white_LOGO-01.png" alt="">
+    <img src="https://x.com/uploads/DJI_0043-scaled.jpg" alt="Coral a vízen">
+    <img src="https://x.com/uploads/AQUA-MARINA-SUP-construction-CORAL-Raspberry-2-small.png" alt="Coral construction">
+    <img src="https://x.com/uploads/Coral-R-1.png" alt="Coral Raspberry">
+    <img src="https://x.com/uploads/AQUA-MARINA-SUP-BLAZEBT-26BZ-Ghost-White-222x1024.png" alt="Blaze Ghost White">
   `;
 
   it("a cikkszámra horgonyoz, és levágja a bélyegkép-méretet", () => {
@@ -166,8 +169,8 @@ describe("findProductImage", () => {
    */
   it("azonos horgonyra a FRONT/BACK rendert választja az életkép helyett", () => {
     const rapid = `
-      <img src="https://x.com/uploads/Aqua-Marina-Product-BT-22RP-11.jpg">
-      <img src="https://x.com/uploads/rapid-frontback.png">
+      <img src="https://x.com/uploads/Aqua-Marina-Product-BT-22RP-11.jpg" alt="Rapid">
+      <img src="https://x.com/uploads/rapid-frontback.png" alt="Rapid front/back">
     `;
     expect(findProductImage(rapid, "rapid")).toBe("https://x.com/uploads/rapid-frontback.png");
   });
@@ -179,9 +182,9 @@ describe("findProductImage", () => {
    */
   it("horgony nélkül az oldal első nem-kizárt képét adja (pozíció-fallback)", () => {
     const revolution = `
-      <img src="https://x.com/uploads/white_LOGO-01.png">
-      <img src="https://x.com/uploads/revolutiobn.png">
-      <img src="https://x.com/uploads/backpack.jpg">
+      <img src="https://x.com/uploads/white_LOGO-01.png" alt="">
+      <img src="https://x.com/uploads/revolutiobn.png" alt="Revolution">
+      <img src="https://x.com/uploads/backpack.jpg" alt="Hátizsák">
     `;
     expect(findProductImage(revolution, "revolution")).toBe(
       "https://x.com/uploads/revolutiobn.png",
@@ -191,6 +194,30 @@ describe("findProductImage", () => {
   it("a fallback a horgony UTÁN jön — a találatot nem írja felül", () => {
     // A „Coral" horgony talál; az első nem-kizárt kép (DJI-életkép) nem nyer.
     expect(findProductImage(page, "Coral")).not.toContain("DJI");
+  });
+
+  /**
+   * ÉLESBEN MÉRT KÁR (zraysports.com, 2026-08-28): ott a fájlnév puszta
+   * sorszám, tehát sem horgony, sem fájlnév-kizárás nem fog rajta — a
+   * fallback mind a 41 deszkára a fejléc-LOGÓT adta. A logót az `alt=""`
+   * árulja el (a HTML-szabvány szerint: díszítő), a „Related Products" blokk
+   * képeit pedig az `alt` teljes hiánya.
+   */
+  it("a fallback ÁTLÉPI a díszítő (alt=\"\") és az alt NÉLKÜLI képeket", () => {
+    const zray = `
+      <img src="//img.x/images/3865618.png" alt="" title="">
+      <img class="_middleImage" src="//img.x/images/3469216.jpg" alt="X5" title="X5">
+      <img src="//img.x/images/8292285.jpg" class="w-listpic-in">
+    `;
+    expect(findProductImage(zray, "X RIDER XL", "X")).toBe("//img.x/images/3469216.jpg");
+  });
+
+  it("csak díszítő képekből álló oldalra null (inkább semmi, mint logó)", () => {
+    const onlyDecorative = `
+      <img src="//img.x/images/3865618.png" alt="">
+      <img src="//img.x/images/8292285.jpg">
+    `;
+    expect(findProductImage(onlyDecorative, "X RIDER XL")).toBeNull();
   });
 
   it("kép nélküli oldalra null", () => {
@@ -228,7 +255,7 @@ describe("findProductImage — megjelenítésre való méret", () => {
   });
 
   it("ha egyik változat sem elég nagy, a LEGNAGYOBB elérhetőt", () => {
-    const small = `<img src="https://x.com/revolutiobn.png"
+    const small = `<img src="https://x.com/revolutiobn.png" alt="Revolution"
       srcset="https://x.com/revolutiobn.png 470w, https://x.com/revolutiobn-141x300.png 141w">`;
     expect(findProductImage(small, "revolution")).toBe("https://x.com/revolutiobn.png");
   });

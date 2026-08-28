@@ -54,24 +54,48 @@ export function rankImageSources(
  * állítása arról, mi a termék fő képe; a `findProductImage` csak akkor jön,
  * ha ilyen állítás nincs (élesben: aquamarina.com egyiket sem adja).
  */
-export function imageFromPage(html: string, modelName: string): string | null {
+export function imageFromPage(
+  html: string,
+  modelName: string,
+  /**
+   * Az oldal URL-je, a RELATÍV képhivatkozások feloldásához. A JSON-LD és az
+   * `og:image` a gyakorlatban abszolút, az oldal `<img src>`-je viszont nem
+   * (élesben a Zray protokoll-relatív `//img.website.xin/…` alakot ír) — a
+   * `boards.image_url` viszont abszolút URL-t vár. Elhagyva a nyers érték megy
+   * tovább (a régi viselkedés).
+   */
+  pageUrl?: string,
+): string | null {
   const product = pickPrimaryProduct(findProductNodes(html));
   const fromJsonLd = product ? firstImage(product.image) : null;
-  if (fromJsonLd !== null) return displayImageUrl(fromJsonLd);
+  if (fromJsonLd !== null) return absolute(displayImageUrl(fromJsonLd), pageUrl);
 
   const og = html.match(
     /<meta[^>]+(?:property|name)="og:image"[^>]+content="([^"]+)"/i,
   )?.[1];
-  if (og !== undefined && og.trim() !== "") return displayImageUrl(og.trim());
+  if (og !== undefined && og.trim() !== "") return absolute(displayImageUrl(og.trim()), pageUrl);
 
-  return displayImageUrl(
-    findProductImage(
-      html,
-      findModelCode(htmlToText(html)),
-      modelName,
-      modelName.split(/\s+/)[0] ?? null,
+  return absolute(
+    displayImageUrl(
+      findProductImage(
+        html,
+        findModelCode(htmlToText(html)),
+        modelName,
+        modelName.split(/\s+/)[0] ?? null,
+      ),
     ),
+    pageUrl,
   );
+}
+
+/** Relatív képhivatkozás feloldása az oldal URL-jéhez képest. */
+function absolute(raw: string | null, pageUrl: string | undefined): string | null {
+  if (raw === null || pageUrl === undefined) return raw;
+  try {
+    return new URL(raw, pageUrl).toString();
+  } catch {
+    return raw;
+  }
 }
 
 /**
