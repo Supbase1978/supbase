@@ -452,6 +452,21 @@ const SPEC_LABELS = {
     "max load",
     "max weight",
     "capacity",
+    // A MAXIMÁLIS TERHELÉS ELŐBBRE VALÓ AZ AJÁNLOTTNÁL (felhasználói döntés,
+    // 2026-08-28: „szinte mindenütt a maximális terhelést írtuk be").
+    //
+    // Élesben (aquatone.com) a spec-tábla KÉT terhelési sort ad, ebben a
+    // sorrendben: `REC. PAYLOAD / < 60 kg` és `MAX. PAYLOAD / < 75 kg`. A
+    // címke-kereső az ELSŐ találatot veszi, tehát a puszta „payload" needle
+    // az AJÁNLOTT értéket adta — a katalógus többi sorával összemérhetetlenül.
+    // A specifikusabb needle ezért ELŐBB áll: a listát sorrendben járjuk be,
+    // így a `max. payload` akkor is nyer, ha a lapon a `rec.` sor van elöl.
+    //
+    // MINDKÉT ÍRÁSMÓD KELL: a pont a címkében van („MAX. PAYLOAD"), és a
+    // részstring-illesztés miatt a pont nélküli needle nem fogná meg.
+    "max. payload",
+    "maximum payload",
+    "max payload",
     // Aqua Marina hivatalos adatlap (aquamarina.com): „MAX. PAYLOAD".
     // A `kg`-kötelezettség miatt a mellette kiírt font-érték („308 lbs /
     // 140 kg") nem téveszt meg — a 140 nyer, nem a 308.

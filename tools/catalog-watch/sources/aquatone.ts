@@ -22,10 +22,12 @@
  *    „kisebb mint" jellel írja — `<p>< 75 kg / 165 lbs</p>`. A naiv
  *    tag-eltávolítás ezt EGY tagnek vette, és a teherbírás nyomtalanul
  *    eltűnt, pedig ott volt a letöltött HTML-ben.
- *  * TEHERBÍRÁS: a `REC. PAYLOAD` áll elöl, a `MAX. PAYLOAD` utána — az
- *    ELSŐ találat nyer, tehát az AJÁNLOTT (konzervatívabb) érték kerül be.
- *    Ez szándékos, és egy irányba téved a biztonsággal; ugyanaz a döntés,
- *    mint a Jobe „Recommended rider weight"-jénél (2026-08-20).
+ *  * TEHERBÍRÁS: a lap KÉT terhelési sort ad, `REC. PAYLOAD` elöl és
+ *    `MAX. PAYLOAD` utána. A `MAX` kerül be (felhasználói döntés,
+ *    2026-08-28: „szinte mindenütt a maximális terhelést írtuk be") — a
+ *    katalógus többi sorával csak így összemérhető. A címke-kereső
+ *    alapból az ELSŐ találatot venné, ezért a `max. payload` needle
+ *    ELŐBBRE került a `payload`-nál a `SPEC_LABELS`-ben.
  */
 import type { SourceRecipe } from "./index.ts";
 
@@ -39,7 +41,8 @@ export const recipe: SourceRecipe = {
       "Gyártói oldal sitemap NÉLKÜL (a robots.txt és minden sitemap-út hibaoldalt ad). " +
       "A terméklistát a bolt saját getList végpontja adja, kategóriánként. A spec kétoszlopos, " +
       "kettős írásmóddal; a terhelési sorok escape-eletlen < jelet viselnek. Teherbírásnak a " +
-      "REC. PAYLOAD kerül be (konzervatívabb, mint a MAX).",
+      "MAX. PAYLOAD kerül be teherbírásnak (a REC. sor áll elöl, de a katalógus többi " +
+      "sorával a maximum az összemérhető).",
     htmlOnly: true,
     minDelayMs: 1500,
     productListUrls: [

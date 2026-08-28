@@ -2,7 +2,7 @@
   "source": "Aquatone",
   "url": "https://aquatone.com/products/details.html?id=78",
   "capturedAt": "2026-08-28",
-  "teaches": "Ketoszlopos spec KETTOS irasmoddal (LENGTH / 10'6\\\" / 320 cm; WEIGHT / 6.8 kg / 15 lbs). A terhelesi sorokat a gyarto ESCAPE-ELES NELKULI kisebb-mint jellel irja (<p>< 75 kg / 165 lbs</p>) - a naiv tag-eltavolitas ezt egy tagnek vette es a teherbiras nyomtalanul eltunt. A REC. PAYLOAD all elol, ezert az (konzervativabb) ertek kerul be.",
+  "teaches": "Ketoszlopos spec KETTOS irasmoddal (LENGTH / 10'6 hüvelyk / 320 cm; WEIGHT / 6.8 kg / 15 lbs). A terhelesi sorokat a gyarto ESCAPE-ELES NELKULI kisebb-mint jellel irja - a naiv tag-eltavolitas ezt egy tagnek vette es a teherbiras nyomtalanul eltunt. KET terhelesi sor van: a REC. PAYLOAD all elol, de a MAX. PAYLOAD (75 kg) kerul be, mert a max. payload needle elobbre valo a puszta payload-nal.",
   "rendered": false,
   "expected": [
     {
@@ -29,7 +29,7 @@
         "thicknessCm": 12.7,
         "volumeL": 185,
         "weightKg": 6.8,
-        "maxLoadKg": 60,
+        "maxLoadKg": 75,
         "inflatable": null
       },
       "accessoryType": null
