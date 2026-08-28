@@ -226,6 +226,47 @@ export async function collectProductUrls(
   const maxProducts = config.maxProducts ?? DEFAULT_MAX_PRODUCTS;
   const locs: string[] = [];
 
+  // LISTAOLDALAS FELDERÍTÉS (F2.1-utó-49) — sitemap HELYETT, ha a forrásnak
+  // nincs használható sitemapje.
+  //
+  // ÉLESBEN MÉRT (aquatone.com): a `robots.txt` és MINDEN sitemap-út 200-zal
+  // tér vissza, de a tartalmuk egy 1,5 kB-os kínai hibaoldal
+  // („系统发生错误") — vagyis nincs se robots, se sitemap. A termékek
+  // `details.html?id=N` alatt élnek, a listát pedig egy AJAX-végpont adja
+  // (`/index.php/Products/getList.html?…&cateid=24`), ami sima GET-tel is
+  // kiszolgál egy HTML-töredéket a termék-linkekkel.
+  //
+  // Ez nem kerülőút: a bolt SAJÁT terméklistáját kérjük le, ugyanazt, amit a
+  // böngésző. Az ID-tér végigpróbálása lenne a kerülőút — azt nem tesszük.
+  if (config.productListUrls && config.productListUrls.length > 0) {
+    for (const listUrl of config.productListUrls) {
+      try {
+        const result = await deps.fetchText(listUrl);
+        if (result.status >= 400) {
+          addError(summary, `terméklista ${listUrl}: HTTP ${result.status}`);
+          continue;
+        }
+        for (const match of result.text.matchAll(/href=["']([^"']+)["']/gi)) {
+          const href = match[1] as string;
+          try {
+            locs.push(new URL(href, listUrl).toString());
+          } catch {
+            // relatív feloldás bukott: kihagyjuk
+          }
+        }
+      } catch (error) {
+        addError(summary, `terméklista ${listUrl}: ${errorMessage(error)}`);
+      }
+    }
+    const fromLists = selectProductUrls(locs, {
+      productUrlPatterns: config.productUrlPatterns,
+      excludeUrlPatterns: config.excludeUrlPatterns,
+      maxProducts,
+    });
+    summary.urlsConsidered = fromLists.length;
+    return fromLists;
+  }
+
   const defaultSitemap = `${origin}/sitemap.xml`;
   const queue = resolveSitemapUrls(source, robots, origin);
   const tried = new Set(queue);
@@ -551,6 +592,7 @@ export function extractPageProducts(
     titleSuffixes: config.titleSuffixes ?? [],
     titleCutAfter: config.titleCutAfter ?? [],
     titleNoiseWords: config.titleNoiseWords ?? [],
+    lengthFromTitle: config.lengthFromTitle ?? false,
     categoryClass: config.categoryClass,
     // A recept által kért kategória-módszerek (F2.1-utó-45) — lista hiányában
     // mind fut, tehát a viselkedés változatlan.

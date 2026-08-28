@@ -110,8 +110,63 @@ elrontotta az Indianát (ott a spec mindkét írásmódot kiteszi, és a szárma
 láb-hüvelyk ütötte a gyártó saját cm-ét), a `thick` melléknévi címke pedig a
 Jobe-t — mindkettőt a fixtúra-háló fogta meg azonnal. Gyanús: 13 → 4.
 
-**Még hiányzó márkák a listáról:** Red Paddle Co, Aquatone, Itiwit (Decathlon),
-Bestway/Hydro-Force.
+**F2.1-utó-48 — Red Paddle Co bekötve (2026-08-28).** A DOMAIN volt a kulcs: a
+`redpaddleco.com` a régi WordPress-oldal (minden válaszát PHP-figyelmeztetések
+vezetik be, és a sitemap-indexében nincs termék-bejegyzés); az élő bolt a
+`red.equipment` (Shopify). Négy általános javítás kellett hozzá:
+- **`lengthFromTitle`** — a gyártó egyetlen mezőben sem közli a hosszt, az a
+  modellnév eleje (`10'8" Ride MSL…`). Enélkül a forrás NULLA terméket adott.
+- **`riders up to`** teherbírás-címke — terhelési mező sincs, a leírás mondja
+  ki. Ugyanaz az eset, mint a Jobe „Recommended rider weight"-je.
+- **`Rider Style`** a `labeledUse` címkelistájára (a gyártó saját besorolása).
+- **TIPOGRÁFIAI ENTITÁSOK** (`&ndash;`, `&mdash;`, `&times;`, idézőjelek) az
+  entitás-feloldásba. Ez volt a legalattomosabb: a cím `… Package&ndash; Red
+  Equipment - ROW` alakú, feloldatlanul a `–` SOSEM jelenik meg, tehát a
+  `titleCutAfter: ["–"]` némán nem csinált semmit — és a bennmaradó „Red
+  **Equipment**" a gyűjtőlap-szűrő „equipment" szavára esett. A forrás emiatt
+  teljesen félrevezető okból adott nulla terméket.
+
+A próbafutás rögtön megmutatta a `lengthFromTitle` árnyoldalát is: a bolt
+KIEGÉSZÍTŐI a címükben viselik a deszka méretét, amihez valók (`FFC Carbon Rod
+for Elite` → 381 cm, `Compact Backpack` → 269 cm), és a gyanú-jelzés sem fogta
+meg őket, mert a szám hihető. Őrszem: a cím-alapú hossz CSAK akkor él, ha van
+SZÉLESSÉG is — a deszka mindig kiírja, a hátizsák nem; plusz `backpack` és
+`camera mount` a kizáró kulcsszavakra.
+
+Eredmény 200 URL-en: 23 „termék" → **17 valódi deszka, 0 gyanús**,
+`hossz ✓ · szél ✓ · vast ✓ · térf 6/17 · súly ✓ · teher 15/17`. Az űrtartalmat
+modellenként változóan, prózában közli (`295L of volume`) — ezért NEM
+`unpublishedFields`. Két fixtúra őrzi.
+
+**F2.1-utó-49 — Aquatone bekötve (2026-08-28).** A DOMAIN itt is a kulcs volt:
+a márkatáblázat `aquatoneair.com`-ot ír, ami DNS-ből sem oldódik fel (emiatt
+írtuk le korábban a márkát); az élő oldal a `aquatone.com`. Ez a HARMADIK
+forrás, ahol a rossz domain miatt vesztünk időt (FunWater, Red Paddle, Aquatone).
+
+- **NINCS `robots.txt` ÉS NINCS SITEMAP**: mindkét út 200-zal felel, de a
+  tartalmuk egy 1,5 kB-os kínai hibaoldal (`系统发生错误`). Ez hiány, nem
+  tiltás — robots.txt híján a bejárás megengedett.
+- **`productListUrls`** — új felderítési mód sitemap HELYETT. A terméklista
+  JS-ből épül, de a mögötte álló végpont sima GET-tel is kiszolgál
+  (`/index.php/Products/getList.html?…&cateid=24`). A megadott listaoldalak
+  minden `href`-je átmegy a szokásos minta-szűrésen. A bolt SAJÁT listáját
+  kérjük le, ugyanazt, amit a böngésző; az ID-tér végigpróbálása lett volna a
+  kerülőút.
+- **ESCAPE-ELETLEN `<` A TARTALOMBAN** — a legalattomosabb csapda eddig. A
+  gyártó így írja a terhelést: `<p>< 75 kg / 165 lbs</p>`. A naiv
+  `<[^>]+>` minta a `< 75 kg / 165 lbs</p>` darabot EGY tagnek vette és
+  eldobta: a teherbírás nyomtalanul eltűnt, pedig ott volt a letöltött
+  HTML-ben — teherbírás nélkül pedig a Deszkaválasztó kizárja a deszkát.
+  A szabály most: `<` után szóköz nem tag-kezdet.
+- **Kettős írásmódú érték-sorok** (`6.8 kg / 15 lbs`) az önálló érték-sor
+  mintájában, a `kg` elsőbbségével.
+
+Eredmény 45 URL-en: 11 deszka + 2 pumpa, **0 gyanús**, `hossz ✓ · szél ✓ ·
+vast ✓ · térf ✓ · súly ✓ · teher 9/11` — az ELSŐ forrás, ahol mind a hat mező
+megvan. Teherbírásnak a `REC. PAYLOAD` kerül be (elöl áll, és konzervatívabb
+a MAX-nál) — ugyanaz a döntés, mint a Jobe rider-weight-jénél.
+
+**Még hiányzó márkák a listáról:** Itiwit (Decathlon), Bestway/Hydro-Force.
 
 **Nyitott kis tételek (nem blokkolók):**
 - **Advisor ár-padló** (domain-review 2.5): NEM ár-büntetés kell, hanem

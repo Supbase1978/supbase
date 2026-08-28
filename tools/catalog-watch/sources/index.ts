@@ -30,12 +30,14 @@ export interface SourceRecipe {
 
 import { recipe as aquaMarina } from "./aqua-marina.ts";
 import { recipe as aquaMarinaHungary } from "./aqua-marina-hungary.ts";
+import { recipe as aquatone } from "./aquatone.ts";
 import { recipe as bluefin } from "./bluefin.ts";
 import { recipe as fanatic } from "./fanatic.ts";
 import { recipe as funwater } from "./funwater.ts";
 import { recipe as gladiator } from "./gladiator.ts";
 import { recipe as indiana } from "./indiana.ts";
 import { recipe as jobe } from "./jobe.ts";
+import { recipe as redPaddle } from "./red-paddle.ts";
 import { recipe as starboard } from "./starboard.ts";
 import { recipe as supDeszka } from "./sup-deszka.ts";
 import { recipe as zray } from "./zray.ts";
@@ -44,12 +46,14 @@ import { recipe as zray } from "./zray.ts";
 export const SOURCE_RECIPES: readonly SourceRecipe[] = [
   aquaMarina,
   aquaMarinaHungary,
+  aquatone,
   bluefin,
   fanatic,
   funwater,
   gladiator,
   indiana,
   jobe,
+  redPaddle,
   starboard,
   supDeszka,
   zray,

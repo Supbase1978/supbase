@@ -1,0 +1,38 @@
+{
+  "source": "Aquatone",
+  "url": "https://aquatone.com/products/details.html?id=78",
+  "capturedAt": "2026-08-28",
+  "teaches": "Ketoszlopos spec KETTOS irasmoddal (LENGTH / 10'6\\\" / 320 cm; WEIGHT / 6.8 kg / 15 lbs). A terhelesi sorokat a gyarto ESCAPE-ELES NELKULI kisebb-mint jellel irja (<p>< 75 kg / 165 lbs</p>) - a naiv tag-eltavolitas ezt egy tagnek vette es a teherbiras nyomtalanul eltunt. A REC. PAYLOAD all elol, ezert az (konzervativabb) ertek kerul be.",
+  "rendered": false,
+  "expected": [
+    {
+      "sourceUrl": "https://aquatone.com/products/details.html?id=78",
+      "brandName": "Aquatone",
+      "modelName": "BEAST",
+      "rawTitle": "BEAST",
+      "modelYear": null,
+      "priceHuf": null,
+      "inStock": null,
+      "imageUrl": null,
+      "imageUrls": [],
+      "boardType": "race",
+      "boardTypeSource": "prose",
+      "boardTypes": [
+        {
+          "type": "race",
+          "source": "prose"
+        }
+      ],
+      "specs": {
+        "lengthCm": 320,
+        "widthCm": 58,
+        "thicknessCm": 12.7,
+        "volumeL": 185,
+        "weightKg": 6.8,
+        "maxLoadKg": 60,
+        "inflatable": null
+      },
+      "accessoryType": null
+    }
+  ]
+}

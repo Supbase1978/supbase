@@ -31,6 +31,19 @@ export type CandidateStatus = "pending" | "approved" | "rejected" | "merged";
 export interface CrawlConfig {
   /** Explicit sitemap-URL. Hiányában a robots.txt `Sitemap:` sorai. */
   sitemapUrl?: string;
+  /**
+   * LISTAOLDALAK, amikből a termék-URL-ek jönnek — sitemap HELYETT.
+   *
+   * Akkor kell, ha a forrásnak nincs használható sitemapje. Élesben
+   * (aquatone.com): a `robots.txt` és minden sitemap-út 200-zal felel, de a
+   * tartalmuk egy hibaoldal; a terméklistát viszont a bolt saját
+   * AJAX-végpontja kiszolgálja sima GET-re is, HTML-töredékként.
+   *
+   * A megadott oldalak MINDEN `href`-je átmegy a szokásos
+   * `productUrlPatterns`/`excludeUrlPatterns` szűrésen — a nem termék-linkek
+   * (menü, lábléc) így maguktól kiesnek.
+   */
+  productListUrls?: string[];
   /** Csak az ezeket a részleteket tartalmazó URL-ek termékoldalak (pl. "/termek/"). */
   productUrlPatterns?: string[];
   /** Kizáró minták (pl. "/blog/", "?page="). */
@@ -124,6 +137,15 @@ export interface CrawlConfig {
    * a lista forrásonként, MÉRÉS után bővül.
    */
   titleNoiseWords?: string[];
+  /**
+   * A HOSSZ A CÍM ELEJÉRŐL, ha egyetlen mező sem adja meg.
+   *
+   * Élesben (red.equipment): a spec-blokk `Width`/`Board Thickness`/
+   * `Board Weight` mezőket ad, HOSSZAT nem — az a modellnév eleje
+   * (`10'8" Ride MSL …`). Enélkül a forrás egyetlen terméket sem ad.
+   * Opt-in, mert a cím sokszor MÁS méretet visel (csomag, evező).
+   */
+  lengthFromTitle?: boolean;
   /**
    * Böngésző-renderelés akkor is, ha a nyers HTML EGYETLEN terméket sem adott.
    *

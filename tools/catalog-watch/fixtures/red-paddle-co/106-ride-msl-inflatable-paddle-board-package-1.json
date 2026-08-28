@@ -1,0 +1,38 @@
+{
+  "source": "Red Paddle Co",
+  "url": "https://red.equipment/products/106-ride-msl-inflatable-paddle-board-package-1",
+  "capturedAt": "2026-08-28",
+  "teaches": "HOSSZ csak a CIMBEN (lengthFromTitle), TEHERBIRAS csak a prozaban (riders up to 100kg), KATEGORIA a gyarto Rider Style mezojebol (labeledUse). A cim &ndash; entitast visel: feloldatlanul a levagas nem tortenik meg, es a bennmarado Red Equipment a gyujtolap-szurore esik - a forras EGYETLEN terméket sem adott.",
+  "rendered": false,
+  "expected": [
+    {
+      "sourceUrl": "https://red.equipment/products/106-ride-msl-inflatable-paddle-board-package-1",
+      "brandName": "Red Paddle Co",
+      "modelName": "Ride MSL",
+      "rawTitle": "Red Paddle Co 10'6\" Ride MSL Inflatable Paddle Board Package",
+      "modelYear": null,
+      "priceHuf": null,
+      "inStock": null,
+      "imageUrl": "https://red.equipment/cdn/shop/files/2023-106-Ride-MSL-Inflatable-Paddle-Board-Package-Red-Paddle-Co-1.png?v=1725371692&width=768",
+      "imageUrls": [],
+      "boardType": "allround",
+      "boardTypeSource": "labeledUse",
+      "boardTypes": [
+        {
+          "type": "allround",
+          "source": "labeledUse"
+        }
+      ],
+      "specs": {
+        "lengthCm": 320,
+        "widthCm": 81.3,
+        "thicknessCm": 12,
+        "volumeL": null,
+        "weightKg": 11.1,
+        "maxLoadKg": 100,
+        "inflatable": null
+      },
+      "accessoryType": null
+    }
+  ]
+}

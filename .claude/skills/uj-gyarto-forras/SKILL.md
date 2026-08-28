@@ -107,7 +107,7 @@ nem előre.
 | Módszer | Mit feltételez | Kinél vált be | Tipikus csapdája |
 |---|---|---|---|
 | `pinnedUrl` | a gyártónak van külön aktivitás-taxonómiája, amit böngészővel ki lehet olvasni | **Gladiator**, **Zray** | az alias-URL-ek (`gladiator-elite-11-6` vs `elite-11-6`) és a csomag-utótagok |
-| `labeledUse` | a gyártó CÍMKÉZETT használat-mezőt ad a spec-táblában | **FunWater** (`Versatility: All-around, ideal for cruising…`) | a címke pontos egyezést kíván; szabad szövegben a „best for" fordulat nem mező |
+| `labeledUse` | a gyártó CÍMKÉZETT használat-mezőt ad a spec-táblában | **FunWater** (`Versatility: All-around…`), **Red Paddle** (`Rider Style: All Round`) | a címke pontos egyezést kíván; szabad szövegben a „best for" fordulat nem mező |
 | `nameAndUrl` | a kategória-szó a névben vagy az URL-szegmensben áll | **Aqua Marina** (`/products/all-around/`) | a marketing-slug (`/products/glowing/`) semmit nem mond a használatról; a SEO-név egyenesen TÉVESZT (FunWater: „Island Explorer" → túra, holott all-round) |
 | `categoryLine` | a termékfejlécben ott a gyártó saját felirata | **Fanatic** (`ALL-AROUND / WINDSURF`) | a felirat SORRENDJE dönt, és MINDEN tagja számít |
 | `breadcrumb` | a morzsamenü kimondja a kategóriát | **Zray** | JS-ből épülő morzsamenüt a crawler nem lát (Zray új modelljei) |
@@ -345,6 +345,24 @@ bemenetén. A változatok:
 - **Egybetűs szót SOHA ne vágj le a név széléről.** A SUP-nál az egybetűs
   végződés VARIÁNS-jelölés (Zray `Max Azure M2 A`, `Kids Saffron K8 B`) — a
   levágás két külön deszkát olvasztana össze.
+
+**A HOSSZ nincs mezőben — a címben van**
+- Van gyártó (red.equipment), aki a hosszt EGYETLEN mezőben sem közli, mert a
+  modellnév ELEJE a méret (`10'8" Ride MSL…`). A kinyerő ilyenkor EGYETLEN
+  terméket sem ad (a hiányzó hossz kizár). Erre való a `lengthFromTitle`.
+- **De a cím sokszor MÁS méretet visel.** Élesben ugyanezen a boltok a
+  KIEGÉSZÍTŐK címében ott a deszka mérete, amihez valók: `FFC Carbon Rod for
+  Elite` → 381 cm „deszka", `Compact Backpack` → 269 cm. A gyanú-jelzés NEM
+  fogja meg őket, mert a szám hihető. Ezért a szabály csak akkor él, ha a
+  spec-blokk SZÉLESSÉGET is adott — azt a deszka mindig kiírja, a hátizsák nem.
+
+**Feloldatlan HTML-entitás a címben**
+- Élesben (red.equipment) a `<title>` így áll: `… Package&ndash; Red Equipment
+  - ROW`. A `&ndash;` feloldatlanul a `–` SOSEM jelenik meg a szövegben, tehát
+  a `titleCutAfter: ["–"]` némán nem csinál semmit — és a bennmaradó „Red
+  **Equipment**" a `NEVER_BOARD_KEYWORDS` gyűjtőlap-szűrőjére esik. A forrás
+  így NULLA terméket ad, teljesen félrevezető okból. Ha egy forrás váratlanul
+  üres, **nézd meg a nyers `<title>`-t entitásokra.**
 
 **Kép**
 - Ha a `<title>` oldal-szintű utótagot visel (`- Jobesports.com`), add meg a

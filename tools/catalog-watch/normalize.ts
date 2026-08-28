@@ -441,6 +441,11 @@ const SPEC_LABELS = {
     // (teherautó, tehermentes), a „hasznos teher" viszont egyértelmű — ez a
     // payload magyar megfelelője.
     "hasznos teher",
+    // Red Paddle (red.equipment): a márka SEHOL nem ír terhelési mezőt, a
+    // leírásában viszont kimondja: „…for riders up to 100kg". Ugyanaz a
+    // fajta korlát, mint a Jobe „Recommended rider weight"-je (lásd lent),
+    // csak mondatba ágyazva — és ez az EGYETLEN terhelési adata.
+    "riders up to",
     // Élesben mért címke (Bluefin): "Max User Weight" — a "max weight"
     // RÉSZSTRING-illesztés ezt nem fogja meg, mert közte van a "user" szó.
     "max user weight",
@@ -663,14 +668,16 @@ function parseUnitLine(
     const match = text.match(/^(\d+(?:[.,]\d+)?)\s*(?:l|liters?|litres?)$/i);
     return match ? toNumber(match[1] ?? "") : null;
   }
-  const kg = text.match(/^(\d+(?:[.,]\d+)?)\s*(?:kg|kilogramm?s?)$/i);
-  if (kg) return toNumber(kg[1] ?? "");
-  const lbs = text.match(/^(\d+(?:[.,]\d+)?)\s*(?:lbs?|pounds?)$/i);
-  if (lbs) {
-    const value = toNumber(lbs[1] ?? "");
-    return value === null ? null : round1(value * KG_PER_POUND);
+  // KETTŐS ÍRÁSMÓD egy sorban: `6.8 kg / 15 lbs`, `< 75 kg / 165 lbs`
+  // (aquatone.com). A sor AKKOR érték-sor, ha CSAK számokból, egységekből és
+  // elválasztókból áll — egy mondat így sem minősül annak. A „kisebb mint"
+  // jel megengedett előtag: a gyártó a terhelési korlátot így írja.
+  if (!/^[<~≤]?\s*\d+(?:[.,]\d+)?\s*[a-z]+(?:\s*[/|]\s*\d+(?:[.,]\d+)?\s*[a-z]+)?$/i.test(text)) {
+    return null;
   }
-  return null;
+  // A `kg` ELSŐBBSÉGE és a font-átváltás szabálya ugyanaz, mint a
+  // címke-ablaknál — ezért ugyanaz a függvény dönt.
+  return parseWeightKg(text);
 }
 
 /**
@@ -1459,6 +1466,11 @@ const NEVER_BOARD_KEYWORDS = [
   // GÖRDESZKA: a nevében ott a „board", tehát a deszka-főnév szabály
   // átengedi; eddig csak a hossz-tartomány fogta meg (71 cm).
   "skateboard",
+  // BOLTI KIEGÉSZÍTŐK, amiknek a CÍMÉBEN ott a deszka mérete (red.equipment).
+  // A `lengthFromTitle` szélesség-őrszeme a legtöbbjüket kiszűri, ezek viszont
+  // a spec-blokkjukban is adnak szélességet — a nevük dönt.
+  "backpack",
+  "camera mount",
 ];
 
 /** A deszka-mivolt pozitív jelei a névben/leírásban. */
@@ -2210,6 +2222,11 @@ function absoluteUrl(raw: string | null, baseUrl: string): string | null {
  */
 const USE_FIELD_LABELS = [
   "versatility",
+  // Red Paddle (red.equipment): `Rider Style: All Round`. A gyártó saját
+  // besorolása — a modellnévből tippelés itt téveszt („Voyager", „Compact"
+  // nem használati kategória).
+  "rider style",
+  "riding style",
   "best for",
   "recommended use",
   "intended use",
@@ -2472,6 +2489,8 @@ export interface PageExtractionOptions {
   titleCutAfter?: readonly string[];
   /** Forrás-szintű zajszavak a modellnévből (`crawl_config.titleNoiseWords`). */
   titleNoiseWords?: readonly string[];
+  /** A hossz a cím elejéről, ha egyetlen mező sem adja (`lengthFromTitle`). */
+  lengthFromTitle?: boolean;
   /**
    * A gyártó SAJÁT kategória-feliratát viselő elem osztályneve
    * (`crawl_config.categoryClass`). Termékspecifikus jel, ezért erős.
@@ -2500,6 +2519,7 @@ export function extractProductFromPage(
     titleSuffixes = [],
     titleCutAfter = [],
     titleNoiseWords = [],
+    lengthFromTitle = false,
     categoryClass,
     categoryMethods,
     overrideText,
@@ -2546,6 +2566,38 @@ export function extractProductFromPage(
   let specs = parseSpecsFromText(pageText);
   if (specs.lengthCm === null) {
     specs = parseTransposedSpecs(pageText) ?? specs;
+  }
+  // UTOLSÓ MENEDÉK: a HOSSZ A CÍMBŐL (`crawl_config.lengthFromTitle`).
+  //
+  // Van gyártó, aki a hosszt EGYETLEN mezőben sem közli, mert a modellnév
+  // ELEJE maga a méret. Élesben (red.equipment): a spec-blokk `Width` /
+  // `Board Thickness` / `Board Weight` mezőket ad, hosszt nem — az a címben
+  // áll: `10'8" Ride MSL Inflatable Paddle Board Package.` A kinyerő emiatt
+  // EGYETLEN terméket sem adott erről a forrásról (a hiányzó hossz kizár).
+  //
+  // MIÉRT OPT-IN, és miért a legutolsó lépés: a cím sokszor NEM a deszka
+  // méretét viseli (csomag-méret, evező-hossz, „12 db" mennyiség), ezért ez
+  // csak ott szabad, ahol MÉRTÜK, hogy a cím eleje a deszka hossza. A
+  // címkézett és a hármas alak mindig ELŐBB dönt.
+  //
+  // ŐRSZEM: CSAK AKKOR, HA VAN SZÉLESSÉG. Élesben mérve (red.equipment) a
+  // kockázat nem elméleti: a bolt kiegészítőinek a címében ott a deszka
+  // mérete, amihez valók — `FFC Carbon Rod for Elite` (14'0"), `Compact
+  // Backpack (available with 8'10")`. Ezek a cím alapján 381 és 269 cm
+  // „hosszú deszkák" lettek, és a gyanú-jelzés sem fogta meg őket, mert a
+  // szám hihető. A DESZKA viszont MINDIG kiírja a szélességét a
+  // spec-blokkban; a hátizsák és az uszony-rúd nem.
+  if (specs.lengthCm === null && specs.widthCm !== null && lengthFromTitle) {
+    // Az ELSŐ láb(-hüvelyk) token a címben. Nem horgonyozunk a cím elejére:
+    // élesben (red.equipment) a `<title>` a MÁRKANÉVVEL kezdődik —
+    // `Red Paddle Co 10'8\" Ride MSL Inflatable Paddle Board Package`.
+    //
+    // Az ELSŐ találat azért helyes, mert a méret a MODELLNÉV része, és az a
+    // cím elején áll; a mögötte jövő csomag-adatok (`… Package`, `10L dry
+    // bag`) már nem láb-jelet viselnek. A láb-jel maga is szűk minta: puszta
+    // szám sosem minősül hossznak.
+    const token = rawTitle.match(/(\d+\s*['′’]\s*\d*\s*(?:''|"|”|″|’’)?)/);
+    if (token?.[1] !== undefined) specs.lengthCm = parseDimensionCm(token[1]);
   }
   if (specs.lengthCm === null) return null;
 

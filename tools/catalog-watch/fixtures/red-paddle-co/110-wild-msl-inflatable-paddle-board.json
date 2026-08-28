@@ -1,0 +1,38 @@
+{
+  "source": "Red Paddle Co",
+  "url": "https://red.equipment/products/110-wild-msl-inflatable-paddle-board",
+  "capturedAt": "2026-08-28",
+  "teaches": "URTARTALOM a prozabol, ertek a cimke ELOTT: 295L of volume. A kategoria river - a gyarto Rider Style mezoje mondja ki, a modellnevbol (Wild) nem jonne ki.",
+  "rendered": false,
+  "expected": [
+    {
+      "sourceUrl": "https://red.equipment/products/110-wild-msl-inflatable-paddle-board",
+      "brandName": "Red Paddle Co",
+      "modelName": "Wild MSL",
+      "rawTitle": "Red Paddle Co 11'0\" Wild MSL Inflatable Paddle Board Package",
+      "modelYear": null,
+      "priceHuf": null,
+      "inStock": null,
+      "imageUrl": "https://red.equipment/cdn/shop/files/2024-110-Wild-MSL-Inflatable-Paddle-Board-Red-Paddle-Co-1.png?v=1725369461&width=768",
+      "imageUrls": [],
+      "boardType": "river",
+      "boardTypeSource": "labeledUse",
+      "boardTypes": [
+        {
+          "type": "river",
+          "source": "labeledUse"
+        }
+      ],
+      "specs": {
+        "lengthCm": 335.3,
+        "widthCm": 86.3,
+        "thicknessCm": 15,
+        "volumeL": 295,
+        "weightKg": 12.6,
+        "maxLoadKg": 150,
+        "inflatable": true
+      },
+      "accessoryType": null
+    }
+  ]
+}
