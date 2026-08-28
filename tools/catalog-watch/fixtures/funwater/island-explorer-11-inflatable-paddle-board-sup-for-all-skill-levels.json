@@ -1,0 +1,46 @@
+{
+  "source": "FunWater",
+  "url": "https://www.funwaterboard.com/products/island-explorer-11-inflatable-paddle-board-sup-for-all-skill-levels",
+  "capturedAt": "2026-08-28",
+  "teaches": "GemPages-racs: a cimke es az ertek KULON SORBAN all (Capacity/350LBS, Weight/12.74KG) - a suly csak a csupasz sor-cimkevel jon ki. A kategoria a gyarto sajat Versatility mezojebol (labeledUse), NEM a nevbol: az Island Explorer ALL-ROUND, nem tura. Urtartalmat a marka nem kozol.",
+  "rendered": false,
+  "expected": [
+    {
+      "sourceUrl": "https://www.funwaterboard.com/products/island-explorer-11-inflatable-paddle-board-sup-for-all-skill-levels",
+      "brandName": "Funwater",
+      "modelName": "Island Explorer",
+      "rawTitle": "Island Explorer 11' Inflatable Paddle Board",
+      "modelYear": null,
+      "priceHuf": null,
+      "inStock": null,
+      "imageUrl": "https://www.funwaterboard.com/cdn/shop/files/FUN2.png?v=1644629659&width=768",
+      "imageUrls": [],
+      "boardType": "allround",
+      "boardTypeSource": "labeledUse",
+      "boardTypes": [
+        {
+          "type": "allround",
+          "source": "labeledUse"
+        },
+        {
+          "type": "yoga",
+          "source": "labeledUse"
+        },
+        {
+          "type": "touring",
+          "source": "nameAndUrl"
+        }
+      ],
+      "specs": {
+        "lengthCm": 335.3,
+        "widthCm": 81.3,
+        "thicknessCm": 15.2,
+        "volumeL": null,
+        "weightKg": 12.74,
+        "maxLoadKg": 158.8,
+        "inflatable": true
+      },
+      "accessoryType": null
+    }
+  ]
+}

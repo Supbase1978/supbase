@@ -33,6 +33,8 @@ export interface NormalizeHelpers {
   urlCategoryHint(url: string): string;
   multiUseFromProse(text: string): BoardType[];
   matchPinnedType(url: string, pins: Readonly<Record<string, BoardType>>): BoardType | null;
+  /** A gyártó SAJÁT használat-mezője a spec-táblából (`Versatility: …`). */
+  labelledUseText(text: string): string;
 }
 
 /** Rövid, olvasható bizonyíték-részlet a moderátornak és a probe-nak. */
@@ -55,6 +57,19 @@ export function buildCategoryMethods(helpers: NormalizeHelpers): CategoryMethod[
       run: (ctx: MethodContext) => {
         const type = helpers.matchPinnedType(ctx.sourceUrl, ctx.boardTypeByUrl);
         return one(type, type === null ? null : ctx.sourceUrl);
+      },
+    },
+    {
+      name: "labeledUse",
+      describe: `A gyártó SAJÁT HASZNÁLAT-MEZŐJE a spec-táblából (FunWater:
+        „Versatility: All-around, ideal for cruising, exploring, and yoga").
+        Címkézett mező, tehát ÁLLÍTÁS, nem következtetés — ezért áll a
+        névből/URL-ből tippelő módszerek ELŐTT. Élesben ez javította az „Island
+        Explorer" nevű ALL-ROUND deszkát, amit a név alapján túrásnak vettünk.`,
+      run: (ctx) => {
+        const line = helpers.labelledUseText(ctx.pageText);
+        const types = boardTypesFromCategoryLine(line);
+        return types.length === 0 ? NO_MATCH : { types, evidence: snippet(line) };
       },
     },
     {

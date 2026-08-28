@@ -138,9 +138,19 @@ export function createRenderFetcher(): RenderFetcher {
       }
     },
     async close(): Promise<void> {
-      if (browserPromise) {
+      if (!browserPromise) return;
+      // A TAKARÍTÁS SOSEM BUKTATHATJA A FUTÁST (F2.1-utó-47). Ha a
+      // `chromium.launch()` elutasított (élesben: telepítetlen böngésző —
+      // `Executable doesn't exist…`), a `browserPromise` egy REJECTED ígéret;
+      // a megvárása itt kivételt dobott, ami a `renderText` saját fail-safe-jét
+      // megkerülve az EGÉSZ crawlt megállította — a már begyűjtött termékekkel
+      // együtt. A böngésző hiánya legfeljebb a fallbacket veszi el, a futást
+      // nem.
+      try {
         const browser = await browserPromise;
         await browser.close();
+      } catch {
+        // Nincs mit bezárni: el sem indult.
       }
     },
   };

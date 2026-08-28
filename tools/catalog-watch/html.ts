@@ -45,6 +45,16 @@ export function htmlToText(html: string): string {
       // A cella- és címke-határ szóköz: „Hosszúság</td><td>320 cm" → egy sor.
       .replace(/<[^>]+>/g, " "),
   )
+    // LÁTHATATLAN IRÁNYJELEK ÉS NULLA SZÉLESSÉGŰ KARAKTEREK (F2.1-utó-47).
+    //
+    // Élesben mért (funwaterboard.com): a spec-sorok értéke elé a sablon egy
+    // U+200E (LEFT-TO-RIGHT MARK) jelet ír — `Item Weight: ‎28 Pounds`. A
+    // szemnek nincs ott, a mintáinknak viszont igen: elválasztja a
+    // kettőspontot az értéktől, és beékelődik a szám elé. Ugyanez a fajta a
+    // lágy elválasztójel (U+00AD) és a BOM (U+FEFF), amit másolt szövegek
+    // hoznak be. Egyik sem hordoz jelentést, tehát nem szóközre váltjuk,
+    // hanem TÖRÖLJÜK — a szóköz itt hamis szóhatárt csinálna.
+    .replace(/[\u00AD\u200B-\u200F\u2060\uFEFF]/g, "")
     .replace(/[^\S\n]+/g, " ")
     .replace(/\n\s*\n+/g, "\n")
     .split("\n")

@@ -74,6 +74,45 @@ felhasználó a HydroInfo-t választotta, majd az analitikát):
    CSRF; minket NEM érint, de a 7.x ágon nincs patch). Kiváltó ok: ha RSC-t
    vezetnénk be.
 
+**F2.1-utó-47 — FunWater bekötve (2026-08-28).** A táblázatból (`Kezdők_tanácsok/
+nepszeru_sup_markak_es_forgalmazok.md`) hiányzó öt márka közül az első. A forrás
+Shopify, de a `/products.json` NEM ad specifikációt (csak marketingszöveget,
+`Default Title` variánsokkal) — a spec a termékoldal nyers HTML-jében van, KÉT
+külön sablonban. Amit a bekötés hozott, mind általános javítás:
+- **`labeledUse`** — új kategória-módszer: a gyártó saját címkézett használat-
+  mezője (`Versatility: All-around, ideal for cruising, exploring, and yoga`).
+  Erősebb a névből tippelésnél, ami itt TÉVEDETT (az „Island Explorer" all-round).
+- **Csupasz sor-címkék egységgel** (`Weight` ⏎ `12.74KG`) — a súly enélkül
+  `0/7` volt, ami a kinyerés hibája, nem termékenkénti ügy.
+- **Prózai inverzió imperiális jelekkel** (`The 10'6" length, 33" width…`) — a
+  spec-tábla után álló reklámmondat EGGYEL elcsúsztatta a méret-hármast, és
+  felülírta a helyes 320 cm-t 83,8-cal.
+- **Teljes szélességű kettőspont** (`Capacity：`) és **láthatatlan LTR-jel**
+  (U+200E), **kiírt egységnevek** (`Pounds`/`Kilograms`), **`Package Weight`**
+  kizárása (az a csomagé).
+- **`titleNoiseWords`** — forrás-szintű zajszó-lista a SEO-címekhez.
+- **A renderelés bukása nem viszi a futást**: a `close()` a sikertelen
+  böngésző-indítás elutasított ígéretét várta meg, és az EGÉSZ crawlt
+  megállította a második URL-nél.
+
+Eredmény 25 termékoldalon: `hossz ✓ · szél ✓ · vast ✓ · térf n.a. · súly ✓ ·
+teher ✓`. Három fixtúra őrzi (mindkét sablon + a prózai inverzió).
+
+**Az ÉLES futás (200 URL) többet mutatott, mint a minta.** 13 gyanús tétel jött,
+amiből 4 valóban nem deszka (bögre, ajándékdoboz, gördeszka, jógamatrac —
+helyesen megjelölve), a többi viszont a MI hibánk volt: ugyanaz a prózai
+inverzió, öt további alakban (görbe idézőjel `’` mint láb-jel; kiírt
+`feet`/`ft`; zárójeles átváltás és elöljáró a címke előtt; `33" wide`
+melléknévi címke). Plusz: ahol a próza ELLENTMOND a spec-táblának (a gyártó
+`12"`-ot írt `12'` helyett), a táblázat nyer — a védelem geometriai, a hossz
+nem lehet kisebb a szélességnél. Két tanulság ára: a `’` bevezetése önmagában
+elrontotta az Indianát (ott a spec mindkét írásmódot kiteszi, és a származtatott
+láb-hüvelyk ütötte a gyártó saját cm-ét), a `thick` melléknévi címke pedig a
+Jobe-t — mindkettőt a fixtúra-háló fogta meg azonnal. Gyanús: 13 → 4.
+
+**Még hiányzó márkák a listáról:** Red Paddle Co, Aquatone, Itiwit (Decathlon),
+Bestway/Hydro-Force.
+
 **Nyitott kis tételek (nem blokkolók):**
 - **Advisor ár-padló** (domain-review 2.5): NEM ár-büntetés kell, hanem
   rendeltetés-jelzés („alkalmi, strandolós használatra jó"), a küszöb pedig a

@@ -1,0 +1,38 @@
+{
+  "source": "FunWater",
+  "url": "https://www.funwaterboard.com/products/rocket-96",
+  "capturedAt": "2026-08-28",
+  "teaches": "Kettospontos Specs-sablon: TELJES SZELESSEGU kettospont (Capacity U+FF1A) es lathatatlan LTR-jel az ertek elott. A meret 9 ′6″ L × 30″ W × 4″ D alaku. A Package Weight a CSOMAGE, nem a deszkae - ezert a suly helyesen HIANYZIK, nem 10.82 kg.",
+  "rendered": false,
+  "expected": [
+    {
+      "sourceUrl": "https://www.funwaterboard.com/products/rocket-96",
+      "brandName": "Funwater",
+      "modelName": "Kids Rocket 9′6″",
+      "rawTitle": "Best Inflatable SUP for Kids Rocket 9′6″",
+      "modelYear": null,
+      "priceHuf": null,
+      "inStock": null,
+      "imageUrl": "https://www.funwaterboard.com/cdn/shop/files/FUN2.png?v=1644629659&width=768",
+      "imageUrls": [],
+      "boardType": "kids",
+      "boardTypeSource": "nameAndUrl",
+      "boardTypes": [
+        {
+          "type": "kids",
+          "source": "nameAndUrl"
+        }
+      ],
+      "specs": {
+        "lengthCm": 289.6,
+        "widthCm": 76.2,
+        "thicknessCm": 10.2,
+        "volumeL": null,
+        "weightKg": null,
+        "maxLoadKg": 136.1,
+        "inflatable": true
+      },
+      "accessoryType": null
+    }
+  ]
+}

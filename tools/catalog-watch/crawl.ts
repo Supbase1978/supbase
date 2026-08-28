@@ -550,6 +550,7 @@ export function extractPageProducts(
     boardTypeByUrl: config.boardTypeByUrl ?? {},
     titleSuffixes: config.titleSuffixes ?? [],
     titleCutAfter: config.titleCutAfter ?? [],
+    titleNoiseWords: config.titleNoiseWords ?? [],
     categoryClass: config.categoryClass,
     // A recept által kért kategória-módszerek (F2.1-utó-45) — lista hiányában
     // mind fut, tehát a viselkedés változatlan.
@@ -673,7 +674,17 @@ export async function crawlSource(
       let products = extractPageProducts(page.text, url, config, null);
       if (deps.renderText && needsRenderedText(products, config)) {
         await sleep(delayMs);
-        const renderedText = await deps.renderText(url);
+        // A RENDERELÉS BUKÁSA NEM VISZI A FUTÁST (F2.1-utó-47). A fallback
+        // KÉNYELMI ág: ami nélküle kijött, az attól még jó. Élesben mért
+        // eset: telepítetlen Playwright-böngésző (`Executable doesn't
+        // exist…`), ami EGYETLEN, forrás-oldali elgépelés miatt indult el —
+        // és a kivétel az EGÉSZ crawlt megállította a második URL-nél. A
+        // crawler dokumentált ígérete ezzel szemben az, hogy egy oldal hibája
+        // nem viszi a többit.
+        const renderedText = await deps.renderText(url).catch((error: unknown) => {
+          addError(summary, `${url}: renderelés sikertelen (${errorMessage(error)})`);
+          return null;
+        });
         if (renderedText !== null) {
           const rerendered = extractPageProducts(page.text, url, config, renderedText);
           if (rerendered.length > 0) products = rerendered;

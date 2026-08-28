@@ -1,0 +1,42 @@
+{
+  "source": "FunWater",
+  "url": "https://www.funwaterboard.com/products/funwater-summer-feath-r-lite-sup-ocean-paddle-board-yoga-green-touring-fashion-lightweight-waterproof-inflatable",
+  "capturedAt": "2026-08-28",
+  "teaches": "A spec-tabla UTAN allo reklammondat NEM irhatja felul a tablazatot. The 10'6 length, 33 width, and 6 thickness - mindharom ertek a cimkeje ELOTT all, imperialis jelekkel; a metrikus-only minta ezt nem fogta, ezert a hossz 33 hüvelyk = 83,8 cm lett a valos 320 helyett.",
+  "rendered": false,
+  "expected": [
+    {
+      "sourceUrl": "https://www.funwaterboard.com/products/funwater-summer-feath-r-lite-sup-ocean-paddle-board-yoga-green-touring-fashion-lightweight-waterproof-inflatable",
+      "brandName": "Funwater",
+      "modelName": "Ocean 10′6″",
+      "rawTitle": "Top Inflatable Paddle Boards Ocean 10′6″ Touring",
+      "modelYear": null,
+      "priceHuf": null,
+      "inStock": null,
+      "imageUrl": "https://www.funwaterboard.com/cdn/shop/files/FUN2.png?v=1644629659&width=768",
+      "imageUrls": [],
+      "boardType": "allround",
+      "boardTypeSource": "labeledUse",
+      "boardTypes": [
+        {
+          "type": "allround",
+          "source": "labeledUse"
+        },
+        {
+          "type": "yoga",
+          "source": "labeledUse"
+        }
+      ],
+      "specs": {
+        "lengthCm": 320,
+        "widthCm": 83.8,
+        "thicknessCm": 15.2,
+        "volumeL": null,
+        "weightKg": 12.02,
+        "maxLoadKg": 149.7,
+        "inflatable": true
+      },
+      "accessoryType": null
+    }
+  ]
+}

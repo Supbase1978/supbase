@@ -114,6 +114,17 @@ export interface CrawlConfig {
    */
   titleCutAfter?: string[];
   /**
+   * FORRÁS-SZINTŰ zajszavak a modellnévből, a globális lista MELLÉ.
+   *
+   * Élesben (funwaterboard.com): minden cím SEO-szóhalmaz — „Cheap Polar Bear
+   * 10′6″ Touring", „Best Paddle Boards Smiling Face Touring". A záró
+   * „Touring" is kulcsszó, nem besorolás: MINDEN terméken ott áll, a
+   * deszkatípust a gyártó külön mezőben (`Versatility`) mondja ki. Ugyanez a
+   * szó az Indianánál VALÓDI modellnév-rész, ezért globálisan tilos kivenni —
+   * a lista forrásonként, MÉRÉS után bővül.
+   */
+  titleNoiseWords?: string[];
+  /**
    * Böngésző-renderelés akkor is, ha a nyers HTML EGYETLEN terméket sem adott.
    *
    * Alapból KI van kapcsolva, mert drága: e nélkül a fallback csak ott fut,

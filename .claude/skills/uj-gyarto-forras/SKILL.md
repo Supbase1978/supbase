@@ -26,6 +26,7 @@ Ha a `probe` nem talál termék-URL-t, próbáld VÉGIG ezeket:
 | `/__sitemap__/content-<régió>-<nyelv>.xml` | **Duotone/Fanatic** (Nuxt) |
 | `/wp-sitemap-posts-<típus>-1.xml` | **Gladiator** (WordPress: `…-catalog-1.xml`) |
 | `/sitemap-index.xml` | Decathlon |
+| `/sitemap.xml` (az INDEX, nem a gyerek) | **FunWater** (Shopify): a `sitemap_products_1.xml` közvetlenül **400**-at ad, mert aláírás-paramétert vár (`?from=…&to=…`) — az indexből viszont mindig a friss alak jön |
 
 ```bash
 node tools/catalog-watch/cli.ts probe --url https://gyarto.com \
@@ -58,12 +59,20 @@ működő nyer**:
 
 | # | Ha a forrásnál… | akkor |
 |---|---|---|
-| 1 | van `/products.json` | **Shopify-mód** (`--shopify`) — 1-2 kérés az EGÉSZ katalógus, a galéria ingyen jár |
+| 1 | van `/products.json` **specifikációval** | **Shopify-mód** (`--shopify`) — 1-2 kérés az EGÉSZ katalógus, a galéria ingyen jár |
 | 2 | van Product JSON-LD **mérettel** | JSON-LD-ág (alapértelmezés) |
 | 3 | a spec címkézett szövegként ott van | `--html-only` — ez **ÜT** a JSON-LD-n |
 | 4 | a spec csak renderelés után létezik | `--render-when-empty` (a fallback görget is) |
 | 5 | egy oldal több méretet ad | méretenkénti bontás, `?size=…` egyedi URL-lel |
 | 6 | a kategória | KÜLÖN katalógusa van — ld. a következő szakaszt |
+
+**A „Shopify" önmagában nem elég ok a Shopify-módra.** Élesben
+(funwaterboard.com): a bolt Shopify, a `/products.json` szolgál is — de a
+`body_html` CSAK marketingszöveg, a variánsok pedig `Default Title`-ök (nem
+méretek). Se méret, se teherbírás, se súly. A teljes spec a TERMÉKOLDAL nyers
+HTML-jében volt, tehát a helyes út a `--html-only` maradt. Mielőtt Shopify-módot
+választasz, **nyiss meg egy `/products.json`-t és keresd meg benne a méretet** —
+ha nincs, a mód féladatot gyártana.
 
 A 2. pontnál **nézd meg, hogy a JSON-LD tényleg ad-e méretet.** Élesben
 (fanatic.com) kitesz nevet és árat, de egyetlen méretet sem — ott a `--html-only`
@@ -80,6 +89,7 @@ node tools/catalog-watch/cli.ts probe-methods --source "Márka" --url "<TERMÉK-
 
 ```
   pinnedUrl        —
+  labeledUse       allround, yoga       Versatility: All-around, ideal for…
   nameAndUrl       —
   categoryLine     —
   breadcrumb       —
@@ -97,7 +107,8 @@ nem előre.
 | Módszer | Mit feltételez | Kinél vált be | Tipikus csapdája |
 |---|---|---|---|
 | `pinnedUrl` | a gyártónak van külön aktivitás-taxonómiája, amit böngészővel ki lehet olvasni | **Gladiator**, **Zray** | az alias-URL-ek (`gladiator-elite-11-6` vs `elite-11-6`) és a csomag-utótagok |
-| `nameAndUrl` | a kategória-szó a névben vagy az URL-szegmensben áll | **Aqua Marina** (`/products/all-around/`) | a marketing-slug (`/products/glowing/`) semmit nem mond a használatról |
+| `labeledUse` | a gyártó CÍMKÉZETT használat-mezőt ad a spec-táblában | **FunWater** (`Versatility: All-around, ideal for cruising…`) | a címke pontos egyezést kíván; szabad szövegben a „best for" fordulat nem mező |
+| `nameAndUrl` | a kategória-szó a névben vagy az URL-szegmensben áll | **Aqua Marina** (`/products/all-around/`) | a marketing-slug (`/products/glowing/`) semmit nem mond a használatról; a SEO-név egyenesen TÉVESZT (FunWater: „Island Explorer" → túra, holott all-round) |
 | `categoryLine` | a termékfejlécben ott a gyártó saját felirata | **Fanatic** (`ALL-AROUND / WINDSURF`) | a felirat SORRENDJE dönt, és MINDEN tagja számít |
 | `breadcrumb` | a morzsamenü kimondja a kategóriát | **Zray** | JS-ből épülő morzsamenüt a crawler nem lát (Zray új modelljei) |
 | `usageBars` | a gyártó pontozza a használatot | **Aqua Marina** (4 sáv) | ha a SZÖRF vezet, a termék kimarad — az nem a mi taxonómiánk |
@@ -147,7 +158,8 @@ a fixtúra a hibát betonozná be.
 kiegészítő semmit nem árul el a deszkák adatáról:
 
 - a FunWatert azért írtam le, mert egy **bodyboardot** mintáztam — a
-  SUP-termékoldalon a teljes spec ott volt;
+  SUP-termékoldalon a teljes spec ott volt (2026-08-28-án be is került: mind a
+  hat mező kijön, az űrtartalmat a gyártó tényleg nem közli);
 - a Jobe-nál a probe a **német kezdőlapot** mintázta.
 
 ```bash
@@ -173,6 +185,56 @@ Mind élesben mért eset. Ha valamelyik mező üres vagy gyanús, itt keresd:
   egységgel (Jobe).
 - `10′6″ * 33″ * 6″ for Adults,` + új sorban `8′ * 30″ * 4″ for Youth` —
   **két készlet egymás alatt** (FunWater).
+
+**A címke és az érték SORRENDJE — a legdrágább csapda-család**
+Élesben (funwaterboard.com) EGY oldalon ÖT változatban fordult elő ugyanaz: a
+spec-tábla UTÁN álló reklámmondat, ahol MINDHÁROM érték a címkéje ELŐTT áll.
+Ez EGGYEL ELCSÚSZTATJA a méret-hármast (a hosszba a szélesség kerül), és
+FELÜLÍRJA a spec-táblából már helyesen kiolvasott értéket, mert a címke-alapú
+olvasás előbb fut. Csendes, hihetőnek látszó adathiba, pont a Deszkaválasztó
+bemenetén. A változatok:
+
+| alak | mi kellett hozzá |
+|---|---|
+| `The 10'6" length, 33" width, and 6" thickness` | imperiális jelek az „érték a címke előtt" mintában |
+| `Its 11’6” length and 33” width` | a **görbe idézőjel** (`’` U+2019) is láb-jel |
+| `Its 11 feet length, 32 inches width` | a **kiírt** `feet`/`foot`/`ft` is mértékegység |
+| `11'6"(335cm) length 33"(83cm) width` | **zárójeles átváltás** ékelődik közéjük |
+| `11 feet (335 cm) in length, 33 inches (84 cm) in width` | **elöljáró** (`in`/`of`) is közéjük ékelődik |
+
+- **A `’` bevezetése egy MÁSIK gyártót rontott el.** Az Indiana MINDKÉT
+  írásmódot kiteszi egymás mellett (`Length CM: 347,5 cm Length Foot/Inch::
+  11’5''`), és a szűk ablakba mindkettő belefér — a származtatott láb-hüvelyk
+  (348) ütötte a gyártó saját metrikus számát. A `’` ezért CSAK akkor láb-jel,
+  ha a szövegben nincs centiméter. Két tágabb megoldás (cm-előresorolás; „a
+  címkéhez legközelebbi érték nyer") TÖBB gyártót tört el — a fixtúra-háló
+  mindet azonnal megfogta. **Itt tessék mérni, nem elvet választani.**
+- **A melléknévi alak (`33" wide`) is címke** — de a `thick` NEM: kipróbálva
+  elrontotta a Jobe-t (ott a próza az anyagvastagságról ír). A szimmetria
+  csábító, a mérés viszont dönt.
+
+**Ha a próza és a spec-tábla ELLENTMOND, a táblázat nyer**
+- Élesben (funwaterboard.com, Fishing Cetus): a leírás `Its 12" length` —
+  a gyártó HÜVELYK-jelet írt LÁB helyett, a saját táblája ugyanott helyesen
+  `12' × 34″ × 6″`. A prózából 30,5 cm „hossz" lett.
+- A védelem GEOMETRIAI, nem ízlés kérdése: **a hossz nem lehet kisebb a
+  szélességnél.** Ha mégis, az összevont spec-tábla hármasa írja felül.
+
+**Láthatatlan és nem-ASCII írásjelek**
+- `Capacity： 300 Pounds` — **TELJES SZÉLESSÉGŰ kettőspont** (U+FF1A). Kínai
+  eredetű sablonoknál ez az alapértelmezés. Nem csak a spec-tábla felismerését
+  rontja: a kettőspont hiányában a parser azt hiszi, hogy az érték a címke
+  ELŐTT áll, és a szomszéd mező adatát veszi.
+- `Item Weight: ‎28 Pounds` — **LTR-jel** (U+200E) az érték előtt. A szemnek
+  nincs ott. Az `htmlToText` mostantól törli (a lágy elválasztójellel és a
+  BOM-mal együtt).
+- `Kilograms` / `Pounds` KIÍRVA — a rövidítés-only minta ezeket nem látta.
+
+**A CSOMAG adatai nem a deszkáéi**
+- `Item Weight: 28 Pounds` és alatta `Package Weight: 18.87 Kilograms` — a
+  második a szállítási doboz, tartozékokkal. Ugyanígy a `Package Dimensions`.
+  Kizárva (`PACKAGE_QUALIFIERS`); ahol a gyártó CSAK a csomag tömegét közli, ott
+  a deszka súlya helyesen HIÁNYZIK.
 
 **Címke**
 - `Dimensions (length/width/thickness)` — a **zárójelben álló címkeszó
@@ -269,6 +331,20 @@ Mind élesben mért eset. Ha valamelyik mező üres vagy gyanús, itt keresd:
 - **A tartozék neve NEM kategória.** Minden Gladiator-oldal oldalsávjában ott
   áll a „ELITE **Touring** Fin 9″" — a szigorú minta (kategória-szó + főnév)
   védi ki.
+
+**Modellnév: SEO-szóhalmaz**
+- Van forrás, ahol a cím nem modellnév, hanem kulcsszó-lista: „Cheap Polar Bear
+  10′6″ Touring", „Best Paddle Boards Smiling Face Touring", „Stand Up For Sale
+  Arrow 12′7″ Racing". Erre való a `titleNoiseWords` — FORRÁS-szintű zajszó-lista
+  a globális mellé. A szavak nagy része máshol valódi modellnév-rész (a
+  „touring" az Indianánál az), ezért globálisan tilos kivenni.
+- A `|` jel UGYANAZON az oldalon kétféle szerepben állhat: márkanév-ELŐTAG után
+  (`Funwater | …`) és reklám-UTÓTAG előtt (`… | SUP for All Skill Levels`). A
+  `titleCutAfter` ezt megkülönbözteti: ha az elülső darab a márkanév, a jel
+  MÖGÖTTI rész a modell.
+- **Egybetűs szót SOHA ne vágj le a név széléről.** A SUP-nál az egybetűs
+  végződés VARIÁNS-jelölés (Zray `Max Azure M2 A`, `Kids Saffron K8 B`) — a
+  levágás két külön deszkát olvasztana össze.
 
 **Kép**
 - Ha a `<title>` oldal-szintű utótagot visel (`- Jobesports.com`), add meg a

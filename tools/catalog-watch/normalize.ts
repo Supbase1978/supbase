@@ -181,6 +181,20 @@ export function modelYearFromProductCode(
 export function cleanModelName(
   rawTitle: string,
   brandName?: string | null,
+  /**
+   * FORRÁS-SZINTŰ zajszavak (`crawl_config.titleNoiseWords`) — a globális
+   * `NOISE_WORDS` mellé, azon a forráson, ahol mérve lettek.
+   *
+   * MIÉRT NEM GLOBÁLIS: a szavak nagy része MÁSHOL valódi modellnév-rész.
+   * Élesben (funwaterboard.com) minden cím SEO-halmaz — „Cheap Polar Bear
+   * 10′6″ Touring", „Best Paddle Boards Smiling Face Touring", „Stand Up For
+   * Sale Arrow 12′7″ Racing" —, és a záró „Touring" is kulcsszó, nem
+   * besorolás: MINDEN terméken ott áll, a deszkatípust a gyártó a
+   * `Versatility` mezőben mondja meg. Ugyanez a „touring" viszont az
+   * Indianánál VALÓDI modellnév-rész („Indiana 12'6 Touring"), ezért
+   * globálisan tilos lenne kivenni.
+   */
+  noiseWords: readonly string[] = [],
 ): string {
   // Az entitás-feloldás ITT történik, mert a nyers cím nem csak HTML-ből jön:
   // a Shopify `/products.json` és a JSON-LD `name` mezője is entitást ad
@@ -218,14 +232,49 @@ export function cleanModelName(
     // modellnek látszana ugyanaz a deszka.
     .replace(new RegExp(AQUA_MARINA_CODE.source, "g"), " ");
 
-  for (const word of NOISE_WORDS) {
+  // A forrás-szintű zaj MEGY ELŐBB: a hosszabb, összetett kifejezések
+  // („paddle boarding", „for sale") még egyben állnak, amikor illesztjük.
+  for (const word of [...noiseWords, ...NOISE_WORDS]) {
     text = text.replace(wholeWordRegExp(word), " ");
   }
 
-  return text
-    .replace(/[|/\\~·•–—-]+/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
+  return stripEdgeStopWords(
+    text
+      .replace(/[|/\\~·•–—-]+/g, " ")
+      .replace(/\s+/g, " ")
+      .trim(),
+  );
+}
+
+/**
+ * A név SZÉLÉN maradt kötőszó/névelő levágása.
+ *
+ * A zajszavak kivétele után gyakran árván marad egy elöljáró: a
+ * `Funwater | Best Inflatable SUP for Kids Rocket 9′6″` címből a zaj
+ * eltávolítása után `for Kids Rocket 9′6″` lett. Modellnév nem kezdődik és nem
+ * végződik kötőszóval — ez nem tartalmi döntés, hanem nyelvtani.
+ *
+ * CSAK A SZÉLEKEN vág: a névben BELÜL ugyanezek a szavak valódi részek
+ * lehetnek („Ride the Sunset").
+ *
+ * EGYBETŰS SZÓ SOSEM KERÜLHET IDE. Az angol „a" névelő kézenfekvőnek tűnt,
+ * de a SUP-nál az egybetűs végződés VARIÁNS-JELÖLÉS: a Zray modellek
+ * `Max Azure M2 A`, `Kids Saffron K8 B` alakúak, és a levágásuk két külön
+ * deszkát olvasztana össze. Regressziós teszt őrzi (`normalize.test.ts`).
+ */
+const EDGE_STOP_WORDS = ["for", "with", "and", "the", "of", "az"];
+
+function stripEdgeStopWords(value: string): string {
+  let text = value;
+  for (;;) {
+    const words = text.split(" ").filter((word) => word !== "");
+    if (words.length <= 1) return text;
+    const first = foldText(words[0] ?? "");
+    const last = foldText(words[words.length - 1] ?? "");
+    if (EDGE_STOP_WORDS.includes(first)) text = words.slice(1).join(" ");
+    else if (EDGE_STOP_WORDS.includes(last)) text = words.slice(0, -1).join(" ");
+    else return text;
+  }
 }
 
 function escapeRegExp(value: string): string {
@@ -273,8 +322,31 @@ export function parseDimensionCm(text: string): number | null {
   // A tipográfiai PRIME-ok (′ U+2032 láb, ″ U+2033 hüvelyk) is számítanak:
   // élesben (funwaterboard.com) a méret `10′6″ * 33″ * 6″` alakban áll, és a
   // sima aposztrófra szűrve az egész sor láthatatlan maradt.
+  // A JOBB OLDALI GÖRBE IDÉZŐJEL (’ U+2019) is láb-jel: a szövegszerkesztők és
+  // a CMS-ek „okos idézőjel" funkciója némán ezzé alakítja az aposztrófot.
+  // Élesben (funwaterboard.com) a leírás `Its 11’6” length and 33” width`
+  // alakú — a `’`-re nem szűrve a `11’` láb ELVESZETT, és a hosszba a
+  // vastagság (6” = 15,2 cm) került.
+  // A GÖRBE IDÉZŐJEL (’ U+2019) CSAK AKKOR láb-jel, ha a szöveg nem ad
+  // metrikus értéket (F2.1-utó-47).
+  //
+  // MIÉRT A FELTÉTEL: a `’` kétértelmű. Láb-jelnek szánva is előfordul — a
+  // CMS-ek „okos idézőjel" funkciója némán ezzé alakítja az aposztrófot
+  // (funwaterboard.com: `Its 11’6” length and 33” width`, ahol nélküle a
+  // hosszba a vastagság került) —, de a szövegben ugyanez a karakter
+  // aposztróf vagy idézőjel is lehet.
+  //
+  // ÉLESBEN MÉRT ÁR (indiana-paddlesurf.com): feltétel NÉLKÜL bevezetve a
+  // spec `Length CM: 347,5 cm Length Foot/Inch:: 11’5''` sorában a SZÁMÍTOTT
+  // láb-hüvelyk (348 cm) ütötte a gyártó SAJÁT metrikus értékét. Ahol tehát
+  // van centiméter, ott nem kockáztatunk: a metrikus a közölt adat, az
+  // imperiális a belőle származtatott.
+  const hasMetric = /\d+(?:[.,]\d+)?\s*cm\b/i.test(text);
+  const footMarks = hasMetric ? "'\u2032" : "'\u2032\u2019";
   const feetInches = text.match(
-    /(\d+)\s*['′](?!['′])\s*(\d+(?:[.,]\d+)?)?\s*(?:''|"|”|″|’’)?/,
+    new RegExp(
+      `(\\d+)\\s*[${footMarks}](?![${footMarks}])\\s*(\\d+(?:[.,]\\d+)?)?\\s*(?:''|"|\u201d|\u2033|\u2019\u2019)?`,
+    ),
   );
   if (feetInches) {
     const feet = toNumber(feetInches[1] ?? "");
@@ -282,6 +354,14 @@ export function parseDimensionCm(text: string): number | null {
     if (feet !== null && inches !== null) {
       return round1(feet * CM_PER_FOOT + inches * CM_PER_INCH);
     }
+  }
+
+  // KIÍRT LÁB: `11 feet length` (funwaterboard.com). A rövidítés-only minta
+  // ezt nem látta, és a hossz a mondat KÖVETKEZŐ értékéből (32 inches) jött.
+  const feet = text.match(/(\d+(?:[.,]\d+)?)\s*(?:feet|foot|ft)\b/i);
+  if (feet) {
+    const value = toNumber(feet[1] ?? "");
+    if (value !== null) return round1(value * CM_PER_FOOT);
   }
 
   const cm = text.match(/(\d+(?:[.,]\d+)?)\s*cm\b/i);
@@ -302,7 +382,7 @@ export function parseDimensionCm(text: string): number | null {
     if (value !== null) return round1(value * 100);
   }
 
-  const inch = text.match(/(\d+(?:[.,]\d+)?)\s*(?:''|"|”|″|inch|in\b|coll)/i);
+  const inch = text.match(/(\d+(?:[.,]\d+)?)\s*(?:''|"|\u201d|\u2033|inch|in\b|coll)/i);
   if (inch) {
     const value = toNumber(inch[1] ?? "");
     if (value !== null) return round1(value * CM_PER_INCH);
@@ -323,7 +403,14 @@ const SPEC_LABELS = {
   // deszka hosszaként. A `paddle`-előzményű találatokat a `valueAfterLabel`
   // kizárja (lásd lent).
   lengthCm: ["hosszúság", "hossz", "length"],
-  widthCm: ["szélesség", "szeles", "width"],
+  // A MELLÉKNÉVI alak („33\" wide", „6\" thick") a prózában gyakori, és a
+  // hozzá tartozó érték a címke ELŐTT áll — azt a `valueAfterLabel` első ága
+  // olvassa. A főnévi alak (`width`/`thickness`) MEGELŐZI a listában, tehát
+  // ahol a forrás rendes spec-táblát ad, ott a viselkedés változatlan.
+  widthCm: ["szélesség", "szeles", "width", "wide"],
+  // A „thick" melléknévi alak SZÁNDÉKOSAN NINCS itt: kipróbálva (2026-08-28)
+  // elrontotta a Jobe-t, ahol a próza az anyagvastagságról ír. A „wide" viszont
+  // biztonságos maradt — a mérés döntött, nem a szimmetria.
   thicknessCm: ["vastagság", "magasság", "thickness"],
   volumeL: ["térfogat", "volumen", "volume"],
   // A csupasz „weight" szándékosan hiányzik: a „Max weight: 140 kg" sorban
@@ -338,6 +425,11 @@ const SPEC_LABELS = {
     "tömeg",
     "board weight",
     "net weight",
+    // Élesben mért címke (funwaterboard.com): „Item Weight: 28 Pounds". A
+    // puszta „weight" itt SEM jöhet szóba (a teherbírás címkéje is azt viseli:
+    // „Max User Weight"), az „item weight" viszont egyértelműen a termék
+    // saját tömege — és nem ütközik a szomszédos „Package Weight"-tel.
+    "item weight",
   ],
   maxLoadKg: [
     "teherbírás",
@@ -462,7 +554,10 @@ function valueAfterLabel(
  */
 function parseWeightKg(window: string): number | null {
   const head = window.split("\n").slice(0, 2).join("\n");
-  const kg = head.match(/(\d+(?:[.,]\d+)?)\s*kg\b/i);
+  // A KIÍRT egységnév ugyanolyan jó, mint a rövidítés. Élesben
+  // (funwaterboard.com): `Item Weight: 28 Pounds`, `Package Weight: 18.87
+  // Kilograms` — a rövidítés-only minta ezeket nem látta.
+  const kg = head.match(/(\d+(?:[.,]\d+)?)\s*(?:kg\b|kilogramm?s?\b)/i);
   if (kg) return toNumber(kg[1] ?? "");
   const lbs = head.match(/(\d+(?:[.,]\d+)?)\s*(?:lbs?|pounds?)\b/i);
   if (lbs) {
@@ -498,28 +593,84 @@ function fillFromLabelledLines(text: string, specs: BoardSpecs): void {
   const fields = ["volumeL", "maxLoadKg", "weightKg"] as const;
   const lines = text.split("\n").map((line) => line.trim());
   for (let i = 0; i < lines.length - 1; i += 1) {
-    const label = foldText(lines[i] ?? "").replace(/\s*:$/, "");
+    const label = foldText(lines[i] ?? "").replace(/\s*[:：]$/, "");
     // A címke-sor legyen RÖVID és szám nélküli — így egy prózai mondat, ami
     // véletlenül tartalmazza a címkeszót, nem minősül címkének. A valós
     // címkék többszavasak („Maximum load capacity"), ezért nem pontos
     // egyezést kérünk, hanem tartalmazást ezen a szűk soron belül.
     if (label === "" || label.length > 40 || /\d/.test(label)) continue;
-    const value = (lines[i + 1] ?? "").match(
-      /^(?:up to|max\.?|~)?\s*(\d+(?:[.,]\d+)?)$/i,
-    );
-    if (!value) continue;
+    const next = lines[i + 1] ?? "";
+    const bare = next.match(/^(?:up to|max\.?|~)?\s*(\d+(?:[.,]\d+)?)$/i);
     for (const field of fields) {
       if (specs[field] !== null) continue;
       if (
-        !SPEC_LABELS[field].some((candidate) =>
-          label.includes(foldText(candidate)),
-        )
-      )
-        continue;
-      specs[field] = toNumber(value[1] ?? "");
-      break;
+        bare &&
+        SPEC_LABELS[field].some((candidate) => label.includes(foldText(candidate)))
+      ) {
+        specs[field] = toNumber(bare[1] ?? "");
+        break;
+      }
+      // MÁSODIK ALAK: az érték a saját sorában áll, de EGYSÉGGEL.
+      if (BARE_LINE_LABELS[field].includes(label)) {
+        const value = parseUnitLine(field, next);
+        if (value !== null) {
+          specs[field] = value;
+          break;
+        }
+      }
     }
   }
+}
+
+/**
+ * A CSUPASZ címkék — kizárólag a „címke a SAJÁT SORÁBAN" alakzatban szabad
+ * őket használni, PONTOS sor-egyezéssel (F2.1-utó-47).
+ *
+ * MIÉRT KÜLÖN LISTA, és miért nem a `SPEC_LABELS`-be kerülnek: szabad
+ * szövegben mindegyik ütközne. A puszta „weight" ott ráfutna a TEHERBÍRÁS
+ * címkéjére („Max User Weight"), a marketingszóra („Lightweight and easy to
+ * inflate/deflate") és a CSOMAG tömegére („Package Weight") is — épp ezért
+ * nincs a `SPEC_LABELS.weightKg`-ban. Ha viszont a címke EGYEDÜL alkot egy
+ * sort (pontos egyezés), és a következő sor EGYETLEN szám + egység, akkor az
+ * már nem próza, hanem kétoszlopos táblázat: a `Lightweight and easy to
+ * inflate/deflate` sor nem egyenlő a „weight" címkével, a `Package Weight`
+ * sem.
+ *
+ * ÉLESBEN MÉRT (funwaterboard.com, 2026-08-28): a spec-rács így áll —
+ *   Capacity / 350LBS / Weight / 12.74KG / Pressure / 12-15PSI
+ * A teherbírás a `SPEC_LABELS`-en át megvolt, a SÚLY viszont mind a hét
+ * mintázott oldalon üresen maradt. Ez `0/N` alak: a kinyerés hibája, nem
+ * termékenkénti ügy.
+ */
+const BARE_LINE_LABELS: Record<"volumeL" | "maxLoadKg" | "weightKg", readonly string[]> = {
+  volumeL: ["volume", "urtartalom", "terfogat"],
+  maxLoadKg: ["capacity", "max load", "load capacity"],
+  // A „sup weight" ugyanaz a mező más néven (funwaterboard.com, egyes lapokon).
+  weightKg: ["weight", "sup weight", "board weight", "suly", "tomeg"],
+};
+
+/**
+ * Egy ÖNÁLLÓ érték-sor a mezőhöz illő egységgel (`12.74KG`, `350LBS`,
+ * `245 L`). A `^…$` horgony a lényeg: a sorban NINCS más — így egy mondat,
+ * amiben véletlenül szerepel egy szám és egy „kg", nem minősül értéknek.
+ */
+function parseUnitLine(
+  field: "volumeL" | "maxLoadKg" | "weightKg",
+  line: string,
+): number | null {
+  const text = line.trim();
+  if (field === "volumeL") {
+    const match = text.match(/^(\d+(?:[.,]\d+)?)\s*(?:l|liters?|litres?)$/i);
+    return match ? toNumber(match[1] ?? "") : null;
+  }
+  const kg = text.match(/^(\d+(?:[.,]\d+)?)\s*(?:kg|kilogramm?s?)$/i);
+  if (kg) return toNumber(kg[1] ?? "");
+  const lbs = text.match(/^(\d+(?:[.,]\d+)?)\s*(?:lbs?|pounds?)$/i);
+  if (lbs) {
+    const value = toNumber(lbs[1] ?? "");
+    return value === null ? null : round1(value * KG_PER_POUND);
+  }
+  return null;
 }
 
 /**
@@ -617,7 +768,10 @@ function labelSearch(
       // menet a lap alján álló EVEZŐ `Súly:` címkéjét találta meg — és a
       // deszka súlya üresen maradt. Három betűnél többet nem engedünk: az már
       // másik szó lenne, nem toldalék.
-      if (requireColon && !/^[a-z]{0,3}\s*:/.test(after)) continue;
+      // A TELJES SZÉLESSÉGŰ kettőspont (U+FF1A) ugyanolyan spec-tábla-jel, mint
+      // az ASCII. Élesben (funwaterboard.com): `Capacity： 300 Pounds` — a
+      // kínai eredetű sablonok ezt írják, és e nélkül csak a laza menet fogta.
+      if (requireColon && !/^[a-z]{0,3}\s*[:：]/.test(after)) continue;
       // ZÁRÓJELEN BELÜLI címkeszó nem címke, hanem MAGYARÁZAT.
       if (isInsideParens(text, index)) continue;
 
@@ -650,7 +804,11 @@ function labelSearch(
         if (excludeFollowedBy.some((word) => gap.includes(foldText(word)))) continue;
       }
 
-      const hasColon = /^\s*:/.test(after);
+      // A TELJES SZÉLESSÉGŰ kettőspont (`：` U+FF1A) ugyanúgy azt mondja, hogy
+      // az érték a címke UTÁN jön — enélkül a „címke ELŐTT" ág lépne életbe, és
+      // a `Dimensions: 11'×30'×6' Capacity：280 Pounds` sorban a MÉRET utolsó
+      // darabját (`6'`) venné teherbírásnak (funwaterboard.com).
+      const hasColon = /^\s*[:：]/.test(after);
       const lineStart = folded.lastIndexOf("\n", index) + 1;
       const trailing = hasColon
         ? null
@@ -659,7 +817,45 @@ function labelSearch(
             // Az érték és a címke között CSAK SZÓKÖZ állhat. Írásjel már
             // mezőhatárt jelöl: a „…15 cm, teherbírás max. 160 kg" sorban a
             // vessző előtti 15 cm a VASTAGSÁG, nem a teherbírás.
-            .match(/(\d+(?:[.,]\d+)?\s*(?:kg|lbs?|pounds?|l|liter|litre|cm|mm|m)\b)[ \t]*$/i);
+            //
+            // AZ IMPERIÁLIS JELEK IS EGYSÉGEK (F2.1-utó-47). Élesben mért kár
+            // (funwaterboard.com): a spec-tábla UTÁN álló reklámmondat így
+            // szól — `The 10'6" length, 33" width, and 6" thickness make this
+            // paddleboard versatile…`. Itt MINDHÁROM érték a címkéje ELŐTT
+            // áll, csak láb- és hüvelyk-jellel. A metrikus-only minta ezt nem
+            // fogta, ezért a „címke UTÁN" ág lépett életbe, és EGGYEL
+            // ELCSÚSZOTT: a hosszba a szélesség (33″ = 83,8 cm), a
+            // szélességbe a vastagság került — a spec-táblából helyesen
+            // kiolvasott 320 cm-t felülírva. Csendes, hihetőnek látszó
+            // adathiba, pont a Deszkaválasztó bemenetén.
+            //
+            // A LÁB-HÜVELYK ÖSSZETETT ALAK (`10'6"`) EGY érték, ezért áll az
+            // egyszerű alak ELŐTT a váltakozásban: külön nézve a `6"`-ot
+            // adná hossznak.
+            .match(
+              new RegExp(
+                "(" +
+                  // a) LÁB + HÜVELYK összetett alak — EGY érték (`10'6\"`,
+                  //    `11\u20196\u201d`). Elöl áll: külön nézve a hüvelyk-részt adná.
+                  "\\d+(?:[.,]\\d+)?\\s*['\u2032\u2019]\\s*\\d+(?:[.,]\\d+)?\\s*(?:''|\"|\u201d|\u2033)" +
+                  // b) SZÓ-alakú egységek — itt kell a szóhatár
+                  "|\\d+(?:[.,]\\d+)?\\s*(?:kg|lbs?|pounds?|l|liter|litre|cm|mm|m|inch(?:es)?|in|feet|foot|ft)\\b" +
+                  // c) JEL-alakú egységek — a szóhatár itt értelmetlen lenne
+                  "|\\d+(?:[.,]\\d+)?\\s*(?:''|\"|\u201d|\u2033|'|\u2032|\u2019)" +
+                  ")" +
+                  // A ZÁRÓJELES ÁTVÁLTÁS a érték és a címke KÖZÉ ékelődhet:
+                  // `11'6\"(335cm) length 33\"(83cm) width` — a gyártó a saját
+                  // metrikus megfelelőjét teszi zárójelbe. Enélkül a minta
+                  // megszakad, és a „címke UTÁN" ág csúsztatja el a hármast.
+                  "(?:\\s*\\([^)]*\\))?" +
+                  // …és állhat közte ELÖLJÁRÓ is: `11 feet (335 cm) in length,
+                  // 33 inches (84 cm) in width` (funwaterboard.com). Az „in"
+                  // itt nem mértékegység, hanem kötőszó — a mértékegységet a
+                  // fenti csoport már elnyelte.
+                  "(?:\\s+(?:in|of))?[ \\t]*$",
+                "i",
+              ),
+            );
       if (trailing?.[1] !== undefined) return trailing[1];
 
       const window = windowAfterLabel(text, index + label.length);
@@ -867,6 +1063,20 @@ export function parseSpecsFromText(text: string): BoardSpecs {
       if (specs.lengthCm === null) specs.lengthCm = triple.lengthCm;
       if (specs.widthCm === null) specs.widthCm = triple.widthCm;
       if (specs.thicknessCm === null) specs.thicknessCm = triple.thicknessCm;
+      // A HOSSZ NEM LEHET KISEBB A SZÉLESSÉGNÉL (F2.1-utó-47). Ha a
+      // címke-alapú olvasás mégis ilyet adott, a SPEC-TÁBLA hármasa a
+      // megbízhatóbb — a táblázat a gyártó szerkesztett adata, a próza nem.
+      //
+      // ÉLESBEN MÉRT (funwaterboard.com, Fishing Cetus): a leírásban `Its 12"
+      // length provides stability` áll — a gyártó HÜVELYK-jelet írt LÁB
+      // helyett. Ugyanezen az oldalon a saját spec-táblája helyesen
+      // `12' × 34″ × 6″`. A prózából olvasott 30,5 cm-es „hossz" viszont
+      // elnyomta a táblázatot, mert az csak a HIÁNYZÓ mezőket tölti. Egy
+      // 30 cm hosszú, 86 cm széles deszka nem létezik: ez nem ízlés kérdése,
+      // hanem geometriai lehetetlenség.
+      if (specs.widthCm !== null && specs.lengthCm !== null && specs.lengthCm < specs.widthCm) {
+        specs.lengthCm = triple.lengthCm;
+      }
     } else if (
       specs.lengthCm === null &&
       specs.widthCm === null &&
@@ -924,7 +1134,12 @@ export function parseSpecsFromText(text: string): BoardSpecs {
     // az. Élesben (aquamarinahungary.com, BLADE Windsurf): „Súly vitorlával:
     // 20,5kg", miközben a deszka maga ~10 kg. Egy ilyen érték a
     // katalógusban azt sugallná, hogy a deszka kétszer olyan nehéz.
-    const window = valueAfterLabel(text, SPEC_LABELS[key], [], WEIGHT_QUALIFIERS);
+    const window = valueAfterLabel(
+      text,
+      SPEC_LABELS[key],
+      PACKAGE_QUALIFIERS,
+      WEIGHT_QUALIFIERS,
+    );
     if (window === null) continue;
     specs[key] = parseWeightKg(window);
   }
@@ -942,6 +1157,13 @@ export function parseSpecsFromText(text: string): BoardSpecs {
  * deszkát magát, hanem a deszkát plusz valamit. Élesben mért eset a
  * vitorlával együtt megadott tömeg (aquamarinahungary.com).
  */
+/**
+ * A CSOMAG adatai NEM a deszkáéi. Élesben (funwaterboard.com) egymás alatt
+ * áll `Item Weight: 28 Pounds` és `Package Weight: 18.87 Kilograms` — utóbbi
+ * a szállítási doboz, tartozékokkal együtt. Ugyanez a `Package Dimensions`.
+ */
+const PACKAGE_QUALIFIERS = ["package", "csomag", "shipping", "szallitas", "szállítás"];
+
 const WEIGHT_QUALIFIERS = [
   "vitorlával",
   "vitorlaval",
@@ -1224,6 +1446,19 @@ const NEVER_BOARD_KEYWORDS = [
   "matrac",
   "platform",
   "dock",
+  // JÓGA-/TORNAMATRAC (funwaterboard.com, 2026-08-28): `Funwater Inflatable
+  // Air Gymnastics Yoga Mat`, 243,8 × 91,4 cm, 149,7 kg teherbírással. Minden
+  // szám hihető, ezért a gyanú-jelzés sem fogta meg — megjelöletlenül jutott
+  // volna a moderátorhoz.
+  //
+  // A HATÁRVONAL VÁLTOZATLAN: nem a testhelyzet, hanem az EVEZÉS. A jóga
+  // DESZKÁT (Aqua Marina Dhyana, Peace) evezik, ezért marad; a jóga MATRACOT
+  // nem, az egy helyben úszik — ugyanaz a döntés, mint az `airmat`-nál.
+  "yoga mat",
+  "gymnastics",
+  // GÖRDESZKA: a nevében ott a „board", tehát a deszka-főnév szabály
+  // átengedi; eddig csak a hossz-tartomány fogta meg (71 cm).
+  "skateboard",
 ];
 
 /** A deszka-mivolt pozitív jelei a névben/leírásban. */
@@ -1958,6 +2193,52 @@ function absoluteUrl(raw: string | null, baseUrl: string): string | null {
  * (F2.1-utó-45). A körkörös import elkerülésére a `methods/catalog.ts` NEM
  * importál innen — a szükséges függvényeket beadjuk neki.
  */
+/**
+ * A GYÁRTÓ SAJÁT HASZNÁLAT-MEZŐJE a spec-táblából (F2.1-utó-47).
+ *
+ * ÉLESBEN MÉRT (funwaterboard.com): a spec-rács utolsó sorai közt ott áll
+ *   `Versatility` / `All-around, ideal for cruising, exploring, and yoga`
+ * — a gyártó KIMONDJA a besorolást, csak nem a névben és nem az URL-ben. A
+ * névre hagyatkozva ez a deszka „touring" lett („Island Explorer"), holott a
+ * gyártó all-roundnak ÍRJA. Ez a legerősebb elérhető jel ezen a forráson:
+ * címkézett mező, nem következtetés.
+ *
+ * Kétféle alakot fogad, mindkettő spec-tábla: a címke a SAJÁT SORÁBAN (az
+ * érték a következőben), vagy kettősponttal ugyanabban a sorban. A címke
+ * PONTOS egyezés — a szabad szövegben előforduló „use"/„best for" fordulat
+ * így nem minősül mezőnek.
+ */
+const USE_FIELD_LABELS = [
+  "versatility",
+  "best for",
+  "recommended use",
+  "intended use",
+  "board type",
+  "hasznalat",
+  "ajanlott hasznalat",
+];
+
+export function labelledUseText(text: string): string {
+  const lines = text.split("\n").map((line) => line.trim());
+  for (let i = 0; i < lines.length; i += 1) {
+    const line = lines[i] ?? "";
+    const folded = foldText(line);
+    // a) `Versatility: All-around, …` — címke és érték egy sorban
+    for (const label of USE_FIELD_LABELS) {
+      const prefix = new RegExp(`^${label}\\s*[:：]\\s*(.+)$`);
+      const inline = folded.match(prefix);
+      if (inline) return line.slice(line.length - (inline[1] ?? "").length);
+    }
+    // b) `Versatility` ⏎ `All-around, …` — a címke egyedül alkot egy sort
+    if (USE_FIELD_LABELS.includes(folded.replace(/\s*[:：]$/, ""))) {
+      const value = lines[i + 1] ?? "";
+      // Az érték legyen érdemi szöveg, ne a következő címke.
+      if (value !== "" && value.length <= 160) return value;
+    }
+  }
+  return "";
+}
+
 const CATEGORY_METHODS = buildCategoryMethods({
   guessBoardType,
   breadcrumbText,
@@ -1965,6 +2246,7 @@ const CATEGORY_METHODS = buildCategoryMethods({
   urlCategoryHint,
   multiUseFromProse,
   matchPinnedType,
+  labelledUseText,
 });
 
 /**
@@ -2188,6 +2470,8 @@ export interface PageExtractionOptions {
    * meg.
    */
   titleCutAfter?: readonly string[];
+  /** Forrás-szintű zajszavak a modellnévből (`crawl_config.titleNoiseWords`). */
+  titleNoiseWords?: readonly string[];
   /**
    * A gyártó SAJÁT kategória-feliratát viselő elem osztályneve
    * (`crawl_config.categoryClass`). Termékspecifikus jel, ezért erős.
@@ -2215,6 +2499,7 @@ export function extractProductFromPage(
     boardTypeByUrl = {},
     titleSuffixes = [],
     titleCutAfter = [],
+    titleNoiseWords = [],
     categoryClass,
     categoryMethods,
     overrideText,
@@ -2225,7 +2510,24 @@ export function extractProductFromPage(
     .trim();
   for (const marker of titleCutAfter) {
     const at = rawTitle.indexOf(marker);
-    if (at > 0) rawTitle = rawTitle.slice(0, at).trim();
+    if (at <= 0) continue;
+    // A MÁRKANÉV-ELŐTAG nem a modell, hanem fejléc — a jel MÖGÖTTI rész kell
+    // (F2.1-utó-47). Élesben (funwaterboard.com) ugyanaz a jel kétféle
+    // szerepben áll ugyanazon az oldalon:
+    //   „Island Explorer 11' Inflatable Paddle Board | SUP for All Skill Levels"
+    //      → a jel UTÁN reklámszöveg, a modell előtte van;
+    //   „Funwater | Paddle Board Inflatable Sale Monkey 11' Touring"
+    //      → a jel ELŐTT a márka, a modell utána van.
+    // Vak vágással a második alakból „Funwater" lenne a modellnév. A
+    // megkülönböztetés nem heurisztika: ha az elülső darab a márkanévnél
+    // nem más, akkor az fejléc.
+    const head = rawTitle.slice(0, at).trim();
+    const tail = rawTitle.slice(at + marker.length).trim();
+    const brandOnly =
+      defaultBrandName !== null &&
+      foldText(head) === foldText(defaultBrandName) &&
+      tail !== "";
+    rawTitle = brandOnly ? tail : head;
   }
   for (const suffix of titleSuffixes) {
     const folded = foldText(rawTitle);
@@ -2248,7 +2550,7 @@ export function extractProductFromPage(
   if (specs.lengthCm === null) return null;
 
   const brandName = normalizeBrandName(defaultBrandName);
-  const modelName = cleanModelName(rawTitle, brandName);
+  const modelName = cleanModelName(rawTitle, brandName, titleNoiseWords);
   if (modelName === "") return null;
 
   // A gyártó használat-értékelése. Ha a SZÖRF vezet, a terméket NEM gyűjtjük
