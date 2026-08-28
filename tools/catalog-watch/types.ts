@@ -138,6 +138,41 @@ export interface CrawlConfig {
    */
   titleNoiseWords?: string[];
   /**
+   * A MÉRET A MODELLNÉV RÉSZE MARAD (F2.1-utó-50).
+   *
+   * A `cleanModelName` alapból kiveszi a láb-hüvelyk méretjelölést a névből,
+   * mert a legtöbb gyártónál zaj. Van viszont forrás, ahol a méret az EGYETLEN
+   * megkülönböztető jegy: a decathlon.hu-n a „SUP szett, 9'6 … - 100-as" és a
+   * „SUP szett, felfújható, 10'6 - 100-as" a méret nélkül UGYANARRA a névre
+   * („100") normalizálódna — két különböző deszka olvadna össze a
+   * duplikátum-felismerésben. Opt-in, mérés után.
+   */
+  titleKeepSize?: boolean;
+  /**
+   * A LETÖLTÉS BÖNGÉSZŐN KERESZTÜL (F2.1-utó-50) — nem fallback, hanem az
+   * EGYETLEN csatorna ennél a forrásnál.
+   *
+   * Élesben (decathlon.hu): minden HTML-oldal `403`-at ad egy Cloudflare
+   * robot-ellenőrzéssel, fej nélküli böngészővel sem oldódik meg; fejes
+   * Chrome-mal viszont másodpercek alatt átmegy. A `robots.txt` és a sitemapok
+   * normálisan kiszolgálódnak, tehát ez nem tiltás, hanem robot-védelem.
+   *
+   * ÁRA: fejes böngésző kell, ezért a havi CI-futásban ez a forrás nem megy át
+   * — a bejárása lokális, kézi menet. Ld. `browser-fetch.ts`.
+   */
+  browserFetch?: boolean;
+  /**
+   * A LEKÉRDEZŐ RÉSZ ELDOBÁSA a listaoldalról szedett termék-URL-ekből
+   * (F2.1-utó-50).
+   *
+   * Élesben (decathlon.hu) minden termékkártya háromféle alakban hivatkozik
+   * ugyanarra a deszkára: csupaszon, `?mc=<cikkszám>&c=<szín>` paraméterekkel,
+   * és `#reviews-floor` töredékkel. A töredéket mindig eldobjuk (az sosem
+   * másik erőforrás), a lekérdező részt viszont CSAK kérésre: máshol a
+   * paraméter maga a termék (`?size=…` a méretenkénti jelölteknél).
+   */
+  stripUrlQuery?: boolean;
+  /**
    * A HOSSZ A CÍM ELEJÉRŐL, ha egyetlen mező sem adja meg.
    *
    * Élesben (red.equipment): a spec-blokk `Width`/`Board Thickness`/

@@ -166,7 +166,67 @@ vast ✓ · térf ✓ · súly ✓ · teher 9/11` — az ELSŐ forrás, ahol min
 megvan. Teherbírásnak a `REC. PAYLOAD` kerül be (elöl áll, és konzervatívabb
 a MAX-nál) — ugyanaz a döntés, mint a Jobe rider-weight-jénél.
 
-**Még hiányzó márkák a listáról:** Itiwit (Decathlon), Bestway/Hydro-Force.
+**F2.1-utó-50 — Itiwit/Decathlon bekötve (2026-08-28).** A MÁRKANÉV MÁR NEM
+ITIWIT: a decathlon.hu mindenütt `DECATHLON` márkanevet tesz ki ugyanezekre a
+deszkákra, ezért a forrás neve Decathlon. Két olyan akadály volt, amilyen még
+nem: egyik sem a kinyerésé, mindkettő a HOZZÁFÉRÉSÉ.
+
+- **NINCS TERMÉK-SITEMAP, pedig van sitemap.** A `robots.txt` két sitemapot
+  hirdet; a működő index öt gyerek-sitemapot sorol, összesen **8665 URL-lel —
+  amiből NULLA a `/p/` termékoldal**. A felderítés ezért kategória-oldalról
+  megy (`productListUrls`, az Aquatone-nál bevezetett mód).
+- **CLOUDFLARE ROBOT-ELLENŐRZÉS MINDEN HTML-OLDALON.** Mérve: sima `curl`
+  (saját és böngésző-UA-val is) `403`; **fej nélküli Chrome 30 s alatt sem
+  jutott át**; FEJES Chrome 2 másodperc alatt igen, és a további oldalak már
+  ellenőrzés nélkül jönnek ugyanabban a kontextusban. A `robots.txt` és a
+  sitemapok viszont normálisan kiszolgálódnak — ez robot-védelem, nem tiltás.
+  Új modul: **`browser-fetch.ts`** (`browserFetch: true` a receptben) — nem
+  fallback, hanem az EGYETLEN csatorna ennél a forrásnál, és ugyanazt a
+  `FetchText` szerződést teljesíti, ezért a `crawl.ts` egy sorát sem kellett
+  hozzáigazítani. **ÁRA: a havi CI-futásban ez a forrás nem megy át** (a runner
+  fej nélküli), a bejárása lokális, kézi menet; a `verify-specs` zárolása
+  viszont megőrzi a bevitt adatot. A `/hu/ajax/nfs/…` JSON-végpontok, amikből
+  az oldal épül, NEM járhatók: a `robots.txt` tiltja a `/hu/ajax/`-ot.
+
+Általános javítások, amiket a forrás kikényszerített:
+- **A gyártó SAJÁT zárójeles átváltása üt** (`Hosszúság: 14' (426 cm)`). A
+  `Vastagság: 4'75" (12 cm)` alakot a láb-hüvelyk minta 4 láb + 75 HÜVELYKNEK
+  olvasta (312 cm egy 12 cm vastag deszkára), és a `Szélesség` ablaka átnyúlt a
+  következő sorba, ahonnan a KÖVETKEZŐ mező láb-értékét szedte fel.
+- **A tartozék tömege sem a deszkáé**: négy tömeg áll egymás alatt (deszka /
+  teljes szett / evező / pumpa), a puszta „súly" needle az EVEZŐÉT adta. Az
+  angol `paddle` kizáró előtagként MEGBUKOTT — az Aqua Marina Hungary címkéje
+  `paddleboard súlya`, ott a „paddle" a deszka neve. A fixtúra-háló fogta meg.
+- **A „maximális terhelhetőség" ARKHIMÉDÉSZ, nem teherbírás.** Pontosan annyi
+  kg, ahány LITER a térfogat (350 l → 350 kg, 335 l → 335 kg, 245 l → 245 kg),
+  és a gyártó ki is mondja: „amíg a vízfelszínen marad". A Deszkaválasztó
+  0,66-os szorzójával ez egy 231 kg-os evezősnek adna zöld utat egy 140 kg-ra
+  tervezett deszkán — biztonsági hiba, nem pontatlanság. A valós korlát a
+  magyar `Max. 140 kg-ig ideális` idióma (megerősítő szóhoz kötve, mert a
+  puszta „130 kg-ig" a kapcsolódó termékek címeiben is ott áll, ELŐBB).
+- **`titleKeepSize`**: a méret az egyetlen megkülönböztető jegy (két külön
+  szett neve a méret nélkül egyaránt „100" lenne). Plusz a vesszős címekből
+  árván maradt vesszők tisztítása.
+- **`stripUrlQuery` + entitás-feloldás + töredék-vágás a listaoldal `href`-jein**:
+  ugyanaz a deszka HÁROMSZOR került a sorba (csupaszon, `?mc=…&c=zöld`
+  színváltozattal és `#reviews-floor` töredékkel), és az `&amp;` feloldatlanul
+  egy nem létező paramétert vitt a lekérésbe.
+
+**Kategória kézzel (`boardTypeByUrl`)**: a morzsamenü MIND A HAT deszkán
+ugyanazt mondja („… › Túra SUP"), a 80 kg-ig ajánlott kezdő szettet is
+beleértve — ez menü-elhelyezés, nem besorolás. A gyártó saját leírása dönt
+(Explo 900 és 12'6 500-as → túra, a többi → allround).
+
+Eredmény 8 URL-en: **6 deszka, 0 gyanús**, `hossz ✓ · szél ✓ · vast ✓ ·
+térf 5/6 · súly ✓ · teher ✓`. Élesben lefutott, a 6 jelölt a moderációs sorban.
+Három fixtúra őrzi. **A hiányzó térfogat és egy hibás vastagság a GYÁRTÓ saját
+adathibája** („SUP, kompakt - 100-as": `Vastagság: 14' (35,5 cm)` — a 14
+hüvelyket váltották át lábként; az űrtartalom sora `Szélesség: 325 liter.`
+címkével áll). Ezt nem javítjuk szabállyal — a moderáció írja felül
+`verify-specs`-szel. Egy „vastagság felső küszöbe" gyanú-jel meg is bukott a
+mérésen: a valós Sprint versenydeszka 27 cm vastag.
+
+**Még hiányzó márka a listáról:** Bestway/Hydro-Force.
 
 **Nyitott kis tételek (nem blokkolók):**
 - **Advisor ár-padló** (domain-review 2.5): NEM ár-büntetés kell, hanem

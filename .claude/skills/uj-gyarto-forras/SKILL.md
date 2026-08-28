@@ -25,7 +25,7 @@ Ha a `probe` nem talál termék-URL-t, próbáld VÉGIG ezeket:
 | `/sitemap_<nyelv>.xml` | Jobe: `sitemap_en.xml` (nyelvenkénti bontás) |
 | `/__sitemap__/content-<régió>-<nyelv>.xml` | **Duotone/Fanatic** (Nuxt) |
 | `/wp-sitemap-posts-<típus>-1.xml` | **Gladiator** (WordPress: `…-catalog-1.xml`) |
-| `/sitemap-index.xml` | Decathlon |
+| `/sitemap-index.xml` | Decathlon — **de a benne hirdetett 8665 URL között EGYETLEN termékoldal sincs** |
 | `/sitemap.xml` (az INDEX, nem a gyerek) | **FunWater** (Shopify): a `sitemap_products_1.xml` közvetlenül **400**-at ad, mert aláírás-paramétert vár (`?from=…&to=…`) — az indexből viszont mindig a friss alak jön |
 
 ```bash
@@ -110,7 +110,7 @@ nem előre.
 | `labeledUse` | a gyártó CÍMKÉZETT használat-mezőt ad a spec-táblában | **FunWater** (`Versatility: All-around…`), **Red Paddle** (`Rider Style: All Round`) | a címke pontos egyezést kíván; szabad szövegben a „best for" fordulat nem mező |
 | `nameAndUrl` | a kategória-szó a névben vagy az URL-szegmensben áll | **Aqua Marina** (`/products/all-around/`) | a marketing-slug (`/products/glowing/`) semmit nem mond a használatról; a SEO-név egyenesen TÉVESZT (FunWater: „Island Explorer" → túra, holott all-round) |
 | `categoryLine` | a termékfejlécben ott a gyártó saját felirata | **Fanatic** (`ALL-AROUND / WINDSURF`) | a felirat SORRENDJE dönt, és MINDEN tagja számít |
-| `breadcrumb` | a morzsamenü kimondja a kategóriát | **Zray** | JS-ből épülő morzsamenüt a crawler nem lát (Zray új modelljei) |
+| `breadcrumb` | a morzsamenü kimondja a kategóriát | **Zray** | JS-ből épülő morzsamenüt a crawler nem lát (Zray új modelljei); **ha MINDEN termék UGYANABBA a levélbe esik, az menü-elhelyezés, nem besorolás** — a Decathlon mind a hat deszkáját „Túra SUP" alá teszi, a 80 kg-ig ajánlott kezdő szettet is |
 | `usageBars` | a gyártó pontozza a használatot | **Aqua Marina** (4 sáv) | ha a SZÖRF vezet, a termék kimarad — az nem a mi taxonómiánk |
 | `prose` | a leírás kimondja, FŐNÉVVEL | Gladiator régi modelljei | a teljes oldalszövegen fut, tehát hosszú navigációs blokkon is |
 | `multiUseProse` | a gyártó KETTŐT mond egy mondatban | **Jobe**, **Gladiator**, Starboard, Bluefin | a `river` helynév is: „choppy waters or rivers" ≠ vadvízi deszka |
@@ -185,6 +185,17 @@ Mind élesben mért eset. Ha valamelyik mező üres vagy gyanús, itt keresd:
   egységgel (Jobe).
 - `10′6″ * 33″ * 6″ for Adults,` + új sorban `8′ * 30″ * 4″ for Youth` —
   **két készlet egymás alatt** (FunWater).
+- `Hosszúság: 14' (426 cm)` — **a gyártó SAJÁT zárójeles átváltása**
+  (Decathlon). Ez ÜT mindenen: a `Vastagság: 4'75" (12 cm)` alakot a
+  láb-hüvelyk minta 4 láb + 75 HÜVELYKNEK olvasta (312 cm egy 12 cm vastag
+  deszkára), és a `Szélesség` ablaka ÁTNYÚLT a következő sorba, ahonnan a
+  KÖVETKEZŐ mező láb-értékét szedte fel. Közvetlenül egy imperiális érték után
+  álló `(… cm)` csak annak az átváltása lehet.
+- `Felfújt deszka:` … `Táska az összehajtott SUP-pal:` — **a deszka után a
+  TÁSKA adatai jönnek, ugyanazokkal a címkékkel** (`Magasság`, `Szélesség`,
+  `Vastagság`, `Súly: 500 g`). A deszka blokkja mindig elöl áll, és a
+  címke-kereső az ELSŐ találatot veszi — ezen múlik, hogy nem a táska mérete
+  kerül be.
 
 **A címke és az érték SORRENDJE — a legdrágább csapda-család**
 Élesben (funwaterboard.com) EGY oldalon ÖT változatban fordult elő ugyanaz: a
@@ -229,6 +240,17 @@ bemenetén. A változatok:
   nincs ott. Az `htmlToText` mostantól törli (a lágy elválasztójellel és a
   BOM-mal együtt).
 - `Kilograms` / `Pounds` KIÍRVA — a rövidítés-only minta ezeket nem látta.
+
+**A TARTOZÉK tömege sem a deszkáé**
+- `Súly (csak a deszka): 8,4 kg` / `Deszka + szkeg + leash + hátizsák együtt:
+  9,6 kg` / `Az evező súlya: 1,2 kg` / `A pumpa súlya: 1200 g` — NÉGY tömeg
+  egymás alatt (Decathlon), plusz a lap alján a technikai mező a TELJES SZETT
+  tömegét ismétli. A puszta „súly" needle az EVEZŐÉT adta. A gyártó zárójeles
+  elhatárolása (`súly (csak a deszka)`) a legspecifikusabb címke, ezért áll
+  elöl; az `evező`/`pumpa` kizáró előtag.
+- **Az angol `paddle` NEM lehet kizáró előtag**: kipróbálva elrontotta az Aqua
+  Marina Hungaryt, ahol a címke `paddleboard súlya: 11 kg` — ott a „paddle"
+  nem tartozék, hanem a DESZKA neve.
 
 **A CSOMAG adatai nem a deszkáéi**
 - `Item Weight: 28 Pounds` és alatta `Package Weight: 18.87 Kilograms` — a
@@ -281,6 +303,20 @@ bemenetén. A változatok:
   kategóriák egyike sem A kategória.
 
 **Teherbírás**
+- **A „maximális terhelhetőség" NEM mindig teherbírás.** Élesben
+  (decathlon.hu) a gyártó két számot ad: `Max. 140 kg-ig ideális` és
+  `Max. terhelhetőség, AMÍG A VÍZFELSZÍNEN MARAD: 335 kg`. A második
+  ARKHIMÉDÉSZ: pontosan annyi kg, ahány LITER a deszka térfogata (350 l →
+  350 kg, 335 l → 335 kg, 245 l → 245 kg), vagyis a teljes elmerülés pontja.
+  A Deszkaválasztó 0,66-os szorzóval veti össze az evezős súlyával — a 350-es
+  szám egy 231 kg-os evezősnek is zöld utat adna egy 140 kg-ra tervezett
+  deszkán. **Ha a terhelési szám megegyezik a literben mért térfogattal,
+  gyanakodj: az felhajtóerő, nem terhelhetőség.**
+- `Max. 140 kg-ig ideális` — a magyar `-ig` rag MAGA a felső korlát,
+  címkeszó nélkül. **Megerősítő szó kell hozzá** (`max.` elöl, vagy
+  `ideális`/`tervez` utána): a puszta „130 kg-ig" a KAPCSOLÓDÓ TERMÉKEK
+  címeiben is ott áll ugyanazon az oldalon, és a szövegben ELŐBB, mint a
+  termék saját adata.
 - `Recommended rider weight: Up to 160kg` — sok gyártó CSAK ezt közli
   (Jobe). Felhasználói döntés (2026-08-20): ezt vesszük teherbírásnak, mert
   konzervatív (alacsonyabb a teljes terhelhetőségnél).
@@ -331,6 +367,15 @@ bemenetén. A változatok:
 - **A tartozék neve NEM kategória.** Minden Gladiator-oldal oldalsávjában ott
   áll a „ELITE **Touring** Fin 9″" — a szigorú minta (kategória-szó + főnév)
   védi ki.
+
+**Modellnév: A MÉRET LEHET AZ EGYETLEN MEGKÜLÖNBÖZTETŐ JEGY**
+- A `cleanModelName` alapból kiveszi a láb-hüvelyk méretet a névből. A
+  Decathlonnál viszont két külön deszka címe a méret nélkül EGYARÁNT „100"
+  lenne (a 9'6-os és a 10'6-os szett is „100-as" sorozat) — összeolvadnának a
+  duplikátum-felismerésben. Erre való a `titleKeepSize`.
+- A vesszős felsorolásból (a magyar boltok címei ilyenek) a zajszavak
+  kivétele után ÁRVA VESSZŐK maradtak a névben („, , , 100"). A vessző is
+  elválasztó.
 
 **Modellnév: SEO-szóhalmaz**
 - Van forrás, ahol a cím nem modellnév, hanem kulcsszó-lista: „Cheap Polar Bear
@@ -427,6 +472,40 @@ Ha gyanú-jelet látsz, **először a termékoldalt nézd meg**: gyakran egyetle
 modell HTML-je tér el a többitől. Ha viszont sok terméknél jön, akkor a recept
 vagy a kinyerés a hibás.
 
+## Ha a forrás MINDEN HTTP-kérést kizár (robot-védelem)
+
+Van forrás, ahol nem hiányos az adat, hanem az oldalig sem jutunk el. Élesben
+(**decathlon.hu**, 2026-08-28): MINDEN HTML-oldal `403` + Cloudflare
+„Just a moment…". A `robots.txt` és a sitemapok viszont NORMÁLISAN
+kiszolgálódnak — ez tehát robot-védelem, nem tiltás.
+
+**Amit mérj le, ebben a sorrendben** (a fejlécek cserélgetése nem visz előre):
+
+| próba | eredmény élesben |
+|---|---|
+| `curl` saját UA-val | `403` |
+| `curl` böngésző-UA-val | `403` — nem a UA a szűrő |
+| FEJ NÉLKÜLI chromium / Chrome | `403`, **30 s alatt sem oldódik meg** |
+| **FEJES Chrome** | **200, 2 másodperc alatt** — és a további oldalak már ellenőrzés nélkül jönnek ugyanabban a kontextusban |
+
+Erre való a `browserFetch: true` a receptben (`browser-fetch.ts`): nem
+fallback, hanem az EGYETLEN csatorna — ugyanazt a `FetchText` szerződést
+teljesíti, ezért a `crawl.ts` egy sorát sem kell hozzáigazítani. **Egyetlen
+böngésző-kontextus** megy a teljes forrásra, hogy a robot-ellenőrzés egyszer
+fusson le.
+
+**Az ára, amit ki kell mondani:** fejes böngésző kell, tehát a HAVI
+CI-futásban ez a forrás NEM megy át. A bejárás lokális, kézi menet; a bevitt
+adatot viszont a `verify-specs` zárolja, tehát egyszeri gyűjtés után marad.
+
+**A listaoldalról szedett `href` KÉT kezelést kíván** (mindkettő általános):
+* **entitás-feloldás** — az attribútumban `&amp;` áll, feloldás nélkül a
+  lekért URL egy nem létező paramétert visel;
+* **a töredék eldobása** — a `…#reviews-floor` ugyanaz az oldal.
+A lekérdező rész forrásfüggő: a Decathlonnál színváltozat (`?mc=…&c=zöld`),
+ezért ott `stripUrlQuery: true`; máshol a paraméter MAGA a termék (`?size=…`).
+Enélkül ugyanaz a deszka háromszor került a sorba.
+
 ## NYISS BÖNGÉSZŐT, mielőtt tovább próbálkozol a crawlerrel
 
 **Ha a forrás kizár (`429`), vagy a keresett adat JS-ből épül, a következő
@@ -475,6 +554,20 @@ oldalán, hogy egyáltalán közli-e.** A kettő gyökeresen más:
 
 - ha a kinyerés nem találja → javítandó, és a fixtúra rögzíti a javítást;
 - ha a gyártó nem teszi közzé → nincs mit javítani, ez maga a tény.
+
+**A HARMADIK eset: a gyártó KÖZLI, de HIBÁSAN.** Élesben (decathlon.hu,
+„SUP, kompakt - 100-as") a lap `Vastagság: 14' (35,5 cm)`-t ír — a 14
+HÜVELYKET váltották át lábként, a deszka 15 cm vastag —, az űrtartalom sora
+pedig `Szélesség: 325 liter.` címkével áll, ezért a térfogat üresen marad. Ezt
+**nem lehet szabállyal javítani**, és nem is szabad: kitalálnánk a gyártó
+helyett. A helye a recept fejlécében van, hogy a moderátor tudja, mit írjon
+felül `verify-specs`-szel.
+
+**Amit itt megpróbáltam és MEGBUKOTT** (hogy ne próbáld újra): egy „vastagság
+felső küszöbe" gyanú-jel, hogy a 35,5 cm kiessen. A `suspicion.test.ts`
+azonnal megfogta — a valós Sprint versenydeszka **27 cm vastag**, tehát nincs
+olyan küszöb, ami a gyártói hibát elkapja, de a legitim deszkát átengedi. A
+küszöbök ott MÉRTEK; ne írj föléjük hipotézist.
 
 Élesben mért eset: a **Bluefin egyetlen modelljénél sem ad űrtartalmat**
 (méretet és teherbírást igen). A 15 deszkája enélkül örökre „hiányos" maradt

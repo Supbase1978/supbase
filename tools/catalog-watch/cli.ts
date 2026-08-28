@@ -35,6 +35,7 @@ import { planApproval } from "./match.ts";
 import { setFieldValue } from "./lock.ts";
 import type { ProductClassification } from "./normalize.ts";
 import { probeSource } from "./probe.ts";
+import { createBrowserFetcher } from "./browser-fetch.ts";
 import { createRenderFetcher } from "./render.ts";
 import {
   formatIncompleteReport,
@@ -308,6 +309,16 @@ const realFetch: FetchText = async (url) => {
   }
 };
 
+/** Egy URL eredete, hibás/hiányzó URL-re `null` (sosem dob). */
+function originOf(url: string | null): string | null {
+  if (url === null) return null;
+  try {
+    return new URL(url).origin;
+  } catch {
+    return null;
+  }
+}
+
 const sleep = (ms: number): Promise<void> =>
   new Promise((resolveSleep) => setTimeout(resolveSleep, ms));
 
@@ -491,7 +502,17 @@ async function commandProbeMethods(args: Args): Promise<void> {
     );
   }
 
-  const page = await realFetch(url);
+  // A FIXTÚRA IS A FORRÁS SAJÁT CSATORNÁJÁN JÖN. Van forrás, ahol a sima
+  // HTTP-kérés el sem jut az oldalig (decathlon.hu — Cloudflare `403`);
+  // enélkül épp az ilyen forrásról nem lehetne regressziós hálót feszíteni.
+  const browserFetcher =
+    recipe?.crawlConfig.browserFetch === true ? createBrowserFetcher() : null;
+  let page: { status: number; text: string };
+  try {
+    page = await (browserFetcher?.fetchText(url) ?? realFetch(url));
+  } finally {
+    if (browserFetcher !== null) await browserFetcher.close();
+  }
   if (page.status !== 200) throw new Error(`HTTP ${page.status}`);
 
   // A RENDERELT szöveg is számít: van forrás, ahol a kategória csak JS után
@@ -705,7 +726,15 @@ async function commandCaptureFixture(args: Args): Promise<void> {
   const segments = new URL(url).pathname.split("/").filter((part) => part !== "");
   const slug = flag(args, "name") ?? slugify(segments[segments.length - 1] ?? "oldal");
 
-  const page = await realFetch(url);
+  // A FIXTÚRA IS A FORRÁS SAJÁT CSATORNÁJÁN JÖN (ld. `probe-methods`).
+  const browserFetcher =
+    recipe.crawlConfig.browserFetch === true ? createBrowserFetcher() : null;
+  let page: { status: number; text: string };
+  try {
+    page = await (browserFetcher?.fetchText(url) ?? realFetch(url));
+  } finally {
+    if (browserFetcher !== null) await browserFetcher.close();
+  }
   if (page.status !== 200) throw new Error(`HTTP ${page.status}`);
 
   let products = extractPageProducts(page.text, url, recipe.crawlConfig, null);
@@ -1107,8 +1136,32 @@ async function commandCrawl(args: Args): Promise<void> {
   // indul el ténylegesen, ha egy termék MINDHÁROM méret-mezője hiányzik a
   // sima HTML-ből. `finally`-ben mindig lezárjuk, ha valaha elindult.
   const renderFetcher = createRenderFetcher();
+
+  // BÖNGÉSZŐ-HÁTTERŰ LETÖLTÉS azoknak a forrásoknak, amiket a receptjük így
+  // kér (`browserFetch`, F2.1-utó-50). Nem fallback: ezeknél a sima HTTP-kérés
+  // EGYÁLTALÁN nem jut el az oldalig (decathlon.hu — Cloudflare `403`).
+  //
+  // A szétosztás EREDET (origin) szerint megy, mert a `crawl.ts` egyetlen
+  // `fetchText`-et kap az egész futásra. Így a többi forrás változatlanul a
+  // sima hálózati primitíven megy, és a böngésző csak akkor indul el, ha egy
+  // ilyen forrás ténylegesen sorra kerül.
+  const browserOrigins = new Set(
+    sources
+      .filter((source) => source.crawl_config?.browserFetch === true)
+      .map((source) => originOf(source.base_url))
+      .filter((origin): origin is string => origin !== null),
+  );
+  const browserFetcher = browserOrigins.size > 0 ? createBrowserFetcher() : null;
+  const dispatchFetch: FetchText = async (url) => {
+    const origin = originOf(url);
+    if (browserFetcher !== null && origin !== null && browserOrigins.has(origin)) {
+      return browserFetcher.fetchText(url);
+    }
+    return realFetch(url);
+  };
+
   const deps: CrawlDeps = {
-    fetchText: realFetch,
+    fetchText: dispatchFetch,
     store: dry ? dry.store : createSupabaseStore(client),
     sleep,
     log: (message) => console.log(message),
@@ -1125,6 +1178,7 @@ async function commandCrawl(args: Args): Promise<void> {
     summary = await crawlAll(sources, deps, { dryRun });
   } finally {
     await renderFetcher.close();
+    if (browserFetcher !== null) await browserFetcher.close();
   }
 
   for (const source of summary.sources) {

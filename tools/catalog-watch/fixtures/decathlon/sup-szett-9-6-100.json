@@ -1,0 +1,38 @@
+{
+  "source": "Decathlon",
+  "url": "https://www.decathlon.hu/p/sup-szett-9-6-felfujhato-egy-szemelynek-80-kg-ig-100-as/_/R-p-352133",
+  "capturedAt": "2026-08-28",
+  "teaches": "A gyártó ELGÉPELT imperiális alakja (Vastagság: 4'75\" (12 cm)) — láb-hüvelykként olvasva 312 cm lett belőle, a zárójeles centiméter menti meg —, a NÉGY egymás alatti tömeg (deszka / teljes szett / evező / pumpa) közül a deszkáé kell, és a magyar „Max. 80 kg-ig ideális\" idióma adja a teherbírást, nem a térfogattal azonos 245 kg.",
+  "rendered": false,
+  "expected": [
+    {
+      "sourceUrl": "https://www.decathlon.hu/p/sup-szett-9-6-felfujhato-egy-szemelynek-80-kg-ig-100-as/_/R-p-352133",
+      "brandName": "Decathlon",
+      "modelName": "9'6 100",
+      "rawTitle": "SUP szett, 9'6, felfújható, egy személynek, 80 kg-ig - 100-as",
+      "modelYear": null,
+      "priceHuf": null,
+      "inStock": null,
+      "imageUrl": "https://contents.mediadecathlon.com/p2869648/k$1421a1ed3c7b8325d5fc0069d1cb97f5/sq/sup-szett-96-felfujhato-egy-szemelynek-80-kg-ig-100-as.jpg?format=auto&f=720x720",
+      "imageUrls": [],
+      "boardType": "allround",
+      "boardTypeSource": "pinnedUrl",
+      "boardTypes": [
+        {
+          "type": "allround",
+          "source": "pinnedUrl"
+        }
+      ],
+      "specs": {
+        "lengthCm": 290,
+        "widthCm": 84,
+        "thicknessCm": 12,
+        "volumeL": 245,
+        "weightKg": 6.7,
+        "maxLoadKg": 80,
+        "inflatable": true
+      },
+      "accessoryType": null
+    }
+  ]
+}

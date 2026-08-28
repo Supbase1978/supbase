@@ -32,6 +32,7 @@ import { recipe as aquaMarina } from "./aqua-marina.ts";
 import { recipe as aquaMarinaHungary } from "./aqua-marina-hungary.ts";
 import { recipe as aquatone } from "./aquatone.ts";
 import { recipe as bluefin } from "./bluefin.ts";
+import { recipe as decathlon } from "./decathlon.ts";
 import { recipe as fanatic } from "./fanatic.ts";
 import { recipe as funwater } from "./funwater.ts";
 import { recipe as gladiator } from "./gladiator.ts";
@@ -48,6 +49,7 @@ export const SOURCE_RECIPES: readonly SourceRecipe[] = [
   aquaMarinaHungary,
   aquatone,
   bluefin,
+  decathlon,
   fanatic,
   funwater,
   gladiator,

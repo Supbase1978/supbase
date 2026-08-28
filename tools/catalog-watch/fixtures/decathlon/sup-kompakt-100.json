@@ -1,0 +1,38 @@
+{
+  "source": "Decathlon",
+  "url": "https://www.decathlon.hu/p/sup-kompakt-100-as/_/R-p-332301",
+  "capturedAt": "2026-08-28",
+  "teaches": "A GYÁRTÓ SAJÁT ADATHIBÁI, amiket NEM találunk ki helyette: a vastagság sora „14' (35,5 cm)\" (a 14 hüvelyket váltották át lábként; a deszka 15 cm vastag), az űrtartalom sora pedig „Szélesség: 325 liter.\" címkével áll — ezért a térfogat üresen MARAD. Ha a kinyerés egyszer értéket kezdene adni ezekre, az találgatás lenne.",
+  "rendered": false,
+  "expected": [
+    {
+      "sourceUrl": "https://www.decathlon.hu/p/sup-kompakt-100-as/_/R-p-332301",
+      "brandName": "Decathlon",
+      "modelName": "kompakt 100",
+      "rawTitle": "SUP, kompakt - 100-as",
+      "modelYear": null,
+      "priceHuf": null,
+      "inStock": null,
+      "imageUrl": "https://contents.mediadecathlon.com/p2869740/k$95f3c6688949415aa48c3c268a1bd315/sq/sup-kompakt-100-as.jpg?format=auto&f=720x720",
+      "imageUrls": [],
+      "boardType": "allround",
+      "boardTypeSource": "pinnedUrl",
+      "boardTypes": [
+        {
+          "type": "allround",
+          "source": "pinnedUrl"
+        }
+      ],
+      "specs": {
+        "lengthCm": 305,
+        "widthCm": 89,
+        "thicknessCm": 35.5,
+        "volumeL": null,
+        "weightKg": 8,
+        "maxLoadKg": 130,
+        "inflatable": true
+      },
+      "accessoryType": null
+    }
+  ]
+}

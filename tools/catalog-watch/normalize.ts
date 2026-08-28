@@ -159,6 +159,22 @@ export function extractModelYear(
 const AQUA_MARINA_CODE = /\b(?:BT|PA)[-\s]?(\d{2})[A-Z]{1,4}\d*\b/;
 
 /**
+ * A LÁB-HÜVELYK ÉS METRIKUS MÉRETJELÖLÉS kivétele a modellnévből.
+ *
+ * A TIPOGRÁFIAI láb-jel (’ U+2019, ′ U+2032) SZÁNDÉKOSAN nincs benne, pedig a
+ * magyar boltok így írják („Atlas 12’0”"). Kipróbálva (2026-08-21): ha
+ * levágnánk, a `PURE AIR Tropic 10′6″` és a `PURE AIR Tropic 10′10″` UGYANARRA
+ * a névre normalizálódna — a SUP-nál viszont a méret maga a termék, tehát a
+ * kettő összefésülhetővé válna. A méret a névben marad, amíg a modell↔méret
+ * azonosítás nem külön mező.
+ */
+function stripSizeMarks(value: string): string {
+  return value
+    .replace(/\d+\s*'\s*\d*\s*(?:''|"|”|’’)?/g, " ")
+    .replace(/\d+([.,]\d+)?\s*(cm|mm|m|inch|coll|"|”)\b/gi, " ");
+}
+
+/**
  * Modellév az Aqua Marina cikkszámából (felhasználói felismerés, 2026-08-21).
  *
  * MIÉRT SZÁMÍT: az évjárat nélkül a 2020-as és a 2025-ös Blade ugyanannak a
@@ -195,6 +211,15 @@ export function cleanModelName(
    * globálisan tilos lenne kivenni.
    */
   noiseWords: readonly string[] = [],
+  /**
+   * A MÉRET A NÉV RÉSZE MARAD (`crawl_config.titleKeepSize`, F2.1-utó-50).
+   *
+   * Élesben (decathlon.hu) a modellnév a méret NÉLKÜL nem azonosít: a
+   * „SUP szett, 9'6, felfújható, egy személynek, 80 kg-ig - 100-as" és a
+   * „SUP szett, felfújható, 10'6 - 100-as" is puszta „100"-zá válna, és a
+   * duplikátum-felismerés két KÜLÖNBÖZŐ deszkát vonna össze.
+   */
+  keepSize = false,
 ): string {
   // Az entitás-feloldás ITT történik, mert a nyers cím nem csak HTML-ből jön:
   // a Shopify `/products.json` és a JSON-LD `name` mezője is entitást ad
@@ -208,17 +233,8 @@ export function cleanModelName(
     text = text.replace(pattern, " ");
   }
 
+  if (!keepSize) text = stripSizeMarks(text);
   text = text
-    // méret-jelölések: 10'6", 10' 6'', 320 cm, 3,2 m, 32"
-    //
-    // A TIPOGRÁFIAI láb-jel (’ U+2019, ′ U+2032) SZÁNDÉKOSAN nincs benne,
-    // pedig a magyar boltok így írják („Atlas 12’0”"). Kipróbálva
-    // (2026-08-21): ha levágnánk, a `PURE AIR Tropic 10′6″` és a
-    // `PURE AIR Tropic 10′10″` UGYANARRA a névre normalizálódna — a SUP-nál
-    // viszont a méret maga a termék, tehát a kettő összefésülhetővé válna.
-    // A méret a névben marad, amíg a modell↔méret azonosítás nem külön mező.
-    .replace(/\d+\s*'\s*\d*\s*(?:''|"|”|’’)?/g, " ")
-    .replace(/\d+([.,]\d+)?\s*(cm|mm|m|inch|coll|"|”)\b/gi, " ")
     .replace(/\b(20\d{2})(-(es|as|ös|os))?\b/g, " ")
     // A KERESKEDŐ ÁLTAL ODAÍRT TEHERBÍRÁS nem a modellnév része (felhasználói
     // jelzés, 2026-08-21): „PURE AIR Tropic 12'0" Aqua Marina | 170 kg",
@@ -240,7 +256,12 @@ export function cleanModelName(
 
   return stripEdgeStopWords(
     text
-      .replace(/[|/\\~·•–—-]+/g, " ")
+      // A VESSZŐ IS ELVÁLASZTÓ (F2.1-utó-50). A decathlon.hu címei vesszős
+      // felsorolások („SUP szett, 9'6, felfújható, egy személynek, 80 kg-ig -
+      // 100-as"); a zajszavak kivétele után az árván maradt vesszők
+      // BENNMARADTAK a névben („, , , 100"). Modellnév nem kezdődik és nem
+      // végződik írásjellel.
+      .replace(/[|/\\~·•–—,;-]+/g, " ")
       .replace(/\s+/g, " ")
       .trim(),
   );
@@ -313,6 +334,31 @@ export function parseDimensionCm(text: string): number | null {
   if (/\d\s*[-–—]\s*\d+\s*(?:cm|mm|m\b|''|"|”|″|inch|in\b|coll)/i.test(text)) {
     return null;
   }
+  // A GYÁRTÓ SAJÁT, ZÁRÓJELES ÁTVÁLTÁSA ÜT MINDENT (F2.1-utó-50).
+  //
+  // Élesben (decathlon.hu) minden méret KÉT írásmóddal áll, az imperiálissal
+  // elöl: `Hosszúság: 14' (426 cm)`, `Szélesség: 33" (84 cm)`,
+  // `Vastagság: 4'75" (12 cm)`. Két baj is származott ebből:
+  //
+  //  * a `4'75"` alakot a láb-hüvelyk minta 4 láb + 75 HÜVELYKNEK olvasta
+  //    (312 cm egy 12 cm vastag deszkára) — a gyártó a 4,75 hüvelyket írta
+  //    így;
+  //  * a címke-ablak ÁTNYÚLIK a következő sorba, és a láb-jeles minta a
+  //    SZÖVEG BÁRMELY pontján illeszkedik: a `Szélesség` ablakában a KÖVETKEZŐ
+  //    mező (`Vastagság: 14' …`) láb-értéke nyert a saját, közvetlenül a
+  //    címke mellett álló centiméteres értéke helyett.
+  //
+  // A zárójeles alak ÖNLEÍRÓ: közvetlenül egy imperiális érték UTÁN álló
+  // `(… cm)` csakis annak az átváltása lehet — a gyártó saját, szerkesztett
+  // adata. Ezért ez fut ELŐBB, és a szöveg ELSŐ ilyen párja nyer.
+  const parenthesised = text.match(
+    /\d+(?:[.,]\d+)?\s*(?:['′’]\s*\d*(?:[.,]\d+)?\s*(?:''|"|”|″)?|''|"|”|″)\s*\(\s*(\d+(?:[.,]\d+)?)\s*cm\s*\)/i,
+  );
+  if (parenthesised) {
+    const value = toNumber(parenthesised[1] ?? "");
+    if (value !== null) return round1(value);
+  }
+
   // A `(?!')` védi ki, hogy egy dupla-aposztróffal írt hüvelyk-jel (`32''`,
   // gyakori ASCII-helyettesítő a valódi ″ karakterre — élesben mért eset,
   // indiana-paddlesurf.com "Width Foot/Inch: 32''") ne illeszkedjen láb-
@@ -419,6 +465,11 @@ const SPEC_LABELS = {
   // az Aqua Marina hivatalos adatlapja (aquamarina.com) ezt a címkét használja
   // a deszka saját súlyára, „MAX. PAYLOAD" mellett.
   weightKg: [
+    // „Súly (csak a deszka): 8,4 kg" — a decathlon.hu ugyanabban a blokkban
+    // sorolja fel a deszka, a teljes szett, az evező és a pumpa tömegét
+    // (F2.1-utó-50). A zárójeles pontosítás a gyártó SAJÁT elhatárolása, és a
+    // legspecifikusabb címke: ezért áll elöl, a puszta „súly" előtt.
+    "súly (csak a deszka)",
     "deszka súlya",
     "saját súly",
     "súly",
@@ -1166,6 +1217,26 @@ export function parseSpecsFromText(text: string): BoardSpecs {
     specs[key] = parseWeightKg(window);
   }
 
+  // AJÁNLOTT EVEZŐS-SÚLY MAGYARUL — és MIÉRT ÜTI a „terhelhetőség" címkét
+  // (F2.1-utó-50).
+  //
+  // Élesben (decathlon.hu) a gyártó KÉT terhelési számot közöl:
+  //   „Max. 140 kg-ig ideális, hogy az irányíthatósága tökéletes maradjon."
+  //   „Max. terhelhetőség, amíg a vízfelszínen marad: 335 kg"
+  // A második NEM teherbírás, hanem ARKHIMÉDÉSZ: pontosan annyi kilogramm,
+  // ahány liter a deszka térfogata (350 l → 350 kg, 335 l → 335 kg,
+  // 245 l → 245 kg) — az a pont, ahol a deszka teljesen elmerül. A
+  // Deszkaválasztó ezt 0,66-os szorzóval veti össze az evezős súlyával, tehát
+  // a 350-es szám egy 231 kg-os evezősnek is zöld utat adna egy olyan
+  // deszkán, amire a gyártó 140 kg-ot ír. Ez nem pontatlanság, hanem
+  // biztonsági hiba.
+  //
+  // Az ajánlott evezős-súly ezért nyer. Ugyanaz a döntés, mint a Jobe
+  // „Recommended rider weight"-jénél (2026-08-20) és a Red Paddle
+  // „riders up to"-jánál: a gyártó saját, KONZERVATÍV korlátja.
+  const riderWeight = recommendedRiderWeightKg(text);
+  if (riderWeight !== null) specs.maxLoadKg = riderWeight;
+
   // UTOLSÓ MENET: címke a SAJÁT SORÁBAN, alatta PUSZTA SZÁM. Csak a még
   // üresen maradt mezőket tölti (ld. `fillFromLabelledLines`).
   fillFromLabelledLines(text, specs);
@@ -1184,7 +1255,47 @@ export function parseSpecsFromText(text: string): BoardSpecs {
  * áll `Item Weight: 28 Pounds` és `Package Weight: 18.87 Kilograms` — utóbbi
  * a szállítási doboz, tartozékokkal együtt. Ugyanez a `Package Dimensions`.
  */
-const PACKAGE_QUALIFIERS = ["package", "csomag", "shipping", "szallitas", "szállítás"];
+const PACKAGE_QUALIFIERS = [
+  "package",
+  "csomag",
+  "shipping",
+  "szallitas",
+  "szállítás",
+  // A TARTOZÉK TÖMEGE SEM A DESZKÁÉ (F2.1-utó-50, decathlon.hu). Ugyanabban a
+  // blokkban áll: „Súly (csak a deszka): 8,4 kg", „Az evező súlya: 1,2 kg",
+  // „A pumpa súlya: 1200 g". A puszta „súly" needle enélkül az EVEZŐ tömegét
+  // adta a deszka súlyaként (1,1 kg egy 6,7 kg-os deszkára).
+  //
+  // CSAK A MAGYAR ALAKOK: az angol „paddle" kipróbálva ELRONTOTTA az Aqua
+  // Marina Hungaryt, ahol a címke „paddleboard súlya: 11 kg" — ott a
+  // „paddle" nem tartozék, hanem a DESZKA neve. A fixtúra-háló azonnal
+  // megfogta; a mérés döntött, nem a szimmetria.
+  "evező",
+  "evezo",
+  "pumpa",
+];
+
+/**
+ * A gyártó által AJÁNLOTT EVEZŐS-SÚLY magyar idiómából, kilogrammban.
+ *
+ * A magyar „-ig" rag maga a felső korlát („140 kg-ig"), címkeszó nélkül. Két
+ * alakban áll élesben (decathlon.hu):
+ *   „Max. 140 kg-ig ideális, hogy az irányíthatósága tökéletes maradjon."
+ *   „140 kg-ig tervezve, maximális teherbírása 350 kg."
+ *
+ * MIÉRT KELL A MEGERŐSÍTŐ SZÓ (`max.` elöl, vagy `ideális`/`tervez` utána):
+ * a puszta „130 kg-ig" a KAPCSOLÓDÓ TERMÉKEK címeiben is ott áll ugyanezen az
+ * oldalon („Felfújható SUP Deszka 10' Tartozékokkal, 130 kg-ig, Sárga"), és a
+ * szövegben ELŐBB, mint a termék saját adata. Megerősítés nélkül a szomszéd
+ * deszka korlátja kerülne be — pontosan az a hiba, amit a zraysports.com
+ * „Related Products" blokkja is okozott.
+ */
+export function recommendedRiderWeightKg(text: string): number | null {
+  const match =
+    text.match(/max\.?\s*(\d+(?:[.,]\d+)?)\s*kg\s*-?\s*ig\b/i) ??
+    text.match(/(\d+(?:[.,]\d+)?)\s*kg\s*-?\s*ig\s+(?:ideális|tervez)/i);
+  return match ? toNumber(match[1] ?? "") : null;
+}
 
 const WEIGHT_QUALIFIERS = [
   "vitorlával",
@@ -2504,6 +2615,8 @@ export interface PageExtractionOptions {
   titleCutAfter?: readonly string[];
   /** Forrás-szintű zajszavak a modellnévből (`crawl_config.titleNoiseWords`). */
   titleNoiseWords?: readonly string[];
+  /** A méret a modellnév része marad (`crawl_config.titleKeepSize`). */
+  titleKeepSize?: boolean;
   /** A hossz a cím elejéről, ha egyetlen mező sem adja (`lengthFromTitle`). */
   lengthFromTitle?: boolean;
   /**
@@ -2534,6 +2647,7 @@ export function extractProductFromPage(
     titleSuffixes = [],
     titleCutAfter = [],
     titleNoiseWords = [],
+    titleKeepSize = false,
     lengthFromTitle = false,
     categoryClass,
     categoryMethods,
@@ -2617,7 +2731,7 @@ export function extractProductFromPage(
   if (specs.lengthCm === null) return null;
 
   const brandName = normalizeBrandName(defaultBrandName);
-  const modelName = cleanModelName(rawTitle, brandName, titleNoiseWords);
+  const modelName = cleanModelName(rawTitle, brandName, titleNoiseWords, titleKeepSize);
   if (modelName === "") return null;
 
   // A gyártó használat-értékelése. Ha a SZÖRF vezet, a terméket NEM gyűjtjük

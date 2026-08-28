@@ -20,7 +20,7 @@ import type {
   ExtractedProduct,
   SourceCrawlSummary,
 } from "./types.ts";
-import { htmlToText } from "./html.ts";
+import { decodeEntities, htmlToText } from "./html.ts";
 import { findProductNodes, pickPrimaryProduct } from "./jsonld.ts";
 import { matchCandidate } from "./match.ts";
 import {
@@ -247,9 +247,24 @@ export async function collectProductUrls(
           continue;
         }
         for (const match of result.text.matchAll(/href=["']([^"']+)["']/gi)) {
-          const href = match[1] as string;
+          // AZ ATTRIBÚTUM ENTITÁST TARTALMAZHAT (F2.1-utó-50). A `&` a HTML-ben
+          // `&amp;`-ként áll, és feloldás nélkül a lekért URL egy NEM LÉTEZŐ
+          // paramétert visel (`?mc=1&amp;c=zöld`). Élesben (decathlon.hu) ez
+          // ugyanannak a terméknek egy harmadik, hibás alakját is felvette a
+          // sorba.
+          const href = decodeEntities(match[1] as string);
           try {
-            locs.push(new URL(href, listUrl).toString());
+            const resolved = new URL(href, listUrl);
+            // A TÖREDÉK SOSEM MÁSIK ERŐFORRÁS. A terméklista kártyái a
+            // vélemény-blokkra mutatnak (`…#reviews-floor`) — ugyanaz az
+            // oldal, harmadszor.
+            resolved.hash = "";
+            // A LEKÉRDEZŐ RÉSZ FORRÁSFÜGGŐ: a decathlon.hu SZÍNVÁLTOZATOT tesz
+            // bele (`?mc=8862497&c=zöld`), ami ugyanaz a deszka — a
+            // színváltozatokat a katalógus összefésülve kezeli. Máshol viszont
+            // a paraméter maga a termék (`?size=…`), ezért ez opt-in.
+            if (config.stripUrlQuery === true) resolved.search = "";
+            locs.push(resolved.toString());
           } catch {
             // relatív feloldás bukott: kihagyjuk
           }
@@ -592,6 +607,7 @@ export function extractPageProducts(
     titleSuffixes: config.titleSuffixes ?? [],
     titleCutAfter: config.titleCutAfter ?? [],
     titleNoiseWords: config.titleNoiseWords ?? [],
+    titleKeepSize: config.titleKeepSize === true,
     lengthFromTitle: config.lengthFromTitle ?? false,
     categoryClass: config.categoryClass,
     // A recept által kért kategória-módszerek (F2.1-utó-45) — lista hiányában
