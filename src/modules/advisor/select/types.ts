@@ -97,7 +97,6 @@ export interface BoardForAdvisor {
   thicknessCm: number | null;
   maxLoadKg: number | null;
   inflatable: boolean;
-  availabilityHu: boolean;
   modelYear: number | null;
   priceHuf: number | null;
   /** Közös nevező átlag 1–5 (null, ha nincs elég értékelés/adat). */
@@ -142,7 +141,6 @@ export interface AdvisorReason {
 export type NoMatchReason =
   | "noBoards"
   | "type"
-  | "availability"
   | "storage"
   | "maxLoad"
   | "volume"

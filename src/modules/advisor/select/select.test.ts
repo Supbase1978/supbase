@@ -35,7 +35,6 @@ function makeBoard(overrides: Partial<BoardForAdvisor> = {}): BoardForAdvisor {
     thicknessCm: 14,
     maxLoadKg: 130,
     inflatable: true,
-    availabilityHu: true,
     modelYear: 2024,
     priceHuf: 400000,
     reviewAvg: 4.5,
@@ -96,7 +95,6 @@ describe("passesHardFilter — 1. réteg kizárások", () => {
     ["nincs budget → nincs ár-szűrés", { priceHuf: 9000000 }, { budgetHuf: null }, true],
     ["rossz cél-típus kizár (verseny csak race)", { boardType: "allround" }, { use: "verseny" }, false],
     ["jó cél-típus átmegy (race verseny)", { boardType: "race", widthCm: 66 }, { use: "verseny" }, true],
-    ["availabilityHu=false kizár", { availabilityHu: false }, {}, false],
   ])("%s", (_desc, board, inputs, expected) => {
     expect(passesHardFilter(makeBoard(board), makeInputs(inputs), CFG)).toBe(expected);
   });
@@ -447,11 +445,6 @@ describe("explainNoMatch — miért nincs találat", () => {
     expect(explainNoMatch(boards, makeInputs({ storage: "inflatable_only" }), CFG)).toBe(
       "storage",
     );
-  });
-
-  it("HU-elérhetőség hiányát is megnevezi", () => {
-    const boards = [makeBoard({ availabilityHu: false })];
-    expect(explainNoMatch(boards, makeInputs(), CFG)).toBe("availability");
   });
 
   it("üres katalógusnál nem tippel a felhasználó beállításaira", () => {

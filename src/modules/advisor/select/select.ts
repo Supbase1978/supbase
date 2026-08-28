@@ -169,8 +169,21 @@ export function passesHardFilter(
   if (board.lengthCm !== null && board.lengthCm > config.singlePaddlerMaxLengthCm) {
     return false;
   }
-  // (c) itthoni elérhetőség
-  if (!board.availabilityHu) return false;
+  // (c) A HAZAI ELÉRHETŐSÉG NEM SZŰR (felhasználói döntés, 2026-08-28).
+  //
+  // „Valaki beszerezheti máshonnan is, akár használtan is — ezért nekünk nem
+  // lényeg az elérhetősége és az ára." A platform arról szól, MILYEN a deszka
+  // és mit mondanak róla a használói; a beszerzési út a felhasználó dolga.
+  // Ugyanaz a szemlélet, mint az ár-megjelenítési politikánál: bolti árat sem
+  // mutatunk, mert elavul és méltánytalan.
+  //
+  // MIÉRT VOLT EZ KÁROS, NEM CSAK FÖLÖSLEGES: az `availability_hu` a
+  // gyakorlatban nem is azt jelentette, aminek látszott — a jóváhagyáskor a
+  // FORRÁS készlet-jelzéséből íródik, forrás-ország nélkül. Ezért 105 Starboard
+  // (gyártói EU-bolt) „itthon elérhetőnek" számított, miközben a magyar boltból
+  // látott Aqua Marinák nagy része nem. A szűrő tehát nem szűkítette, hanem
+  // ELTORZÍTOTTA az ajánlást.
+  //
   // (d) tárolás: "csak felfújható" → inflatable
   if (inputs.storage === "inflatable_only" && !board.inflatable) return false;
   // (e) ársáv: csak ha budget ÉS ár is ismert; hiányzó ár NEM zár ki
@@ -219,11 +232,12 @@ export function explainNoMatch(
   );
   if (singlePaddler.length === 0) return "type";
 
-  const available = singlePaddler.filter((b) => b.availabilityHu);
-  if (available.length === 0) return "availability";
-
+  // Elérhetőség-ág itt SINCS: a kemény szűrő sem szűr rá (ld. ott a (c) pontot),
+  // és az indok-láncnak a szűrővel azonos sorrendben kell haladnia.
   const byStorage =
-    inputs.storage === "inflatable_only" ? available.filter((b) => b.inflatable) : available;
+    inputs.storage === "inflatable_only"
+      ? singlePaddler.filter((b) => b.inflatable)
+      : singlePaddler;
   if (byStorage.length === 0) return "storage";
 
   const effective = effectiveWeight(inputs, config);

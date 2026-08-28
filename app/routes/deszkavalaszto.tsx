@@ -126,7 +126,6 @@ export async function loader({ request }: Route.LoaderArgs) {
       thicknessCm: board.thickness_cm,
       maxLoadKg: board.max_load_kg,
       inflatable: board.inflatable,
-      availabilityHu: board.availability_hu,
       modelYear: board.model_year,
       priceHuf: cheapest.get(board.id) ?? null,
       reviewAvg: agg.avgOverall,

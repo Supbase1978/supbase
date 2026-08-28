@@ -84,7 +84,6 @@
     "noMatch": {
       "noBoards": "Jelenleg egyetlen deszka sincs a katalógusban.",
       "type": "A választott célra nincs megfelelő deszka-típus a kínálatban. Próbáld másik céllal.",
-      "availability": "A feltételeidnek megfelelő deszkák jelenleg nem elérhetők Magyarországon.",
       "storage": "A „csak felfújható” megkötéssel nem maradt találat — engedd meg a merev deszkát is.",
       "maxLoad": "A megadott terheléshez (testsúly + utas) a kínálatban lévő deszkák terhelhetősége kevés. Ez BIZTONSÁGI korlát, nem érdemes lazítani rajta — keress nagy terhelhetőségű, extra széles deszkát, vagy vedd ki az utast.",
       "volume": "A megadott testsúlyhoz a kínálatban lévő deszkák térfogata kevés — nagyobb, több literes deszka kell.",
