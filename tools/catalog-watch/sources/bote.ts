@@ -70,14 +70,22 @@
  *    (`-gatorshell-`), ahogy a Shopify `product_type`-ja is („Solid Paddle
  *    Boards").
  *
- *  * **UGYANAZ A DESZKA KÉT URL-EN.** A `rackham-gatorshell-paddle-boardS`
- *    (többes szám) a 14 lábas modellt árulja, a `…-paddle-board` (egyes) a
- *    12 lábast — a SPEC-TÁBLA viszont az egyes számú lapon MINDKETTŐT felsorolja,
- *    azonos számokkal. Onnan a méret-bontás „Rackham Gatorshell 12'" és
- *    „… 14'" néven adja őket; a többes számú lapon egyetlen méret-fejléc áll,
- *    tehát ott bontás sincs, és a jelölt neve puszta „Rackham Gatorshell"
- *    lenne — a 14 lábas MÁSODIK, névtelen példánya. Ezért a többes számú URL
- *    kizárva.
+ *  * **A SPEC-TÁBLA PLATFORM-TÁBLA, nem kínálat** — felhasználói észrevétel
+ *    („a solid SUP-ok 5 deszkát fednek le"), és igaza volt. A kemény ág
+ *    lapjain a tábla a modellcsalád MINDEN méretét felsorolja, a bolt viszont
+ *    csak egyet árul belőlük: a Breeze Gatorshell táblája 10'6"-ot ÉS
+ *    11'6"-ot ír, a variáns-választón csak a 10'6" áll; a HD Gatorshellnél
+ *    10'6" + 12' a tábla, 12' a kínálat. Így KÉT olyan deszka került a
+ *    katalógusba, amit a gyártó nem kínál. A felfújható ágon a kettő
+ *    egybeesett (a WULF és a Breeze Aero mindkét méretét árulja), ezért ott
+ *    nem derült ki. A kínálatot a variáns-választó mondja meg — ott a méret
+ *    PUSZTA sorként áll, a spec-fejléc mindig visel mellette valamit.
+ *
+ *  * **UGYANAZ A MODELLNÉV KÉT URL-EN.** A `rackham-gatorshell-paddle-boardS`
+ *    (többes szám) a 14 lábast árulja, a `…-paddle-board` (egyes) a 12 lábast;
+ *    a JSON-LD mindkettőt „Rackham Gatorshell"-nek hívja. A kínálat-szűrő után
+ *    mindkét lap EGY méretet ad, és a méret-fejléc a névbe kerül — enélkül két
+ *    azonos nevű sor születne, 61 cm hosszkülönbséggel.
  *
  *  * **Az APEX-et a JÓVÁHAGYÁS vonta össze a 12 lábas Rackhammal** — és ez
  *    helyes. A kinyerés külön jelöltnek látja (saját termékoldal, saját
@@ -128,10 +136,7 @@ export const recipe: SourceRecipe = {
     ],
     // A CSOMAG ugyanaz a deszka evezővel és pumpával — a katalógusban
     // duplikátum lenne. A `-tailgate-pad` a platón használt alátét.
-    // A `…-paddle-boardS` (többes szám) a 14 lábas Rackham külön termékoldala,
-    // de a spec-táblája szó szerint ott áll az egyes számú lapon is, ahol a
-    // méret-bontás nevet is ad neki — ld. a fejlécet.
-    excludeUrlPatterns: ["-package", "tailgate-pad", "rackham-gatorshell-paddle-boards"],
+    excludeUrlPatterns: ["-package", "tailgate-pad"],
     // A gyártó saját URL-szegmense mondja ki, hogy KEMÉNY deszka; a Shopify
     // `product_type` ugyanezt („Solid Paddle Boards").
     rigidUrlPatterns: ["-gatorshell-"],

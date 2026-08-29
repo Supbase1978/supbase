@@ -2,38 +2,9 @@
   "source": "BOTE",
   "url": "https://www.boteboard.com/products/hd-gatorshell-paddle-board",
   "capturedAt": "2026-08-29",
-  "teaches": "Láb és hüvelyk KÖZÖTT SZÓKÖZ a méret-hármasban (10′ 6″ L × 30″ W × 4.5″ D), NAGYBETŰS spec-címkék (DIMENSIONS/CAPACITY/AVG. WEIGHT), és kemény deszka (inflatable=false a rigidUrlPatterns miatt). A lap <img src>-je FEL NEM OLDOTT Liquid-helyőrző ({{ firstImageSrc }}) — érvényes URL-lé abszolutizálódik, ezért a kép NULL kell legyen, nem törött link.",
+  "teaches": "Láb és hüvelyk KÖZÖTT SZÓKÖZ a méret-hármasban (10′ 6″ L × 30″ W × 4.5″ D), NAGYBETŰS spec-címkék, kemény deszka (inflatable=false), és FEL NEM OLDOTT Liquid-helyőrző a képben ({{ firstImageSrc }}) → a kép NULL. A spec-tábla 10'6\"-ot is felsorol, de a bolt CSAK a 12'-t árulja.",
   "rendered": false,
   "expected": [
-    {
-      "sourceUrl": "https://www.boteboard.com/products/hd-gatorshell-paddle-board?size=10-6",
-      "brandName": "BOTE",
-      "modelName": "HD Gatorshell 10'6\"",
-      "rawTitle": "HD Gatorshell",
-      "modelYear": null,
-      "priceHuf": null,
-      "inStock": null,
-      "imageUrl": null,
-      "imageUrls": [],
-      "boardType": "allround",
-      "boardTypeSource": "pinnedUrl",
-      "boardTypes": [
-        {
-          "type": "allround",
-          "source": "pinnedUrl"
-        }
-      ],
-      "specs": {
-        "lengthCm": 320,
-        "widthCm": 76.2,
-        "thicknessCm": 11.4,
-        "volumeL": null,
-        "weightKg": 17.2,
-        "maxLoadKg": 108.9,
-        "inflatable": false
-      },
-      "accessoryType": null
-    },
     {
       "sourceUrl": "https://www.boteboard.com/products/hd-gatorshell-paddle-board?size=12",
       "brandName": "BOTE",

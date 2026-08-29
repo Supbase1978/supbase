@@ -1,0 +1,38 @@
+{
+  "source": "BOTE",
+  "url": "https://www.boteboard.com/products/breeze-gatorshell-paddle-board",
+  "capturedAt": "2026-08-29",
+  "teaches": "A SPEC-TÁBLA PLATFORM-TÁBLA: 10'6\" és 11'6\" méretet is felsorol, a bolt viszont CSAK a 10'6\"-ot árulja. A kínálatot a variáns-választó puszta méret-sora mondja meg — enélkül egy nem létező deszka került a katalógusba.",
+  "rendered": false,
+  "expected": [
+    {
+      "sourceUrl": "https://www.boteboard.com/products/breeze-gatorshell-paddle-board?size=10-6",
+      "brandName": "BOTE",
+      "modelName": "Breeze Gatorshell 10'6\"",
+      "rawTitle": "Breeze Gatorshell",
+      "modelYear": null,
+      "priceHuf": null,
+      "inStock": null,
+      "imageUrl": "https://www.boteboard.com/cdn/shop/files/breeze-gs-extremely-lightweight.jpg?v=1760547343&width=768",
+      "imageUrls": [],
+      "boardType": "allround",
+      "boardTypeSource": "pinnedUrl",
+      "boardTypes": [
+        {
+          "type": "allround",
+          "source": "pinnedUrl"
+        }
+      ],
+      "specs": {
+        "lengthCm": 320,
+        "widthCm": 81.3,
+        "thicknessCm": 11.4,
+        "volumeL": null,
+        "weightKg": 14.1,
+        "maxLoadKg": 104.3,
+        "inflatable": false
+      },
+      "accessoryType": null
+    }
+  ]
+}

@@ -373,7 +373,7 @@ négy fixtúra őrzi, a galéria (3–8 kép/deszka) is megvan.
   nem a bejárás módját — Shopify-boltnál a `--html-only` út SEM jelent
   kép-lemondást.
 **F2.1-utó-54/b — a BOTE KEMÉNY („Gatorshell") ága (2026-08-29).** Felhasználói
-kérésre ugyanaznap. 13 URL → **17 deszka összesen**, 0 gyanús, a mezősor
+kérésre ugyanaznap. 14 URL → **15 deszka összesen**, 0 gyanús, a mezősor
 változatlanul teljes. A vegyes katalógus három olyan hibát hozott felszínre,
 ami egyetlen felfújható-only forráson sem jött volna elő:
 
@@ -400,13 +400,41 @@ ami egyetlen felfújható-only forráson sem jött volna elő:
   `displayImageUrl` mostantól elutasítja a Liquid/Handlebars/JS-sablonok
   jelöléseit, kódolva és nyersen egyaránt.
 
-Két további, dokumentált döntés: a `rackham-gatorshell-paddle-boardS` (többes
-szám) URL **kizárva** — a 14 lábas modellt árulja, de a spec-táblája szó
-szerint ott áll az egyes számú lapon is, ahol a méret-bontás nevet is ad neki;
-a többes számú lapról viszont névtelen második példány lenne. A **Rackham
-Gatorshell APEX**-et pedig a jóváhagyás összevonta a 12 lábassal, helyesen: a
-spec-je betűre ugyanaz, az eltérés (pedálhajtás) pedig olyan tulajdonság,
-amire a katalógusnak nincs mezője.
+**A NEGYEDIK hiba a felhasználótól jött, és a legfontosabb volt: a spec-tábla
+PLATFORM-tábla, nem kínálat.** „Ahogy én látom, a solid SUP-ok a BOTE-nál 5
+deszkát fednek le és kettő van csomagban" — a kollekció-képernyőkép ezt
+igazolta. A kemény ág lapjain a tábla a modellcsalád MINDEN méretét felsorolja,
+a bolt viszont csak egyet árul belőlük:
+
+| termék | ELADÓ méret | spec-tábla |
+|---|---|---|
+| Breeze Gatorshell | 10'6" | 10'6", **11'6"** |
+| HD Gatorshell | 12' | **10'6"**, 12' |
+| Rackham Gatorshell | 12' | 12', **14'** (a 14' saját URL-en) |
+| WULF Aero / Breeze Aero | mindkettő | ugyanaz a kettő |
+
+A vastagon szedett méretek NEM léteznek a boltban — kettő közülük már a
+katalógusba is bekerült. A felfújható ágon a tábla és a kínálat EGYBEESETT,
+ezért a hiba ott nem derült ki: egy forráson belül is kellett a másik ág, hogy
+látszódjon. A kínálatot a variáns-választó mondja meg, ahol a méret PUSZTA
+sorként áll (`10'6"`), míg a spec-fejléc mindig visel mellette valamit
+(`10'6" Breeze Gatorshell`, `10′4″ Specs`) — és mert ugyanez a gomb-sor okozta
+a hamis fejléceket is, a két jelenség ugyanannak a ténynek a két oldala. Ha
+egyetlen puszta méret-sor sincs (JS-ből épülő választó), NEM szűrünk.
+
+A javítás mellékhatásaként a méret-bontás EGY méretnél is lefut: a 12 és a 14
+lábas „Rackham Gatorshell" külön termékoldalon él, mindkettő egyetlen kínált
+mérettel, és a JSON-LD mindkettőt ugyanúgy nevezi — méret nélkül két azonos
+nevű sor születne, 61 cm hosszkülönbséggel. Ezzel a többes számú URL kizárása
+is FÖLÖSLEGESSÉ vált, és vissza lett véve: minden lap pontosan azt adja, amit
+árul.
+
+A két nem létező sor törölve (nem volt rajtuk vélemény és ár), a
+`rackham-gatorshell-paddle-boards` visszavéve. **Végállapot: 15 deszka** —
+11 felfújható + 4 kemény. A **Rackham Gatorshell APEX**-et a jóváhagyás
+összevonta a 12 lábassal: a spec-je betűre ugyanaz, az eltérés (pedálhajtás)
+pedig olyan tulajdonság, amire a katalógusnak nincs mezője — így lesz az 5
+kemény termékből 4 katalógus-sor.
 
 Mellékesen mérve: a `-gatorshell-` minta önmagában TÚL TÁG (a
 `rover-gatorshell-micro-skiff` egy csónak), ezért az URL-minta a `paddle-board`

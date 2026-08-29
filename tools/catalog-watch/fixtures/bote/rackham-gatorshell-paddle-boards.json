@@ -1,14 +1,14 @@
 {
   "source": "BOTE",
-  "url": "https://www.boteboard.com/products/rackham-gatorshell-paddle-board",
+  "url": "https://www.boteboard.com/products/rackham-gatorshell-paddle-boards",
   "capturedAt": "2026-08-29",
-  "teaches": "A spec-tábla 12' és 14' méretet is felsorol, de ez a lap CSAK a 12'-t árulja — a 14' a saját (többes számú) URL-jén jön. Kemény deszka vegyes katalógusban: a felfújhatóságot a rigidUrlPatterns rögzíti.",
+  "teaches": "UGYANAZ A MODELLNÉV MÁSIK URL-EN: a JSON-LD itt is „Rackham Gatorshell”, de ez a lap a 14 lábast árulja (az egyes számú URL a 12 lábast). Egyetlen kínált méret mellett is bontunk, hogy a méret a névbe kerüljön.",
   "rendered": false,
   "expected": [
     {
-      "sourceUrl": "https://www.boteboard.com/products/rackham-gatorshell-paddle-board?size=12",
+      "sourceUrl": "https://www.boteboard.com/products/rackham-gatorshell-paddle-boards?size=14",
       "brandName": "BOTE",
-      "modelName": "Rackham Gatorshell 12'",
+      "modelName": "Rackham Gatorshell 14'",
       "rawTitle": "Rackham Gatorshell",
       "modelYear": null,
       "priceHuf": null,
@@ -24,12 +24,12 @@
         }
       ],
       "specs": {
-        "lengthCm": 365.8,
-        "widthCm": 81.3,
+        "lengthCm": 426.7,
+        "widthCm": 86.4,
         "thicknessCm": 20.3,
         "volumeL": null,
-        "weightKg": 21.8,
-        "maxLoadKg": 158.8,
+        "weightKg": 23.6,
+        "maxLoadKg": 181.4,
         "inflatable": false
       },
       "accessoryType": null

@@ -484,6 +484,23 @@ bemenetén. A változatok:
   `-aero-hybrid-paddle-board` minta épp a `lowrider-aero-TANDEM-hybrid-…`
   deszkát hagyta ki, mert a változat neve beékelődik.
 
+**A SPEC-TÁBLA PLATFORM-TÁBLA LEHET, NEM KÍNÁLAT**
+- Élesben (boteboard.com) a kemény „Gatorshell" ág lapjain a tábla a
+  modellcsalád MINDEN méretét felsorolja, a bolt viszont csak EGYET árul: a
+  Breeze Gatorshell táblája 10'6"-ot ÉS 11'6"-ot ír, a variáns-választón csak
+  a 10'6" áll. **Két nem létező deszka került emiatt a katalógusba** — a
+  felhasználó vette észre a kollekció-oldal darabszámából.
+- A felfújható ágon UGYANEZEN A FORRÁSON a tábla és a kínálat egybeesett,
+  ezért a hiba egy ágból nem látszott volna. **Ha a spec-tábla több méretet
+  ad, mint amennyit a variáns-választó kínál, a VÁLASZTÓ az igazság.**
+- A megkülönböztetés alaki: a kínált méret PUSZTA sorként áll (`10'6"`), a
+  spec-fejléc mindig visel mellette valamit (`10'6" Breeze Gatorshell`,
+  `10′4″ Specs`). Ugyanaz a gomb-sor okozza a hamis fejléceket is — a két
+  jelenség ugyanannak a ténynek a két oldala.
+- **Ellenőrizd a darabszámot a kollekció-oldalon**, mielőtt lezárod a
+  bekötést: a `/collections/<slug>/products.json` egyetlen kéréssel megadja a
+  termékek listáját és a `Length` variánsait.
+
 **VEGYES KATALÓGUS: a FELFÚJHATÓSÁGOT a teljes oldalszöveg NEM dönti el**
 - Élesben (boteboard.com) a márka felfújható (`-aero-`) és KEMÉNY
   (`-gatorshell-`) deszkát is árul. A kemény deszkák lapján is ott a navigáció

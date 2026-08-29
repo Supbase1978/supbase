@@ -3094,8 +3094,14 @@ export function extractProductsFromPage(
   // CÍMBŐL (illetve a JSON-LD-ből) kapott alapnévhez ragasztjuk. Enélkül két
   // azonos nevű „WULF Aero" jelölt születne, holott két külön deszkáról van
   // szó (250 kontra 315 LBS teherbírás).
+  // EGY MÉRET IS BONTÁS. A méret-fejléc azt jelenti, hogy a gyártó a
+  // modellcsalád TÖBB példányát tartja számon ezen a néven, és a kínálat-szűrő
+  // után maradhat belőle egy — a méretnek akkor is a névben a helye. Élesben
+  // (boteboard.com) a 12 és a 14 lábas „Rackham Gatorshell" KÜLÖN termékoldalon
+  // él, mindkettő egyetlen kínált mérettel: méret nélkül két azonos nevű sor
+  // születne, 61 cm hosszkülönbséggel.
   const labeled = parseLabeledSpecsBySize(pageText);
-  if (labeled.length < 2) return [base];
+  if (labeled.length === 0) return [base];
   return labeled.map((size) => ({
     ...base,
     modelName: `${base.modelName} ${size.label}`,
@@ -3172,6 +3178,23 @@ function sizedUrl(sourceUrl: string, label: string): string {
  *
  * AZONOS MÉRET KÉTSZER: ha mégis két fejléc ad ugyanarra a méretre blokkot, a
  * TÖBB kitöltött mezőt adó nyer — a fél blokk sosem írhatja felül a teljeset.
+ *
+ * A SPEC-TÁBLA PLATFORM-TÁBLA LEHET, nem kínálat (boteboard.com, 2026-08-29).
+ * A kemény „Gatorshell" ág lapjain a tábla a modellcsalád MINDEN méretét
+ * felsorolja, a bolt viszont csak EGYET árul belőlük: a Breeze Gatorshell
+ * táblája 10'6"-ot ÉS 11'6"-ot ír, a variáns-választón viszont csak a 10'6"
+ * áll. Enélkül a szűrő nélkül két olyan deszka került a katalógusba, amit a
+ * gyártó nem kínál (felhasználói észrevétel: „a solid SUP-ok 5 deszkát fednek
+ * le"). A felfújható ágon a kettő egybeesett, ezért ott nem derült ki.
+ *
+ * A KÍNÁLATOT a variáns-választó mondja meg: a méret ott PUSZTA sorként áll
+ * (`10'6"`), míg a spec-fejléc mindig visel mellette valamit (`10'6" Breeze
+ * Gatorshell`, `10′4″ Specs`). Ezért a puszta méret-sorok halmaza a szűrő —
+ * és mert ugyanaz a gomb-sor okozta a hamis fejléceket is, a két jelenség
+ * ugyanannak a ténynek a két oldala.
+ *
+ * ÓVATOS: ha EGYETLEN puszta méret-sor sincs (JS-ből épülő választó), nem
+ * szűrünk — inkább maradjon a régi viselkedés, mint hogy mindent eldobjunk.
  */
 const SIZE_HEADING = /^(\d{1,2}\s*['\u2019\u2032](?:\s*\d{1,2}\s*(?:''|["\u201d\u2033])?)?)(?:\s+[A-Za-z][\w.'-]*){0,3}$/;
 /** Egy méret-blokk legfeljebb ennyi sor — a spec-blokk élesben ~15. */
@@ -3197,6 +3220,7 @@ export function parseLabeledSpecsBySize(text: string): SizedSpecs[] {
   }
   if (heads.length < 2) return [];
 
+  const offered = offeredSizeLabels(lines);
   const byLabel = new Map<string, SizedSpecs>();
   for (let k = 0; k < heads.length; k += 1) {
     const head = heads[k];
@@ -3212,12 +3236,35 @@ export function parseLabeledSpecsBySize(text: string): SizedSpecs[] {
     ) {
       continue;
     }
+    // A KÍNÁLAT dönt: amit a bolt nem árul, az nem termék (ld. a fejlécet).
+    if (offered.size > 0 && !offered.has(head.label)) continue;
     const seen = byLabel.get(head.label);
     if (seen === undefined || filledSpecFields(specs) > filledSpecFields(seen.specs)) {
       byLabel.set(head.label, { label: head.label, specs });
     }
   }
-  return byLabel.size < 2 ? [] : [...byLabel.values()];
+  return [...byLabel.values()];
+}
+
+/**
+ * A ténylegesen KÍNÁLT méretek: a variáns-választó gombjai.
+ *
+ * Alakjuk PUSZTA méret — a sor semmi mást nem tartalmaz. Ez különbözteti meg
+ * őket a spec-fejléctől, ami mindig visel mellette valamit (`10′4″ Specs`,
+ * `10'6" BREEZE AERO`). Üres halmaz = nem tudjuk, mit árul a bolt; a hívó
+ * ilyenkor nem szűr.
+ */
+function offeredSizeLabels(lines: readonly string[]): Set<string> {
+  const out = new Set<string>();
+  for (const line of lines) {
+    const match = line.match(SIZE_HEADING);
+    if (match?.[1] === undefined) continue;
+    // A CSUPASZ alak a variáns-gomb: a fejléc még szavakat is visel.
+    if (match[1].replace(/\s+/g, "") !== line.replace(/\s+/g, "")) continue;
+    if (parseDimensionCm(match[1]) === null) continue;
+    out.add(normalizeSizeLabel(match[1]));
+  }
+  return out;
 }
 
 /**
