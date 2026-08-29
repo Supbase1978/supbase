@@ -1,0 +1,38 @@
+{
+  "source": "Uone",
+  "url": "https://www.u1.net.pl/deska-sup-super-126-2025-purple/",
+  "capturedAt": "2026-08-29",
+  "teaches": "A SZŰRŐ-OLDALSÁV csapdája: a termékoldal szűrő-panelje ugyanazokat a címkéket viseli, mint a spec-tábla, és felsorolja az ÖSSZES értéket („Typ deski\" ⏎ „Deski SUP – Allround\" ⏎ …), ráadásul ELŐBB — emiatt minden deszka allround lett a valódi „Typ deski: Touring\" helyett. A kettőspontos alak elsőbbsége oldja meg. Plusz: a „Wysokość\" a deszka vastagsága, a teherbírás mezője két számot ad (150kg/300kg) és az AJÁNLOTT áll elöl.",
+  "rendered": false,
+  "expected": [
+    {
+      "sourceUrl": "https://www.u1.net.pl/deska-sup-super-126-2025-purple/",
+      "brandName": "Uone",
+      "modelName": "Super 12'6\" PURPLE",
+      "rawTitle": "Deska SUP Super 12'6\" 2025 PURPLE",
+      "modelYear": 2025,
+      "priceHuf": null,
+      "inStock": null,
+      "imageUrl": "https://www.facebook.com/tr?id=2218211512253107&ev=ViewContent&noscript=1&cd%5Bcontent_ids%5D=%5B%2225341%22%5D&cd%5Bcontent_type%5D=product&cd%5Bcontent_name%5D=Deska+SUP+SUPer+12%276%22+PURPLE+Zestaw+MAX&cd%5Bcategory_name%5D=Bestsellery%2C+Deski+SUP%2C+Sporty+wodne%2C+Deski+SUP+%E2%80%93+100+kg%2C+Deski+SUP+%E2%80%93+120+kg%2C+Deski+SUP+%E2%80%93+130+kg%2C+Deski+SUP+%E2%80%93+140+kg%2C+Deski+SUP+%E2%80%93+150+kg%2C+Deski+SUP+%E2%80%93+Touring%2C+Deski+SUP+12%276%22%2C+Deski+SUP+dla+kobiet%2C+Deski+SUP+dla+m%C4%99%C5%BCczyzn%2C+Deski+SUP+dla+pocz%C4%85tkuj%C4%85cych%2C+Deski+SUP+dla+zaawansowanych%2C+Deski+SUP+do+2000+z%C5%82%2C+Deski+SUP+dwuosobowe%2C+SUP+Super&cd%5Bvalue%5D=1599.2&cd%5Bcurrency%5D=PLN&cd%5Bcontents%5D=%5B%7B%22id%22%3A%2225341%22%2C%22quantity%22%3A1%7D%5D&cd%5Bproduct_price%5D=1599.2&cd%5Bpage_title%5D=Deska+SUP+SUPer+12%276%22+PURPLE+Zestaw+MAX&cd%5Bpost_type%5D=product&cd%5Bpost_id%5D=25341&cd%5Bplugin%5D=PixelYourSite&cd%5Buser_role%5D=guest&cd%5Bevent_url%5D=www.u1.net.pl%2Fdeska-sup-super-126-2025-purple%2F",
+      "imageUrls": [],
+      "boardType": "touring",
+      "boardTypeSource": "labeledUse",
+      "boardTypes": [
+        {
+          "type": "touring",
+          "source": "labeledUse"
+        }
+      ],
+      "specs": {
+        "lengthCm": 381,
+        "widthCm": 81,
+        "thicknessCm": 15,
+        "volumeL": 350,
+        "weightKg": null,
+        "maxLoadKg": 150,
+        "inflatable": null
+      },
+      "accessoryType": null
+    }
+  ]
+}

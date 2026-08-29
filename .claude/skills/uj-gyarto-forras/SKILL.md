@@ -394,6 +394,31 @@ bemenetén. A változatok:
   áll a „ELITE **Touring** Fin 9″" — a szigorú minta (kategória-szó + főnév)
   védi ki.
 
+**A SZŰRŐ-OLDALSÁV UGYANAZOKAT A CÍMKÉKET VISELI, mint a spec**
+- Élesben (u1.net.pl) a termékoldalon ott a kategória szűrő-panelje, és
+  felsorolja az ÖSSZES lehetséges értéket: `Typ deski` ⏎ `Deski SUP – Allround`
+  ⏎ `… – Gigant` ⏎ `… – Race`, valamint `Waga użytkownika` ⏎ `… – 100kg` ⏎
+  `… – 120kg`. Ráadásul ELŐBB, mint a termék saját adata.
+- Az eredmény: MINDEN deszka „allround" lett a valódi `Typ deski: Touring`
+  helyett, és a szűrőből 100 kg került a deszka TÖMEGÉBE.
+- Ez a navigációs-menü csapda testvére, csak a CÍMKÉZETT mezőket találja el.
+  A védelem ugyanaz az elv, ami a `valueAfterLabel`-nél már megvolt: a
+  KETTŐSPONTOS alak (`Typ deski: Touring`) megy előbb, azt csak a spec írja.
+
+**UGYANAZ A CÍMKE KÉTSZER, KÉT JELENTÉSSEL — inkább maradjon üres**
+- A u1.net.pl lapján KÉT `Waga` sor van: az első a kiszállított SZETT tömege
+  (15 kg), a második a deszkáé (10,5 kg) — szövegben megkülönböztethetetlenül.
+- Ilyenkor NE vedd át a mezőt. A csomag tömege a deszka súlyaként rosszabb,
+  mint a hiány. És ez NEM `unpublishedFields`: a gyártó KÖZLI, csak mi nem
+  tudjuk biztonságosan kiolvasni — a kettő nem ugyanaz, és a recept
+  fejlécében külön kell kimondani.
+
+**A SZÓ SZERINTI FORDÍTÁS FÉLREVEZET**
+- Lengyelül a `grubość` = „vastagság", de a u1.net.pl-en az az ANYAG
+  vastagsága, milliméterben (`Grubość burty: 0.75mm`) — abból 0,08 cm-es
+  deszka lenne. A deszka vastagsága ott `Wysokość` („magasság").
+- Idegen nyelvű címkénél mindig nézd meg az ÉRTÉKET is, ne csak a szót.
+
 **A HIÁNYZÓ MEZŐT MÁSIK FORRÁS PÓTOLHATJA — de csak ha EGYEZIK a többiben**
 - Élesben: a Bestway hivatalos boltja űrtartalmat és deszka-súlyt nem közöl, a
   magyar **aqualing.hu** viszont igen — és a MÉRET meg a TEHERBÍRÁS pontosan

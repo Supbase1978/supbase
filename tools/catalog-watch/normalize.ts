@@ -481,19 +481,25 @@ const SPEC_LABELS = {
   // "Paddle Length" címkéje is illeszkedne rájuk, és az EVEZŐ hosszát írná a
   // deszka hosszaként. A `paddle`-előzményű találatokat a `valueAfterLabel`
   // kizárja (lásd lent).
-  lengthCm: ["hosszúság", "hossz", "length"],
+  // A LENGYEL címkék a u1.net.pl „Parametry" táblájából (F2.1-utó-53).
+  lengthCm: ["hosszúság", "hossz", "length", "długość"],
   // A MELLÉKNÉVI alak („33\" wide", „6\" thick") a prózában gyakori, és a
   // hozzá tartozó érték a címke ELŐTT áll — azt a `valueAfterLabel` első ága
   // olvassa. A főnévi alak (`width`/`thickness`) MEGELŐZI a listában, tehát
   // ahol a forrás rendes spec-táblát ad, ott a viselkedés változatlan.
-  widthCm: ["szélesség", "szeles", "width", "wide"],
+  widthCm: ["szélesség", "szeles", "width", "wide", "szerokość"],
   // A „thick" melléknévi alak SZÁNDÉKOSAN NINCS itt: kipróbálva (2026-08-28)
   // elrontotta a Jobe-t, ahol a próza az anyagvastagságról ír. A „wide" viszont
   // biztonságos maradt — a mérés döntött, nem a szimmetria.
-  thicknessCm: ["vastagság", "magasság", "thickness"],
+  // A LENGYEL „wysokość" (magasság) a deszka VASTAGSÁGA — a u1.net.pl így
+  // nevezi (`Wysokość: 6" / 15 cm`). A „grubość" SZÁNDÉKOSAN NINCS itt, pedig
+  // az a szó szerinti „vastagság": ugyanezen a lapon `Grubość burty` és
+  // `Grubość materiału` néven az ANYAG vastagsága áll milliméterben
+  // (0,75 mm) — abból 0,08 cm-es deszka lenne.
+  thicknessCm: ["vastagság", "magasság", "thickness", "wysokość"],
   // „Űrtartalom (l)" — a magyar boltok gyakoribb szava a térfogatra
   // (F2.1-utó-52, aqualing.hu).
-  volumeL: ["térfogat", "űrtartalom", "urtartalom", "volumen", "volume"],
+  volumeL: ["térfogat", "űrtartalom", "urtartalom", "volumen", "volume", "pojemność"],
   // A csupasz „weight" szándékosan hiányzik: a „Max weight: 140 kg" sorban
   // beleillene, és a TEHERBÍRÁST írná a deszka saját súlyaként.
   // A „net weight" ELÉG specifikus ahhoz, hogy ne ütközzön a teherbírással —
@@ -570,6 +576,12 @@ const SPEC_LABELS = {
     // Mindkét német szó egyértelmű terhelési fogalom, ütközés nincs.
     "belastbarkeit",
     "tragkraft",
+    // LENGYEL: `Rekomendowane/ maksymalne obciążenie` ⏎ `150kg/ 300kg`. A
+    // mező KÉT számot ad, és az AJÁNLOTT áll elöl — a `parseWeightKg` az
+    // elsőt veszi, ami itt a helyes: a 300 kg a 350 literes térfogathoz
+    // tartozó merülési határ (ugyanaz az arkhimédészi csapda, mint a
+    // decathlon.hu-n), az evezősre vonatkozó valós korlát a 150.
+    "obciążenie",
     // Jobe (jobesports.com): „Recommended rider weight: Up to 160kg" — a
     // márka SEHOL nem ír „max load"-ot, ez az EGYETLEN terhelési korlátja.
     // Felhasználói döntés (2026-08-20): ezt vesszük teherbírásnak.
@@ -1309,7 +1321,9 @@ export function parseSpecsFromText(text: string): BoardSpecs {
   const volumeWindow = valueAfterLabel(text, SPEC_LABELS.volumeL);
   if (volumeWindow !== null) {
     const match = volumeWindow.match(
-      /(\d+(?:[.,]\d+)?)\s*(?:l\b|liter|litre)/i,
+      // A lengyel „350 litrów" tő eltér (`litr…`) — a `l\b` nem fogja meg,
+      // mert az `l` után betű áll.
+      /(\d+(?:[.,]\d+)?)\s*(?:l\b|liter|litre|litr)/i,
     );
     specs.volumeL = match ? toNumber(match[1] ?? "") : null;
   }
@@ -2476,20 +2490,37 @@ const USE_FIELD_LABELS = [
   // utána még fel kell ismerni kategóriaként, tehát egy „Típus: felfújható"
   // mező semmit nem ír be.
   "tipus",
+  // Lengyel: `Typ deski` ⏎ `Touring` (u1.net.pl).
+  "typ deski",
 ];
 
 export function labelledUseText(text: string): string {
   const lines = text.split("\n").map((line) => line.trim());
-  for (let i = 0; i < lines.length; i += 1) {
-    const line = lines[i] ?? "";
+
+  // ELSŐ MENET — `Versatility: All-around, …`, címke és érték EGY sorban.
+  //
+  // MIÉRT ELŐBB (F2.1-utó-53, u1.net.pl): a termékoldalak SZŰRŐ-OLDALSÁVJA
+  // ugyanazokat a címkéket viseli, mint a spec-tábla, és felsorolja az ÖSSZES
+  // lehetséges értéket — `Typ deski` ⏎ `Deski SUP – Allround` ⏎
+  // `Deski SUP – Gigant` ⏎ `Deski SUP – Race` … —, ráadásul ELŐBB, mint a
+  // termék saját adata. A sorrendben haladó olvasó ezért a szűrő ELSŐ
+  // opcióját adta kategóriának: minden deszka „allround" lett, a valódi
+  // `Typ deski: Touring` helyett.
+  //
+  // A kettőspontos alakot viszont csak a spec írja; a szűrő nem. Ugyanaz az
+  // elv, mint a `valueAfterLabel` kétmenetes keresésénél.
+  for (const line of lines) {
     const folded = foldText(line);
-    // a) `Versatility: All-around, …` — címke és érték egy sorban
     for (const label of USE_FIELD_LABELS) {
-      const prefix = new RegExp(`^${label}\\s*[:：]\\s*(.+)$`);
-      const inline = folded.match(prefix);
+      const inline = folded.match(new RegExp(`^${label}\\s*[:：]\\s*(.+)$`));
       if (inline) return line.slice(line.length - (inline[1] ?? "").length);
     }
-    // b) `Versatility` ⏎ `All-around, …` — a címke egyedül alkot egy sort
+  }
+
+  // MÁSODIK MENET — `Versatility` ⏎ `All-around, …`, a címke egyedül áll egy
+  // sorban. Ez a laza alak; a kettőspontos mindig üti.
+  for (let i = 0; i < lines.length; i += 1) {
+    const folded = foldText(lines[i] ?? "");
     if (USE_FIELD_LABELS.includes(folded.replace(/\s*[:：]$/, ""))) {
       const value = valueLineAfter(lines, i);
       // Az érték legyen érdemi szöveg, ne a következő címke.

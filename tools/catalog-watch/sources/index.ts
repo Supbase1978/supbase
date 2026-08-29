@@ -43,6 +43,7 @@ import { recipe as jobe } from "./jobe.ts";
 import { recipe as redPaddle } from "./red-paddle.ts";
 import { recipe as starboard } from "./starboard.ts";
 import { recipe as supDeszka } from "./sup-deszka.ts";
+import { recipe as uone } from "./uone.ts";
 import { recipe as zray } from "./zray.ts";
 
 /** Minden recept. Új forrás = új fájl + egy sor ide. */
@@ -62,5 +63,6 @@ export const SOURCE_RECIPES: readonly SourceRecipe[] = [
   redPaddle,
   starboard,
   supDeszka,
+  uone,
   zray,
 ];

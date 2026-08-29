@@ -306,8 +306,40 @@ ugyanaz a 381×79×15-ös méret az egyik boltban „Glider Elite / 150 kg", a
 másikban „Aqua Excursion / 120 kg" — az két külön modell, nem elírás. Csak a
 kimondott alakot fogadjuk el („Deszka nettó tömege", „Tábla súlya").
 
+**F2.1-utó-53 — Uone (u1.net.pl) bekötve, lengyel gyártó (2026-08-29).**
+Felhasználói lelet. A LEGJOBBAN SZERKESZTETT spec-tábla eddig: a „Parametry"
+fül a NYERS HTML-ben adja mind a hat mezőt, címkézve, plusz a `Typ deski`
+besorolást. Eredmény 11 URL-en: **10 deszka, 0 gyanús**, `hossz ✓ · szél ✓ ·
+vast ✓ · térf ✓ · súly 0/10 · teher ✓`. Élesben lefutott, két fixtúra őrzi.
+
+- **SZŰRŐ-OLDALSÁV-CSAPDA**: a termékoldal szűrő-panelje UGYANAZOKAT a
+  címkéket viseli, mint a spec, és felsorolja az összes lehetséges értéket
+  (`Typ deski` ⏎ `Deski SUP – Allround` ⏎ …; `Waga użytkownika` ⏎ `… 100kg`),
+  ráadásul ELŐBB. Emiatt minden deszka „allround" lett a valódi
+  `Typ deski: Touring` helyett, és a szűrőből 100 kg került a deszka tömegébe.
+  A `labelledUseText` mostantól KÉTMENETES: a kettőspontos alak megy előbb —
+  ugyanaz az elv, ami a `valueAfterLabel`-nél már megvolt.
+- **Lengyel címkék**: `długość`, `szerokość`, `wysokość` (= a deszka
+  VASTAGSÁGA), `pojemność`, `obciążenie`, `typ deski`, és a `litr…` tő a
+  térfogat egységéhez. A `grubość` SZÁNDÉKOSAN kimarad: az a szó szerinti
+  „vastagság", de ott az ANYAGÉ, milliméterben — abból 0,08 cm-es deszka lenne.
+- **Teherbírás**: `150kg/ 300kg` egy mezőben, az AJÁNLOTT áll elöl és az kerül
+  be — a 300 kg a 350 literes térfogathoz tartozó merülési határ. Ugyanaz az
+  arkhimédészi csapda, mint a decathlon.hu-n.
+- **A DESZKA SÚLYÁT szándékosan nem vesszük át**: két `Waga` sor van, az első a
+  szett tömege (15 kg), a második a deszkáé (10,5) — megkülönböztethetetlenül.
+  Ez NEM „a gyártó nem közli" eset, ezért nem `unpublishedFields`.
+
+**Amit MEGVIZSGÁLTUNK ÉS ELVETETTÜNK** (rendeljkinait.hu „2025 legjobb
+termékei" cikk, felhasználói lelet): szponzorált, másodlagos kompiláció. Négy
+ellenőrizhető modellből egy egyezett a saját, elsődleges forrásból mért
+adatunkkal; **kettőnél 20 kg-mal TÚLBECSÜLTE a teherbírást** (Gladiator Elite
+11,6: 220 kontra 200; Starboard iGO 10'8": 120 kontra 100), a Bestway Aqua
+Journey-nél pedig 95 kg-ot ír a két független forrásunk egybehangzó 100-a
+helyett. Épp az a mező, amire a Deszkaválasztó kemény biztonsági szűrőt épít.
+
 **A `Kezdők_tanácsok/nepszeru_sup_markak_es_forgalmazok.md` mind a 12 márkája
-be van kötve** (+ az Indiana és három bolt a táblázaton kívül).
+be van kötve** (+ az Indiana, az Uone és három bolt a táblázaton kívül).
 
 **F2.5-utó — a vízlista 4-ről 10-re, és hét új spot (2026-08-29).** A
 felhasználó kérésére felkutattuk, hol lehet még SUP-ozni és milyen szabállyal

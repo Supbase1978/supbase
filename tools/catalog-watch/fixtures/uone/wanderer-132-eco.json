@@ -1,0 +1,38 @@
+{
+  "source": "Uone",
+  "url": "https://www.u1.net.pl/deska-sup-wanderer-132-eco-2025/",
+  "capturedAt": "2026-08-29",
+  "teaches": "A teljes lengyel „Parametry\" tábla mind a hat mezőnkre: Długość deski / Szerokość / Wysokość / Pojemność / obciążenie, kettős írásmóddal (12’6″ / 381 cm). A cím szerkezete <modell> | <reklám> | Sklep Uone — a bolt-utótag után a maradék ELSŐ darabja a modell.",
+  "rendered": false,
+  "expected": [
+    {
+      "sourceUrl": "https://www.u1.net.pl/deska-sup-wanderer-132-eco-2025/",
+      "brandName": "Uone",
+      "modelName": "Wanderer 13'2\" ECO",
+      "rawTitle": "Deska SUP Wanderer 13'2\" ECO 2025",
+      "modelYear": 2025,
+      "priceHuf": null,
+      "inStock": null,
+      "imageUrl": "https://www.facebook.com/tr?id=2218211512253107&ev=ViewContent&noscript=1&cd%5Bcontent_ids%5D=%5B%2229167%22%5D&cd%5Bcontent_type%5D=product&cd%5Bcontent_name%5D=Deska+SUP+Wanderer+13%272%22+ECO+Zestaw+PREMIUM&cd%5Bcategory_name%5D=Deski+SUP%2C+Deski+U1+2025%2C+Sporty+wodne%2C+Deski+SUP+%E2%80%93+100+kg%2C+Deski+SUP+%E2%80%93+120+kg%2C+Deski+SUP+%E2%80%93+130+kg%2C+Deski+SUP+%E2%80%93+140+kg%2C+Deski+SUP+%E2%80%93+150+kg%2C+Deski+SUP+%E2%80%93+160+kg%2C+Deski+SUP+%E2%80%93+170+kg%2C+Deski+SUP+%E2%80%93+180+kg%2C+Deski+SUP+%E2%80%93+Touring%2C+Deski+SUP+13%272%22%2C+Deski+SUP+dla+kobiet%2C+Deski+SUP+dla+m%C4%99%C5%BCczyzn%2C+Deski+SUP+dla+pocz%C4%85tkuj%C4%85cych%2C+Deski+SUP+dla+zaawansowanych%2C+Deski+SUP+dwuosobowe%2C+Deski+SUP+powy%C5%BCej+2000+z%C5%82%2C+SUP+Uone&cd%5Bvalue%5D=3039.2&cd%5Bcurrency%5D=PLN&cd%5Bcontents%5D=%5B%7B%22id%22%3A%2229167%22%2C%22quantity%22%3A1%7D%5D&cd%5Bproduct_price%5D=3039.2&cd%5Bpage_title%5D=Deska+SUP+Wanderer+13%272%22+ECO+Zestaw+PREMIUM&cd%5Bpost_type%5D=product&cd%5Bpost_id%5D=29167&cd%5Bplugin%5D=PixelYourSite&cd%5Buser_role%5D=guest&cd%5Bevent_url%5D=www.u1.net.pl%2Fdeska-sup-wanderer-132-eco-2025%2F",
+      "imageUrls": [],
+      "boardType": "touring",
+      "boardTypeSource": "labeledUse",
+      "boardTypes": [
+        {
+          "type": "touring",
+          "source": "labeledUse"
+        }
+      ],
+      "specs": {
+        "lengthCm": 401,
+        "widthCm": 75,
+        "thicknessCm": 15,
+        "volumeL": 314,
+        "weightKg": null,
+        "maxLoadKg": 180,
+        "inflatable": true
+      },
+      "accessoryType": null
+    }
+  ]
+}
