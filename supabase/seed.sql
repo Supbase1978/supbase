@@ -158,6 +158,10 @@ on conflict (id) do nothing;
 
 -- ---------------------------------------------------------------------------
 -- SPOTOK (15) — valós koordináták; PostGIS Point(4326).
+-- A 2026-08-29-i vízbővítés HÉT TOVÁBBI spotja NEM itt van, hanem a
+-- `20260717092900_spots_new_waters.sql` migrációban: azoknak az éles
+-- adatbázisba is el kell jutniuk, ide viszont csak friss adatbázis esetén
+-- futna le bármi. Ugyanaz a minta, mint a vízmérce-hozzárendelésnél.
 -- storm_warning_region: Balaton / Velencei-tó / Tisza-tó / Fertő (folyók: null).
 -- shore_bearing_deg: a partról a nyílt víz felé mutató irány (offshore-szélhez).
 -- ---------------------------------------------------------------------------
@@ -224,8 +228,10 @@ values
    ST_SetSRID(ST_MakePoint(20.7640, 47.6150),4326), 270, 'Tisza-tó',
    null,'{"hu":"Tiszafüredi holtág-bejárók.","en":"Tiszafüred backwater launches."}', null),
 
-  ('d0000011-0000-0000-0000-000000000000','Orfűi-tó',
-   '{"hu":"orfui-to","en":"orfu-lake"}','Baranya','HU','to','konnyu',
+  -- A SUP-os víz Orfűn a PÉCSI-TÓ (69 ha, völgyzárógátas tározó); az Orfűi-tavon
+  -- a horgászrend minden vízi járművet tilt (ld. /alapinfo/orfu).
+  ('d0000011-0000-0000-0000-000000000000','Orfű (Pécsi-tó)',
+   '{"hu":"orfu-pecsi-to","en":"orfu-lake-pecs"}','Baranya','HU','to','konnyu',
    ST_SetSRID(ST_MakePoint(18.1520, 46.1500),4326), null, null,
    '{"hu":"Mecseki kirándulótó, szélvédett.","en":"Sheltered lake in the Mecsek hills."}',
    '{"hu":"Kemping melletti strand.","en":"Beach next to the campsite."}', null),
@@ -290,7 +296,7 @@ insert into public.providers (id, name, slug, type, description, contact_email, 
   ('e0000004-0000-0000-0000-000000000000','Orfű SUP & Kemping',
    '{"hu":"orfu-sup-kemping","en":"orfu-sup-camping"}',
    '{rental,accommodation}',
-   '{"hu":"Kölcsönzés és szállás az Orfűi-tó partján.","en":"Rental and accommodation by Lake Orfű."}',
+   '{"hu":"Kölcsönzés és szállás a Pécsi-tó partján, Orfűn.","en":"Rental and accommodation by Lake Pécs at Orfű."}',
    'kemping@orfusup.hu','free'),
 
   ('e0000005-0000-0000-0000-000000000000','Duna SUP Iskola',
