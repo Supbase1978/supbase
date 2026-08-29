@@ -372,8 +372,46 @@ négy fixtúra őrzi, a galéria (3–8 kép/deszka) is megvan.
 - **A galéria `htmlOnly` mellett is jár**: a `backfill-gallery` a BOLTOT nézi,
   nem a bejárás módját — Shopify-boltnál a `--html-only` út SEM jelent
   kép-lemondást.
-- **Kimaradt, külön döntésre**: a `…-gatorshell-…` KEMÉNY deszkák (Breeze, HD,
-  Rackham) ugyanezen a bolton élnek; a kérés a felfújható kollekcióra szólt.
+**F2.1-utó-54/b — a BOTE KEMÉNY („Gatorshell") ága (2026-08-29).** Felhasználói
+kérésre ugyanaznap. 13 URL → **17 deszka összesen**, 0 gyanús, a mezősor
+változatlanul teljes. A vegyes katalógus három olyan hibát hozott felszínre,
+ami egyetlen felfújható-only forráson sem jött volna elő:
+
+- **A felfújhatóságot a teljes oldalszövegből nem lehet eldönteni** (új
+  kapcsoló: `rigidUrlPatterns`). A kemény deszkák lapján is ott a navigáció
+  „Inflatable Paddle Boards" menüpontja: a Breeze Gatorshell ettől `true`-t
+  kapott, a másik négy `null`-t — amit a jóváhagyás `true`-ra old fel. MIND AZ
+  ÖT kemény deszka felfújhatóként került volna a katalógusba. Ez ugyanaz a
+  navigációs-menü csapda, ami a kategória-kinyerésnél már ismert, és a
+  védekezés is ugyanaz: a gyártó SAJÁT, termékspecifikus jele (az URL-szegmens)
+  üt a szövegen.
+- **A trigram-egyeztető MIND A HATOT a felfújható testvérére javasolta
+  összevonásra** — a „HD Gatorshell 10'6""-t ráadásul a „Breeze Aero
+  10'6""-ra, tehát még a modellcsalád is más volt. A moderátori sor helyesen
+  elkapta őket, de hat hamis javaslat maradt volna benne. Új, KEMÉNY kizáró
+  szabály (`constructionConflicts`): két deszka, amiről a forrás egyiknél
+  felfújhatót, másiknál keményet állít, sosem lehet ugyanaz a katalógus-sor.
+  Nem küszöb-hangolás — tény. `null` mellett nem zárunk ki semmit.
+- **FEL NEM OLDOTT sablon-helyőrző a képben**: a HD Gatorshell lapján
+  `<img src="{{ firstImageSrc }}">` állt, amiből abszolutizálás után
+  `…/products/%7B%7B%20firstImageSrc%20%7D%7D&width=200` lett — szintaktikailag
+  ÉRVÉNYES URL, ezért minden korábbi szűrőn átment. A `%7B%7B` alak azért is
+  alattomos, mert a kapcsos zárójel a kódolás után nem látszik. A
+  `displayImageUrl` mostantól elutasítja a Liquid/Handlebars/JS-sablonok
+  jelöléseit, kódolva és nyersen egyaránt.
+
+Két további, dokumentált döntés: a `rackham-gatorshell-paddle-boardS` (többes
+szám) URL **kizárva** — a 14 lábas modellt árulja, de a spec-táblája szó
+szerint ott áll az egyes számú lapon is, ahol a méret-bontás nevet is ad neki;
+a többes számú lapról viszont névtelen második példány lenne. A **Rackham
+Gatorshell APEX**-et pedig a jóváhagyás összevonta a 12 lábassal, helyesen: a
+spec-je betűre ugyanaz, az eltérés (pedálhajtás) pedig olyan tulajdonság,
+amire a katalógusnak nincs mezője.
+
+Mellékesen mérve: a `-gatorshell-` minta önmagában TÚL TÁG (a
+`rover-gatorshell-micro-skiff` egy csónak), ezért az URL-minta a `paddle-board`
+szegmenst is megköveteli; a NAGYBETŰS címkéket (`DIMENSIONS:`) és a láb-hüvelyk
+közti szóközt (`10′ 6″ L`) a meglévő olvasó vitte, javítani nem kellett.
 
 **Amit MEGVIZSGÁLTUNK ÉS ELVETETTÜNK** (rendeljkinait.hu „2025 legjobb
 termékei" cikk, felhasználói lelet): szponzorált, másodlagos kompiláció. Négy

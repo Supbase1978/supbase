@@ -484,6 +484,29 @@ bemenetén. A változatok:
   `-aero-hybrid-paddle-board` minta épp a `lowrider-aero-TANDEM-hybrid-…`
   deszkát hagyta ki, mert a változat neve beékelődik.
 
+**VEGYES KATALÓGUS: a FELFÚJHATÓSÁGOT a teljes oldalszöveg NEM dönti el**
+- Élesben (boteboard.com) a márka felfújható (`-aero-`) és KEMÉNY
+  (`-gatorshell-`) deszkát is árul. A kemény deszkák lapján is ott a navigáció
+  „Inflatable Paddle Boards" menüpontja, ezért a `detectInflatable` egynél
+  `true`-t adott, négynél `null`-t — és a jóváhagyás a `null`-t `true`-ra oldja
+  fel. Mind az öt kemény deszka FELFÚJHATÓKÉNT került volna be.
+- Ez a navigációs-menü csapda újabb alakja, és a védekezés is ugyanaz: a gyártó
+  SAJÁT, termékspecifikus jele üt a szövegen. Erre való a `rigidUrlPatterns`.
+- **A trigram-egyeztető is elbukik itt**: a „Rackham Gatorshell" nevének
+  hasonlósága a „Rackham Aero"-hoz magas, ezért mind a hat kemény deszkát a
+  felfújható testvérére javasolta összevonásra (a „HD Gatorshell 10'6\""-t
+  ráadásul a „Breeze Aero 10'6\""-ra). A `constructionConflicts` mostantól
+  kizárja az ellentmondó szerkezetű párokat — ha MINDKÉT oldal állít valamit.
+
+**FEL NEM OLDOTT SABLON-HELYŐRZŐ a kép `src`-jében**
+- `<img src="{{ firstImageSrc }}">` — a bolt sablonjának egy darabja nyersen
+  kikerült a HTML-be. Abszolutizálás után ez SZINTAKTIKAILAG ÉRVÉNYES URL
+  (`…/products/%7B%7B%20firstImageSrc%20%7D%7D&width=200`), ezért minden
+  korábbi szűrőn átment, és törött kép került volna a katalógus-sorra. A
+  `%7B%7B` alak azért alattomos, mert a kapcsos zárójel a kódolás után nem
+  látszik. **Ha egy kép-URL gyanúsan hosszú és `%7B`/`%24` szekvenciát visel,
+  az sablon, nem kép.**
+
 **A `multiUseProse` A VÁSÁRLÓI ÉRTÉKELÉSEKRE IS RÁUGRIK**
 - Élesben (boteboard.com) a Rackham Aero kategóriáját egy REVIEW CÍMÉBŐL adta:
   „Ultimate Fishing and Exploration Inflatable SUP" — Donovan S. Történetesen

@@ -20,7 +20,7 @@ const SOURCE: CatalogSourceRow = {
 };
 
 const BOARDS: BoardForMatch[] = [
-  { id: "b-vapor", brandName: "Aqua Marina", modelName: "Vapor", modelYear: 2024 },
+  { id: "b-vapor", brandName: "Aqua Marina", modelName: "Vapor", modelYear: 2024, inflatable: null },
 ];
 
 function productPage(name: string, brand: string, price: string): string {
@@ -514,7 +514,13 @@ describe("crawlSource — Shopify-forrás", () => {
     // A `cleanModelName` a generikus „Paddle Board" utótagot levágja, a méret
     // és a KIVITEL viszont a névbe kerül — így él a katalógusban is.
     const { store, candidates, seen } = makeStore([
-      { id: "b-go", brandName: "Starboard", modelName: `GO 12'0" X 34" Rhino`, modelYear: null },
+      {
+        id: "b-go",
+        brandName: "Starboard",
+        modelName: `GO 12'0" X 34" Rhino`,
+        modelYear: null,
+        inflatable: null,
+      },
     ]);
     const network = makeNetwork({
       [`${ORIGIN}/robots.txt`]: { text: "User-agent: *\n" },

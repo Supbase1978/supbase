@@ -57,10 +57,43 @@
  *  * **Űrtartalmat a márka EGYETLEN modellnél sem közöl** (2026-08-29,
  *    mind a 9 termékoldalon ellenőrizve) — méretet, súlyt és teherbírást igen.
  *
- * AMI KIMARADT, és miért: a `…-gatorshell-…` KEMÉNY deszkák (Breeze, HD,
- * Rackham) ugyanezen a bolton élnek, de a felhasználó kérése a felfújható
- * kollekcióra szólt. Az URL-mintájuk kész van (`-gatorshell-`), a bekötésük
- * egy sor — külön döntés kérdése.
+ * A KEMÉNY („Gatorshell") ÁG UTÓLAG, felhasználói kérésre (2026-08-29). Amit
+ * az hozott a felszínre:
+ *
+ *  * **A felfújhatóságot a TELJES oldalszövegből nem lehet eldönteni vegyes
+ *    katalógusban** (új kapcsoló: `rigidUrlPatterns`). A kemény deszkák lapján
+ *    is ott a navigáció „Inflatable Paddle Boards" menüpontja és a kapcsolódó
+ *    felfújható termékek: a Breeze Gatorshell ettől `true`-t kapott, a másik
+ *    négy `null`-t — amit a jóváhagyás `true`-ra old fel. MIND AZ ÖT kemény
+ *    deszka felfújhatóként került volna be, az adatlapon és a Deszkaválasztóban
+ *    egyaránt hazugságként. A gyártó saját URL-je viszont kimondja
+ *    (`-gatorshell-`), ahogy a Shopify `product_type`-ja is („Solid Paddle
+ *    Boards").
+ *
+ *  * **UGYANAZ A DESZKA KÉT URL-EN.** A `rackham-gatorshell-paddle-boardS`
+ *    (többes szám) a 14 lábas modellt árulja, a `…-paddle-board` (egyes) a
+ *    12 lábast — a SPEC-TÁBLA viszont az egyes számú lapon MINDKETTŐT felsorolja,
+ *    azonos számokkal. Onnan a méret-bontás „Rackham Gatorshell 12'" és
+ *    „… 14'" néven adja őket; a többes számú lapon egyetlen méret-fejléc áll,
+ *    tehát ott bontás sincs, és a jelölt neve puszta „Rackham Gatorshell"
+ *    lenne — a 14 lábas MÁSODIK, névtelen példánya. Ezért a többes számú URL
+ *    kizárva.
+ *
+ *  * **Az APEX-et a JÓVÁHAGYÁS vonta össze a 12 lábas Rackhammal** — és ez
+ *    helyes. A kinyerés külön jelöltnek látja (saját termékoldal, saját
+ *    JSON-LD-név), a `dedupe` viszont azonos márkánál, azonos hossznál és
+ *    magas név-hasonlóságnál összevon, és a spec-je BETŰRE ugyanaz
+ *    (12′ × 32″ × 8″, 350 LBS, 48 LBS). Ami eltér — a pedálhajtás —, arra a
+ *    katalógusnak nincs mezője, tehát két azonos sor keletkezett volna. Ha
+ *    később mégis külön kell, a moderátor szétválaszthatja.
+ *
+ *  * **A `-gatorshell-` önmagában TÚL TÁG**: a `rover-gatorshell-micro-skiff`
+ *    egy csónak, nem deszka. Az URL-minta ezért a `paddle-board` szegmenst is
+ *    megköveteli — strukturális kizárás, nem heurisztika.
+ *
+ *  * **NAGYBETŰS címkék** (`DIMENSIONS:`, `CAPACITY:`, `AVG. WEIGHT:`) és
+ *    **szóköz a láb és a hüvelyk között** (`10′ 6″ L`) — mindkettőt vitte a
+ *    meglévő olvasó, javítani nem kellett.
  */
 import type { SourceRecipe } from "./index.ts";
 
@@ -71,7 +104,7 @@ export const recipe: SourceRecipe = {
   country: "US",
   crawlConfig: {
     notes:
-      "Shopify-bolt, de a /products.json SPEC NÉLKÜLI (csak marketing-próza és szín-variánsok) — a teljes Technical Specs a nyers HTML-ben van, ezért htmlOnly. A modellnév a Product JSON-LD-ből: a <title> termékenként más SEO-sablon, az EasyRider Aeroé ki sem mondja a nevet, a LowRider Aero Tandemé pedig a „Kayak” szótól kajaknak minősült. A WULF és a Breeze EGY oldalon KÉT méretet ad, méretenként megismételt címkézett blokkban. Minden érték imperiális (LBS, láb-hüvelyk). ŰRTARTALMAT NEM KÖZÖL (2026-08-29, mind a 9 termékoldalon ellenőrizve).",
+      "Shopify-bolt, de a /products.json SPEC NÉLKÜLI (csak marketing-próza és szín-variánsok) — a teljes Technical Specs a nyers HTML-ben van, ezért htmlOnly. A modellnév a Product JSON-LD-ből: a <title> termékenként más SEO-sablon, az EasyRider Aeroé ki sem mondja a nevet, a LowRider Aero Tandemé pedig a „Kayak” szótól kajaknak minősült. A WULF és a Breeze EGY oldalon KÉT méretet ad, méretenként megismételt címkézett blokkban. Minden érték imperiális (LBS, láb-hüvelyk). ŰRTARTALMAT NEM KÖZÖL (2026-08-29, mind a 13 termékoldalon ellenőrizve). A `-gatorshell-` ág KEMÉNY deszka: a teljes oldalszöveg félrevezet (a navigáció ott is „Inflatable Paddle Boards”-ot ír), ezért rigidUrlPatterns rögzíti.",
     htmlOnly: true,
     modelNameFromJsonLd: true,
     sitemapUrl:
@@ -84,10 +117,24 @@ export const recipe: SourceRecipe = {
     // előtagot: a `lowrider-aero-TANDEM-hybrid-paddle-board`-ba beékelődik a
     // változat neve, és az `-aero-hybrid-paddle-board` minta épp azt a
     // deszkát hagyta ki (élesben mérve: 8 URL a 9 helyett).
-    productUrlPatterns: ["-aero-inflatable-paddle-board", "hybrid-paddle-board"],
+    productUrlPatterns: [
+      "-aero-inflatable-paddle-board",
+      "hybrid-paddle-board",
+      // A KEMÉNY ág. A `-gatorshell-` önmagában a `rover-gatorshell-micro-skiff`
+      // csónakot is behozná, ezért a `paddle-board` szegmens is kell; az APEX
+      // pedig külön minta, mert a változat neve beékelődik.
+      "-gatorshell-paddle-board",
+      "-gatorshell-apex-paddle-board",
+    ],
     // A CSOMAG ugyanaz a deszka evezővel és pumpával — a katalógusban
     // duplikátum lenne. A `-tailgate-pad` a platón használt alátét.
-    excludeUrlPatterns: ["-package", "tailgate-pad"],
+    // A `…-paddle-boardS` (többes szám) a 14 lábas Rackham külön termékoldala,
+    // de a spec-táblája szó szerint ott áll az egyes számú lapon is, ahol a
+    // méret-bontás nevet is ad neki — ld. a fejlécet.
+    excludeUrlPatterns: ["-package", "tailgate-pad", "rackham-gatorshell-paddle-boards"],
+    // A gyártó saját URL-szegmense mondja ki, hogy KEMÉNY deszka; a Shopify
+    // `product_type` ugyanezt („Solid Paddle Boards").
+    rigidUrlPatterns: ["-gatorshell-"],
     defaultBrandName: "BOTE",
     // A gyártó SAJÁT `activity:` címkéi (ld. a fejlécet). A `Family Fun` nem
     // szerepel: az a célközönség, nem a használat.
@@ -106,6 +153,11 @@ export const recipe: SourceRecipe = {
       "/products/lowrider-aero-tandem-hybrid-paddle-board": "allround",
       "/products/prorider-aero-hybrid-paddle-board": "allround",
       "/products/kids-flowrider-aero-hybrid-paddle-board": "kids",
+      // A kemény ág, ugyanabból az `activity:` taxonómiából.
+      "/products/hd-gatorshell-paddle-board": "allround",
+      "/products/breeze-gatorshell-paddle-board": "allround",
+      "/products/rackham-gatorshell-paddle-board": "fishing",
+      "/products/rackham-gatorshell-apex-paddle-board": "fishing",
     },
     // MÉRVE (2026-08-29, probe-methods): itt CSAK a `pinnedUrl` és a
     // `nameAndUrl` ad megbízható találatot. A `multiUseProse` SZÁNDÉKOSAN

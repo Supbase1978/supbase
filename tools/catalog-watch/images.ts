@@ -192,6 +192,7 @@ export const DISPLAY_IMAGE_WIDTH = 768;
 
 export function displayImageUrl(raw: string | null): string | null {
   if (raw === null || raw.trim() === "") return null;
+  if (isTemplatePlaceholder(raw)) return null;
   let url: URL;
   try {
     // ENTITÁS-DEKÓDOLÁS ITT IS: a visszatöltés a JELÖLTBEN TÁROLT URL-lel
@@ -211,6 +212,39 @@ export function displayImageUrl(raw: string | null): string | null {
   url.searchParams.delete("height");
   url.searchParams.delete("aspect_ratio");
   return url.toString();
+}
+
+/**
+ * FEL NEM OLDOTT SABLON-HELYŐRZŐ az `src`-ben — sosem kép.
+ *
+ * Élesben (boteboard.com, 2026-08-29) a HD Gatorshell lapján a sablon egy
+ * darabja nyersen kikerült a HTML-be: `<img src="{{ firstImageSrc }}">`. Az
+ * abszolutizálás után ebből
+ * `https://www.boteboard.com/products/%7B%7B%20firstImageSrc%20%7D%7D&width=200`
+ * lett — szintaktikailag ÉRVÉNYES URL, ezért minden korábbi szűrőn átment, és
+ * egy törött kép került volna a katalógus-sorra. A `%7B%7B` alak azért is
+ * alattomos, mert a kapcsos zárójel a kódolás után már nem látszik.
+ *
+ * A Liquid (`{{ }}`) mellett a másik két elterjedt jelölést is elutasítjuk
+ * (`{% %}`, `${ }`), kódolva és nyersen egyaránt.
+ */
+function isTemplatePlaceholder(raw: string): boolean {
+  const folded = decodeURIComponent_(raw).toLowerCase();
+  return (
+    folded.includes("{{") ||
+    folded.includes("}}") ||
+    folded.includes("{%") ||
+    folded.includes("${")
+  );
+}
+
+/** Hibatűrő URL-dekódolás: a hibás `%` szekvencia nem dobhat kivételt. */
+function decodeURIComponent_(raw: string): string {
+  try {
+    return decodeURIComponent(raw);
+  } catch {
+    return raw;
+  }
 }
 
 /** A schema.org `image` lehet string, tömb vagy `ImageObject` — mind elviselve. */

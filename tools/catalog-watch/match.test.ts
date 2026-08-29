@@ -11,10 +11,10 @@ import {
 import type { BoardForMatch } from "./types.ts";
 
 const BOARDS: BoardForMatch[] = [
-  { id: "b-vapor", brandName: "Aqua Marina", modelName: "Vapor", modelYear: 2024 },
-  { id: "b-ride", brandName: "Red Paddle Co", modelName: "Ride", modelYear: 2023 },
-  { id: "b-ray", brandName: "Fanatic", modelName: "Ray Air Touring", modelYear: null },
-  { id: "b-explorer", brandName: "Red Paddle Co", modelName: "Explorer", modelYear: 2024 },
+  { id: "b-vapor", brandName: "Aqua Marina", modelName: "Vapor", modelYear: 2024, inflatable: null },
+  { id: "b-ride", brandName: "Red Paddle Co", modelName: "Ride", modelYear: 2023, inflatable: null },
+  { id: "b-ray", brandName: "Fanatic", modelName: "Ray Air Touring", modelYear: null, inflatable: null },
+  { id: "b-explorer", brandName: "Red Paddle Co", modelName: "Explorer", modelYear: 2024, inflatable: null },
 ];
 
 describe("trigrams", () => {
@@ -111,14 +111,69 @@ describe("matchCandidate", () => {
 });
 
 /**
+ * A SZERKEZET mint KIZÁRÓ jel (boteboard.com, 2026-08-29). A márka ugyanazt a
+ * modellcsaládot felfújható („Rackham Aero") és kemény („Rackham Gatorshell")
+ * kivitelben is árulja; a trigram-hasonlóság emiatt magas, de a kettő sosem
+ * lehet ugyanaz a katalógus-sor.
+ */
+describe("szerkezet-ütközés", () => {
+  const aero: BoardForMatch = {
+    id: "b-aero",
+    brandName: "BOTE",
+    modelName: "Rackham Aero",
+    modelYear: null,
+    inflatable: true,
+  };
+
+  it("kemény jelölt NEM egyezik a felfújható testvérére", () => {
+    const result = matchCandidate(
+      {
+        brandName: "BOTE",
+        modelName: "Rackham Gatorshell",
+        modelYear: null,
+        specs: { inflatable: false },
+      },
+      [aero],
+    );
+    expect(result).toEqual({ kind: "new", boardId: null, confidence: 0 });
+  });
+
+  it("felfújható jelölt továbbra is egyezik", () => {
+    const result = matchCandidate(
+      {
+        brandName: "BOTE",
+        modelName: "Rackham Aero",
+        modelYear: null,
+        specs: { inflatable: true },
+      },
+      [aero],
+    );
+    expect(result.kind).toBe("known");
+  });
+
+  it("ISMERETLEN szerkezet nem zár ki — inkább egyezzen, mint hogy tévedjünk", () => {
+    const result = matchCandidate(
+      {
+        brandName: "BOTE",
+        modelName: "Rackham Aero",
+        modelYear: null,
+        specs: { inflatable: null },
+      },
+      [aero],
+    );
+    expect(result.kind).toBe("known");
+  });
+});
+
+/**
  * ÚJRA-EGYEZTETÉS a tömeges jóváhagyás előtt (2026-08-20). A jelölt sora a
  * crawl pillanatában fagy meg; a bolti jelöltek java KORÁBBAN keletkezett,
  * mint a hozzájuk tartozó gyártói deszka.
  */
 describe("planApproval", () => {
   const boards = [
-    { id: "b1", modelName: "Atlas", modelYear: null, brandName: "Aqua Marina" },
-    { id: "b2", modelName: "Hyper", modelYear: null, brandName: "Aqua Marina" },
+    { id: "b1", modelName: "Atlas", modelYear: null, brandName: "Aqua Marina", inflatable: null },
+    { id: "b2", modelName: "Hyper", modelYear: null, brandName: "Aqua Marina", inflatable: null },
   ];
 
   it("a MÁR MEGLÉVŐ deszkát nem hozza létre újra — összefésül", () => {

@@ -43,6 +43,48 @@ function round3(value: number): number {
   return Math.round(value * 1000) / 1000;
 }
 
+/**
+ * Amit egy jelöltről az egyeztetéshez ismerni kell. A `specs` azért van itt,
+ * mert a SZERKEZET (felfújható kontra kemény) kizáró jel — ld.
+ * `constructionConflicts`.
+ */
+export type MatchCandidate = Pick<
+  ExtractedProduct,
+  "brandName" | "modelName" | "modelYear"
+> & {
+  /**
+   * Elhagyható: ahol a hívó nem ismeri a szerkezetet, ott nincs mit kizárni.
+   * A `crawl.ts` és a jóváhagyó teljes `ExtractedProduct`-ot ad, tehát élesben
+   * mindig van.
+   */
+  specs?: { inflatable: boolean | null };
+};
+
+/**
+ * KIZÁRÓ ELTÉRÉS: a jelölt és a deszka SZERKEZETE mond ellent egymásnak.
+ *
+ * Élesben (boteboard.com, 2026-08-29) a márka ugyanazt a modellcsaládot
+ * felfújható („Rackham Aero") és kemény („Rackham Gatorshell") kivitelben is
+ * árulja. A nevek trigram-hasonlósága emiatt magas: mind a hat kemény deszkát
+ * a felfújható testvérére javasolta összevonásra a rendszer — a
+ * „HD Gatorshell 10'6\""-t ráadásul a „Breeze Aero 10'6\""-ra, tehát még a
+ * modellcsalád is más volt. A moderátori sor helyesen elkapta őket, de hat
+ * hamis összevonási javaslat maradt volna benne.
+ *
+ * Ez NEM küszöb-hangolás: két deszka, amiről a forrás egyiknél felfújhatót,
+ * másiknál keményet állít, sosem lehet ugyanaz a katalógus-sor (más a
+ * szerkezete, a súlya és a vastagsága). A kizárás ezért KEMÉNY, de csak akkor
+ * él, ha MINDKÉT oldal állít valamit — `null` mellett nem zárunk ki semmit.
+ */
+export function constructionConflicts(
+  candidate: MatchCandidate,
+  board: BoardForMatch,
+): boolean {
+  const a = candidate.specs?.inflatable ?? null;
+  const b = board.inflatable;
+  return a !== null && b !== null && a !== b;
+}
+
 /** Egy jelölt–deszka pár összesített pontszáma (0–1). */
 export function scorePair(
   candidate: Pick<ExtractedProduct, "brandName" | "modelName" | "modelYear">,
@@ -73,12 +115,13 @@ export function scorePair(
  * és egy téves összeolvasztás rossz árat írna a másik deszkára.
  */
 export function matchCandidate(
-  candidate: Pick<ExtractedProduct, "brandName" | "modelName" | "modelYear">,
+  candidate: MatchCandidate,
   boards: readonly BoardForMatch[],
 ): MatchResult {
   let best: { board: BoardForMatch; score: number; brandScore: number } | null = null;
 
   for (const board of boards) {
+    if (constructionConflicts(candidate, board)) continue;
     const { score, brandScore } = scorePair(candidate, board);
     if (!best || score > best.score) best = { board, score, brandScore };
   }
@@ -115,7 +158,7 @@ export type ApprovalPlan =
  *  * `new`       → **create**: tényleg új típus.
  */
 export function planApproval(
-  candidate: Pick<ExtractedProduct, "brandName" | "modelName" | "modelYear">,
+  candidate: MatchCandidate,
   boards: readonly BoardForMatch[],
 ): ApprovalPlan {
   const match = matchCandidate(candidate, boards);

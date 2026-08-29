@@ -230,7 +230,7 @@ export function createSupabaseStore(client: SupabaseClient): CrawlStore {
     async listBoardsForMatch(): Promise<BoardForMatch[]> {
       const { data, error } = await client
         .from("boards")
-        .select("id, model_name, model_year, brand:brands(name)")
+        .select("id, model_name, model_year, inflatable, brand:brands(name)")
         .eq("kind", "board");
       fail("boards olvasás", error);
       return (data ?? []).map((row) => {
@@ -242,6 +242,7 @@ export function createSupabaseStore(client: SupabaseClient): CrawlStore {
           id: row.id as string,
           modelName: row.model_name as string,
           modelYear: (row.model_year as number | null) ?? null,
+          inflatable: (row.inflatable as boolean | null) ?? null,
           brandName,
         };
       });

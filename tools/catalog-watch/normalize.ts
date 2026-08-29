@@ -2796,6 +2796,12 @@ export interface PageExtractionOptions {
    */
   modelNameFromJsonLd?: boolean;
   /**
+   * KEMÉNY deszkát jelölő URL-részletek (`crawl_config.rigidUrlPatterns`).
+   * Vegyes katalógusú boltnál a teljes oldalszöveg félrevezet: a navigáció a
+   * kemény deszka lapján is kiírja, hogy „Inflatable Paddle Boards".
+   */
+  rigidUrlPatterns?: readonly string[];
+  /**
    * A gyártó SAJÁT kategória-feliratát viselő elem osztályneve
    * (`crawl_config.categoryClass`). Termékspecifikus jel, ezért erős.
    */
@@ -2841,6 +2847,7 @@ export function extractProductFromPage(
     titleKeepSize = false,
     lengthFromTitle = false,
     modelNameFromJsonLd = false,
+    rigidUrlPatterns = [],
     categoryClass,
     categoryMethods,
     overrideText,
@@ -2938,6 +2945,7 @@ export function extractProductFromPage(
     if (token?.[1] !== undefined) specs.lengthCm = parseDimensionCm(token[1]);
   }
   if (specs.lengthCm === null) return null;
+  specs = applyRigidUrl(specs, sourceUrl, rigidUrlPatterns);
 
   const brandName = normalizeBrandName(defaultBrandName);
   const modelName = cleanModelName(rawTitle, brandName, titleNoiseWords, titleKeepSize);
@@ -3094,9 +3102,38 @@ export function extractProductsFromPage(
     sourceUrl: sizedUrl(sourceUrl, size.label),
     // A felfújhatóság az EGÉSZ oldal szövegéből derül ki (a méret-blokk csak a
     // „AeroULTRA Technology" szót viseli), ezért az alaptermékét tartjuk meg,
-    // ha a blokk nem mondja ki.
-    specs: { ...size.specs, inflatable: size.specs.inflatable ?? base.specs.inflatable },
+    // ha a blokk nem mondja ki. A recept rögzítése ezen is ÜT.
+    specs: applyRigidUrl(
+      { ...size.specs, inflatable: size.specs.inflatable ?? base.specs.inflatable },
+      sourceUrl,
+      options.rigidUrlPatterns ?? [],
+    ),
   }));
+}
+
+/**
+ * KEMÉNY deszka a recept URL-rögzítése alapján (`rigidUrlPatterns`).
+ *
+ * MIÉRT NEM ELÉG a `detectInflatable`: vegyes katalógusú boltnál a teljes
+ * oldalszöveg félrevezet. Élesben (boteboard.com) a kemény „Gatorshell"
+ * deszkák lapján is ott a navigáció „Inflatable Paddle Boards" menüpontja és a
+ * kapcsolódó felfújható termékek — a Breeze Gatorshell ettől `true`-t kapott,
+ * a másik négy `null`-t, amit a jóváhagyás `true`-ra old fel. Mind az öt
+ * kemény deszka felfújhatóként került volna a katalógusba.
+ *
+ * Ez ugyanaz a navigációs-menü csapda, ami a kategória-kinyerésnél már
+ * ismert — és a védekezés is ugyanaz: a gyártó SAJÁT, termékspecifikus jele
+ * (itt az URL-szegmens) üt a szövegen.
+ */
+function applyRigidUrl(
+  specs: BoardSpecs,
+  sourceUrl: string,
+  patterns: readonly string[],
+): BoardSpecs {
+  if (patterns.length === 0) return specs;
+  const url = sourceUrl.toLowerCase();
+  if (!patterns.some((pattern) => url.includes(pattern.toLowerCase()))) return specs;
+  return { ...specs, inflatable: false };
 }
 
 /** Méretenként EGYEDI jelölt-URL — közös URL-lel a méretek felülírnák egymást. */

@@ -196,6 +196,25 @@ export interface CrawlConfig {
    */
   modelNameFromJsonLd?: boolean;
   /**
+   * URL-részletek, amik KEMÉNY (nem felfújható) deszkát jelölnek.
+   *
+   * Élesben (boteboard.com, 2026-08-29): a bolt VEGYES katalógusú — felfújható
+   * `…-aero-…` és kemény `…-gatorshell-…` deszkákat is árul. A
+   * `detectInflatable` a TELJES oldalszövegen dolgozik, ahol a navigáció és a
+   * kapcsolódó termékek minden gatorshell-lapon is kiírják, hogy „Inflatable
+   * Paddle Boards" — ezért a Breeze Gatorshell `true`-t kapott, a többi négy
+   * pedig `null`-t. A jóváhagyás a `null`-t `true`-ra oldja fel (a katalógus
+   * túlnyomó része felfújható), tehát MIND AZ ÖT kemény deszka felfújhatóként
+   * került volna be. Ez nem szépséghiba: az adatlapon és a Deszkaválasztóban
+   * is hazugság lenne.
+   *
+   * A gyártó saját URL-je viszont egyértelműen kimondja (`Solid Paddle
+   * Boards` a Shopify `product_type`-ja is ugyanezt). Ez tehát nem
+   * heurisztika, hanem a forrás saját, ellenőrizhető besorolása — ugyanaz a
+   * fajta rögzítés, mint a `boardTypeByUrl`.
+   */
+  rigidUrlPatterns?: string[];
+  /**
    * Böngésző-renderelés akkor is, ha a nyers HTML EGYETLEN terméket sem adott.
    *
    * Alapból KI van kapcsolva, mert drága: e nélkül a fallback csak ott fut,
@@ -319,6 +338,21 @@ export interface BoardForMatch {
   brandName: string | null;
   modelName: string;
   modelYear: number | null;
+  /**
+   * FELFÚJHATÓ-E — a szerkezet KEMÉNY megkülönböztető az egyeztetésben.
+   *
+   * Élesben (boteboard.com, 2026-08-29): a márka ugyanazt a modellcsaládot
+   * felfújható („Rackham Aero") és kemény („Rackham Gatorshell") kivitelben is
+   * árulja. A névhasonlóság emiatt magas, és a trigram-egyeztető MIND A HATOT
+   * a felfújható testvérére javasolta összevonásra — a „HD Gatorshell 10'6\""-t
+   * ráadásul a „Breeze Aero 10'6\""-ra, tehát még a modellcsalád is más volt.
+   *
+   * Két deszka, amiről a forrás EGYIKNÉL felfújhatót, MÁSIKNÁL keményet
+   * állít, sosem lehet ugyanaz a katalógus-sor: más a szerkezete, más a
+   * súlya, más a vastagsága. Ez tehát nem küszöb-hangolás, hanem tény.
+   * `null` = nem tudjuk — ilyenkor nem zárunk ki semmit.
+   */
+  inflatable: boolean | null;
 }
 
 /** Egy forrás egy futásának eredménye (a summary sora). */

@@ -1,0 +1,67 @@
+{
+  "source": "BOTE",
+  "url": "https://www.boteboard.com/products/rackham-gatorshell-paddle-board",
+  "capturedAt": "2026-08-29",
+  "teaches": "KEMÉNY deszka VEGYES katalógusban: a teljes oldalszöveg félrevezet (a navigáció itt is Inflatable Paddle Boards-ot ír), a felfújhatóságot a rigidUrlPatterns rögzíti false-ra. Az egyes számú lap spec-táblája MINDKÉT méretet (12' és 14') felsorolja, NAGYBETŰS címkékkel.",
+  "rendered": false,
+  "expected": [
+    {
+      "sourceUrl": "https://www.boteboard.com/products/rackham-gatorshell-paddle-board?size=12",
+      "brandName": "BOTE",
+      "modelName": "Rackham Gatorshell 12'",
+      "rawTitle": "Rackham Gatorshell",
+      "modelYear": null,
+      "priceHuf": null,
+      "inStock": null,
+      "imageUrl": "https://www.boteboard.com/cdn/shop/files/rackham-gs-fishing.jpg?v=1760712006&width=768",
+      "imageUrls": [],
+      "boardType": "fishing",
+      "boardTypeSource": "pinnedUrl",
+      "boardTypes": [
+        {
+          "type": "fishing",
+          "source": "pinnedUrl"
+        }
+      ],
+      "specs": {
+        "lengthCm": 365.8,
+        "widthCm": 81.3,
+        "thicknessCm": 20.3,
+        "volumeL": null,
+        "weightKg": 21.8,
+        "maxLoadKg": 158.8,
+        "inflatable": false
+      },
+      "accessoryType": null
+    },
+    {
+      "sourceUrl": "https://www.boteboard.com/products/rackham-gatorshell-paddle-board?size=14",
+      "brandName": "BOTE",
+      "modelName": "Rackham Gatorshell 14'",
+      "rawTitle": "Rackham Gatorshell",
+      "modelYear": null,
+      "priceHuf": null,
+      "inStock": null,
+      "imageUrl": "https://www.boteboard.com/cdn/shop/files/rackham-gs-fishing.jpg?v=1760712006&width=768",
+      "imageUrls": [],
+      "boardType": "fishing",
+      "boardTypeSource": "pinnedUrl",
+      "boardTypes": [
+        {
+          "type": "fishing",
+          "source": "pinnedUrl"
+        }
+      ],
+      "specs": {
+        "lengthCm": 426.7,
+        "widthCm": 86.4,
+        "thicknessCm": 20.3,
+        "volumeL": null,
+        "weightKg": 23.6,
+        "maxLoadKg": 181.4,
+        "inflatable": false
+      },
+      "accessoryType": null
+    }
+  ]
+}

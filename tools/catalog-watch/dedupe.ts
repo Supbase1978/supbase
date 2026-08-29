@@ -19,7 +19,12 @@
  * TISZTA modul: se hálózat, se adatbázis. A hívó adja a jelölteket, és a
  * döntést kapja vissza.
  */
-import { KNOWN_THRESHOLD, BRAND_THRESHOLD, scorePair } from "./match.ts";
+import {
+  BRAND_THRESHOLD,
+  constructionConflicts,
+  KNOWN_THRESHOLD,
+  scorePair,
+} from "./match.ts";
 import type { BoardSpecs, ExtractedProduct } from "./types.ts";
 
 /** Egy jelölt a döntéshez szükséges mezőkkel. */
@@ -96,12 +101,18 @@ function isBetter(a: DedupeCandidate, b: DedupeCandidate): boolean {
  * kerekítenek), és ha valamelyik hossza ismeretlen, NEM vonjuk össze.
  */
 export function isSameBoard(a: DedupeCandidate, b: DedupeCandidate): boolean {
-  const { score, brandScore } = scorePair(a.extracted, {
+  const asBoard = {
     id: b.id,
     brandName: b.extracted.brandName,
     modelName: b.extracted.modelName,
     modelYear: b.extracted.modelYear,
-  });
+    inflatable: b.extracted.specs.inflatable,
+  };
+  // A SZERKEZET kizáró jel itt is: a „Rackham Aero" (felfújható) és a
+  // „Rackham Gatorshell" (kemény) nevének trigram-hasonlósága magas, de sosem
+  // ugyanaz a deszka (boteboard.com, 2026-08-29).
+  if (constructionConflicts(a.extracted, asBoard)) return false;
+  const { score, brandScore } = scorePair(a.extracted, asBoard);
   if (score < KNOWN_THRESHOLD || brandScore < BRAND_THRESHOLD) return false;
 
   const lengthA = a.extracted.specs.lengthCm;
