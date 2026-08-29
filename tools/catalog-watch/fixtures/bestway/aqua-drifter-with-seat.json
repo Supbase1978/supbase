@@ -1,0 +1,38 @@
+{
+  "source": "Bestway",
+  "url": "https://www.bestwaystore.de/en/hydro-force-sup-all-round-board-set-aqua-drifter-with-seat-335-x-91.5-x-15-cm/6532d-26",
+  "capturedAt": "2026-08-29",
+  "teaches": "Az ANGOL spec-blokk („Inflated size 335 x 91.5 x 15 cm\" + „Weight capacity 150 kg\"), és a modellnév tisztítása: a védjegy-jelek (® ™) és a címben álló MÉRET-HÁRMAS eldobása, plusz a kategória-szavak forrás-szintű zajként — enélkül a név „Hydro Force® all round board Aqua Drifter™ with seat 335 x 91.5 x\" volt. Űrtartalmat és deszka-súlyt a gyártó NEM közöl.",
+  "rendered": false,
+  "expected": [
+    {
+      "sourceUrl": "https://www.bestwaystore.de/en/hydro-force-sup-all-round-board-set-aqua-drifter-with-seat-335-x-91.5-x-15-cm/6532d-26",
+      "brandName": "Hydro-Force",
+      "modelName": "Aqua Drifter with seat",
+      "rawTitle": "Hydro Force® SUP all-round board set Aqua Drifter™ with seat 335 x 91.5 x 15 cm",
+      "modelYear": null,
+      "priceHuf": null,
+      "inStock": null,
+      "imageUrl": "https://www.bestwaystore.de/media/b9/e6/9b/1783937243/1064570-product.jpg?ts=1783937243",
+      "imageUrls": [],
+      "boardType": "allround",
+      "boardTypeSource": "nameAndUrl",
+      "boardTypes": [
+        {
+          "type": "allround",
+          "source": "nameAndUrl"
+        }
+      ],
+      "specs": {
+        "lengthCm": 335,
+        "widthCm": 91.5,
+        "thicknessCm": 15,
+        "volumeL": null,
+        "weightKg": null,
+        "maxLoadKg": 150,
+        "inflatable": true
+      },
+      "accessoryType": null
+    }
+  ]
+}

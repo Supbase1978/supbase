@@ -31,6 +31,7 @@ export interface SourceRecipe {
 import { recipe as aquaMarina } from "./aqua-marina.ts";
 import { recipe as aquaMarinaHungary } from "./aqua-marina-hungary.ts";
 import { recipe as aquatone } from "./aquatone.ts";
+import { recipe as bestway } from "./bestway.ts";
 import { recipe as bluefin } from "./bluefin.ts";
 import { recipe as decathlon } from "./decathlon.ts";
 import { recipe as fanatic } from "./fanatic.ts";
@@ -48,6 +49,7 @@ export const SOURCE_RECIPES: readonly SourceRecipe[] = [
   aquaMarina,
   aquaMarinaHungary,
   aquatone,
+  bestway,
   bluefin,
   decathlon,
   fanatic,

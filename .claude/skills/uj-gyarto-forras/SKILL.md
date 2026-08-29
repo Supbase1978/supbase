@@ -22,7 +22,7 @@ Ha a `probe` nem talál termék-URL-t, próbáld VÉGIG ezeket:
 | Út | Kinél volt ez a nyerő |
 |---|---|
 | `/sitemap_index.xml` | **Jobe** — a `/sitemap.xml` 404, az index viszont 3044 URL |
-| `/sitemap_<nyelv>.xml` | Jobe: `sitemap_en.xml` (nyelvenkénti bontás) |
+| `/sitemap_<nyelv>.xml` vagy `/<nyelv>/sitemap.xml` | Jobe: `sitemap_en.xml`; **Bestway**: a `/sitemap.xml` a NÉMET URL-eket sorolja (2999 db, egyetlen `/en/` sincs benne), az angol ág saját indexe a `/en/sitemap.xml` — és a két nyelv slugja NEM egymásból származik (`…-mit-sitz-335-x-91-5-x-15-cm` kontra `…-with-seat-335-x-91.5-x-15-cm`), tehát átírni sem lehetne |
 | `/__sitemap__/content-<régió>-<nyelv>.xml` | **Duotone/Fanatic** (Nuxt) |
 | `/wp-sitemap-posts-<típus>-1.xml` | **Gladiator** (WordPress: `…-catalog-1.xml`) |
 | `/sitemap-index.xml` | Decathlon — **de a benne hirdetett 8665 URL között EGYETLEN termékoldal sincs** |
@@ -50,6 +50,32 @@ böngésző kell (`/chrome`), vagy a kategória-oldalak kézi végigjárása.
 nyisd meg a kategória-oldalt Playwrighttal, görgess, és kattints egy
 termékkártyára — az URL elárulja a mintát (Fanatic: a kártyák NEM linkek,
 kattintásra viszont `/en/products/<slug>-<cikkszám>` jön ki).
+
+## Ha a GYÁRTÓNAK nincs bejárható oldala
+
+Nem minden márkának van termékoldala spec-táblával. Élesben (**Bestway**,
+2026-08-29) a `bestway.com` katalógusa nem ad SUP-termékoldalakat — a
+**hivatalos regionális bolt** viszont igen (`bestwaystore.de`, „Official
+Bestway® Store"). Ez legitim forrás: a gyártó saját adatát közli, csak nem a
+gyártó domainjén. A recept `kind`-ja ilyenkor `shop`, a `notes`-ban pedig ki
+kell mondani, MIÉRT nem a gyártói oldal a forrás.
+
+**Ugyanannak a márkának több boltja is lehet — mérd meg, melyik ad többet.**
+A Bestway UK-boltja (`bestwaystore.co.uk`) Shopify, a `/products.json` szolgál
+is — de a specifikáció ott csak a marketing-prózában áll (`body_html`:
+„12cm thick… up to 120kg"), táblázatban nem. A német bolt ANGOL ága viszont
+címkézett spec-blokkot ad (`Inflated size … cm`, `Weight capacity … kg`).
+Ez a `/products.json`-csapda újabb megerősítése: a Shopify önmagában nem ok
+a Shopify-módra.
+
+**AZ URL-MINTA LEGYEN STRUKTURÁLIS SZŰRŐ, ha megteheted.** A Bestway-boltban
+~55 Hydro-Force PÓTALKATRÉSZ van, köztük „replacement board" tételek, amik a
+NEVÜKBEN deszka-méretet viselnek (`…-replacement-board-for-hydro-force-sup-
+oceana-305-x-84-x-12-cm`) — pont az a fajta, amit a `classifyProduct` nehezen
+szűr. A deszkák viszont kivétel nélkül egy közös előtag alatt élnek
+(`/en/hydro-force-sup-…`), a pótalkatrészek pedig másik alatt
+(`/en/bestway-spare-part-…`). A szűk minta így strukturálisan zár ki, nem
+heurisztikával.
 
 ## 2. lépés — válaszd ki a MÓDSZERT
 
@@ -367,6 +393,34 @@ bemenetén. A változatok:
 - **A tartozék neve NEM kategória.** Minden Gladiator-oldal oldalsávjában ott
   áll a „ELITE **Touring** Fin 9″" — a szigorú minta (kategória-szó + főnév)
   védi ki.
+
+**A NYELVI ÁG NEM GARANCIA — maradhat idegen nyelvű spec-blokk**
+- Élesben (bestwaystore.de) a tíz Hydro-Force deszkából EGYNÉL az ANGOL
+  oldalon is NÉMET a spec: `Maximale Belastbarkeit: 120 kg` a `Weight
+  capacity` helyett (a bolt fordítása ennél a modellnél hiányos).
+- **Ez a legalattomosabb fajta hiány:** a MÉRET átjött, mert a
+  `305 x 84 x 12 cm` hármas nyelvfüggetlen — a TEHERBÍRÁS viszont némán üresen
+  maradt, és az KÖTELEZŐ mező (nélküle a Deszkaválasztó kizárja a deszkát).
+  A mezősor `teher 9/10`-e volt az egyetlen jel.
+- A megoldás egy-egy címke hozzáadása (`belastbarkeit`, `tragkraft`), nem a
+  forrás elejtése.
+
+**CSONKA HTTP-VÁLASZ — féladat, nem üres eredmény**
+- Élesben egy termékoldal első letöltése 79 kB-ot adott a 820 helyett, egy
+  `href="…` attribútum közepén elvágva. A kinyerés NEM üresen tért vissza: a
+  méretet a CÍMBŐL még kiolvasta, a teherbírás viszont hiányzott — vagyis egy
+  hihetőnek látszó, féladatos sor.
+- **Ha egy lap váratlanul kevesebb mezőt ad, mint a többi, ELŐSZÖR töltsd le
+  újra.** Ugyanezen a forráson a sitemap-letöltés is bukott egyszer (`0 URL`),
+  a következő futás hibátlan volt.
+
+**Modellnév: VÉDJEGY-JELEK ÉS A CÍMBEN ÁLLÓ MÉRET-HÁRMAS**
+- `Hydro Force® SUP all-round board set Aqua Drifter™ with seat 335 x 91.5 x
+  15 cm` — a `®`/`™` sosem a modellnév része, és a márkanév levágása után árva
+  jelként marad a név elején (`™ Touring Board Freesoul™ Tech`).
+- A méret-hármast EGYBEN kell kivenni: a darabonként illesztő minta csak az
+  egységes tagot (`15 cm`) vitte el, és a névben ott maradt a csonk
+  (`Aqua Drifter with seat 335 x 91.5 x`).
 
 **Modellnév: A MÉRET LEHET AZ EGYETLEN MEGKÜLÖNBÖZTETŐ JEGY**
 - A `cleanModelName` alapból kiveszi a láb-hüvelyk méretet a névből. A

@@ -1,0 +1,38 @@
+{
+  "source": "Bestway",
+  "url": "https://www.bestwaystore.de/en/hydro-force-sup-allround-board-set-oceana-305-x-84-x-12-cm/65350-25",
+  "capturedAt": "2026-08-29",
+  "teaches": "AZ ANGOL NYELVI ÁGON MARADT NÉMET SPEC-BLOKK: a bolt fordítása ennél a modellnél hiányos, és „Maximale Belastbarkeit: 120 kg\"-ot ír „Weight capacity\" helyett. A méret ettől még kijött (a hármas-minta nyelvfüggetlen), a TEHERBÍRÁS viszont némán üresen maradt — pedig az kötelező mező, nélküle a Deszkaválasztó kizárja a deszkát. A német terhelési címkék (belastbarkeit/tragkraft) ezt oldják meg.",
+  "rendered": false,
+  "expected": [
+    {
+      "sourceUrl": "https://www.bestwaystore.de/en/hydro-force-sup-allround-board-set-oceana-305-x-84-x-12-cm/65350-25",
+      "brandName": "Hydro-Force",
+      "modelName": "Oceana",
+      "rawTitle": "Hydro Force® SUP Allround Board-Set Oceana 305 x 84 x 12 cm",
+      "modelYear": null,
+      "priceHuf": null,
+      "inStock": null,
+      "imageUrl": "https://www.bestwaystore.de/media/ed/bd/d2/1786369029/887720-product.jpg?ts=1786369029",
+      "imageUrls": [],
+      "boardType": "allround",
+      "boardTypeSource": "nameAndUrl",
+      "boardTypes": [
+        {
+          "type": "allround",
+          "source": "nameAndUrl"
+        }
+      ],
+      "specs": {
+        "lengthCm": 305,
+        "widthCm": 84,
+        "thicknessCm": 12,
+        "volumeL": null,
+        "weightKg": null,
+        "maxLoadKg": 120,
+        "inflatable": null
+      },
+      "accessoryType": null
+    }
+  ]
+}

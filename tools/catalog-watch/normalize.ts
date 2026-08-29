@@ -49,8 +49,22 @@ export const BRAND_ALIASES: Record<string, string> = {
   // maradt teszt-adat) — enélkül egy "Bluefin-testing" nevű márka jönne
   // létre jóváhagyáskor.
   "bluefin-testing": "Bluefin",
-  "itiwit / decathlon": "Itiwit",
-  itiwit: "Itiwit",
+  // ITIWIT → DECATHLON (F2.1-utó-51). A márkanév MEGVÁLTOZOTT: a decathlon.hu
+  // ma mindenütt `DECATHLON` márkanevet tesz ki ugyanezekre a deszkákra, és a
+  // saját forrásunk (`sources/decathlon.ts`) is így írja. Ha az „Itiwit" külön
+  // márkaként maradna, ugyanaz a deszka KÉT márka alatt szóródna szét
+  // aszerint, hogy a bolt a régi vagy az új nevet használja.
+  "itiwit / decathlon": "Decathlon",
+  itiwit: "Decathlon",
+  decathlon: "Decathlon",
+  // BESTWAY → HYDRO-FORCE (F2.1-utó-51). A Bestway SUP-vonalának neve
+  // Hydro-Force, és a deszkák EZT a nevet viselik — a hivatalos bolt is így
+  // hirdeti őket. A kötőjel nélküli írásmód ugyanolyan gyakori, a folding
+  // pedig a szóközt nem tünteti el, tehát mindkét alak kell.
+  bestway: "Hydro-Force",
+  "hydro force": "Hydro-Force",
+  "hydro-force": "Hydro-Force",
+  hydroforce: "Hydro-Force",
   // Élesben mért eset (2026-08-20, sup-deszka.hu): UGYANAZ a márka két
   // írásmóddal — 6 jelölt „TooMuch", 4 „Too Much". Egybeírva a folding nem
   // hozza össze őket (a szóköz nem tűnik el), tehát két külön márka jönne
@@ -170,6 +184,15 @@ const AQUA_MARINA_CODE = /\b(?:BT|PA)[-\s]?(\d{2})[A-Z]{1,4}\d*\b/;
  */
 function stripSizeMarks(value: string): string {
   return value
+    // MÉRET-HÁRMAS EGYBEN: `335 x 91.5 x 15 cm` (F2.1-utó-51,
+    // bestwaystore.de). Az egyesével illesztő minták csak az EGYSÉGES tagot
+    // (`15 cm`) vitték el, és a névben ott maradt a csonk: „Aqua Drifter with
+    // seat 335 x 91.5 x". A hármas egyetlen alakzat — együtt kell kivenni,
+    // MÉG a darabonkénti minták előtt.
+    .replace(
+      /\d+(?:[.,]\d+)?\s*[x×*]\s*\d+(?:[.,]\d+)?\s*[x×*]\s*\d+(?:[.,]\d+)?\s*(?:cm|mm|m|inch|coll|"|”)?/gi,
+      " ",
+    )
     .replace(/\d+\s*'\s*\d*\s*(?:''|"|”|’’)?/g, " ")
     .replace(/\d+([.,]\d+)?\s*(cm|mm|m|inch|coll|"|”)\b/gi, " ");
 }
@@ -224,7 +247,15 @@ export function cleanModelName(
   // Az entitás-feloldás ITT történik, mert a nyers cím nem csak HTML-ből jön:
   // a Shopify `/products.json` és a JSON-LD `name` mezője is entitást ad
   // (`Indiana 12&#039;6 Touring`) — enélkül az `&#039;` a modellnév része lenne.
-  let text = decodeEntities(rawTitle).replace(/\s+/g, " ").trim();
+  // VÉDJEGY-JELEK: a `®`, `™` és `©` SOHA nem a modellnév része, viszont a
+  // gyártói címekben sűrűn ott áll (F2.1-utó-51, bestwaystore.de: „Hydro
+  // Force® SUP … Aqua Drifter™ with seat"). Kivétel nélkül eldobjuk — enélkül
+  // ugyanaz a deszka két néven állhatna, attól függően, hogy a bolt kitette-e
+  // a jelet, és a márkanév levágása után árva `™` maradna a név elején.
+  let text = decodeEntities(rawTitle)
+    .replace(/[®™©]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 
   if (brandName) {
     // A márkanevet bárhol kivesszük (nem csak prefixként): „Aqua Marina Vapor
@@ -522,6 +553,15 @@ const SPEC_LABELS = {
     // A `kg`-kötelezettség miatt a mellette kiírt font-érték („308 lbs /
     // 140 kg") nem téveszt meg — a 140 nyer, nem a 308.
     "payload",
+    // NÉMET CÍMKÉK (F2.1-utó-51, bestwaystore.de). Az angol nyelvi ágon is
+    // maradhat NÉMET spec-blokk: a tíz Hydro-Force deszkából egynél (a 2025-ös
+    // Oceana) a bolt fordítása hiányos, és a lap `Maximale Belastbarkeit:
+    // 120 kg`-ot ír `Weight capacity` helyett. A méret ettől még kijött (a
+    // hármas-minta nyelvfüggetlen), a TEHERBÍRÁS viszont némán üresen maradt —
+    // az pedig KÖTELEZŐ mező: nélküle a Deszkaválasztó kizárja a deszkát.
+    // Mindkét német szó egyértelmű terhelési fogalom, ütközés nincs.
+    "belastbarkeit",
+    "tragkraft",
     // Jobe (jobesports.com): „Recommended rider weight: Up to 160kg" — a
     // márka SEHOL nem ír „max load"-ot, ez az EGYETLEN terhelési korlátja.
     // Felhasználói döntés (2026-08-20): ezt vesszük teherbírásnak.

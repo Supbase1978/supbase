@@ -226,7 +226,53 @@ címkével áll). Ezt nem javítjuk szabállyal — a moderáció írja felül
 `verify-specs`-szel. Egy „vastagság felső küszöbe" gyanú-jel meg is bukott a
 mérésen: a valós Sprint versenydeszka 27 cm vastag.
 
-**Még hiányzó márka a listáról:** Bestway/Hydro-Force.
+**F2.1-utó-51 — Bestway / Hydro-Force bekötve (2026-08-29). A MÁRKATÁBLÁZAT
+TELJES.** A gyártónak NINCS bejárható D2C oldala (a bestway.com katalógusa nem
+ad SUP-termékoldalakat spec-táblával); a forrás a hivatalos európai bolt
+ANGOL nyelvi ága (`bestwaystore.de/en`, „Official Bestway® Store").
+
+- **NYELVENKÉNTI SITEMAP.** A `/sitemap.xml` a NÉMET URL-eket sorolja (2999 db,
+  egyetlen `/en/` sincs benne); az angol ág saját indexet kap
+  (`/en/sitemap.xml`). A két nyelv slugja NEM egymásból származik, tehát
+  átírni sem lehetne — a jó sitemapot kell megtalálni.
+- **A Shopify-testvérbolt kevesebbet ad.** A `bestwaystore.co.uk` Shopify, a
+  `/products.json` szolgál is — de a spec ott csak marketing-prózában áll. A
+  `/products.json`-csapda újabb megerősítése.
+- **AZ URL-MINTA STRUKTURÁLIS SZŰRŐ.** A boltban ~55 Hydro-Force pótalkatrész
+  van, köztük „replacement board" tételek a NEVÜKBEN deszka-mérettel — a
+  deszkák viszont kivétel nélkül `/en/hydro-force-sup-…` alatt élnek. A szűk
+  minta zár, nem a `classifyProduct` heurisztikája.
+
+Általános javítások:
+- **Védjegy-jelek** (`®`/`™`/`©`) a modellnévből — a márkanév levágása után
+  árva jelként maradtak (`™ Touring Board Freesoul™ Tech`).
+- **Méret-hármas EGYBEN** a névből: a darabonkénti minta csak az egységes
+  tagot (`15 cm`) vitte el, és ott maradt a csonk (`Aqua Drifter with seat
+  335 x 91.5 x`).
+- **Német terhelési címkék** (`belastbarkeit`, `tragkraft`). MIÉRT: az ANGOL
+  oldalon is maradhat NÉMET spec-blokk — tíz deszkából egynél (2025-ös Oceana)
+  `Maximale Belastbarkeit: 120 kg` áll. A méret ettől még kijött (a hármas
+  nyelvfüggetlen), a teherbírás viszont némán üresen maradt, és az KÖTELEZŐ
+  mező. A mezősor `teher 9/10`-e volt az egyetlen jel.
+- **Márka-aliasok**: `bestway`/`hydro force`/`hydroforce` → `Hydro-Force`, és
+  — az előző lépés következményeként — `itiwit` → `Decathlon` (a decathlon.hu
+  ma ezt a márkanevet teszi ki ugyanazokra a deszkákra, tehát különben ugyanaz
+  a deszka két márka alatt szóródna szét).
+
+Eredmény 10 URL-en: **10 deszka, 0 pótalkatrész, 0 gyanús**, `hossz ✓ · szél ✓
+· vast ✓ · térf n.a. · súly n.a. · teher ✓`. Élesben lefutott, a 10 jelölt a
+moderációs sorban. Két fixtúra őrzi (angol spec-blokk + a német spec-blokkos
+Oceana). **ŰRTARTALMAT ÉS DESZKA-SÚLYT a gyártó NEM közöl** (négy termékoldalon
+ellenőrizve; a műszaki adatlap PDF, amit a robots.txt kizár) — a
+`sync-unpublished --apply` a jóváhagyás UTÁN jelöli meg a sorokat.
+
+**ÉLESBEN MÉRT, NEM A FORRÁS HIBÁJA:** egy termékoldal első letöltése CSONKA
+válasz volt (79 kB a 820 helyett). A kinyerés nem üresen tért vissza: a méretet
+a CÍMBŐL még kiolvasta, a teherbírás viszont hiányzott — hihetőnek látszó,
+féladatos sor. Ha egy lap kevesebb mezőt ad, mint a többi: előbb töltsd le újra.
+
+**A `Kezdők_tanácsok/nepszeru_sup_markak_es_forgalmazok.md` mind a 12 márkája
+be van kötve** (+ az Indiana és két bolt a táblázaton kívül).
 
 **F2.5-utó — a vízlista 4-ről 10-re, és hét új spot (2026-08-29).** A
 felhasználó kérésére felkutattuk, hol lehet még SUP-ozni és milyen szabállyal
