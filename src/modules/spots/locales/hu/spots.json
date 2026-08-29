@@ -143,7 +143,7 @@
     "seo": {
       "list": {
         "title": "Alapvető információk — SUP-szabályok vizenként | Suptime",
-        "description": "Hajózási és használati szabályok, biztonsági tudnivalók és gyakorlati infók SUP-osoknak a Balatonon, a Tisza-tavon, a Dunán és a Tiszán."
+        "description": "Hajózási és használati szabályok, biztonsági tudnivalók és gyakorlati infók SUP-osoknak tíz magyar vízen: Balaton, Velencei-tó, Tisza-tó, Fertő tó, Duna, Ráckevei-Duna-ág, Tisza, Hármas-Körös, Szigetköz, Orfű."
       },
       "detail": {
         "title": "{{water}} — SUP-szabályok és biztonság | Suptime",
@@ -152,7 +152,7 @@
     },
     "list": {
       "title": "Alapvető információk",
-      "lead": "Mit szabad, mit nem, mire figyelj — hajózási szabályok, biztonsági tudnivalók és gyakorlati infók a négy legnépszerűbb magyar vízen. Ez nem játékos „tudod-e”-rovat, hanem tényleges vízre szállás előtti alapismeret."
+      "lead": "Mit szabad, mit nem, mire figyelj — hajózási szabályok, biztonsági tudnivalók és gyakorlati infók a tíz legnépszerűbb magyar SUP-vízen. Ez nem játékos „tudod-e”-rovat, hanem tényleges vízre szállás előtti alapismeret."
     },
     "detail": {
       "backToList": "Vissza az Alapvető információkhoz",
@@ -160,15 +160,23 @@
       "safetyTitle": "Biztonsági tudnivalók",
       "practicalTitle": "Gyakorlati infók",
       "legalBasisTitle": "Jogi alap",
-      "lastVerified": "Utoljára ellenőrizve: 2026-08-13. A szabályok időnként változnak — bizonytalanság esetén nézd meg a helyi hatóság vagy üzemeltető aktuális tájékoztatóját.",
+      "lastVerified": "Utoljára ellenőrizve: 2026-08-29. A szabályok időnként változnak — bizonytalanság esetén nézd meg a helyi hatóság vagy üzemeltető aktuális tájékoztatóját.",
       "relatedTitle": "Ne felejtsd el",
       "relatedLeash": "Póráz — mire való és melyik típus kell",
       "relatedPfd": "Mentőmellény — mikor nem hagyható el",
       "relatedSpots": "Nézd meg a spotjainkat"
     },
     "stormTable": {
-      "header": { "level": "Fokozat", "signal": "Jelzés", "action": "Teendő" },
-      "none": { "level": "Nincs jelzés", "signal": "nem villog", "action": "—" },
+      "header": {
+        "level": "Fokozat",
+        "signal": "Jelzés",
+        "action": "Teendő"
+      },
+      "none": {
+        "level": "Nincs jelzés",
+        "signal": "nem villog",
+        "action": "—"
+      },
       "level1": {
         "level": "I. fokú",
         "signal": "kb. 45 villanás percenként · 40–60 km/h széllökés várható, a szél becsapódása előtt legalább 30 perccel jelez",
@@ -183,7 +191,8 @@
     "legalBasis": {
       "0": "2000. évi XLII. törvény 87. § 43. pont — a víziközlekedésről",
       "1": "57/2011. (XI. 22.) NFM rendelet — Hajózási Szabályzat",
-      "2": "46/2001. (XII. 27.) BM rendelet — a szabad vízen tartózkodás alapvető szabályairól"
+      "2": "46/2001. (XII. 27.) BM rendelet — a szabad vízen tartózkodás alapvető szabályairól",
+      "3": "17/2002. (III. 7.) KöViM rendelet — a víziutak jegyzéke (ez dönti el, melyik vízen él a Hajózási Szabályzat)"
     },
     "waters": {
       "balaton": {
@@ -204,6 +213,27 @@
         "practical": {
           "0": "A viharjelző rendszer csak április 1. és október 31. között üzemel — ezen az időszakon kívül nincs fényjelzéses figyelmeztetés, fokozott saját figyelem kell.",
           "1": "Nézd meg Balaton-parti spotjainkat aktuális szél- és vízadatokkal."
+        }
+      },
+      "velencei-to": {
+        "title": "Velencei-tó",
+        "tag": "Fürdőeszköz-besorolás · viharjelző rendszer működik",
+        "rules": {
+          "0": "A SUP-ot itt — a Balatonhoz hasonlóan — fürdőeszköznek kezelik: ott használható, ahol a fürdés is megengedett, és mentőmellény nem jogilag kötelező. Erősen ajánlott viselni.",
+          "1": "Belső égésű motorral hajtott kishajót és csónakot a tó TELJES területén tilos üzemeltetni — a Velencei-tó ettől csendes víz.",
+          "2": "ÁLTALÁNOS parttávolság-korlátot a jogszabály a Velencei-tóra nem ad: a fürdési rendelet név szerint csak a Balatont és a Tisza-tavat korlátozza. A közkeletű „500 méteres szabály” valójában az I. fokú viharjelzés tilalma (lásd lent) — a mindennapi eligazodást a bóják adják.",
+          "3": "Tilos fürdeni, és így fürdőeszközzel közlekedni, a hajóútban, a hajóutat jelző bóják 100 méteres körzetében, kikötők és vízisportpályák területén és 100 méteres körzetében, valamint ott, ahol tiltó tábla jelzi.",
+          "4": "Kijelölt fürdőhely határától 150 méteren belül vízi sporteszköz közlekedésére szolgáló pálya nem jelölhető ki — a strandok előtti sáv a fürdőzőké.",
+          "5": "A tó nagy részét nádas borítja; a nyílt vizet csatornákon és bejáratokon át lehet elérni. A nádasban könnyű eltévedni, és nem lehet akárhol partra szállni."
+        },
+        "safetyIntro": "A Velencei-tavon április 1. és október 31. között ugyanaz a vihar-előrejelző és viharjelző szolgálat működik, mint a Balatonon és a Tisza-tavon.",
+        "safetyNotes": {
+          "0": "Sekély, gyorsan melegedő tó — a szél ugyanolyan gyorsan fel is korbácsolja. A sekély vízen rövid, meredek hullám keletkezik, ami SUP-on nehezebben kezelhető, mint a hosszú hullám.",
+          "1": "Vízimentő segélyhívó: 1817, általános segélyhívó: 112."
+        },
+        "practical": {
+          "0": "Vízre szállás a strandokról, Agárdnál és Velencénél.",
+          "1": "Nézd meg Velencei-tavi spotjainkat aktuális szél- és vízadatokkal."
         }
       },
       "tisza-to": {
@@ -227,6 +257,27 @@
           "1": "Helyi bérlő- és oktató-üzemeltetők (pl. SUP Bázis, Poroszló) friss, helyi tájékoztatást adnak indulás előtt."
         }
       },
+      "ferto-to": {
+        "title": "Fertő tó",
+        "tag": "Víziút · nemzeti park · nádascsatornák",
+        "rules": {
+          "0": "A Fertő tó víziút és egyben a Fertő–Hanság Nemzeti Park területe. A nemzeti park tájékoztatása szerint a tó TELJES vízfelülete használható vízi sportra, és saját eszközzel egyénileg is lehet közlekedni.",
+          "1": "KIVÉTEL a táblával jelzett fokozottan védett rész: jelenleg a Fertőrákosi-öböl és a hozzá tartozó vizek (Kládler-tó, Kis-kládler, Püspök-tó), valamint egyes csatornák. A Fertőrákosi-öbölben csónakot használni nem megengedett.",
+          "2": "Belső égésű motorral hajtott kishajót és csónakot a tó teljes területén tilos üzemeltetni.",
+          "3": "A soproni csatornák és a hozzájuk kapcsolódó hurokcsatornák járhatók; vízre szállni onnan vagy a tó kikötőiből (Virágosmajor, Fertőrákos) lehet."
+        },
+        "safetyIntro": "A Fertő tavon április 1. és október 31. között vihar-előrejelző és viharjelző szolgálat működik — a fokozatok ugyanazok, mint a Balatonon.",
+        "safetyNotes": {
+          "0": "A nádascsatornák mindössze 2–3 méter szélesek, mindkét oldalon náddal: könnyű eltévedni, és a csatornából nem lehet akárhol kiszállni. Menj térképpel, és mondd meg valakinek, merre indulsz.",
+          "1": "A Fertő átlagosan alig egy méter mély, erősen szélnek kitett tó — a szél gyorsan felkorbácsolja, és a nádas nem partra szállási hely.",
+          "2": "Általános segélyhívó: 112."
+        },
+        "practical": {
+          "0": "Vízre szállás a magyar oldalon Fertőrákosnál és Virágosmajornál.",
+          "1": "Szervezett, több résztvevős eseményhez a Fertő–Hanság Nemzeti Park Igazgatóságát érdemes megkeresni — védett területen vagyunk.",
+          "2": "Nézd meg a fertőrákosi spotunkat aktuális szél- és viharjelzés-adattal."
+        }
+      },
       "duna": {
         "title": "Duna",
         "tag": "Fővárosi szakasz · vízi sporteszköz-besorolás",
@@ -248,6 +299,29 @@
           "1": "Nézd meg budapesti spotjainkat aktuális vízi körülményekkel."
         }
       },
+      "rsd": {
+        "title": "Ráckevei (Soroksári)-Duna-ág",
+        "tag": "Víziút · vízi sporteszköz-besorolás · motorkorlátozás",
+        "rules": {
+          "0": "A Duna-ág teljes hossza (58–0 fkm) víziút, ezért ugyanaz a szabály, mint a Dunán: a SUP „vízi sporteszköz”, mentőmellény vagy biztonsági bokapánt (leash) viselése kötelező. 14 éven aluliaknak és nem úszóknak mentőmellény kell.",
+          "1": "TELJESEN LEZÁRT TERÜLET: a Rózsa-szigetnél, a Duna-ág nyugati oldali mellékágában (Büdös-sarok) táblákkal és bójákkal kijelölt védőterület van, ahol a vízi járművel való közlekedés tilos.",
+          "2": "A Kvassay-zsilipnél az erőművi ágba behajózni és ott lehorgonyozni tilos.",
+          "3": "A belső égésű motoros kishajók és csónakok üzemeltetése környezetvédelmi okból korlátozott, 21:00 és 6:00 között pedig az ág teljes szakaszán tilos — ettől ez a főváros környékének legcsendesebb Duna-vize.",
+          "4": "A 24,5–32,5 fkm közötti szakaszon a jobb oldali mellékágakon (Opera-, Sóskás-, Cifrus-, Raffás- és Csupics-sziget) a robbanómotor teljesen tilos; a főmederben ugyanitt 5 km/h a korlát, hullámkeltés és szívóhatás nélkül. Ugyancsak 5 km/h a dömsödi révnél, a 10–11,5 fkm közötti szakaszon.",
+          "5": "A 35–43 fkm közötti szakaszon úszólápok és hókonyok védelmében tiltott és sebességkorlátozott részek vannak (Dunavarsányi-úszóláp, Taksonyi-holtág, a Taksony Vezér híd és a Taksonyi-sziget közötti jobb parti sáv) — evezővel is kerüld a lápokat.",
+          "6": "Zsilipek és vízi műtárgyak 300 méteres, hidak, kompátkelők és vízkivételi művek 100 méteres körzete kerülendő. Az ág két végét a Kvassay- és a Tassi-zsilip zárja."
+        },
+        "safetyNotes": {
+          "0": "Az ág állóvíz jellegű, sodrása minimális — ettől kezdőbarát. A hosszú, egyenes szakaszokon viszont a szél ugyanúgy elviszi a deszkát, mint egy tavon, és visszaevezni ellenszélben sokkal nehezebb.",
+          "1": "Nyáron a nem korlátozott szakaszokon jelentős a motorcsónak-forgalom; számíts hullámkeltésre és a stégek mellől hirtelen kihajózó csónakokra.",
+          "2": "Általános segélyhívó: 112."
+        },
+        "practical": {
+          "0": "Ismert vízre szállási pontok: Ráckeve, Szigetszentmiklós, Dunavarsány, Tass, illetve a budapesti oldalon a soroksári szakasz.",
+          "1": "A robbanómotor elől elzárt mellékágak (Opera-, Sóskás-, Cifrus-, Raffás- és Csupics-sziget) a legcsendesebb és legjobb SUP-terep az egész ágon.",
+          "2": "A víziközlekedési korlátozások és a zsilipelési üzemrend a Közép-Duna-völgyi Vízügyi Igazgatóság oldalán érhetők el — hosszabb túra előtt érdemes ránézni."
+        }
+      },
       "tisza": {
         "title": "Tisza",
         "tag": "Folyó · a vízállás a fő biztonsági tényező",
@@ -265,6 +339,71 @@
           "0": "Népszerű szakasz kezdőknek és középhaladóknak: Tiszabecs → Szatmárcseke a felső folyáson — általános tempó napi 15–25 km, kényelmesen.",
           "1": "Élő vízállás-előrejelzés: eveznijo.hu „Vízállás előrejelzés” — nézd meg indulás előtt.",
           "2": "A holtágak — a folyó mentén futó oxbow-tavak — nyugodtabb, kiszámíthatóbb vizet adnak, mint a Tisza főmedre — jó választás kezdőknek vagy nyugodtabb napra."
+        }
+      },
+      "harmas-koros": {
+        "title": "Hármas-Körös",
+        "tag": "Folyó · víziút · Körös-Maros Nemzeti Park",
+        "rules": {
+          "0": "A Hármas-Körös teljes hossza (91–0 fkm) víziút, ezért a SUP itt is „vízi sporteszköz”: 14 év feletti, úszni tudó SUP-osnak mentőmellény vagy biztonsági bokapánt (leash) kell, 14 éven aluliaknak és nem úszóknak mentőmellény.",
+          "1": "A hullámtér a Körös-Maros Nemzeti Park területe. Robbanómotoros csónakkal csak a folyóvízen szabad közlekedni, a hullámtéren belüli holtágakon és kubikokon tilos — evezős eszközre ez nem korlátozás, sőt ettől lesznek a holtágak a legcsendesebb vizek.",
+          "2": "A vízi közlekedés során a sebességet úgy kell megválasztani, hogy a keltett hullámzás és zaj a lehető legkisebb legyen.",
+          "3": "Védett természeti területen hulladékot hagyni tilos, és tüzet csak a kijelölt tűzrakóhelyen szabad gyújtani.",
+          "4": "Gyomaendrődtől lefelé evezve a Békésszentandrási duzzasztó zárja a folyót. Átjutni CSAK a hajózsilipen lehet, túrakenuval és kajakkal, jellemzően 8–9 és 16–17 óra között, az üzemeltető személyzettel előre egyeztetve."
+        },
+        "safetyNotes": {
+          "0": "Duzzasztón vagy bukógáton átmenni SOHA nem szabad — potenciálisan halálos. A Békésszentandrási duzzasztónál kizárólag a hajózsilip a járható út, és azt előre egyeztetni kell.",
+          "1": "A vízállás itt is a fő biztonsági tényező: alacsony vízen zátonyok és gázlók, magas vízen jóval erősebb sodrás, és a meredek partok partra szállásra alkalmatlanná válhatnak.",
+          "2": "A hullámtéri partok nagy része védett természeti terület — kiszállni a kijelölt megállóhelyeken érdemes, nem ott, ahol épp lehetne.",
+          "3": "Általános segélyhívó: 112."
+        },
+        "practical": {
+          "0": "Vízre szállás Gyomaendrődön: a Csicsegő Vízitúra Megállóhely a Dévaványa/Körösladány felé vezető közúti hídnál, a bal parton.",
+          "1": "A hullámtéri holtágak — a XIX. századi folyószabályozáskor leválasztott egykori kanyarulatok — nyugodtabb, kiszámíthatóbb vizet adnak, mint a főmeder. Ugyanaz a logika, mint a Tiszánál.",
+          "2": "A Kettős-Körös (23–0 fkm) és a Sebes-Körös alsó szakasza (10–0 fkm) szintén víziút, ugyanezekkel a szabályokkal."
+        }
+      },
+      "szigetkoz": {
+        "title": "Szigetköz",
+        "tag": "Mosoni-Duna és mellékágak · engedély- és bejelentésköteles",
+        "rules": {
+          "0": "A Mosoni-Duna víziút (14–0 fkm), tehát a SUP itt „vízi sporteszköz”: 14 év feletti, úszni tudó SUP-osnak mentőmellény vagy biztonsági bokapánt (leash) kell, 14 éven aluliaknak és nem úszóknak mentőmellény.",
+          "1": "A LEGFONTOSABB: a Szigetköz összes víztestje védett területen fekszik, ezért a rajtuk járművel való közlekedés ENGEDÉLY- ÉS BEJELENTÉSKÖTELES. Ezt indulás előtt kell elintézni, nem a vízen.",
+          "2": "Emberi erővel hajtott eszközzel (kajak, kenu, SUP) a mellékágrendszer járható; a robbanómotorra a szigetközi szabályok szigorú korlátozást adnak.",
+          "3": "A mellékágrendszerben sok a fenékküszöb és a duzzasztó műtárgy: egy hosszabb túrán 8–10 hordozással kell számolni.",
+          "4": "Védett természeti területen hulladékot hagyni tilos, tüzet csak kijelölt helyen szabad gyújtani."
+        },
+        "safetyNotes": {
+          "0": "Az ágrendszer szövevényes, és a vízhozam műtárgyaktól függ: ugyanaz az ág az egyik napon evezhető, a másikon járhatatlan. Helyismeret nélkül kérj vezetőt, vagy menj szervezett túrával.",
+          "1": "A hordozásokhoz zárt vízicipő vagy szandál kell — a köveken mezítláb sérülésveszélyes.",
+          "2": "Vidd magaddal vízhatlan tokban a telefont, egy helyi kapcsolat számát és térképet: a mellékágakban nincs mindenütt térerő.",
+          "3": "Általános segélyhívó: 112."
+        },
+        "practical": {
+          "0": "Az engedélyt és a bejelentést indulás előtt kell intézni — a Hello Szigetköz engedélyoldalán keresztül.",
+          "1": "A Mosoni-Duna főága Győrig folyamatosan evezhető, és ezen jár a legkevesebb hordozással — kezdőnek ez a belépő.",
+          "2": "Nézd meg a győri spotunkat aktuális szél- és vízadatokkal."
+        }
+      },
+      "orfu": {
+        "title": "Orfűi tavak",
+        "tag": "Nem víziút · a Pécsi-tó a SUP-os víz",
+        "rules": {
+          "0": "Az orfűi tavak NEM szerepelnek a víziutak jegyzékén, ezért itt nem a Hajózási Szabályzat a kiindulópont, hanem a fürdésre vonatkozó szabályok és a helyi rend: az orfűi önkormányzat előírásai, az üzemeltető és a horgászegyesület szabályai.",
+          "1": "A SUP-os víz a Pécsi-tó (69 hektár, völgyzárógátas tározó). Az Aktív Víziturisztikai Központ nagy úszóstégjéről — a faluközponttól kb. 200 méterre, a tó délkeleti partján — bárki vízre szállhat; a víz ott derékig ér, kezdőnek is jó.",
+          "2": "Az Orfűi-tavon a horgászrend kimondja, hogy a tavon mindennemű vízi jármű elhelyezése tilos — oda ne vidd a deszkát.",
+          "3": "A zárógátat vízi járművel, csónakkal 50 méteren belül megközelíteni tilos; ezt bójasor jelzi.",
+          "4": "Mentőmellény itt jogilag nem kötelező, de a tó közepén ugyanúgy egyedül vagy, mint bárhol máshol — a leash mindig legyen rajtad."
+        },
+        "safetyNotes": {
+          "0": "Völgyzárógátas tározó: a part meredeken mélyülhet, és a gát környéke a legveszélyesebb pont — a bójasort komolyan kell venni.",
+          "1": "A Mecsekben a szél a völgy irányát követi, és zivatar előtt hirtelen erősödik. A tó közepéről a part 10–15 perc evezés — ennyi idővel számolj, ha fordul az idő.",
+          "2": "Általános segélyhívó: 112."
+        },
+        "practical": {
+          "0": "Több helyi kölcsönző dolgozik a Pécsi-tavon (SUP, kajak, kenu, vízibicikli) — kezdőnek ez a legegyszerűbb belépő.",
+          "1": "Az üdülőterület rendjére az orfűi önkormányzat előírásai az irányadók: parkolni csak a kijelölt helyen szabad, a partra autóval lehajtani tilos.",
+          "2": "Hatósági szempontból a Pécsi-tó és az Orfűi-tó vize egyaránt alkalmas fürdésre — vízi járművel viszont csak a Pécsi-tóra menj."
         }
       }
     }

@@ -1,9 +1,12 @@
 /**
- * /alapinfo — „Alapvető információk" áttekintő: a 4 vízhez (Balaton, Tisza-tó,
- * Duna, Tisza) tartozó SUP-szabály/biztonság/gyakorlati-infó oldalak listája.
- * VÉKONY route: statikus tartalom, nincs DB-lekérdezés (a `WATER_INFO_SLUGS`
- * a spots modulban él, lásd `src/modules/spots/waterinfo.ts`) — ugyanaz a
- * minta, mint a catalog modul `/felszereles` route-ja.
+ * /alapinfo — „Alapvető információk" áttekintő: a figyelt vizekhez tartozó
+ * SUP-szabály/biztonság/gyakorlati-infó oldalak listája. A vízlista ZÁRT és a
+ * spots modulban él — bővítése új slug + `WATER_INFO_COUNTS` sor + hu/en
+ * kulcsok (`src/modules/spots/waterinfo.ts`; a források:
+ * `docs/VIZTESTEK_KUTATAS.md`).
+ *
+ * VÉKONY route: statikus tartalom, nincs DB-lekérdezés — ugyanaz a minta,
+ * mint a catalog modul `/felszereles` route-ja.
  */
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router";

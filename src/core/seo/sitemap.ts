@@ -64,9 +64,15 @@ export const STATIC_SITEMAP_PATHS: readonly string[] = [
   "/alapinfo",
   // Alapvető információk — vizenkénti SUP-szabályok (F2-utó, statikus tartalom).
   "/alapinfo/balaton",
+  "/alapinfo/velencei-to",
   "/alapinfo/tisza-to",
+  "/alapinfo/ferto-to",
   "/alapinfo/duna",
+  "/alapinfo/rsd",
   "/alapinfo/tisza",
+  "/alapinfo/harmas-koros",
+  "/alapinfo/szigetkoz",
+  "/alapinfo/orfu",
   "/aszf",
   "/adatvedelem",
 ];

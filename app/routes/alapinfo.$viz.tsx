@@ -1,6 +1,6 @@
 /**
- * /alapinfo/:viz — egy víz (Balaton, Tisza-tó, Duna, Tisza) SUP-szabály-,
- * biztonság- és gyakorlati-infó oldala. VÉKONY route: statikus tartalom,
+ * /alapinfo/:viz — egy víz SUP-szabály-, biztonság- és gyakorlati-infó
+ * oldala. VÉKONY route: statikus tartalom,
  * nincs DB-lekérdezés — a zárt vízlista és az elem-számok a spots modulban
  * élnek (`src/modules/spots/waterinfo.ts`). Ismeretlen víz-slugra 404,
  * ugyanaz a minta, mint a catalog modul `felszereles.$kategoria.tsx`-e

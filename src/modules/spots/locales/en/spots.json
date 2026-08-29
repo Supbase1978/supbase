@@ -143,7 +143,7 @@
     "seo": {
       "list": {
         "title": "Basic info — SUP rules by water | Suptime",
-        "description": "Navigation and usage rules, safety notes and practical info for SUP paddlers on Lake Balaton, Lake Tisza, the Danube and the Tisza river."
+        "description": "Navigation and usage rules, safety notes and practical info for paddleboarders on ten Hungarian waters: Lake Balaton, Lake Velence, Lake Tisza, Lake Fertő, the Danube, the Ráckeve Danube Arm, the Tisza, the Hármas-Körös, the Szigetköz and Orfű."
       },
       "detail": {
         "title": "{{water}} — SUP rules and safety | Suptime",
@@ -152,7 +152,7 @@
     },
     "list": {
       "title": "Basic info",
-      "lead": "What's allowed, what isn't, and what to watch for — navigation rules, safety notes and practical info for the four most popular Hungarian waters. This isn't playful trivia — it's what you need to know before you launch."
+      "lead": "What's allowed, what isn't, and what to watch for — navigation rules, safety notes and practical info for the ten most popular Hungarian SUP waters. This isn't playful trivia — it's what you need to know before you get on the water."
     },
     "detail": {
       "backToList": "Back to Basic info",
@@ -160,15 +160,23 @@
       "safetyTitle": "Safety notes",
       "practicalTitle": "Practical info",
       "legalBasisTitle": "Legal basis",
-      "lastVerified": "Last verified: 2026-08-13. Rules change from time to time — if in doubt, check the current notice from the local authority or operator.",
+      "lastVerified": "Last verified: 2026-08-29. Rules change from time to time — if in doubt, check the current notice from the local authority or operator.",
       "relatedTitle": "Don't forget",
       "relatedLeash": "Leash — what it's for and which type you need",
       "relatedPfd": "Life vest — when you can't skip it",
       "relatedSpots": "Check out our spots"
     },
     "stormTable": {
-      "header": { "level": "Level", "signal": "Signal", "action": "What to do" },
-      "none": { "level": "No warning", "signal": "not flashing", "action": "—" },
+      "header": {
+        "level": "Level",
+        "signal": "Signal",
+        "action": "What to do"
+      },
+      "none": {
+        "level": "No warning",
+        "signal": "not flashing",
+        "action": "—"
+      },
       "level1": {
         "level": "Level I",
         "signal": "about 45 flashes/minute · gusts of 40–60 km/h expected, signals at least 30 minutes before the wind arrives",
@@ -183,7 +191,8 @@
     "legalBasis": {
       "0": "Act XLII of 2000, Section 87 § point 43 — on water transport",
       "1": "Decree 57/2011 (XI. 22.) NFM — Navigation Regulations",
-      "2": "Decree 46/2001 (XII. 27.) BM — basic rules for being on open water"
+      "2": "Decree 46/2001 (XII. 27.) BM — basic rules for being on open water",
+      "3": "Decree 17/2002 (III. 7.) KöViM — the register of designated waterways (this determines which waters the Navigation Regulations apply to)"
     },
     "waters": {
       "balaton": {
@@ -204,6 +213,27 @@
         "practical": {
           "0": "The storm warning system only operates between April 1 and October 31 — outside that window there is no light-signal warning at all, so pay extra attention on your own.",
           "1": "Check out our Lake Balaton spots for current wind and water data."
+        }
+      },
+      "velencei-to": {
+        "title": "Lake Velence",
+        "tag": "Classified as bathing equipment · storm warning system in operation",
+        "rules": {
+          "0": "As on Lake Balaton, a SUP is treated here as bathing equipment: it may be used where bathing is permitted, and a life vest is not legally mandatory. Wearing one is still strongly recommended.",
+          "1": "Operating small craft and boats with internal combustion engines is prohibited across the ENTIRE lake — this is what makes Lake Velence a quiet water.",
+          "2": "The law sets no GENERAL distance-from-shore limit for Lake Velence: the bathing decree names only Lake Balaton and Lake Tisza. The widely quoted “500 metre rule” is in fact the level I storm warning ban (see below) — day to day, the buoys are your guide.",
+          "3": "Bathing — and therefore moving about on bathing equipment — is prohibited in the navigation channel, within 100 metres of channel-marking buoys, in and within 100 metres of harbours and water sports courses, and anywhere a prohibition sign is posted.",
+          "4": "No water sports course may be designated within 150 metres of a designated bathing area — the strip in front of the beaches belongs to swimmers.",
+          "5": "Most of the lake is reed bed; open water is reached through channels and entrances. It is easy to get lost in the reeds, and you cannot land just anywhere."
+        },
+        "safetyIntro": "From 1 April to 31 October, Lake Velence is covered by the same storm forecasting and storm warning service as Lake Balaton and Lake Tisza.",
+        "safetyNotes": {
+          "0": "A shallow lake that warms quickly — and that the wind whips up just as quickly. Shallow water produces short, steep waves, which are harder to handle on a SUP than long swell.",
+          "1": "Water rescue emergency line: 1817, general emergency number: 112."
+        },
+        "practical": {
+          "0": "Launch from the beaches at Agárd and Velence.",
+          "1": "See our Lake Velence spots with current wind and water data."
         }
       },
       "tisza-to": {
@@ -227,6 +257,27 @@
           "1": "Local rental/instruction operators (e.g. SUP Bázis in Poroszló) can give you a fresh, local briefing before you launch."
         }
       },
+      "ferto-to": {
+        "title": "Lake Fertő",
+        "tag": "Waterway · national park · reed channels",
+        "rules": {
+          "0": "Lake Fertő is a designated waterway and at the same time part of Fertő–Hanság National Park. According to the national park, the ENTIRE water surface may be used for water sports, and you may paddle individually with your own equipment.",
+          "1": "The EXCEPTION is the strictly protected area marked with signs: currently Fertőrákos Bay and its associated waters (Kládler Lake, Kis-kládler, Püspök Lake) plus certain channels. Boats are not permitted in Fertőrákos Bay.",
+          "2": "Operating small craft and boats with internal combustion engines is prohibited across the entire lake.",
+          "3": "The Sopron channels and the loop channels connected to them are navigable; launch from there or from the lake's harbours (Virágosmajor, Fertőrákos)."
+        },
+        "safetyIntro": "From 1 April to 31 October a storm forecasting and storm warning service operates on Lake Fertő — the levels are the same as on Lake Balaton.",
+        "safetyNotes": {
+          "0": "The reed channels are only 2–3 metres wide with reed on both sides: it is easy to get lost, and you cannot climb out just anywhere. Take a map, and tell someone where you are heading.",
+          "1": "Lake Fertő averages barely a metre in depth and is highly exposed to wind — the wind whips it up fast, and the reed bed is not a landing place.",
+          "2": "General emergency number: 112."
+        },
+        "practical": {
+          "0": "On the Hungarian side, launch at Fertőrákos and Virágosmajor.",
+          "1": "For an organised event with several participants, contact the Fertő–Hanság National Park Directorate — this is protected land.",
+          "2": "See our Fertőrákos spot with current wind and storm warning data."
+        }
+      },
       "duna": {
         "title": "Danube",
         "tag": "Budapest stretch · classified as water sports equipment",
@@ -248,6 +299,29 @@
           "1": "Check out our Budapest spots for current water conditions."
         }
       },
+      "rsd": {
+        "title": "Ráckeve (Soroksár) Danube Arm",
+        "tag": "Waterway · water sports equipment · engine restrictions",
+        "rules": {
+          "0": "The whole arm (river km 58–0) is a designated waterway, so the same rule applies as on the Danube: a SUP is “water sports equipment”, and wearing a life vest or a safety ankle leash is mandatory. Under-14s and non-swimmers need a life vest.",
+          "1": "COMPLETELY CLOSED AREA: at Rózsa Island, in the western side branch of the arm (Büdös-sarok), a protected zone is marked with signs and buoys where travel by any watercraft is prohibited.",
+          "2": "At the Kvassay lock it is prohibited to enter the power plant branch by boat or to moor there.",
+          "3": "Operating small craft and boats with internal combustion engines is restricted for environmental reasons, and between 21:00 and 06:00 it is prohibited along the entire arm — which makes this the quietest Danube water near the capital.",
+          "4": "Between river km 24.5 and 32.5, combustion engines are entirely prohibited in the right-side branches (Opera, Sóskás, Cifrus, Raffás and Csupics islands); in the main channel over the same stretch the limit is 5 km/h, without creating waves or suction. The same 5 km/h applies at the Dömsöd ferry, between river km 10 and 11.5.",
+          "5": "Between river km 35 and 43 there are prohibited and speed-restricted stretches protecting floating bogs (the Dunavarsány floating bog, the Taksony backwater, and the right-bank strip between Taksony Vezér Bridge and Taksony Island) — avoid the bogs on a paddleboard too.",
+          "6": "Keep clear of locks and hydraulic structures by 300 metres, and of bridges, ferry crossings and water intakes by 100 metres. The arm is closed at both ends by the Kvassay and Tass locks."
+        },
+        "safetyNotes": {
+          "0": "The arm behaves like still water with minimal current, which makes it beginner friendly. On the long straight stretches, though, the wind carries a board away just as it would on a lake, and paddling back into the wind is much harder.",
+          "1": "In summer there is heavy motorboat traffic on the unrestricted stretches; expect wake, and boats pulling out suddenly from jetties.",
+          "2": "General emergency number: 112."
+        },
+        "practical": {
+          "0": "Known launch points: Ráckeve, Szigetszentmiklós, Dunavarsány, Tass, and on the Budapest side the Soroksár stretch.",
+          "1": "The side branches closed to combustion engines (Opera, Sóskás, Cifrus, Raffás and Csupics islands) are the quietest and best SUP water on the whole arm.",
+          "2": "The navigation restrictions and the lock operating schedule are published by the Central Danube Valley Water Directorate — worth a look before a longer tour."
+        }
+      },
       "tisza": {
         "title": "Tisza river",
         "tag": "River · water level is the main safety factor",
@@ -265,6 +339,71 @@
           "0": "A popular section for beginners and intermediates: Tiszabecs → Szatmárcseke on the upper river — a comfortable pace is around 15–25 km/day.",
           "1": "Live water level forecast: eveznijo.hu's \"Vízállás előrejelzés\" — check it before you go.",
           "2": "Backwaters — the oxbow lakes along the river — offer calmer, more predictable water than the Tisza's main channel, a good choice for beginners or a calmer day."
+        }
+      },
+      "harmas-koros": {
+        "title": "Hármas-Körös",
+        "tag": "River · waterway · Körös–Maros National Park",
+        "rules": {
+          "0": "The whole length of the Hármas-Körös (river km 91–0) is a designated waterway, so a SUP counts as “water sports equipment” here too: a swimmer over 14 needs a life vest or a safety ankle leash, while under-14s and non-swimmers need a life vest.",
+          "1": "The floodplain belongs to Körös–Maros National Park. Combustion-engine boats may only travel on the river itself — they are prohibited on the backwaters and borrow pits inside the floodplain. That is no restriction for paddlers; it is exactly what makes the backwaters the quietest water here.",
+          "2": "Choose your speed so that the waves and noise you create are as small as possible.",
+          "3": "In a protected natural area you may not leave waste behind, and fires may only be lit at designated fire sites.",
+          "4": "Paddling downstream from Gyomaendrőd, the Békésszentandrás weir closes the river. The ONLY way through is the navigation lock, for touring canoes and kayaks, typically between 08:00–09:00 and 16:00–17:00, arranged in advance with the operating staff."
+        },
+        "safetyNotes": {
+          "0": "NEVER try to pass over a weir or spillway — it can be fatal. At the Békésszentandrás weir the navigation lock is the only viable route, and it has to be arranged in advance.",
+          "1": "Water level is the main safety factor here too: shoals and fords at low water, much stronger current at high water, and steep banks that can become impossible to land on.",
+          "2": "Most of the floodplain banks are protected natural areas — land at the designated stops, not wherever you happen to be able to.",
+          "3": "General emergency number: 112."
+        },
+        "practical": {
+          "0": "Launch at Gyomaendrőd: the Csicsegő water tour stop at the road bridge towards Dévaványa/Körösladány, on the left bank.",
+          "1": "The floodplain backwaters — former meanders cut off during the 19th-century river regulation — give calmer, more predictable water than the main channel. The same logic as on the Tisza.",
+          "2": "The Kettős-Körös (river km 23–0) and the lower Sebes-Körös (river km 10–0) are designated waterways too, under the same rules."
+        }
+      },
+      "szigetkoz": {
+        "title": "Szigetköz",
+        "tag": "Mosoni-Duna and side branches · permit and notification required",
+        "rules": {
+          "0": "The Mosoni-Duna is a designated waterway (river km 14–0), so a SUP is “water sports equipment”: a swimmer over 14 needs a life vest or a safety ankle leash, while under-14s and non-swimmers need a life vest.",
+          "1": "MOST IMPORTANT: every water body in the Szigetköz lies within a protected area, so travelling on them by any craft REQUIRES A PERMIT AND NOTIFICATION. Sort this out before you set off, not on the water.",
+          "2": "The side branch system is navigable with human-powered craft (kayak, canoe, SUP); Szigetköz rules place strict limits on combustion engines.",
+          "3": "The side branch system has many sills and weirs: on a longer tour expect 8–10 portages.",
+          "4": "In a protected natural area you may not leave waste behind, and fires may only be lit at designated places."
+        },
+        "safetyNotes": {
+          "0": "The branch system is intricate and its flow depends on hydraulic structures: the same branch can be paddleable one day and impassable the next. Without solid local knowledge, take a guide or join an organised tour.",
+          "1": "Bring closed water shoes or sandals for the portages — bare feet on the rocks invite injury.",
+          "2": "Carry your phone in a waterproof case along with a local contact number and a map: there is no mobile coverage everywhere in the side branches.",
+          "3": "General emergency number: 112."
+        },
+        "practical": {
+          "0": "Arrange the permit and notification before departure — through the Hello Szigetköz permit page.",
+          "1": "The main Mosoni-Duna channel is continuously paddleable down to Győr and involves the fewest portages — that is the beginner's entry point.",
+          "2": "See our Győr spot with current wind and water data."
+        }
+      },
+      "orfu": {
+        "title": "Orfű lakes",
+        "tag": "Not a designated waterway · Lake Pécs is the SUP water",
+        "rules": {
+          "0": "The Orfű lakes are NOT on the register of designated waterways, so the Navigation Regulations are not the starting point here. What governs instead are the bathing rules and the local regime: the Orfű municipality's rules, the operator, and the angling association.",
+          "1": "The SUP water is Lake Pécs (69 hectares, a valley-dam reservoir). Anyone can launch from the large floating jetty of the Active Water Tourism Centre — about 200 metres from the village centre, on the south-eastern shore — where the water is waist deep, good for beginners too.",
+          "2": "On Lake Orfű the angling rules state that placing any kind of watercraft on the lake is prohibited — do not take your board there.",
+          "3": "Approaching the dam by any watercraft within 50 metres is prohibited; a line of buoys marks the limit.",
+          "4": "A life vest is not legally required here, but in the middle of the lake you are just as alone as anywhere else — always wear your leash."
+        },
+        "safetyNotes": {
+          "0": "This is a valley-dam reservoir: the bottom can drop away steeply near the shore, and the area around the dam is the most dangerous point — take the buoy line seriously.",
+          "1": "In the Mecsek hills the wind follows the valley and picks up suddenly before a thunderstorm. From the middle of the lake the shore is 10–15 minutes of paddling — reckon with that if the weather turns.",
+          "2": "General emergency number: 112."
+        },
+        "practical": {
+          "0": "Several local operators rent gear on Lake Pécs (SUP, kayak, canoe, pedalo) — the simplest way in for a beginner.",
+          "1": "The Orfű municipality's rules govern the resort area: park only in the designated area, and do not drive down to the shore.",
+          "2": "Both Lake Pécs and Lake Orfű are officially considered suitable for bathing — but take a watercraft onto Lake Pécs only."
         }
       }
     }
