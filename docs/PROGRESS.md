@@ -24,7 +24,7 @@
 | F2.3 Felszerelés (kiegészítők), 1–3. szakasz | ✅ kész + élesítve (2026-07-29) | 1.: `/felszereles` útmutató-oldalak. 2.: `kind`/`would_recommend` migráció (élesítve, REST-tel verifikálva) + `kind='board'` szűrő mindenhol + `/felszereles/:kategoria/:slug` termékadatlap. 3.: catalog-watch `classifyProduct` (evező/mentőmellény/pumpa jelöltté válik) + admin deszka/kiegészítő kapcsoló. Valós forrás-adat MEGÉRKEZETT (2026-07-31, ld. F2.1) — evező/mentőmellény/pumpa jelöltek a 168 pendingben, moderációra várnak |
 | F2.4 Direkt bolti ár eltávolítása | ✅ kész (2026-07-30) | A deszka- és kiegészítő-adatlapról (fejléc-ár + „Hol kapható" blokk + JSON-LD `offers`) eltávolítva — felhasználói döntés, ld. F2.4-szakasz. A `board_prices` gyűjtés (catalog-watch) VÁLTOZATLAN, a Deszkaválasztó budget-szűrője/eredmény-ára is VÁLTOZATLAN (felhasználói döntés szerint) |
 | F1.10 Záró audit + élesítés | ✅ audit **26/26** (2026-07-27) | **`docs/AUDIT_F1.md`**: az audit két mérés-jellegű hiánya pótolva (vizuális regresszió 07-26, teljesítmény-budget 07-27). HÁTRA az F1 lezárásához a publikussá tétel — a lépések a `RUNBOOK.md` **élesítési checklistjében** (domain → Resend-SMTP → Turnstile → cégadatok → `SITE_PUBLIC=true`), mind felhasználói döntés/adat |
-| F2.5 Alapvető információk | ✅ kész (2026-08-13) | Statikus SUP-szabály/biztonság/gyakorlati-infó oldalak 4 vízre (Balaton, Tisza-tó, Duna, Tisza) a Spotok modulban, `/alapinfo` + `/alapinfo/:viz`. Kétkörös forráskutatás (5+ forrás, jogszabály-hivatkozásokkal); bizonytalan tények (alkoholhatár, Tiszabecs-mérce száma) szándékosan kihagyva/óvatosan fogalmazva. hu/en kulcs-paritás ellenőrizve |
+| F2.5 Alapvető információk | ✅ kész + BŐVÍTVE (2026-08-29) | Statikus SUP-szabály/biztonság/gyakorlati-infó oldalak a Spotok modulban, `/alapinfo` + `/alapinfo/:viz`. Kezdetben 4 vízre (2026-08-13), **2026-08-29-től 10-re**: + RSD, Hármas-Körös, Velencei-tó, Fertő tó, Szigetköz, Orfű. Kétkörös forráskutatás (jogszabály-hivatkozásokkal); bizonytalan tények szándékosan kihagyva. hu/en kulcs-paritás ellenőrizve. Források: `docs/VIZTESTEK_KUTATAS.md` |
 
 ## ITINER a következő sessionnek (2026-07-28-i állapot)
 
@@ -227,6 +227,48 @@ címkével áll). Ezt nem javítjuk szabállyal — a moderáció írja felül
 mérésen: a valós Sprint versenydeszka 27 cm vastag.
 
 **Még hiányzó márka a listáról:** Bestway/Hydro-Force.
+
+**F2.5-utó — a vízlista 4-ről 10-re, és hét új spot (2026-08-29).** A
+felhasználó kérésére felkutattuk, hol lehet még SUP-ozni és milyen szabállyal
+(`docs/VIZTESTEK_KUTATAS.md`). A kutatás fő eredménye nem egy-egy szabály,
+hanem a RENDEZŐELV: melyik jogi rétegbe esik a víz.
+
+1. **Víziút-e?** A `17/2002. (III. 7.) KöViM r.` 3. sz. melléklete dönti el —
+   ott a Hajózási Szabályzat él, tehát mentőmellény vagy leash. Az **RSD
+   (58–0 fkm)** és a **Hármas-Körös (91–0 fkm)** is víziút; a Rába, a Maros és
+   a kisebb tavak nem.
+2. **Fürdőeszköz-réteg** (`46/2001. BM r.`) — szó szerint kiolvasva.
+3. **Helyi réteg** — nemzeti parki engedély, önkormányzati rend, horgászrend.
+
+Két ponton pontosította a meglévő tartalmat: a viharjelző szolgálat **NÉGY
+vízen** működik (Balaton, Velencei-tó, Tisza-tó, Fertő tó — `4. § (1)`), és a
+Velencei-tóra a jogszabály **nem ad általános parttávolság-korlátot** (az
+„500 méter" ott az I. fokú viharjelzés tilalma).
+
+Új oldalak: **RSD · Hármas-Körös · Velencei-tó · Fertő tó · Szigetköz · Orfű.**
+A megosztott jogi lista negyedik tétellel bővült (17/2002. KöViM r.). Az Orfű
+`legalBasis: false` — ott nem a Hajózási Szabályzat a kiindulópont.
+
+**Hét új spot, migrációban élesítve** (`20260717092900`, `--include-all`-lal,
+mert a GDPR-migráció sorszáma elé esik): Ráckeve (Ráckevei-Duna) ·
+Gyomaendrőd (Hármas-Körös) · Szarvas (Holt-Körös) · Körös-torok (Csongrád) ·
+Fadd-Dombori (Holt-Duna) · Gyékényesi-tó · Szentendre (Szentendrei-Duna).
+Élesben verifikálva: **22 spot**, mind renderel, a szabályoldal-link jó.
+A vízmérce csak Gyomaendrődhöz került (2756 „Gyoma", KF 550/650/750) — a
+Ráckeve és a Szentendre mérce jó folyón van, de NINCSENEK készültségi
+szintjei, és a `pickRiverAlertLevel` ilyenkor konstans 0-t adna, azaz „nincs
+készültség"-et állítana ott, ahol nem tudjuk.
+
+**Javítás:** az „Orfűi-tó" spot valójában a PÉCSI-TAVON van, és a SUP-os víz
+is az — az Orfűi-tavon a horgászrend minden vízi járművet tilt. Átnevezve
+„Orfű (Pécsi-tó)"-ra, slugostul (biztonságos, mert az oldal még nem publikus).
+
+Új regressziós háló: `waterinfo.test.ts` — a spot→víz leképezés név-alapú ága
+SORRENDFÜGGŐ („Ráckevei-Duna" ⊃ „Duna"), ezt teszt őrzi.
+
+**Nyitva maradt** (a kutatás záró szakasza sorolja): az Orfűi-tó rekreációs
+SUP-ja, a Pécsi-tó hivatalos szabályzata, a Dráva, a Deseda, a Szelidi-tó és a
+gemenci engedélyeztetés menete. Bizonytalan tény nem kerül ki az oldalra.
 
 **Nyitott kis tételek (nem blokkolók):**
 - **Advisor ár-padló** (domain-review 2.5): NEM ár-büntetés kell, hanem
