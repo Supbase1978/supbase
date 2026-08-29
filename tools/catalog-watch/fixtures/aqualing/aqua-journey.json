@@ -1,0 +1,38 @@
+{
+  "source": "Aqualing",
+  "url": "https://www.aqualing.hu/hydro-force-aqua-journey-sup-szett-274x76x12-cm-2021.html",
+  "capturedAt": "2026-08-29",
+  "teaches": "A HÁROM SORBA TÖRDELT attribútum-tábla (címke ⏎ kettőspont ⏎ érték), ahol az EGYSÉG A CÍMKÉBEN áll („Hosszúság (cm)\", „Űrtartalom (l)\"). Ez adja azt a két mezőt, amit a gyártó saját boltja NEM közöl: űrtartalom 208 l és „Deszka nettó tömege\" 11,6 kg. A csonkolt <title> utótagja („- aquali\") is levágódik.",
+  "rendered": false,
+  "expected": [
+    {
+      "sourceUrl": "https://www.aqualing.hu/hydro-force-aqua-journey-sup-szett-274x76x12-cm-2021.html",
+      "brandName": "Hydro-Force",
+      "modelName": "AQUA JOURNEY",
+      "rawTitle": "HYDRO-FORCE AQUA JOURNEY SUP szett 274 x 76 x 12 cm",
+      "modelYear": null,
+      "priceHuf": null,
+      "inStock": null,
+      "imageUrl": "https://www.aqualing.hu/shop_ordered/58086/pic/sup_kepek/hydro-force-aqua-journey-sup-szett-1.jpg",
+      "imageUrls": [],
+      "boardType": "allround",
+      "boardTypeSource": "labeledUse",
+      "boardTypes": [
+        {
+          "type": "allround",
+          "source": "labeledUse"
+        }
+      ],
+      "specs": {
+        "lengthCm": 274,
+        "widthCm": 76,
+        "thicknessCm": 12,
+        "volumeL": 208,
+        "weightKg": 11.6,
+        "maxLoadKg": 100,
+        "inflatable": true
+      },
+      "accessoryType": null
+    }
+  ]
+}

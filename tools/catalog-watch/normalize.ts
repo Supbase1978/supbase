@@ -190,7 +190,9 @@ function stripSizeMarks(value: string): string {
     // seat 335 x 91.5 x". A hármas egyetlen alakzat — együtt kell kivenni,
     // MÉG a darabonkénti minták előtt.
     .replace(
-      /\d+(?:[.,]\d+)?\s*[x×*]\s*\d+(?:[.,]\d+)?\s*[x×*]\s*\d+(?:[.,]\d+)?\s*(?:cm|mm|m|inch|coll|"|”)?/gi,
+      // Az egység MINDEN tagon állhat: `340 cm x 89 cm x 15 cm` (aqualing.hu),
+      // nem csak a hármas végén (`335 x 91.5 x 15 cm`).
+      /\d+(?:[.,]\d+)?\s*(?:cm|mm)?\s*[x×*]\s*\d+(?:[.,]\d+)?\s*(?:cm|mm)?\s*[x×*]\s*\d+(?:[.,]\d+)?\s*(?:cm|mm|m|inch|coll|"|”)?/gi,
       " ",
     )
     .replace(/\d+\s*'\s*\d*\s*(?:''|"|”|’’)?/g, " ")
@@ -489,7 +491,9 @@ const SPEC_LABELS = {
   // elrontotta a Jobe-t, ahol a próza az anyagvastagságról ír. A „wide" viszont
   // biztonságos maradt — a mérés döntött, nem a szimmetria.
   thicknessCm: ["vastagság", "magasság", "thickness"],
-  volumeL: ["térfogat", "volumen", "volume"],
+  // „Űrtartalom (l)" — a magyar boltok gyakoribb szava a térfogatra
+  // (F2.1-utó-52, aqualing.hu).
+  volumeL: ["térfogat", "űrtartalom", "urtartalom", "volumen", "volume"],
   // A csupasz „weight" szándékosan hiányzik: a „Max weight: 140 kg" sorban
   // beleillene, és a TEHERBÍRÁST írná a deszka saját súlyaként.
   // A „net weight" ELÉG specifikus ahhoz, hogy ne ütközzön a teherbírással —
@@ -502,6 +506,10 @@ const SPEC_LABELS = {
     // legspecifikusabb címke: ezért áll elöl, a puszta „súly" előtt.
     "súly (csak a deszka)",
     "deszka súlya",
+    // „Deszka nettó tömege: 11,6 kg" (aqualing.hu) — a gyártó szett-tömegétől
+    // elhatárolt, kimondottan a DESZKA tömege.
+    "nettó tömeg",
+    "netto tomeg",
     "saját súly",
     "súly",
     "tömeg",
@@ -700,6 +708,54 @@ function parseWeightKg(window: string): number | null {
  * hüvelykről vagy lábról van szó — egység nélküli hossz-számot tippelni valódi
  * hiba lenne (32 hüvelyk kontra 32 cm).
  */
+/**
+ * A CSAK KETTŐSPONTOT tartalmazó sor átugrása (F2.1-utó-52, aqualing.hu).
+ *
+ * A bolt attribútum-táblája HÁROM sorba tördeli az adatot — címke, kettőspont,
+ * érték —, mert mindhárom külön cellában áll. A „következő sor az érték"
+ * alakzat enélkül a kettőspontot olvasná értéknek, és a tábla EGYETLEN mezője
+ * sem jönne át. Egy magában álló kettőspont sosem érték.
+ */
+function valueLineAfter(lines: readonly string[], i: number): string {
+  const next = lines[i + 1] ?? "";
+  return /^[:：]$/.test(next) ? (lines[i + 2] ?? "") : next;
+}
+
+/**
+ * MÉRET A TÁBLÁZATBÓL, HA AZ EGYSÉG A CÍMKÉBEN ÁLL (F2.1-utó-52, aqualing.hu).
+ *
+ * A `fillFromLabelledLines` doc-kommentje szerint a méreteket szándékosan NEM
+ * töltjük puszta számból: ott a mértékegység dönti el, hogy 32 hüvelykről vagy
+ * 32 centiméterről van szó. A `Hosszúság (cm)` ⏎ `305` alak viszont nem
+ * találgatás — a bolt KIÍRTA az egységet, csak a címkébe, nem az érték mellé.
+ *
+ * MIÉRT FUT EZ ELSŐKÉNT, minden más méret-olvasó ELŐTT: mert ez a
+ * legmegbízhatóbb alak, és a lazább minták elronthatják. Élesben (aqualing.hu)
+ * a `Vastagság (cm) / 12` cella helyes 12-je helyett 12000 került a mezőbe,
+ * amit egy prózai minta szedett fel a szomszédos `Max. …(kg)` sorokból. A
+ * szerkesztett táblázat ÜT a szabad szövegen; a többi olvasó utána már csak a
+ * MÉG ÜRES mezőket tölti.
+ */
+function fillDimensionsFromLabelledLines(text: string, specs: BoardSpecs): void {
+  const lines = text.split("\n").map((line) => line.trim());
+  for (let i = 0; i < lines.length - 1; i += 1) {
+    const label = foldText(lines[i] ?? "").replace(/\s*[:：]$/, "");
+    if (label === "" || label.length > 40 || /\d/.test(label)) continue;
+    if (PACKAGE_QUALIFIERS.some((q) => label.includes(foldText(q)))) continue;
+    const unit = /\((cm|mm)\)/.exec(label)?.[1];
+    if (unit === undefined) continue;
+    const bare = valueLineAfter(lines, i).match(/^(\d+(?:[.,]\d+)?)$/);
+    if (bare === null) continue;
+    for (const key of ["lengthCm", "widthCm", "thicknessCm"] as const) {
+      if (specs[key] !== null) continue;
+      if (!SPEC_LABELS[key].some((c) => label.includes(foldText(c)))) continue;
+      const value = toNumber(bare[1] ?? "");
+      if (value !== null) specs[key] = unit === "mm" ? round1(value / 10) : value;
+      break;
+    }
+  }
+}
+
 function fillFromLabelledLines(text: string, specs: BoardSpecs): void {
   const fields = ["volumeL", "maxLoadKg", "weightKg"] as const;
   const lines = text.split("\n").map((line) => line.trim());
@@ -710,8 +766,13 @@ function fillFromLabelledLines(text: string, specs: BoardSpecs): void {
     // címkék többszavasak („Maximum load capacity"), ezért nem pontos
     // egyezést kérünk, hanem tartalmazást ezen a szűk soron belül.
     if (label === "" || label.length > 40 || /\d/.test(label)) continue;
-    const next = lines[i + 1] ?? "";
+    // A TARTOZÉK CÍMKÉJE NEM A DESZKÁÉ. Élesben (aqualing.hu) a tábla
+    // `Max. evezős súly (kg)` sora a „súly" needle-re illeszkedne, és az
+    // EVEZŐS megengedett testsúlyát írná a deszka tömegébe.
+    if (PACKAGE_QUALIFIERS.some((q) => label.includes(foldText(q)))) continue;
+    const next = valueLineAfter(lines, i);
     const bare = next.match(/^(?:up to|max\.?|~)?\s*(\d+(?:[.,]\d+)?)$/i);
+
     for (const field of fields) {
       if (specs[field] !== null) continue;
       if (
@@ -1147,7 +1208,18 @@ function parsePairDimensionCm(
 export function parseSpecsFromText(text: string): BoardSpecs {
   const specs: BoardSpecs = { ...EMPTY_SPECS };
 
+  // A LEGMEGBÍZHATÓBB ALAK MEGY ELŐBB: szerkesztett táblázat, ahol az egység a
+  // címkében áll (`Hosszúság (cm)` ⏎ `305`). Ld. a függvény doc-kommentjét.
+  fillDimensionsFromLabelledLines(text, specs);
+
   for (const key of ["lengthCm", "widthCm", "thicknessCm"] as const) {
+    // A MÁR MEGTALÁLT ÉRTÉKET NEM ÍRJUK FELÜL (F2.1-utó-52). Ez a menet a
+    // SZABAD SZÖVEGBEN keres, és a `specs[key] = parseDimensionCm(window)`
+    // értékadás korábban akkor is lecsapott, ha a laza minta `null`-t vagy
+    // egy elszállt számot adott — vagyis a szerkesztett táblázatból már
+    // helyesen kiolvasott méretet rontotta el. Élesben (aqualing.hu) a
+    // `Vastagság (cm) / 12` cellából így lett 12000.
+    if (specs[key] !== null) continue;
     const window = valueAfterLabel(text, SPEC_LABELS[key], ["paddle"]);
     if (window !== null) specs[key] = parseDimensionCm(window);
   }
@@ -2399,6 +2471,11 @@ const USE_FIELD_LABELS = [
   "board type",
   "hasznalat",
   "ajanlott hasznalat",
+  // „Típus: All-around/Általános" (aqualing.hu) — a bolt saját besorolása az
+  // attribútum-táblában. A szó általános, de a KOCKÁZAT alacsony: az értéket
+  // utána még fel kell ismerni kategóriaként, tehát egy „Típus: felfújható"
+  // mező semmit nem ír be.
+  "tipus",
 ];
 
 export function labelledUseText(text: string): string {
@@ -2414,7 +2491,7 @@ export function labelledUseText(text: string): string {
     }
     // b) `Versatility` ⏎ `All-around, …` — a címke egyedül alkot egy sort
     if (USE_FIELD_LABELS.includes(folded.replace(/\s*[:：]$/, ""))) {
-      const value = lines[i + 1] ?? "";
+      const value = valueLineAfter(lines, i);
       // Az érték legyen érdemi szöveg, ne a következő címke.
       if (value !== "" && value.length <= 160) return value;
     }
@@ -2676,6 +2753,21 @@ export interface PageExtractionOptions {
   overrideText?: string;
 }
 
+/**
+ * Hány karaktert vág le a cím végéről egy ismert utótag — 0, ha nem illik rá.
+ *
+ * A TELJES utótag a szokásos eset; a rövidebb darab a CSONKÍTOTT címeké
+ * (`titleSuffixes` doc-komment). Mindig a leghosszabb illeszkedő darabot adja,
+ * és 4 karakternél rövidebbet nem fogad el.
+ */
+function matchedSuffixLength(foldedTitle: string, foldedSuffix: string): number {
+  if (foldedTitle.endsWith(foldedSuffix)) return foldedSuffix.length;
+  for (let length = foldedSuffix.length - 1; length >= 4; length -= 1) {
+    if (foldedTitle.endsWith(foldedSuffix.slice(0, length))) return length;
+  }
+  return 0;
+}
+
 export function extractProductFromPage(
   html: string,
   sourceUrl: string,
@@ -2721,9 +2813,17 @@ export function extractProductFromPage(
   for (const suffix of titleSuffixes) {
     const folded = foldText(rawTitle);
     const needle = foldText(suffix);
-    if (needle !== "" && folded.endsWith(needle)) {
+    // A CSONKÍTOTT UTÓTAG IS UTÓTAG (F2.1-utó-52, aqualing.hu). A bolt fix
+    // hosszra vágja a saját `<title>`-ét, ezért a végén az utótagnak csak egy
+    // DARABJA marad: „… 305 x 84 x 12 cm - a" és „… 274x76x12 cm - aquali".
+    // Ezek nem a modellnév részei, de pontos utótagként nem adhatók meg —
+    // termékenként más hosszan csonkolódnak. A leghosszabb olyan darabot
+    // vágjuk le, ami az utótag ELEJE; a 4 karakteres alsó korlát védi ki, hogy
+    // egyetlen betű vagy szóköz miatt vágjunk.
+    const cut = needle === "" ? 0 : matchedSuffixLength(folded, needle);
+    if (cut > 0) {
       rawTitle = rawTitle
-        .slice(0, rawTitle.length - suffix.length)
+        .slice(0, rawTitle.length - cut)
         .replace(/[\s|·–—-]+$/, "");
     }
   }

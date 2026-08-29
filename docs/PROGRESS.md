@@ -271,8 +271,43 @@ válasz volt (79 kB a 820 helyett). A kinyerés nem üresen tért vissza: a mér
 a CÍMBŐL még kiolvasta, a teherbírás viszont hiányzott — hihetőnek látszó,
 féladatos sor. Ha egy lap kevesebb mezőt ad, mint a többi: előbb töltsd le újra.
 
+**F2.1-utó-52 — Aqualing bekötve: a Hydro-Force hiányzó mezőiért
+(2026-08-29).** A gyártói bolt űrtartalmat és deszka-súlyt nem közöl; a magyar
+`aqualing.hu` viszont IGEN, címkézett attribútum-táblában — és a MÉRET meg a
+TEHERBÍRÁS pontosan egyezik a gyártóival, tehát nem másik igazságot ad, hanem
+kiegészíti. Csak a Hydro-Force ágat gyűjtjük róla (a Gladiatort a gyártótól).
+
+Eredmény 32 URL-en: **15 deszka, 0 gyanús**, `hossz ✓ · szél ✓ · vast ✓ ·
+térf 11/15 · súly 3/15 · teher ✓` — a térfogat 0-ról 11-re. Élesben lefutott,
+két fixtúra őrzi. A bolt 5 olyan modellt is visz, ami a gyártói boltban nincs
+(Huaka'i Tech, White Cap, White Cap Convertible, FastBlast Tech, Aqua Wander…).
+
+Általános javítások, mind élesben mért hibára:
+- **A SZERKESZTETT TÁBLÁZAT ÜT A PRÓZÁN.** A `Vastagság (cm) / 12` cellából
+  12000 lett, mert a szabad szövegben kereső, lazább menet FELÜLÍRTA a
+  táblázatból már helyesen kiolvasott értéket. A javítás kétrészes: a
+  táblázat-olvasó fut előbb, és a lazább menetek csak a MÉG ÜRES mezőket
+  töltik. Az elv a fájlban máshol ki volt mondva — a méreteknél hiányzott.
+- **Az egység a CÍMKÉBEN is állhat** (`Hosszúság (cm)` ⏎ `:` ⏎ `305`). A
+  méretet egyébként sosem olvassuk puszta számból, de ez nem találgatás. A
+  címke, a kettőspont és az érték KÜLÖN SORBAN áll (külön táblacellák), ezért
+  a „következő sor az érték" olvasó a kettőspontot vette értéknek.
+- **Csonkolt `<title>`**: a bolt fix hosszra vágja a saját címét, így az
+  utótagnak csak egy darabja marad („… 12 cm - a", „… - aquali"). A
+  `titleSuffixes` mostantól a leghosszabb olyan darabot is levágja, ami az
+  utótag ELEJE (min. 4 karakter).
+- **Magyar címkék**: `űrtartalom` (térfogat), `nettó tömeg` (deszka-súly),
+  `Típus` (labeledUse). A `Max. evezős súly` NEM a deszka tömege — a
+  tartozék-kizárás védi.
+
+**AMIT NEM VETTÜNK ÁT** (sportvilag.com, ugyanezért felmerült): a bolti
+„Súlya: 11,6 kg" ott a SZETT tömege (a lap alatta sorolja a tartalmat), és
+ugyanaz a 381×79×15-ös méret az egyik boltban „Glider Elite / 150 kg", a
+másikban „Aqua Excursion / 120 kg" — az két külön modell, nem elírás. Csak a
+kimondott alakot fogadjuk el („Deszka nettó tömege", „Tábla súlya").
+
 **A `Kezdők_tanácsok/nepszeru_sup_markak_es_forgalmazok.md` mind a 12 márkája
-be van kötve** (+ az Indiana és két bolt a táblázaton kívül).
+be van kötve** (+ az Indiana és három bolt a táblázaton kívül).
 
 **F2.5-utó — a vízlista 4-ről 10-re, és hét új spot (2026-08-29).** A
 felhasználó kérésére felkutattuk, hol lehet még SUP-ozni és milyen szabállyal

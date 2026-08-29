@@ -394,6 +394,45 @@ bemenetén. A változatok:
   áll a „ELITE **Touring** Fin 9″" — a szigorú minta (kategória-szó + főnév)
   védi ki.
 
+**A HIÁNYZÓ MEZŐT MÁSIK FORRÁS PÓTOLHATJA — de csak ha EGYEZIK a többiben**
+- Élesben: a Bestway hivatalos boltja űrtartalmat és deszka-súlyt nem közöl, a
+  magyar **aqualing.hu** viszont igen — és a MÉRET meg a TEHERBÍRÁS pontosan
+  egyezik a gyártóival. Ez a döntő: nem másik igazságot ad, hanem kiegészíti.
+- Ahol ELTÉR, ott ne fésülj: ugyanannak a méretnek (381×79×15) az egyik
+  boltban „Glider Elite / 150 kg", a másikban „Aqua Excursion / 120 kg" a
+  neve és az adata — az két külön modell, nem elírás.
+- **A bolti „Súlya: 11,6 kg" gyakran a SZETT tömege** (a lap alatta sorolja a
+  tartalmat: deszka, evező, pumpa, hátizsák). Csak a kimondott alak fogadható
+  el: „Deszka nettó tömege", „Tábla súlya".
+
+**A SZERKESZTETT TÁBLÁZAT ÜT A PRÓZÁN — és ezt sorrendben kell kikényszeríteni**
+- Élesben (aqualing.hu) a `Vastagság (cm) / 12` cellából **12000** lett: a
+  szabad szövegben kereső, lazább minta FELÜLÍRTA a táblázatból már helyesen
+  kiolvasott értéket, mert az értékadás akkor is lecsapott, ha a laza minta
+  szemetet adott.
+- A javítás kétrészes: a táblázat-olvasó fut ELŐBB, és a lazább menetek csak a
+  MÉG ÜRES mezőket töltik. Ez az elv a fájlban máshol már ki volt mondva — itt
+  a méreteknél hiányzott.
+
+**AZ EGYSÉG A CÍMKÉBEN IS ÁLLHAT**
+- `Hosszúság (cm)` ⏎ `:` ⏎ `305`. A méretet egyébként sosem olvassuk puszta
+  számból (32 hüvelyk kontra 32 cm) — de ez NEM találgatás: a bolt kiírta az
+  egységet, csak a címkébe. Enélkül az egész attribútum-tábla használhatatlan
+  volt, és mivel a méret hiánya kizár, a lapok fele NULLA terméket adott.
+- **A címke, a kettőspont és az érték KÜLÖN SORBAN is állhat** (külön
+  táblacellák). A „következő sor az érték" olvasó enélkül a kettőspontot veszi
+  értéknek. Egy magában álló kettőspont sosem érték.
+
+**A `<title>` LEHET FIX HOSSZRA VÁGVA**
+- A shop a saját címét csonkolja, ezért a végén az utótagnak csak egy DARABJA
+  marad: `… 12 cm - a`, `… 274x76x12 cm - aquali`, sőt olykor a méret közepén
+  vág (`… evezővel 340`). Pontos utótagként ez nem adható meg — a
+  `titleSuffixes` ezért a leghosszabb olyan darabot is levágja, ami az utótag
+  ELEJE (min. 4 karakter).
+- A címben maradt árva méret-szám bennmarad; a modellnév ettől eltér a gyártói
+  forrásétól („FREESOUL TECH 340" kontra „Freesoul Tech"). Ez moderátori
+  összefésülés, nem kinyerési hiba.
+
 **A NYELVI ÁG NEM GARANCIA — maradhat idegen nyelvű spec-blokk**
 - Élesben (bestwaystore.de) a tíz Hydro-Force deszkából EGYNÉL az ANGOL
   oldalon is NÉMET a spec: `Maximale Belastbarkeit: 120 kg` a `Weight

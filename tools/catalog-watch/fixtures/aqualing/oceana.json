@@ -1,0 +1,38 @@
+{
+  "source": "Aqualing",
+  "url": "https://www.aqualing.hu/hydro-force-oceana-sup-szett-305x84x12-cm-2021.html",
+  "capturedAt": "2026-08-29",
+  "teaches": "A táblázat ÜT a prózán: a „Vastagság (cm) / 12\" cellából korábban 12000 lett, mert egy lazább, szabad szövegben kereső minta felülírta a helyes értéket. A kategóriát a bolt saját „Típus: All-around/Általános\" mezője adja (labeledUse), és a csonkolt <title> („- a\") utótagja is levágódik.",
+  "rendered": false,
+  "expected": [
+    {
+      "sourceUrl": "https://www.aqualing.hu/hydro-force-oceana-sup-szett-305x84x12-cm-2021.html",
+      "brandName": "Hydro-Force",
+      "modelName": "OCEANA",
+      "rawTitle": "HYDRO-FORCE OCEANA felfújható sup szett 305 x 84 x 12 cm",
+      "modelYear": null,
+      "priceHuf": null,
+      "inStock": null,
+      "imageUrl": "https://www.aqualing.hu/img/58086/SUP_131/500x500/SUP_131.webp?time=1712144829",
+      "imageUrls": [],
+      "boardType": "allround",
+      "boardTypeSource": "labeledUse",
+      "boardTypes": [
+        {
+          "type": "allround",
+          "source": "labeledUse"
+        }
+      ],
+      "specs": {
+        "lengthCm": 305,
+        "widthCm": 84,
+        "thicknessCm": 12,
+        "volumeL": 250,
+        "weightKg": null,
+        "maxLoadKg": 120,
+        "inflatable": true
+      },
+      "accessoryType": null
+    }
+  ]
+}
