@@ -609,6 +609,7 @@ export function extractPageProducts(
     titleNoiseWords: config.titleNoiseWords ?? [],
     titleKeepSize: config.titleKeepSize === true,
     lengthFromTitle: config.lengthFromTitle ?? false,
+    modelNameFromJsonLd: config.modelNameFromJsonLd ?? false,
     categoryClass: config.categoryClass,
     // A recept által kért kategória-módszerek (F2.1-utó-45) — lista hiányában
     // mind fut, tehát a viselkedés változatlan.

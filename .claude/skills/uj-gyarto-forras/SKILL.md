@@ -448,6 +448,49 @@ bemenetén. A változatok:
   táblacellák). A „következő sor az érték" olvasó enélkül a kettőspontot veszi
   értéknek. Egy magában álló kettőspont sosem érték.
 
+**A `<title>` NEM MINDIG A MODELLNÉV — a JSON-LD gyakran igen**
+- Élesben (boteboard.com, 2026-08-29) a címek termékenként MÁS SEO-sablont
+  követnek, és kettő egyenesen kárt okozott: az EasyRider Aero címe a
+  modellnevet KI SEM MONDJA („Beginner Inflatable Paddle Board — SUP & Kayak |
+  BOTE"), a LowRider Aero Tandemé pedig a „Kayak" szót viseli — attól a
+  `classifyProduct` KAJAKNAK nézte és eldobta a deszkát. Mindkettő NULLA
+  jelöltet adott, pedig a spec-blokkjuk hibátlan volt.
+- Ugyanezeken az oldalakon a `Product` JSON-LD `name`-je pontosan a
+  katalógusnév. Erre való a `modelNameFromJsonLd`: a spec marad a SZÖVEGBŐL
+  (`htmlOnly`), CSAK a nevet vesszük át a JSON-LD-ből. **Ha a címek zajosak,
+  nézd meg a JSON-LD-t, mielőtt `titleCutAfter`/`titleNoiseWords` sorozatot
+  írsz** — ott sokszor készen áll a tiszta név.
+
+**EGY OLDAL, TÖBB MÉRET — MÁSODIK ELRENDEZÉS: MEGISMÉTELT CÍMKÉZETT BLOKK**
+- A Fanatic-féle transzponált tábla (fej + méretsorok) mellett van egy másik
+  alak: a gyártó a TELJES címkézett blokkot megismétli méretenként, egy
+  méret-fejléc alatt (`10′4″ Specs` … `11′4″ Specs`). A szokásos,
+  első-találat-nyer olvasás ilyenkor a MÁSODIK méretet NÉMÁN elveszti — a WULF
+  Aero 11'4"-e külön deszka, 315 LBS teherbírással a 10'4" 250-je helyett.
+  Ezt a `parseLabeledSpecsBySize` bontja.
+- **A fejléc alakja UGYANAZON A BOLTON belül változhat**: a WULF-nál
+  `10′4″ Specs` (tipográfiai jel), a Breeze-nél `10'6" BREEZE AERO` (egyenes
+  jel + modellnév).
+- **A VARIÁNS-VÁLASZTÓ gombjai alakra ugyanolyan fejlécek** (`10'4"`, `11'4"`),
+  csak nincs mögöttük spec-blokk. A védelem nem a fejléc alakja, hanem az
+  EGYEZÉS: a fejléc kimondja a hosszt, és a blokkból kiolvasott hossznak ezzel
+  egyeznie kell.
+
+**A `boardTypeByUrl` KULCSA RÉSZSTRING — a slug kevés lehet**
+- Élesben (boteboard.com) a `kids-fLOWRIDER-AERO-HYBRID-PADDLE-BOARD` URL
+  TARTALMAZZA a `lowrider-aero-hybrid-paddle-board` kulcsot, ezért a
+  gyerekdeszka `allround` lett `kids` helyett. A `/products/` előtaggal
+  megadott TELJES útvonal zárja ki. Ugyanez az URL-mintáknál: az
+  `-aero-hybrid-paddle-board` minta épp a `lowrider-aero-TANDEM-hybrid-…`
+  deszkát hagyta ki, mert a változat neve beékelődik.
+
+**A `multiUseProse` A VÁSÁRLÓI ÉRTÉKELÉSEKRE IS RÁUGRIK**
+- Élesben (boteboard.com) a Rackham Aero kategóriáját egy REVIEW CÍMÉBŐL adta:
+  „Ultimate Fishing and Exploration Inflatable SUP" — Donovan S. Történetesen
+  jót mondott, de az vélemény, nem gyártói állítás, és a következő értékelés
+  bármit írhat. Ahol az oldal értékeléseket is renderel, mérd le a módszert, és
+  a `categoryMethods`-ból hagyd ki.
+
 **A `<title>` LEHET FIX HOSSZRA VÁGVA**
 - A shop a saját címét csonkolja, ezért a végén az utótagnak csak egy DARABJA
   marad: `… 12 cm - a`, `… 274x76x12 cm - aquali`, sőt olykor a méret közepén
@@ -537,6 +580,10 @@ bemenetén. A változatok:
   adhatja termékképnek.
 - Shopify-forrásnál a `/products.json` `images[]` tömbje ingyen adja a
   galériát (7–22 kép/termék).
+- **A galéria akkor is jár, ha a crawl `htmlOnly`.** A `backfill-gallery` a
+  BOLTOT nézi, nem a bejárás módját: a BOTE-nál a spec a szövegből jött, a
+  3–8 képes galéria mégis egyetlen paranccsal megvolt. Shopify-boltnál tehát
+  a `--html-only` út SEM jelent kép-lemondást.
 
 ## 5. lépés — felvétel és ellenőrzés
 

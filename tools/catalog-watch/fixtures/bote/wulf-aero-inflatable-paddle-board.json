@@ -1,0 +1,67 @@
+{
+  "source": "BOTE",
+  "url": "https://www.boteboard.com/products/wulf-aero-inflatable-paddle-board",
+  "capturedAt": "2026-08-29",
+  "teaches": "EGY oldal KÉT deszkát ír le, méretenként megismételt címkézett blokkban (10′4″ Specs / 11′4″ Specs) — a bontás nélkül a nagyobb méret elveszne. Az Avg. Weight a deszka saját tömege, a Loaded Bag Weight a becsomagolt szetté. Űrtartalmat a márka nem közöl.",
+  "rendered": false,
+  "expected": [
+    {
+      "sourceUrl": "https://www.boteboard.com/products/wulf-aero-inflatable-paddle-board?size=10-4",
+      "brandName": "BOTE",
+      "modelName": "WULF Aero 10'4\"",
+      "rawTitle": "WULF Aero",
+      "modelYear": null,
+      "priceHuf": null,
+      "inStock": null,
+      "imageUrl": "https://www.boteboard.com/cdn/shop/files/wulf-aero-lightweight-portable.jpg?v=1760046412&width=768",
+      "imageUrls": [],
+      "boardType": "allround",
+      "boardTypeSource": "pinnedUrl",
+      "boardTypes": [
+        {
+          "type": "allround",
+          "source": "pinnedUrl"
+        }
+      ],
+      "specs": {
+        "lengthCm": 315,
+        "widthCm": 86.4,
+        "thicknessCm": 15.2,
+        "volumeL": null,
+        "weightKg": 9.1,
+        "maxLoadKg": 113.4,
+        "inflatable": true
+      },
+      "accessoryType": null
+    },
+    {
+      "sourceUrl": "https://www.boteboard.com/products/wulf-aero-inflatable-paddle-board?size=11-4",
+      "brandName": "BOTE",
+      "modelName": "WULF Aero 11'4\"",
+      "rawTitle": "WULF Aero",
+      "modelYear": null,
+      "priceHuf": null,
+      "inStock": null,
+      "imageUrl": "https://www.boteboard.com/cdn/shop/files/wulf-aero-lightweight-portable.jpg?v=1760046412&width=768",
+      "imageUrls": [],
+      "boardType": "allround",
+      "boardTypeSource": "pinnedUrl",
+      "boardTypes": [
+        {
+          "type": "allround",
+          "source": "pinnedUrl"
+        }
+      ],
+      "specs": {
+        "lengthCm": 345.4,
+        "widthCm": 86.4,
+        "thicknessCm": 15.2,
+        "volumeL": null,
+        "weightKg": 10,
+        "maxLoadKg": 142.9,
+        "inflatable": true
+      },
+      "accessoryType": null
+    }
+  ]
+}

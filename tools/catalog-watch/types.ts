@@ -182,6 +182,20 @@ export interface CrawlConfig {
    */
   lengthFromTitle?: boolean;
   /**
+   * A MODELLNÉV A `Product` JSON-LD `name`-jéből, a `<title>` helyett.
+   *
+   * Élesben (boteboard.com, 2026-08-29): a `<title>` termékenként MÁS
+   * SEO-sablon — az EasyRider Aeróé ki sem mondja a modellnevet („Beginner
+   * Inflatable Paddle Board — SUP & Kayak | BOTE"), a LowRider Aero Tandemé
+   * pedig a „Kayak" szót viseli, amitől a `classifyProduct` KAJAKNAK nézte és
+   * eldobta a deszkát. A JSON-LD `name` ugyanezeken az oldalakon pontosan a
+   * katalógusnév.
+   *
+   * A spec ettől függetlenül a szövegből jön (`htmlOnly`): a JSON-LD itt
+   * egyetlen méretet sem ad, CSAK a nevet vesszük át belőle.
+   */
+  modelNameFromJsonLd?: boolean;
+  /**
    * Böngésző-renderelés akkor is, ha a nyers HTML EGYETLEN terméket sem adott.
    *
    * Alapból KI van kapcsolva, mert drága: e nélkül a fallback csak ott fut,

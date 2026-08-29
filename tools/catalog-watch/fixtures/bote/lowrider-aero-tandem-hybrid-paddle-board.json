@@ -1,0 +1,38 @@
+{
+  "source": "BOTE",
+  "url": "https://www.boteboard.com/products/lowrider-aero-tandem-hybrid-paddle-board",
+  "capturedAt": "2026-08-29",
+  "teaches": "A <title> a KAYAK szót viseli (LowRider Aero Tandem Duo Paddle Board | SUP Kayak Hybrid), amitől a classifyProduct kajaknak nézte és eldobta a deszkát — a modellnév a Product JSON-LD-ből jön (modelNameFromJsonLd). A Board Weight a deszkáé, a Seat Weight a tartozék ülésé.",
+  "rendered": false,
+  "expected": [
+    {
+      "sourceUrl": "https://www.boteboard.com/products/lowrider-aero-tandem-hybrid-paddle-board",
+      "brandName": "BOTE",
+      "modelName": "LowRider Aero Tandem",
+      "rawTitle": "LowRider Aero Tandem",
+      "modelYear": null,
+      "priceHuf": null,
+      "inStock": null,
+      "imageUrl": "https://www.boteboard.com/cdn/shop/files/lowrider-lightweight-portable.jpg?v=1760970514&width=768",
+      "imageUrls": [],
+      "boardType": "allround",
+      "boardTypeSource": "pinnedUrl",
+      "boardTypes": [
+        {
+          "type": "allround",
+          "source": "pinnedUrl"
+        }
+      ],
+      "specs": {
+        "lengthCm": 350.5,
+        "widthCm": 91.4,
+        "thicknessCm": 15.2,
+        "volumeL": null,
+        "weightKg": 16.8,
+        "maxLoadKg": 226.8,
+        "inflatable": true
+      },
+      "accessoryType": null
+    }
+  ]
+}

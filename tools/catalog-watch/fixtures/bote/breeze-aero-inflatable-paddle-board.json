@@ -1,0 +1,67 @@
+{
+  "source": "BOTE",
+  "url": "https://www.boteboard.com/products/breeze-aero-inflatable-paddle-board",
+  "capturedAt": "2026-08-29",
+  "teaches": "A méret-fejléc UGYANAZON A BOLTON belül másik írásmódot használ, mint a WULF: egyenes láb-hüvelyk jel és a modellnév a fejlécben (10'6\" BREEZE AERO), nem a 10′4″ Specs alak. A bontásnak mindkettőt fognia kell.",
+  "rendered": false,
+  "expected": [
+    {
+      "sourceUrl": "https://www.boteboard.com/products/breeze-aero-inflatable-paddle-board?size=10-6",
+      "brandName": "BOTE",
+      "modelName": "Breeze Aero 10'6\"",
+      "rawTitle": "Breeze Aero",
+      "modelYear": null,
+      "priceHuf": null,
+      "inStock": null,
+      "imageUrl": "https://www.boteboard.com/cdn/shop/files/breeze-aero-duo-hero-2_2000x.jpg?v=1775762370&width=768",
+      "imageUrls": [],
+      "boardType": "allround",
+      "boardTypeSource": "pinnedUrl",
+      "boardTypes": [
+        {
+          "type": "allround",
+          "source": "pinnedUrl"
+        }
+      ],
+      "specs": {
+        "lengthCm": 320,
+        "widthCm": 86.4,
+        "thicknessCm": 15.2,
+        "volumeL": null,
+        "weightKg": 9.1,
+        "maxLoadKg": 113.4,
+        "inflatable": true
+      },
+      "accessoryType": null
+    },
+    {
+      "sourceUrl": "https://www.boteboard.com/products/breeze-aero-inflatable-paddle-board?size=11-6",
+      "brandName": "BOTE",
+      "modelName": "Breeze Aero 11'6\"",
+      "rawTitle": "Breeze Aero",
+      "modelYear": null,
+      "priceHuf": null,
+      "inStock": null,
+      "imageUrl": "https://www.boteboard.com/cdn/shop/files/breeze-aero-duo-hero-2_2000x.jpg?v=1775762370&width=768",
+      "imageUrls": [],
+      "boardType": "allround",
+      "boardTypeSource": "pinnedUrl",
+      "boardTypes": [
+        {
+          "type": "allround",
+          "source": "pinnedUrl"
+        }
+      ],
+      "specs": {
+        "lengthCm": 350.5,
+        "widthCm": 86.4,
+        "thicknessCm": 15.2,
+        "volumeL": null,
+        "weightKg": 10,
+        "maxLoadKg": 142.9,
+        "inflatable": true
+      },
+      "accessoryType": null
+    }
+  ]
+}

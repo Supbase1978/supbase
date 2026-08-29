@@ -330,6 +330,51 @@ vast ✓ · térf ✓ · súly 0/10 · teher ✓`. Élesben lefutott, két fixt�
   szett tömege (15 kg), a második a deszkáé (10,5) — megkülönböztethetetlenül.
   Ez NEM „a gyártó nem közli" eset, ezért nem `unpublishedFields`.
 
+**F2.1-utó-54 — BOTE (boteboard.com) bekötve, amerikai gyártó (2026-08-29).**
+Felhasználói lelet. Shopify-bolt, de a `/products.json` SPEC NÉLKÜLI (marketing-
+próza + szín-variánsok), a teljes „Technical Specs" viszont ott a nyers HTML-ben
+— tehát `htmlOnly`, sokadszor. Eredmény 9 URL-en: **11 deszka, 0 gyanús**,
+`hossz ✓ · szél ✓ · vast ✓ · térf n.a. · súly ✓ · teher ✓`. Élesben lefutott,
+négy fixtúra őrzi, a galéria (3–8 kép/deszka) is megvan.
+
+- **A `<title>` NEM a modellnév — a JSON-LD igen** (új kapcsoló:
+  `modelNameFromJsonLd`). Két deszka NULLA jelöltet adott hibátlan spec-blokk
+  mellett: az EasyRider Aero címe a nevet KI SEM MONDJA („Beginner Inflatable
+  Paddle Board — SUP & Kayak"), a LowRider Aero Tandemé pedig a „Kayak" szót
+  viseli, amitől a `classifyProduct` kajaknak minősítette és eldobta. A
+  `Product` JSON-LD `name`-je mind a 9 modellnél pontosan a katalógusnév. A
+  spec marad a szövegből; CSAK a nevet vesszük át.
+- **EGY oldal, KÉT deszka — új elrendezés**: a gyártó méretenként MEGISMÉTLI a
+  teljes címkézett blokkot egy méret-fejléc alatt (`10′4″ Specs` …
+  `11′4″ Specs`). Az első-találat-nyer olvasás a nagyobb méretet NÉMÁN
+  elvesztette — pedig a WULF Aero 11'4" külön deszka, 315 LBS teherbírással a
+  10'4" 250-je helyett. Erre való a `parseLabeledSpecsBySize`. A fejléc alakja
+  UGYANAZON A BOLTON belül kétféle (`10′4″ Specs` kontra `10'6" BREEZE AERO`),
+  és a VARIÁNS-VÁLASZTÓ gombjai alakra ugyanolyan fejlécek — a védelem ezért
+  nem a fejléc alakja, hanem az EGYEZÉS: a fejléc kimondta hossznak és a
+  blokkból kiolvasottnak meg kell egyeznie.
+- **`Avg. Weight`** — új címke a deszka saját tömegére. Mellette ott a
+  `Loaded Bag Weight` (becsomagolt szett) és a `Seat Weight` (tartozék ülés);
+  egyikbe sem illik bele az „avg", ezért a szűk címke elhatárol.
+- **A RÉSZSTRING-illesztés kétszer harapott**: a `kids-fLOWRIDER-AERO-HYBRID-…`
+  URL tartalmazza a `lowrider-aero-hybrid-paddle-board` kulcsot (a gyerekdeszka
+  `allround` lett `kids` helyett → a kulcs mostantól teljes útvonal), az
+  `-aero-hybrid-paddle-board` minta pedig épp a `lowrider-aero-TANDEM-hybrid-…`
+  deszkát hagyta ki, mert a változat neve beékelődik.
+- **A `multiUseProse` a VÁSÁRLÓI ÉRTÉKELÉSRE ugrott rá** („Ultimate Fishing and
+  Exploration Inflatable SUP" — Donovan S). Történetesen jót mondott, de az
+  vélemény, nem gyártói állítás — a `categoryMethods` ezért itt `pinnedUrl` +
+  `nameAndUrl`, a besorolás pedig a gyártó saját `activity:` címkéiből
+  (`All Purpose`/`Recreation`/`Leisure` → allround, `Expedition` → touring,
+  `Fishing` → fishing; a `Family Fun` célközönség, nem használat).
+- **Űrtartalmat a márka egyetlen modellnél sem közöl** (mind a 9 termékoldalon
+  ellenőrizve) — `unpublishedFields: ["volumeL"]`.
+- **A galéria `htmlOnly` mellett is jár**: a `backfill-gallery` a BOLTOT nézi,
+  nem a bejárás módját — Shopify-boltnál a `--html-only` út SEM jelent
+  kép-lemondást.
+- **Kimaradt, külön döntésre**: a `…-gatorshell-…` KEMÉNY deszkák (Breeze, HD,
+  Rackham) ugyanezen a bolton élnek; a kérés a felfújható kollekcióra szólt.
+
 **Amit MEGVIZSGÁLTUNK ÉS ELVETETTÜNK** (rendeljkinait.hu „2025 legjobb
 termékei" cikk, felhasználói lelet): szponzorált, másodlagos kompiláció. Négy
 ellenőrizhető modellből egy egyezett a saját, elsődleges forrásból mért

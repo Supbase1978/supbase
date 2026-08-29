@@ -34,6 +34,7 @@ import { recipe as aqualing } from "./aqualing.ts";
 import { recipe as aquatone } from "./aquatone.ts";
 import { recipe as bestway } from "./bestway.ts";
 import { recipe as bluefin } from "./bluefin.ts";
+import { recipe as bote } from "./bote.ts";
 import { recipe as decathlon } from "./decathlon.ts";
 import { recipe as fanatic } from "./fanatic.ts";
 import { recipe as funwater } from "./funwater.ts";
@@ -54,6 +55,7 @@ export const SOURCE_RECIPES: readonly SourceRecipe[] = [
   aquatone,
   bestway,
   bluefin,
+  bote,
   decathlon,
   fanatic,
   funwater,

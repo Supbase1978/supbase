@@ -1,0 +1,38 @@
+{
+  "source": "BOTE",
+  "url": "https://www.boteboard.com/products/easyrider-aero-hybrid-paddle-board",
+  "capturedAt": "2026-08-29",
+  "teaches": "A <title> a modellnevet KI SEM MONDJA (Beginner Inflatable Paddle Board — SUP & Kayak | BOTE) — enélkül a jelölt neve SEO-mondat lenne, a JSON-LD name viszont pontosan EasyRider Aero.",
+  "rendered": false,
+  "expected": [
+    {
+      "sourceUrl": "https://www.boteboard.com/products/easyrider-aero-hybrid-paddle-board",
+      "brandName": "BOTE",
+      "modelName": "EasyRider Aero",
+      "rawTitle": "EasyRider Aero",
+      "modelYear": null,
+      "priceHuf": null,
+      "inStock": null,
+      "imageUrl": "https://www.boteboard.com/cdn/shop/files/easyrider-lightweight-portable.jpg?v=1760972240&width=768",
+      "imageUrls": [],
+      "boardType": "allround",
+      "boardTypeSource": "pinnedUrl",
+      "boardTypes": [
+        {
+          "type": "allround",
+          "source": "pinnedUrl"
+        }
+      ],
+      "specs": {
+        "lengthCm": 315,
+        "widthCm": 91.4,
+        "thicknessCm": 15.2,
+        "volumeL": null,
+        "weightKg": 12.7,
+        "maxLoadKg": 113.4,
+        "inflatable": true
+      },
+      "accessoryType": null
+    }
+  ]
+}

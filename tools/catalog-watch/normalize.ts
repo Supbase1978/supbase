@@ -13,6 +13,7 @@ import { decodeEntities, htmlToText } from "./html.ts";
 import { buildCategoryMethods } from "./methods/catalog.ts";
 import type { CategoryMethod, MethodContext } from "./methods/index.ts";
 import { displayImageUrl, MAX_GALLERY_CANDIDATES } from "./images.ts";
+import { findProductNodes, pickPrimaryProduct } from "./jsonld.ts";
 import {
   boardTypeFromDescription,
   boardTypeFromUsage,
@@ -526,6 +527,14 @@ const SPEC_LABELS = {
     // „Max User Weight"), az „item weight" viszont egyértelműen a termék
     // saját tömege — és nem ütközik a szomszédos „Package Weight"-tel.
     "item weight",
+    // Élesben mért címke (boteboard.com, 2026-08-29): „Avg. Weight: 20 LBS" —
+    // a gyártó a deszka saját tömegét ÁTLAGKÉNT közli (a kézi ragasztás miatt
+    // modellenként szór). Ugyanazon a lapon áll a „Loaded Bag Weight: 29 LBS"
+    // (a becsomagolt szett) és a „Seat Weight: 5.6 LBS" (a tartozék ülés) —
+    // egyikbe sem illik bele az „avg", ezért a szűk címke elhatárol.
+    "avg. weight",
+    "avg weight",
+    "average weight",
   ],
   maxLoadKg: [
     "teherbírás",
@@ -2768,6 +2777,25 @@ export interface PageExtractionOptions {
   /** A hossz a cím elejéről, ha egyetlen mező sem adja (`lengthFromTitle`). */
   lengthFromTitle?: boolean;
   /**
+   * A MODELLNÉV A JSON-LD-BŐL, a `<title>` helyett
+   * (`crawl_config.modelNameFromJsonLd`).
+   *
+   * Élesben (boteboard.com, 2026-08-29): a `<title>` SEO-mondat, ami
+   * termékenként MÁS sablont követ, és az EasyRider Aeróé a modellnevet ki sem
+   * mondja („Beginner Inflatable Paddle Board — SUP & Kayak | BOTE"). A
+   * `LowRider Aero Tandem`-é pedig a „Kayak" szót viseli, amitől a
+   * `classifyProduct` kajaknak nézte és eldobta a deszkát. Ugyanezeken az
+   * oldalakon a `Product` JSON-LD `name`-je pontosan a katalógusnév
+   * („EasyRider Aero", „LowRider Aero Tandem").
+   *
+   * MIÉRT OPT-IN, és miért nem az egész JSON-LD-ág: a spec ezeknél a
+   * forrásoknál a SZÖVEGBEN van (`htmlOnly`), a JSON-LD egyetlen méretet sem
+   * ad — csak a NEVET vesszük át belőle. Ahol a `<title>` a jobb (a legtöbb
+   * forrásnál a JSON-LD neve a variánsnevet is viseli), ott a kapcsoló nélkül
+   * minden változatlan.
+   */
+  modelNameFromJsonLd?: boolean;
+  /**
    * A gyártó SAJÁT kategória-feliratát viselő elem osztályneve
    * (`crawl_config.categoryClass`). Termékspecifikus jel, ezért erős.
    */
@@ -2812,6 +2840,7 @@ export function extractProductFromPage(
     titleNoiseWords = [],
     titleKeepSize = false,
     lengthFromTitle = false,
+    modelNameFromJsonLd = false,
     categoryClass,
     categoryMethods,
     overrideText,
@@ -2820,6 +2849,15 @@ export function extractProductFromPage(
   let rawTitle = htmlToText(titleMatch?.[1] ?? "")
     .replace(/\s+/g, " ")
     .trim();
+  // A NÉV A JSON-LD-BŐL, ha a recept kéri (`modelNameFromJsonLd`). A
+  // `<title>` ilyenkor SEO-mondat, a JSON-LD `name` viszont a katalógusnév —
+  // ld. az opció doc-kommentjét. Csak akkor él, ha tényleg van neve: üres
+  // találatnál marad a cím.
+  if (modelNameFromJsonLd) {
+    const node = pickPrimaryProduct(findProductNodes(html));
+    const name = typeof node?.name === "string" ? node.name.trim() : "";
+    if (name !== "") rawTitle = decodeEntities(name).replace(/\s+/g, " ").trim();
+  }
   for (const marker of titleCutAfter) {
     const at = rawTitle.indexOf(marker);
     if (at <= 0) continue;
@@ -3031,17 +3069,136 @@ export function extractProductsFromPage(
   if (!base) return [];
 
   const pageText = options.overrideText ?? htmlToText(html);
-  const sizes = parseTransposedSpecsBySize(pageText);
-  if (sizes.length < 2) return [base];
+  const transposed = parseTransposedSpecsBySize(pageText);
+  if (transposed.length >= 2) {
+    return transposed.map((size) => ({
+      ...base,
+      // A blokk első cellája a gyártó SAJÁT, méretet is viselő neve
+      // („FLY AIR S|L|T 9'8\"") — ez pontosabb, mint a cím + méret ragasztása.
+      modelName: sizedModelName(size.label, base.brandName) || base.modelName,
+      sourceUrl: sizedUrl(sourceUrl, size.label),
+      specs: size.specs,
+    }));
+  }
 
-  return sizes.map((size) => ({
+  // MÁSIK ELRENDEZÉS: méretenként MEGISMÉTELT címkézett blokk (boteboard.com).
+  // A fejléc itt puszta méret („10′4″ Specs"), nem modellnév — a nevet ezért a
+  // CÍMBŐL (illetve a JSON-LD-ből) kapott alapnévhez ragasztjuk. Enélkül két
+  // azonos nevű „WULF Aero" jelölt születne, holott két külön deszkáról van
+  // szó (250 kontra 315 LBS teherbírás).
+  const labeled = parseLabeledSpecsBySize(pageText);
+  if (labeled.length < 2) return [base];
+  return labeled.map((size) => ({
     ...base,
-    // A blokk első cellája a gyártó SAJÁT, méretet is viselő neve
-    // („FLY AIR S|L|T 9'8\"") — ez pontosabb, mint a cím + méret ragasztása.
-    modelName: sizedModelName(size.label, base.brandName) || base.modelName,
-    sourceUrl: `${sourceUrl}${sourceUrl.includes("?") ? "&" : "?"}size=${sizeSlug(size.label)}`,
-    specs: size.specs,
+    modelName: `${base.modelName} ${size.label}`,
+    sourceUrl: sizedUrl(sourceUrl, size.label),
+    // A felfújhatóság az EGÉSZ oldal szövegéből derül ki (a méret-blokk csak a
+    // „AeroULTRA Technology" szót viseli), ezért az alaptermékét tartjuk meg,
+    // ha a blokk nem mondja ki.
+    specs: { ...size.specs, inflatable: size.specs.inflatable ?? base.specs.inflatable },
   }));
+}
+
+/** Méretenként EGYEDI jelölt-URL — közös URL-lel a méretek felülírnák egymást. */
+function sizedUrl(sourceUrl: string, label: string): string {
+  return `${sourceUrl}${sourceUrl.includes("?") ? "&" : "?"}size=${sizeSlug(label)}`;
+}
+
+/**
+ * MÉRETENKÉNTI bontás CÍMKÉZETT spec-blokkokból (boteboard.com, 2026-08-29).
+ *
+ * A `parseTransposedSpecsBySize` testvére, MÁS elrendezésre. Ott EGY
+ * címke-blokk alatt állnak a méretek értéksorai (táblázat-fej + sorok); itt
+ * viszont a gyártó a TELJES címkézett blokkot MEGISMÉTLI méretenként, egy
+ * méret-fejléc alatt:
+ *
+ *   10′4″ Specs                 (vagy: `10'6" BREEZE AERO`)
+ *   Dimensions:  10′4″ L × 34″ W × 6″ D
+ *   Capacity:    250 LBS
+ *   Avg. Weight: 20 LBS
+ *   …
+ *   11′4″ Specs
+ *   Dimensions:  11′4″ L × 34″ W × 6″ D
+ *   …
+ *
+ * A szokásos `parseSpecsFromText` ilyen lapon a MÁSODIK méretet elveszti: a
+ * címke-kereső az első találatot veszi, és az a 10′4″-é. A SUP-nál viszont a
+ * méret maga a termék — a WULF Aero 10′4″ és 11′4″ két külön deszka, más
+ * teherbírással (250 kontra 315 LBS).
+ *
+ * MI VÉD A TÉVES DARABOLÁS ELLEN — nem a fejléc alakja, hanem az EGYEZÉS:
+ * a fejléc kimondja a hosszt, és a blokkból kiolvasott hossznak ezzel EGYEZNIE
+ * kell (1 cm tűréssel). Ez nem elméleti óvatosság: ugyanezen a lapon a
+ * VARIÁNS-VÁLASZTÓ gombjai (`10'4"`, `11'4"`) alakra pontosan ugyanolyan
+ * fejlécek, csak nem áll mögöttük spec-blokk. Az egyezés-vizsgálat ezeket
+ * némán elejti, a valódi blokkokat pedig átengedi.
+ *
+ * AZONOS MÉRET KÉTSZER: ha mégis két fejléc ad ugyanarra a méretre blokkot, a
+ * TÖBB kitöltött mezőt adó nyer — a fél blokk sosem írhatja felül a teljeset.
+ */
+const SIZE_HEADING = /^(\d{1,2}\s*['\u2019\u2032](?:\s*\d{1,2}\s*(?:''|["\u201d\u2033])?)?)(?:\s+[A-Za-z][\w.'-]*){0,3}$/;
+/** Egy méret-blokk legfeljebb ennyi sor — a spec-blokk élesben ~15. */
+const SIZED_BLOCK_MAX_LINES = 40;
+/** A fejléc és a blokk hossza legfeljebb ennyivel térhet el (cm). */
+const SIZED_LENGTH_TOLERANCE_CM = 1;
+
+export function parseLabeledSpecsBySize(text: string): SizedSpecs[] {
+  const lines = text
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => line !== "");
+
+  const heads: { at: number; label: string; lengthCm: number }[] = [];
+  for (let i = 0; i < lines.length; i += 1) {
+    const line = lines[i] ?? "";
+    if (line.length > 40) continue;
+    const match = line.match(SIZE_HEADING);
+    if (match?.[1] === undefined) continue;
+    const lengthCm = parseDimensionCm(match[1]);
+    if (lengthCm === null) continue;
+    heads.push({ at: i, label: normalizeSizeLabel(match[1]), lengthCm });
+  }
+  if (heads.length < 2) return [];
+
+  const byLabel = new Map<string, SizedSpecs>();
+  for (let k = 0; k < heads.length; k += 1) {
+    const head = heads[k];
+    if (head === undefined) continue;
+    const next = heads[k + 1]?.at ?? lines.length;
+    const end = Math.min(next, head.at + 1 + SIZED_BLOCK_MAX_LINES);
+    const specs = parseSpecsFromText(lines.slice(head.at + 1, end).join("\n"));
+    // A FEJLÉC MONDJA KI, melyik deszkáé a blokk. Ha a kiolvasott hossz nem
+    // ezt adja, akkor nem spec-blokk állt mögötte (variáns-gomb, prózasor).
+    if (
+      specs.lengthCm === null ||
+      Math.abs(specs.lengthCm - head.lengthCm) > SIZED_LENGTH_TOLERANCE_CM
+    ) {
+      continue;
+    }
+    const seen = byLabel.get(head.label);
+    if (seen === undefined || filledSpecFields(specs) > filledSpecFields(seen.specs)) {
+      byLabel.set(head.label, { label: head.label, specs });
+    }
+  }
+  return byLabel.size < 2 ? [] : [...byLabel.values()];
+}
+
+/**
+ * EGYSÉGES méretjelölés a modellnévhez: `10\u20324\u2033` és `10'4"` ugyanaz a
+ * deszka. Élesben (boteboard.com) a WULF tipográfiai, a Breeze egyenes jelet
+ * használ UGYANAZON a boltban — a katalógusban ne két írásmód szerepeljen.
+ */
+function normalizeSizeLabel(label: string): string {
+  return label
+    .replace(/\s+/g, "")
+    .replace(/[\u2019\u2032]/g, "'")
+    .replace(/''|[\u201d\u2033]/g, '"');
+}
+
+/** Hány mezőt tölt ki ez a specifikáció? (Az azonos méretű blokkok döntője.) */
+function filledSpecFields(specs: BoardSpecs): number {
+  return (["lengthCm", "widthCm", "thicknessCm", "volumeL", "weightKg", "maxLoadKg"] as const)
+    .filter((key) => specs[key] !== null).length;
 }
 
 /** A méret-címke mint modellnév: márkanév nélkül, a MÉRET megtartásával. */
