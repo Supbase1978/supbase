@@ -78,12 +78,26 @@ describe("dedupeCandidates — a gyártói név a hivatalos", () => {
     const groups = dedupeCandidates([
       // A gyártónál nincs súly, a boltnál igen.
       candidate("brand1", "Monster", "brand_site", { weightKg: null, maxLoadKg: 150 }),
-      candidate("shop1", "Monster", "shop", { weightKg: 9.5, maxLoadKg: 999 }),
+      // A bolti teherbírás ELTÉR, de csak kerekítésnyit: az összevonás így is
+      // megtörténik (a nagyságrendi eltérés MÁS deszkát jelentene — ld. az
+      // „eltérő közölt adat" tesztet lent).
+      candidate("shop1", "Monster", "shop", { weightKg: 9.5, maxLoadKg: 152 }),
     ]);
     expect(groups[0]?.winner.extracted.specs.weightKg).toBe(9.5);
     // A gyártó SAJÁT értékét viszont NEM írja felül a bolti.
     expect(groups[0]?.winner.extracted.specs.maxLoadKg).toBe(150);
     expect(groups[0]?.filledFields).toContain("weightKg");
+  });
+
+  it("ELTÉRŐ közölt űrtartalom/teherbírás mellett NEM von össze", () => {
+    // Élesben (islesurfandsup.com): az `Explorer Pro v1` és az `Explorer Pro 2`
+    // ugyanolyan hosszú és majdnem azonos nevű, de a gyártó 330 kontra 365
+    // litert és 325 kontra 425 fontot ír — két modell-generáció.
+    const groups = dedupeCandidates([
+      candidate("a", "Explorer Pro v1", "brand_site", { volumeL: 330, maxLoadKg: 147 }),
+      candidate("b", "Explorer Pro 2", "brand_site", { volumeL: 365, maxLoadKg: 193 }),
+    ]);
+    expect(groups).toHaveLength(2);
   });
 
   it("a kategória-tippet is átveszi, ha a nyertesnek nincs", () => {

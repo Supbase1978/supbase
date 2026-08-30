@@ -10,6 +10,7 @@
  */
 import type { GearCategory } from "../../src/modules/catalog/gear.ts";
 import { decodeEntities, htmlToText } from "./html.ts";
+import { embeddedSpecText } from "./embedded.ts";
 import { buildCategoryMethods } from "./methods/catalog.ts";
 import type { CategoryMethod, MethodContext } from "./methods/index.ts";
 import { displayImageUrl, MAX_GALLERY_CANDIDATES } from "./images.ts";
@@ -368,6 +369,28 @@ export function parseDimensionCm(text: string): number | null {
   if (/\d\s*[-–—]\s*\d+\s*(?:cm|mm|m\b|''|"|”|″|inch|in\b|coll)/i.test(text)) {
     return null;
   }
+  // VEGYES TÖRT: `4 1/2"` = 4,5 hüvelyk (F2.1-utó-55, islesurfandsup.com).
+  // Az amerikai gyártók a vastagságot így írják. A minta nélkül a
+  // hüvelyk-olvasó a NEVEZŐT vette értéknek (`2"` = 5,1 cm a valós 11,4
+  // helyett) — hihető szám, csendes hiba. Az egész és a tört rész között
+  // szóköz áll; a tört önmagában (`1/2"`) is érvényes.
+  // AZ ABLAK ELEJÉN kell állnia. Enélkül a minta a szöveg BÁRMELY pontján
+  // illeszkedik, és élesben (islesurfandsup.com, Versa 2.0) a VASTAGSÁG
+  // törtje (`4 1/2\"`) a hosszba és a szélességbe is bekerült: 11,4 × 11,4 ×
+  // 11,4 cm lett egy 317 × 81 × 11 cm-es deszkából. A címke-melletti érték
+  // mindig az ablak elején áll.
+  const fraction = text.match(
+    /^[\s:：]*(?:(\d+)\s+)?(\d+)\s*\/\s*(\d+)\s*(?:''|"|”|″|inch|in\b)/i,
+  );
+  if (fraction) {
+    const whole = toNumber(fraction[1] ?? "0") ?? 0;
+    const numerator = toNumber(fraction[2] ?? "");
+    const denominator = toNumber(fraction[3] ?? "");
+    if (numerator !== null && denominator !== null && denominator !== 0) {
+      return round1((whole + numerator / denominator) * CM_PER_INCH);
+    }
+  }
+
   // A GYÁRTÓ SAJÁT, ZÁRÓJELES ÁTVÁLTÁSA ÜT MINDENT (F2.1-utó-50).
   //
   // Élesben (decathlon.hu) minden méret KÉT írásmóddal áll, az imperiálissal
@@ -1444,6 +1467,15 @@ const WEIGHT_QUALIFIERS = [
 
 /** Felfújható vagy kemény deszka? Bizonytalanságnál null. */
 export function detectInflatable(text: string): boolean | null {
+  // A CÍMKÉZETT MEZŐ ÜT a szövegen (F2.1-utó-55). Ahol a forrás kimondja
+  // (`Type: Inflatable`, `Type: Hardboard`), ott nincs mit következtetni — és
+  // a szöveg-alapú olvasás épp ott téved a legkönnyebben: élesben
+  // (islesurfandsup.com) MINDEN termékoldal említi a kemény modelleket is, így
+  // a felfújható deszkák `null`-t kaptak volna, holott a gyártó a spec-mezőben
+  // egyértelműen írja. Ugyanaz az elv, ami a `labelledUseText`-nél már megvolt:
+  // a kettőspontos alakot csak a spec írja.
+  const declared = declaredConstruction(text);
+  if (declared !== null) return declared;
   const folded = foldText(text);
   // A SZERKEZETI jelek is számítanak, nem csak a szó szerinti „inflatable":
   // a drop-stitch mag, a nagynyomású szelep és a PVC-réteg fizikai tény egy
@@ -1464,6 +1496,32 @@ export function detectInflatable(text: string): boolean | null {
   const rigid = hasRigidClaim(folded);
   if (inflatable && !rigid) return true;
   if (rigid && !inflatable) return false;
+  return null;
+}
+
+/**
+ * A forrás KIMONDOTT szerkezet-mezője (`Type: Inflatable`), ha van.
+ *
+ * A `Type`/`Construction`/`Típus` címke a sor elején, kettősponttal — ez a
+ * spec-tábla alakja, prózában nem fordul elő. Az érték csak akkor dönt, ha
+ * egyértelmű: ismeretlen szónál (`Type: All-Around`) `null`, és marad a
+ * szöveg-alapú olvasás.
+ *
+ * AZ „INFLATABLE HARDBOARD" FELFÚJHATÓ. Élesben (islesurfandsup.com) ez a
+ * gyártó saját konstrukció-neve a merevebb, felfújható Pro-szériára — a
+ * „hardboard" itt a KELTETT ÉRZETRE utal, nem a szerkezetre. A jelző dönt: ha
+ * az érték felfújhatót is mond, felfújható.
+ */
+function declaredConstruction(text: string): boolean | null {
+  for (const line of text.split("\n")) {
+    const match = foldText(line.trim()).match(
+      /^(?:type|construction|tipus|szerkezet|kivitel)\s*[:：]\s*(.+)$/,
+    );
+    const value = match?.[1];
+    if (value === undefined) continue;
+    if (value.includes("felfujhato") || value.includes("inflatable")) return true;
+    if (hasRigidClaim(value)) return false;
+  }
   return null;
 }
 
@@ -1835,7 +1893,10 @@ export function classifyProduct(product: {
   const identity = foldText(
     `${product.rawTitle} ${product.classificationHint ?? ""}`,
   );
-  if (NEVER_BOARD_KEYWORDS.some((word) => identity.includes(word))) {
+  if (
+    NEVER_BOARD_KEYWORDS.some((word) => identity.includes(word)) &&
+    !isPaddleBoardHybrid(identity)
+  ) {
     return { kind: "ignore" };
   }
 
@@ -1892,6 +1953,32 @@ export function classifyProduct(product: {
     (hasSup && product.boardType !== null) ||
     (lengthInRange && dimensionsCoherent);
   return isBoard ? { kind: "board" } : { kind: "ignore" };
+}
+
+/**
+ * SUP–KAJAK HIBRID: a „kayak" szó itt NEM kajakot jelent (F2.1-utó-55).
+ *
+ * Élesben (islesurfandsup.com, 2026-08-29) a gyártó „Stand Up Paddle Boards"
+ * kollekciójának FELE hibrid: `Switch Paddle Board Kayak Hybrid`,
+ * `Explorer Pro Hybrid SUP-Kayak Inflatable Paddle Board`. Ezek deszkák, amikre
+ * ülés is tehető — állva evezhetők, a spec-blokkjuk deszka-spec, és a gyártó a
+ * SUP-kollekcióba sorolja őket. A `kayak` kulcsszóra viszont mind a HAT
+ * kiesett, hibátlan adat mellett. Ugyanez a szó vitte el korábban a BOTE
+ * LowRider Aero Tandemjét is.
+ *
+ * A kivétel SZŰK, és ugyanazt az alakot követi, mint a `hasRigidClaim`
+ * „like"-kivétele: a kajak-szó akkor nem kizáró, ha a termék azonossága
+ * KIMONDJA, hogy hibrid, ÉS deszkának is nevezi magát. A tiszta kajak
+ * (`flywater-micro-skiff-kayak`) egyiket sem teszi, tehát változatlanul kiesik.
+ */
+function isPaddleBoardHybrid(identity: string): boolean {
+  if (!/\bhybrid|\bhibrid/.test(identity)) return false;
+  return (
+    identity.includes("paddle board") ||
+    identity.includes("paddleboard") ||
+    identity.includes("paddle-board") ||
+    /\bi?sup\b/.test(identity)
+  );
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -2492,6 +2579,11 @@ const USE_FIELD_LABELS = [
   "recommended use",
   "intended use",
   "board type",
+  // ISLE (islesurfandsup.com): `Ideal For: All Around Paddling`. A gyártó saját
+  // használat-mezője a beágyazott adatban. A prózában is gyakori fordulat
+  // („ideal for beginners"), de az itt nem számít: az első menet a sor ELEJÉN
+  // álló, KETTŐSPONTOS alakot kívánja, a második a címkét EGYEDÜL egy sorban.
+  "ideal for",
   "hasznalat",
   "ajanlott hasznalat",
   // „Típus: All-around/Általános" (aqualing.hu) — a bolt saját besorolása az
@@ -2802,6 +2894,13 @@ export interface PageExtractionOptions {
    */
   rigidUrlPatterns?: readonly string[];
   /**
+   * A beágyazott JSON horgonya (`crawl_config.embeddedSpecAnchor`). Fejetlen
+   * boltnál a spec egy `<script>`-ben áll, amit a `htmlToText` nem lát —
+   * a horgony utáni blokkból `címke: érték` sorok készülnek, és azok a
+   * SZÖVEG ELÉ kerülnek. Ld. `embedded.ts`.
+   */
+  embeddedSpecAnchor?: string;
+  /**
    * A gyártó SAJÁT kategória-feliratát viselő elem osztályneve
    * (`crawl_config.categoryClass`). Termékspecifikus jel, ezért erős.
    */
@@ -2848,6 +2947,7 @@ export function extractProductFromPage(
     lengthFromTitle = false,
     modelNameFromJsonLd = false,
     rigidUrlPatterns = [],
+    embeddedSpecAnchor,
     categoryClass,
     categoryMethods,
     overrideText,
@@ -2905,7 +3005,14 @@ export function extractProductFromPage(
   }
   if (rawTitle === "") return null;
 
-  const pageText = overrideText ?? htmlToText(html);
+  // A BEÁGYAZOTT JSON SPECIFIKÁCIÓJA A SZÖVEG ELÉ kerül (`embeddedSpecAnchor`).
+  // Fejetlen boltnál ez az EGYETLEN hely, ahol a spec létezik; és mert a
+  // címke-kereső az ELSŐ találatot veszi, az előre fűzés egyben elsőbbséget is
+  // ad neki a lap prózájával szemben — ugyanaz az elv, ami a szerkesztett
+  // táblázatot a próza elé sorolja.
+  const embedded = embeddedSpecText(html, embeddedSpecAnchor ?? "");
+  const bodyText = overrideText ?? htmlToText(html);
+  const pageText = embedded === "" ? bodyText : `${embedded}\n${bodyText}`;
   // Elsőként a szokásos, címke-melletti parse; ha az üres, a két hasábos
   // („transzponált") elrendezés fallbackje.
   let specs = parseSpecsFromText(pageText);

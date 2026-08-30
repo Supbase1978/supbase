@@ -40,6 +40,7 @@ import { recipe as fanatic } from "./fanatic.ts";
 import { recipe as funwater } from "./funwater.ts";
 import { recipe as gladiator } from "./gladiator.ts";
 import { recipe as indiana } from "./indiana.ts";
+import { recipe as isle } from "./isle.ts";
 import { recipe as jobe } from "./jobe.ts";
 import { recipe as redPaddle } from "./red-paddle.ts";
 import { recipe as starboard } from "./starboard.ts";
@@ -61,6 +62,7 @@ export const SOURCE_RECIPES: readonly SourceRecipe[] = [
   funwater,
   gladiator,
   indiana,
+  isle,
   jobe,
   redPaddle,
   starboard,

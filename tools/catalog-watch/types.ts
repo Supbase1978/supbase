@@ -215,6 +215,22 @@ export interface CrawlConfig {
    */
   rigidUrlPatterns?: string[];
   /**
+   * A JSON-KULCS, ami a beágyazott adatban a termék SAJÁT spec-blokkját jelöli.
+   *
+   * FEJETLEN (headless) boltnál a HTML csak React-váz: a spec egy `<script>`-be
+   * ágyazott API-válaszban áll, amit a `htmlToText` sosem lát. Élesben
+   * (islesurfandsup.com, 2026-08-29) ott van mind a hat mező, űrtartalommal
+   * együtt — CSV-alakban, egy JSON-mezőben.
+   *
+   * MIÉRT KELL HORGONY: ugyanazon a lapon TÖBB ilyen blokk áll, a
+   * termékajánlóké is. Az `explorer-pro-2` lapján három van, és az ELSŐ a
+   * szomszéd modellé — a „vedd az elsőt" szabály némán rossz deszkát adna. A
+   * kulcs (`productBoxAccordionItems`) oldalanként pontosan egyszer fordul elő,
+   * és a termék saját adata közvetlenül utána áll. Forrásonként más, ezért
+   * konfig: találgatni nem szabad. Ld. `embedded.ts`.
+   */
+  embeddedSpecAnchor?: string;
+  /**
    * Böngésző-renderelés akkor is, ha a nyers HTML EGYETLEN terméket sem adott.
    *
    * Alapból KI van kapcsolva, mert drága: e nélkül a fallback csak ott fut,

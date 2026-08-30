@@ -1,0 +1,38 @@
+{
+  "source": "ISLE",
+  "url": "https://islesurfandsup.com/products/switch-compact-paddle-board-kayak-hybrid",
+  "capturedAt": "2026-08-30",
+  "teaches": "SUP–KAJAK HIBRID: a névben és az URL-ben is ott a „kayak”, amitől a NEVER_BOARD_KEYWORDS eldobta — pedig deszka, ülés-opcióval, a gyártó SUP-kollekciójából. A kivétel szűk: hibrid-állítás ÉS deszka-főnév együtt kell hozzá.",
+  "rendered": false,
+  "expected": [
+    {
+      "sourceUrl": "https://islesurfandsup.com/products/switch-compact-paddle-board-kayak-hybrid",
+      "brandName": "ISLE",
+      "modelName": "Switch Compact Kayak Hybrid",
+      "rawTitle": "Switch Compact Paddle Board Kayak Hybrid",
+      "modelYear": null,
+      "priceHuf": null,
+      "inStock": null,
+      "imageUrl": "https://cdn.shopify.com/s/files/1/0281/4843/3031/files/Switch_Compact_UGC_Bus_1.jpg?v=1715822116&width=768&crop=center",
+      "imageUrls": [],
+      "boardType": "allround",
+      "boardTypeSource": "labeledUse",
+      "boardTypes": [
+        {
+          "type": "allround",
+          "source": "labeledUse"
+        }
+      ],
+      "specs": {
+        "lengthCm": 320,
+        "widthCm": 86.4,
+        "thicknessCm": 15.2,
+        "volumeL": 320,
+        "weightKg": 7.7,
+        "maxLoadKg": 99.8,
+        "inflatable": true
+      },
+      "accessoryType": null
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "source": "ISLE",
+  "url": "https://islesurfandsup.com/products/versa-epoxy",
+  "capturedAt": "2026-08-30",
+  "teaches": "Az EGYETLEN kemény ISLE-deszka: a Type: Hardboard mező dönt, nem a szöveg (a lap a felfújható modelleket is említi). A vastagság VEGYES TÖRT: 4 1/2\" = 11,4 cm — a törtnek az ablak elején kell állnia, különben a hosszba és a szélességbe is beszivárog.",
+  "rendered": false,
+  "expected": [
+    {
+      "sourceUrl": "https://islesurfandsup.com/products/versa-epoxy",
+      "brandName": "ISLE",
+      "modelName": "Versa 2.0",
+      "rawTitle": "Versa 2.0 Paddle Board",
+      "modelYear": null,
+      "priceHuf": null,
+      "inStock": null,
+      "imageUrl": "https://cdn.shopify.com/s/files/1/0281/4843/3031/files/ISLE_Versatility_Navy_White_800.png?v=1741369578&width=768&crop=center",
+      "imageUrls": [],
+      "boardType": "allround",
+      "boardTypeSource": "labeledUse",
+      "boardTypes": [
+        {
+          "type": "allround",
+          "source": "labeledUse"
+        }
+      ],
+      "specs": {
+        "lengthCm": 317.5,
+        "widthCm": 81.3,
+        "thicknessCm": 11.4,
+        "volumeL": 175,
+        "weightKg": 11.8,
+        "maxLoadKg": 97.5,
+        "inflatable": false
+      },
+      "accessoryType": null
+    }
+  ]
+}

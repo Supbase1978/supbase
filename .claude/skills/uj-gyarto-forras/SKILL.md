@@ -484,6 +484,53 @@ bemenetén. A változatok:
   `-aero-hybrid-paddle-board` minta épp a `lowrider-aero-TANDEM-hybrid-…`
   deszkát hagyta ki, mert a változat neve beékelődik.
 
+**FEJETLEN (headless) BOLT: a spec a `<script>`-ben van, nem a szövegben**
+- Élesben (islesurfandsup.com) a HTML egy React-váz: a `/products.json` 404,
+  a `htmlToText` a spec-ből SEMMIT nem lát, a JSON-LD csak nevet és árat ad.
+  A teljes tábla — mind a hat mező, űrtartalommal — egy beágyazott
+  API-válaszban áll, CSV-alakban:
+  `"sizes":{"value":"Length,Width,Thick,…\n10'6\",34\",6\",…"}`.
+- **Ne írj rá külön kinyerőt.** Az `embedded.ts` `címke: érték` SOROKKÁ
+  alakítja, és a MEGLÉVŐ `parseSpecsFromText` elé fűzi — így a font-átváltás,
+  a csomag-kizárás és a láb-hüvelyk olvasás mind érvényben marad.
+- **HORGONY NÉLKÜL ROSSZ DESZKÁT AD.** Ugyanazon a lapon több ilyen blokk áll,
+  a termékajánlóké is: az `explorer-pro-2` lapján HÁROM, és az ELSŐ a szomszéd
+  modellé. Keress olyan JSON-kulcsot, ami oldalanként PONTOSAN EGYSZER fordul
+  elő és a termék sajátját vezeti be (`embeddedSpecAnchor`).
+- Ha egy fejetlen boltnál üres a kinyerés, **grepelj a nyers HTML-ben egy
+  ismert értékre** (`"285 LBS"`, `"326"`) — a JSON-ban ott lesz.
+
+**A „KAYAK" SZÓ NEM MINDIG KAJAK**
+- A SUP–kajak HIBRID deszka: állva evezhető, csak ülés is tehető rá. Élesben
+  (islesurfandsup.com) a SUP-kollekció FELE ilyen, és mind kiesett a
+  `NEVER_BOARD_KEYWORDS` kajak-szaván — hibátlan spec-blokk mellett. Ugyanez
+  vitte el a BOTE LowRider Aero Tandemjét is.
+- A kivétel szűk: a kajak-szó akkor nem kizáró, ha a termék KIMONDJA, hogy
+  hibrid, ÉS deszkának is nevezi magát. A tiszta kajak egyiket sem teszi.
+
+**A CÍMKÉZETT `Type:` MEZŐ ÜT a szövegen (felfújható kontra kemény)**
+- Ahol a forrás kimondja (`Type: Inflatable`), ott nincs mit következtetni — és
+  a szöveg-alapú olvasás épp ott téved: vegyes katalógusban MINDEN termékoldal
+  említi a másik ágat is, ezért mindegyik `null`-t kapna.
+- **Az „Inflatable Hardboard" FELFÚJHATÓ**: az ISLE konstrukció-neve a
+  merevebb szériára, a „hardboard" a keltett ÉRZETRE utal. Ha az érték
+  felfújhatót is mond, felfújható.
+
+**VEGYES TÖRT a méretben: `4 1/2"` = 11,4 cm**
+- Az amerikai gyártók a vastagságot így írják. A minta nélkül a hüvelyk-olvasó
+  a NEVEZŐT vette értéknek (5,1 cm) — hihető szám, csendes hiba.
+- **A törtnek az érték-ablak ELEJÉN kell állnia.** Szabadon eresztve a
+  VASTAGSÁG törtje a hosszba és a szélességbe is beszivárgott: 11,4 × 11,4 ×
+  11,4 cm lett egy 317 × 81 × 11 cm-es deszkából.
+
+**ELTÉRŐ KÖZÖLT ADAT = MÁS DESZKA (a dedupe-nál)**
+- A hossz és a név nem mindig különböztet meg: az `Explorer Pro v1` és az
+  `Explorer Pro 2` ugyanolyan hosszú és majdnem azonos nevű — a jóváhagyó
+  össze is vonta őket. A gyártó viszont 330 kontra 365 litert és 325 kontra
+  425 fontot ír. Ugyanez a `Switch` és a `Switch Pro`.
+- Ahol MINDKÉT jelölt közli ugyanazt a mezőt és 5% fölött eltér, nincs
+  összevonás. A kerekítés és a font-átváltás belefér (élesben 1% alatt).
+
 **A SPEC-TÁBLA PLATFORM-TÁBLA LEHET, NEM KÍNÁLAT**
 - Élesben (boteboard.com) a kemény „Gatorshell" ág lapjain a tábla a
   modellcsalád MINDEN méretét felsorolja, a bolt viszont csak EGYET árul: a

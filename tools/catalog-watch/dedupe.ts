@@ -118,7 +118,36 @@ export function isSameBoard(a: DedupeCandidate, b: DedupeCandidate): boolean {
   const lengthA = a.extracted.specs.lengthCm;
   const lengthB = b.extracted.specs.lengthCm;
   if (lengthA === null || lengthB === null) return false;
-  return Math.abs(lengthA - lengthB) <= 5;
+  if (Math.abs(lengthA - lengthB) > 5) return false;
+
+  // ELTÉRŐ KÖZÖLT ADAT = MÁS DESZKA (F2.1-utó-55).
+  //
+  // A hossz és a név nem mindig különböztet meg: élesben (islesurfandsup.com)
+  // az `Explorer Pro v1` és az `Explorer Pro 2` UGYANOLYAN hosszú (365,8 cm) és
+  // a nevük trigram-hasonlósága magas — a jóváhagyó össze is vonta őket. Két
+  // külön modell-generáció viszont, és a gyártó ki is mondja: 330 kontra 365
+  // liter, 325 kontra 425 font. Ugyanez a `Switch` és a `Switch Pro`.
+  //
+  // Ahol MINDKÉT jelölt közli ugyanazt a mezőt és ÉRDEMBEN eltér, ott nem
+  // összevonandó. A tűrés a gyártói kerekítést és a font-átváltást engedi meg
+  // (a bolti és a gyártói sor közti eltérés élesben 1% alatt van), a valódi
+  // modellkülönbséget viszont nem: a fenti két pár 11% és 31%.
+  return !specValueConflicts(a, b, "volumeL") && !specValueConflicts(a, b, "maxLoadKg");
+}
+
+/** Efölött két KÖZÖLT érték már nem kerekítési eltérés, hanem másik deszka. */
+const SPEC_CONFLICT_RATIO = 0.05;
+
+/** Ellentmond-e a két jelölt UGYANARRÓL a mezőről, ha mindkettő közli? */
+function specValueConflicts(
+  a: DedupeCandidate,
+  b: DedupeCandidate,
+  field: "volumeL" | "maxLoadKg",
+): boolean {
+  const left = a.extracted.specs[field];
+  const right = b.extracted.specs[field];
+  if (left === null || right === null || left === 0 || right === 0) return false;
+  return Math.abs(left - right) / Math.max(left, right) > SPEC_CONFLICT_RATIO;
 }
 
 /**

@@ -1,0 +1,38 @@
+{
+  "source": "ISLE",
+  "url": "https://islesurfandsup.com/products/sportsman-isup",
+  "capturedAt": "2026-08-30",
+  "teaches": "HIBÁS GYÁRTÓI ADAT, amit NEM javítunk ki: Length: 11.6\" — hüvelyk-jel láb helyett, ebből 29,5 cm lesz a valós 350 helyett. A gyanú-jelzésnek kell elkapnia; a fixtúra azt rögzíti, hogy nem találunk ki értéket a gyártó helyett.",
+  "rendered": false,
+  "expected": [
+    {
+      "sourceUrl": "https://islesurfandsup.com/products/sportsman-isup",
+      "brandName": "ISLE",
+      "modelName": "Sportsman",
+      "rawTitle": "Sportsman Paddle Board",
+      "modelYear": null,
+      "priceHuf": null,
+      "inStock": null,
+      "imageUrl": "https://cdn.jsdelivr.net/gh/lipis/flag-icons/flags/4x3/us.svg",
+      "imageUrls": [],
+      "boardType": "allround",
+      "boardTypeSource": "labeledUse",
+      "boardTypes": [
+        {
+          "type": "allround",
+          "source": "labeledUse"
+        }
+      ],
+      "specs": {
+        "lengthCm": 29.5,
+        "widthCm": 91.4,
+        "thicknessCm": 15.2,
+        "volumeL": 412,
+        "weightKg": 12.5,
+        "maxLoadKg": 158.8,
+        "inflatable": true
+      },
+      "accessoryType": null
+    }
+  ]
+}

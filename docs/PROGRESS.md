@@ -441,6 +441,62 @@ Mellékesen mérve: a `-gatorshell-` minta önmagában TÚL TÁG (a
 szegmenst is megköveteli; a NAGYBETŰS címkéket (`DIMENSIONS:`) és a láb-hüvelyk
 közti szóközt (`10′ 6″ L`) a meglévő olvasó vitte, javítani nem kellett.
 
+**F2.1-utó-55 — ISLE (islesurfandsup.com) bekötve, FEJETLEN bolttal
+(2026-08-29).** Felhasználói lelet. Az eddigi LEGJOBB adatú forrásunk:
+14 deszka, **mind a hat mezővel — űrtartalommal együtt** (`hossz ✓ · szél ✓ ·
+vast ✓ · térf ✓ · súly ✓ · teher ✓`). Csak épp egyik adat sem ott volt, ahol
+eddig kerestük.
+
+- **A HTML egy React-váz.** A `/products.json` 404, a `htmlToText` a
+  spec-ből SEMMIT nem lát: a teljes tábla egy `<script>`-be ágyazott
+  API-válaszban áll, CSV-alakban (`"sizes":{"value":"Length,Width,Thick,…\n
+  10'6\",34\",6\",…"}`). Az új `embedded.ts` ezt `címke: érték` SOROKKÁ
+  alakítja, és a MEGLÉVŐ `parseSpecsFromText` elé fűzi — így minden korábbi
+  tudás érvényben marad (font-átváltás, a `Complete Package Weight`
+  csomag-kizárása, láb-hüvelyk olvasás), és nem született párhuzamos,
+  karbantartandó második kinyerő.
+- **A horgony nélkül némán ROSSZ deszkát adna.** Ugyanazon a lapon több ilyen
+  CSV áll, a termékajánlóké is: az `explorer-pro-2` lapján HÁROM van, és az
+  ELSŐ a szomszéd modellé (31,5" a 31" helyett). A `productBoxAccordionItems`
+  kulcs oldalanként pontosan egyszer fordul elő — a recept ezt adja meg
+  (`embeddedSpecAnchor`), találgatni nem szabad.
+- **A „kayak" szó a kollekció FELÉT kizárta.** Hat deszka SUP–kajak HIBRID
+  (`Switch Paddle Board Kayak Hybrid`, `Explorer Pro Hybrid SUP-Kayak…`) —
+  deszkák, amikre ülés is tehető, a gyártó SUP-kollekciójából, hibátlan
+  spec-blokkal. Ugyanez a szó vitte el korábban a BOTE LowRider Aero Tandemjét
+  is. A kivétel szűk, és a `hasRigidClaim` „like"-kivételének alakját követi:
+  a kajak-szó akkor nem kizáró, ha a termék KIMONDJA, hogy hibrid, ÉS
+  deszkának is nevezi magát. A `flywater-micro-skiff-kayak` egyiket sem teszi,
+  tehát változatlanul kiesik.
+- **A CÍMKÉZETT `Type:` mező ÜT a szövegen.** MINDEN ISLE-termékoldal említi a
+  kemény modelleket is, ezért a szöveg-alapú `detectInflatable` minden deszkára
+  `null`-t adott volna. Az „Inflatable Hardboard" a gyártó konstrukció-neve a
+  merevebb Pro-szériára — az FELFÚJHATÓ; a `Versa 2.0` az egyetlen valóban
+  kemény (`Type: Hardboard`).
+- **VEGYES TÖRT a méretben**: `4 1/2"` = 11,4 cm. Enélkül a hüvelyk-olvasó a
+  NEVEZŐT vette értéknek (5,1 cm) — hihető szám, csendes hiba. A mintának az
+  érték-ablak ELEJÉN kell állnia: szabadon eresztve a vastagság törtje a
+  hosszba és a szélességbe is beszivárgott (11,4 × 11,4 × 11,4 cm).
+- **`Ideal For: Long Distance Paddling`** — ugyanaz a használat, más szóval,
+  mint a „touring". A kategória-felirat szótára ezzel bővült; egyúttal a
+  KÉTSZER, szó szerint duplán álló szabálylista egyetlen közös konstanssá vált
+  (egy bővítés eddig némán érinthette az egyiket és a másikat nem).
+- **ELTÉRŐ KÖZÖLT ADAT = MÁS DESZKA.** A jóváhagyó összevonta az
+  `Explorer Pro v1`-et az `Explorer Pro 2`-vel (azonos hossz, hasonló név) —
+  pedig a gyártó 330 kontra 365 litert és 325 kontra 425 fontot ír. Ugyanez a
+  `Switch` és a `Switch Pro`. Ahol mindkét jelölt közli ugyanazt a mezőt és 5%
+  fölött eltér, ott nincs összevonás; a kerekítés és a font-átváltás belefér
+  (élesben 1% alatt), a modellkülönbség nem (11% és 31%).
+
+**HIBÁS GYÁRTÓI ADAT, amit nem javítunk ki**: a `Sportsman` hossza `11.6"` —
+hüvelyk-jel láb helyett, ebből 29,5 cm lesz a valós 350 helyett (a saját
+`switch-isup` lapján ugyanez a szám helyesen `11'6"`). A gyanú-jelzés két
+indokkal is elkapta, és kivette a tömeges jóváhagyásból — moderátori döntés.
+
+**Nyitva maradt**: a galéria. A `backfill-gallery` a `/products/<handle>.json`
+végpontra épül, ami itt 404 — a képlista a beágyazott JSON-ban áll. A borító
+minden deszkán megvan.
+
 **Amit MEGVIZSGÁLTUNK ÉS ELVETETTÜNK** (rendeljkinait.hu „2025 legjobb
 termékei" cikk, felhasználói lelet): szponzorált, másodlagos kompiláció. Négy
 ellenőrizhető modellből egy egyezett a saját, elsődleges forrásból mért

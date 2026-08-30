@@ -321,6 +321,28 @@ export function findModelCode(pageText: string): string | null {
  * race-t adna a valós túra helyett. A gyártó viszont az ELSŐ helyre a fő
  * felhasználást írja — azt vesszük.
  */
+/**
+ * A KATEGÓRIA-FELIRAT szótára — az egy- és a többértékű olvasó KÖZÖS listája.
+ *
+ * Korábban szó szerint kétszer állt itt; egy bővítés így némán érinthette az
+ * egyiket és a másikat nem.
+ *
+ * A `long distance` az ISLE-től jött (islesurfandsup.com, 2026-08-29): a
+ * gyártó `Ideal For` mezője „Long Distance Paddling"-et ír, nem „touring"-ot —
+ * ugyanaz a használat, más szóval. A mező CÍMKÉZETT, tehát a gyártó saját
+ * állítása; enélkül az Explorer-széria besorolása a gyengébb, névből tippelő
+ * ágra maradt volna.
+ */
+const CATEGORY_LINE_RULES: [BoardType, string[]][] = [
+  ["kids", ["kids", "junior", "youth"]],
+  ["fishing", ["fishing", "angler"]],
+  ["river", ["river", "whitewater", "rapid"]],
+  ["race", ["race", "racing"]],
+  ["yoga", ["yoga", "fitness", "pilates"]],
+  ["touring", ["touring", "tura", "explore", "adventure", "long distance"]],
+  ["allround", ["all-around", "all around", "allround", "all-round", "all round"]],
+];
+
 export function boardTypeFromCategoryLine(text: string): BoardType | null {
   // Helyi hajtás: a `normalize.ts`-ből importálni körkörös függést adna
   // (az importálja EZT a modult).
@@ -328,15 +350,7 @@ export function boardTypeFromCategoryLine(text: string): BoardType | null {
     .normalize("NFD")
     .replace(/\p{Diacritic}/gu, "")
     .toLowerCase();
-  const rules: [BoardType, string[]][] = [
-    ["kids", ["kids", "junior", "youth"]],
-    ["fishing", ["fishing", "angler"]],
-    ["river", ["river", "whitewater", "rapid"]],
-    ["race", ["race", "racing"]],
-    ["yoga", ["yoga", "fitness", "pilates"]],
-    ["touring", ["touring", "tura", "explore", "adventure"]],
-    ["allround", ["all-around", "all around", "allround", "all-round", "all round"]],
-  ];
+  const rules = CATEGORY_LINE_RULES;
   let best: { at: number; type: BoardType } | null = null;
   for (const [type, needles] of rules) {
     for (const needle of needles) {
@@ -364,15 +378,7 @@ export function boardTypesFromCategoryLine(text: string): BoardType[] {
     .normalize("NFD")
     .replace(/\p{Diacritic}/gu, "")
     .toLowerCase();
-  const rules: [BoardType, string[]][] = [
-    ["kids", ["kids", "junior", "youth"]],
-    ["fishing", ["fishing", "angler"]],
-    ["river", ["river", "whitewater", "rapid"]],
-    ["race", ["race", "racing"]],
-    ["yoga", ["yoga", "fitness", "pilates"]],
-    ["touring", ["touring", "tura", "explore", "adventure"]],
-    ["allround", ["all-around", "all around", "allround", "all-round", "all round"]],
-  ];
+  const rules = CATEGORY_LINE_RULES;
   const found: { at: number; type: BoardType }[] = [];
   for (const [type, needles] of rules) {
     let earliest: number | null = null;

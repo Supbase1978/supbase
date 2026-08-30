@@ -1,0 +1,38 @@
+{
+  "source": "ISLE",
+  "url": "https://islesurfandsup.com/products/explorer-pro-2",
+  "capturedAt": "2026-08-30",
+  "teaches": "A lapon HÁROM spec-CSV áll (termékajánlók), és az ELSŐ a szomszéd modellé (explorer-pro, 31,5\" a 31\" helyett). A productBoxAccordionItems horgony jelöli a termék SAJÁTJÁT — nélküle némán rossz deszka adata kerülne be.",
+  "rendered": false,
+  "expected": [
+    {
+      "sourceUrl": "https://islesurfandsup.com/products/explorer-pro-2",
+      "brandName": "ISLE",
+      "modelName": "Explorer Pro 2",
+      "rawTitle": "Explorer Pro 2",
+      "modelYear": null,
+      "priceHuf": null,
+      "inStock": null,
+      "imageUrl": "https://cdn.shopify.com/s/files/1/0281/4843/3031/files/Explorer_Pro_05.jpg?v=1709171315&width=768&crop=center",
+      "imageUrls": [],
+      "boardType": "touring",
+      "boardTypeSource": "labeledUse",
+      "boardTypes": [
+        {
+          "type": "touring",
+          "source": "labeledUse"
+        }
+      ],
+      "specs": {
+        "lengthCm": 365.8,
+        "widthCm": 78.7,
+        "thicknessCm": 15.2,
+        "volumeL": 365,
+        "weightKg": 10.4,
+        "maxLoadKg": 192.8,
+        "inflatable": true
+      },
+      "accessoryType": null
+    }
+  ]
+}
