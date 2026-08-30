@@ -64,6 +64,7 @@ import {
 import {
   displayImageUrl,
   galleryCandidates,
+  galleryFromPage,
   imageFromPage,
   rankImageSources,
   shopifyProductJsonUrl,
@@ -1540,6 +1541,8 @@ async function commandBackfillImages(args: Args): Promise<void> {
       status: candidate.status,
       sourceKind: kindById.get(candidate.sourceId) ?? null,
       storedImageUrl: candidate.imageUrl,
+      storedGallery: candidate.imageUrls,
+      sourceId: candidate.sourceId,
     });
     byBoard.set(candidate.boardId, list);
   }
@@ -1627,6 +1630,12 @@ async function commandBackfillGallery(args: Args): Promise<void> {
   );
   const sources = await listAllSources(client);
   const kindById = new Map(sources.map((source) => [source.id, source.kind as string]));
+  // A BEÁGYAZOTT KÉPLISTA horgonya forrásonként — a receptből (`embedded.ts`).
+  const anchorById = new Map<string, string>();
+  for (const source of sources) {
+    const anchor = (source.crawl_config as CrawlConfig | null)?.embeddedSpecAnchor;
+    if (typeof anchor === "string" && anchor !== "") anchorById.set(source.id, anchor);
+  }
 
   const byBoard = new Map<string, ImageSourceCandidate[]>();
   for (const candidate of candidates) {
@@ -1636,6 +1645,8 @@ async function commandBackfillGallery(args: Args): Promise<void> {
       status: candidate.status,
       sourceKind: kindById.get(candidate.sourceId) ?? null,
       storedImageUrl: candidate.imageUrl,
+      storedGallery: candidate.imageUrls,
+      sourceId: candidate.sourceId,
     });
     byBoard.set(candidate.boardId, list);
   }
@@ -1650,6 +1661,56 @@ async function commandBackfillGallery(args: Args): Promise<void> {
   let empty = 0;
   for (const row of targets) {
     const ranked = rankImageSources(byBoard.get(row.id) ?? []);
+
+    // A CRAWL ÁLTAL BEGYŰJTÖTT galéria ELSŐBBSÉGET élvez (F2.1-utó-55).
+    //
+    // MIÉRT: ez az ág hálózat nélkül dolgozik, és van forrás, ahol a Shopify
+    // JSON-út NEM JÁRHATÓ — a fejetlen boltnál (islesurfandsup.com) a
+    // `/products/<handle>.json` 404-et ad, a képlista viszont a beágyazott
+    // adatban áll, amit a crawl már kiolvasott. Enélkül a 14 ISLE-deszka
+    // örökre egyképes maradt volna.
+    const stored = ranked.find(
+      (source) => (source.storedGallery?.length ?? 0) > 0,
+    )?.storedGallery;
+    if (stored !== undefined) {
+      const gallery = galleryCandidates([...stored], row.imageUrl);
+      if (gallery.length > 0) {
+        filled += 1;
+        console.log(`  ✓ ${row.modelName} — ${gallery.length} kép (a jelöltből)`);
+        if (apply) await updateBoardGallery(client, row.id, gallery);
+        continue;
+      }
+    }
+
+    // MÁSODIK ÚT: a TERMÉKOLDAL beágyazott képlistája. Fejetlen boltnál a
+    // Shopify JSON-végpont 404, a lista viszont a lapon van — és a MÁR
+    // JÓVÁHAGYOTT jelölt sorát egy újracrawl szándékosan nem írja felül, tehát
+    // a meglévő katalógus-sorok galériája csak innen pótolható.
+    const withAnchor = ranked.find(
+      (source) => anchorById.get(source.sourceId ?? "") !== undefined,
+    );
+    if (withAnchor?.url != null) {
+      const page = await fetchOrNull(withAnchor.url);
+      await sleep(DEFAULT_MIN_DELAY_MS);
+      const gallery =
+        page === null || page.status >= 400
+          ? []
+          : galleryFromPage(
+              page.text,
+              anchorById.get(withAnchor.sourceId ?? "") ?? null,
+              row.imageUrl,
+              withAnchor.url,
+            );
+      if (gallery.length > 0) {
+        filled += 1;
+        console.log(`  ✓ ${row.modelName} — ${gallery.length} kép (a lap beágyazott listájából)`);
+        if (apply) await updateBoardGallery(client, row.id, gallery);
+        continue;
+      }
+      empty += 1;
+      continue;
+    }
+
     const jsonUrl = ranked.map((source) => shopifyProductJsonUrl(source.url)).find((u) => u !== null);
     if (jsonUrl === undefined || jsonUrl === null) {
       notShopify += 1;

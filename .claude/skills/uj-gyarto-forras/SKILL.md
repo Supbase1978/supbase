@@ -500,6 +500,17 @@ bemenetén. A változatok:
 - Ha egy fejetlen boltnál üres a kinyerés, **grepelj a nyers HTML-ben egy
   ismert értékre** (`"285 LBS"`, `"326"`) — a JSON-ban ott lesz.
 
+**FEJETLEN BOLTNÁL A KÉPEK IS A BEÁGYAZOTT JSON-BAN VANNAK**
+- Élesben (islesurfandsup.com) NÉGY deszka borítója egy ORSZÁGZÁSZLÓ-ikon lett
+  (a pénznem-választóé), a többié életkép: a pozíció-fallback a lapon TALÁLT
+  első képet adja, a termékfotók viszont csak a beágyazott adatban vannak.
+- A gyártó rendezett képlistája ugyanabban a blokkban áll, közvetlenül a spec
+  ELŐTT — az UTOLSÓ `media.nodes` a horgony előtt a terméké; ami utána jön, az
+  már az ajánlóké. Az első elem a borító, a többi a galéria.
+- **A JÓVÁHAGYOTT jelöltet egy újracrawl NEM írja felül**, tehát a már
+  katalógusba került sorok galériája nem onnan pótolható — a
+  `backfill-gallery` ilyenkor a TERMÉKOLDALRÓL olvas.
+
 **A „KAYAK" SZÓ NEM MINDIG KAJAK**
 - A SUP–kajak HIBRID deszka: állva evezhető, csak ülés is tehető rá. Élesben
   (islesurfandsup.com) a SUP-kollekció FELE ilyen, és mind kiesett a

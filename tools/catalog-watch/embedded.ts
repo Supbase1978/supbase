@@ -126,6 +126,42 @@ function labelledFactLines(window: string): string[] {
   return out;
 }
 
+/**
+ * A TERMÉK SAJÁT KÉPLISTÁJA a beágyazott JSON-ból.
+ *
+ * MIÉRT KELL: fejetlen boltnál a `findProductImage` pozíció-fallbackje a
+ * lapon TALÁLT első képet adja — élesben (islesurfandsup.com) négy deszka
+ * borítója egy ORSZÁGZÁSZLÓ-ikon lett (a pénznem-választóé), a többié pedig
+ * életkép, nem termékfotó. A gyártó saját, rendezett képlistája viszont ott
+ * van a beágyazott adatban, és az ELSŐ eleme a termék fő fotója.
+ *
+ * A HORGONY ITT IS DÖNT, csak visszafelé: a képlista a termék-csomópontban
+ * áll, közvetlenül a spec-blokk ELŐTT. Az UTOLSÓ `media.nodes` a horgony előtt
+ * tehát a terméké — ami utána jön, az már az ajánlóké.
+ */
+export function embeddedImageUrls(
+  html: string,
+  anchor: string,
+  max: number,
+): string[] {
+  if (anchor === "" || max <= 0) return [];
+  const at = html.indexOf(`"${anchor}"`);
+  if (at < 0) return [];
+  const start = html.lastIndexOf('"media":{"nodes":[', at);
+  if (start < 0) return [];
+
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const match of html.slice(start, at).matchAll(/"url":"(https?:\/\/[^"]+?)"/g)) {
+    if (out.length >= max) break;
+    const url = decodeJsonString(match[1] ?? "");
+    if (url === null || seen.has(url)) continue;
+    seen.add(url);
+    out.push(url);
+  }
+  return out;
+}
+
 /** A forrás rövidítése helyett a katalógus által ismert címke. */
 function resolveLabel(label: string): string {
   return LABEL_ALIASES[label.trim().toLowerCase()] ?? label.trim();

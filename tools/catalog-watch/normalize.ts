@@ -10,7 +10,7 @@
  */
 import type { GearCategory } from "../../src/modules/catalog/gear.ts";
 import { decodeEntities, htmlToText } from "./html.ts";
-import { embeddedSpecText } from "./embedded.ts";
+import { embeddedImageUrls, embeddedSpecText } from "./embedded.ts";
 import { buildCategoryMethods } from "./methods/catalog.ts";
 import type { CategoryMethod, MethodContext } from "./methods/index.ts";
 import { displayImageUrl, MAX_GALLERY_CANDIDATES } from "./images.ts";
@@ -3143,6 +3143,24 @@ export function extractProductFromPage(
     );
   } catch {
     pathHint = "";
+  }
+
+  // A GYÁRTÓ SAJÁT KÉPLISTÁJA ÜT a heurisztikán (F2.1-utó-55). Fejetlen
+  // boltnál a pozíció-fallback a lapon talált első képet adja — élesben négy
+  // ISLE-deszka borítója egy ORSZÁGZÁSZLÓ-ikon lett (a pénznem-választóé), a
+  // többié pedig életkép. A beágyazott lista ELSŐ eleme a termék fő fotója, a
+  // többi a galéria.
+  const embeddedImages = embeddedImageUrls(
+    html,
+    embeddedSpecAnchor ?? "",
+    MAX_GALLERY_CANDIDATES + 1,
+  );
+  if (embeddedImages.length > 0) {
+    const [cover, ...rest] = embeddedImages;
+    extracted.imageUrl = displayImageUrl(absoluteUrl(cover ?? "", sourceUrl));
+    extracted.imageUrls = rest
+      .map((url) => displayImageUrl(absoluteUrl(url, sourceUrl)))
+      .filter((url): url is string => url !== null);
   }
 
   const classification = classifyProduct({

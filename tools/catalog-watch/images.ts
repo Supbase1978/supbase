@@ -15,6 +15,7 @@
 import { findProductNodes, pickPrimaryProduct } from "./jsonld.ts";
 import { decodeEntities, htmlToText } from "./html.ts";
 import { findModelCode, findProductImage } from "./usage-rating.ts";
+import { embeddedImageUrls } from "./embedded.ts";
 
 /** Egy szóba jöhető képforrás: a deszkához kötött jelölt egy sora. */
 export interface ImageSourceCandidate {
@@ -23,8 +24,19 @@ export interface ImageSourceCandidate {
   status: string;
   /** A jelöltet adó forrás fajtája: `brand_site` | `shop` | `feed`. */
   sourceKind: string | null;
+  /** A forrás azonosítója — ebből derül ki a recept (pl. a beágyazott horgony). */
+  sourceId?: string | null;
   /** A crawl idején eltárolt kép (ha volt) — ezért nem kell újra letölteni. */
   storedImageUrl: string | null;
+  /**
+   * A crawl idején BEGYŰJTÖTT galéria, ha a forrás adott ilyet.
+   *
+   * Fejetlen boltnál (islesurfandsup.com) ez az EGYETLEN út: a
+   * `/products/<handle>.json` végpont 404, a képlista a beágyazott JSON-ban
+   * áll — a crawl viszont már kiolvasta. Elhagyható: a régebbi jelölt-sorok
+   * még nem viselik.
+   */
+  storedGallery?: readonly string[];
 }
 
 /**
@@ -86,6 +98,31 @@ export function imageFromPage(
     ),
     pageUrl,
   );
+}
+
+/**
+ * GALÉRIA EGY LETÖLTÖTT OLDALBÓL, a gyártó BEÁGYAZOTT képlistájából.
+ *
+ * MIÉRT KELL KÜLÖN ÚT: a `backfill-gallery` alapesetben a Shopify
+ * `/products/<handle>.json` végpontjára épül — fejetlen boltnál viszont az
+ * 404-et ad (islesurfandsup.com), a képlista pedig a lapba ágyazott
+ * API-válaszban áll. A crawl ezt már kiolvassa, de a MÁR JÓVÁHAGYOTT jelöltek
+ * sorát egy újracrawl szándékosan nem írja felül — a meglévő katalógus-sorok
+ * galériája tehát csak innen pótolható.
+ *
+ * Üres lista, ha a forrásnak nincs horgonya vagy a lap nem ad képet.
+ */
+export function galleryFromPage(
+  html: string,
+  embeddedAnchor: string | null,
+  coverUrl: string | null,
+  pageUrl?: string,
+): string[] {
+  if (!embeddedAnchor) return [];
+  const urls = embeddedImageUrls(html, embeddedAnchor, MAX_GALLERY_CANDIDATES + 1)
+    .map((url) => absolute(url, pageUrl))
+    .filter((url): url is string => url !== null);
+  return galleryCandidates(urls, coverUrl);
 }
 
 /** Relatív képhivatkozás feloldása az oldal URL-jéhez képest. */
@@ -193,6 +230,12 @@ export const DISPLAY_IMAGE_WIDTH = 768;
 export function displayImageUrl(raw: string | null): string | null {
   if (raw === null || raw.trim() === "") return null;
   if (isTemplatePlaceholder(raw)) return null;
+  // ORSZÁGZÁSZLÓ-IKON sosem termékfotó. Élesben (islesurfandsup.com,
+  // 2026-08-29) a pénznem-választó zászlaja lett NÉGY deszka borítója: a
+  // pozíció-fallback a lapon talált első képet adja, és fejetlen boltnál a
+  // termékfotók csak a beágyazott adatban vannak. A `flag-icons` a jól ismert
+  // ikonkészlet útvonala — egyértelmű, ezért szűk a szabály.
+  if (raw.includes("flag-icons")) return null;
   let url: URL;
   try {
     // ENTITÁS-DEKÓDOLÁS ITT IS: a visszatöltés a JELÖLTBEN TÁROLT URL-lel

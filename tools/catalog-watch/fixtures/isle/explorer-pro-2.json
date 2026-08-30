@@ -2,7 +2,7 @@
   "source": "ISLE",
   "url": "https://islesurfandsup.com/products/explorer-pro-2",
   "capturedAt": "2026-08-30",
-  "teaches": "A lapon HÁROM spec-CSV áll (termékajánlók), és az ELSŐ a szomszéd modellé (explorer-pro, 31,5\" a 31\" helyett). A productBoxAccordionItems horgony jelöli a termék SAJÁTJÁT — nélküle némán rossz deszka adata kerülne be.",
+  "teaches": "A lapon HÁROM spec-CSV áll (termékajánlók), és az ELSŐ a szomszéd modellé (explorer-pro, 31,5\" a 31\" helyett). A productBoxAccordionItems horgony jelöli a termék SAJÁTJÁT — nélküle némán rossz deszka adata kerülne be. A képek a gyártó SAJÁT, beágyazott képlistájából jönnek — a pozíció-fallback itt zászló-ikont és életképet adott.",
   "rendered": false,
   "expected": [
     {
@@ -13,8 +13,17 @@
       "modelYear": null,
       "priceHuf": null,
       "inStock": null,
-      "imageUrl": "https://cdn.shopify.com/s/files/1/0281/4843/3031/files/Explorer_Pro_05.jpg?v=1709171315&width=768&crop=center",
-      "imageUrls": [],
+      "imageUrl": "https://cdn.shopify.com/s/files/1/0281/4843/3031/files/ISLE_Studio_EX07-1400-PRO-GR-SF-NV-PKG_TOP_1x1_e9bac083-9931-4833-b2d2-e76c8223ba99.png?v=1745430346&width=768",
+      "imageUrls": [
+        "https://cdn.shopify.com/s/files/1/0281/4843/3031/files/ISLE_Studio_EX07-1200-PRO-GR-SF-NV-PKG_PDP-COMP_1x1_701edb4e-7982-43f3-8ffe-44306f0a0810.png?v=1745430346&width=768",
+        "https://cdn.shopify.com/s/files/1/0281/4843/3031/files/ISLE_Studio_EX07-1200-PRO-IC-CR-SN-PKG_PDP-COMP_1x1_62bf96fd-9594-4898-a633-d4071d7e7556.png?v=1745430346&width=768",
+        "https://cdn.shopify.com/s/files/1/0281/4843/3031/files/ISLE_Studio_EX07-1200-PRO-IC-LM-DS-PKG_PDP-COMP_1x1_75cd4a9d-5c10-4f45-88a0-cd89ab44bb8b.png?v=1745430346&width=768",
+        "https://cdn.shopify.com/s/files/1/0281/4843/3031/files/ISLE_Studio_EX07-1400-PRO-GR-SF-NV-PKG_PDP-COMP_1x1_27221b9c-dbb5-4b05-91b3-812cc90b92d2.png?v=1745430346&width=768",
+        "https://cdn.shopify.com/s/files/1/0281/4843/3031/files/ISLE_Studio_EX07-1400-PRO-IC-CR-SN-PKG_PDP-COMP_1x1_a4b5e86c-28ef-4ef0-a38b-7158fee4c73c.png?v=1745430346&width=768",
+        "https://cdn.shopify.com/s/files/1/0281/4843/3031/files/ISLE_Studio_EX07-1400-PRO-IC-LM-DS-PKG_PDP-COMP_1x1_318e8197-b04c-4b14-baae-097aa8780bc7.png?v=1745430346&width=768",
+        "https://cdn.shopify.com/s/files/1/0281/4843/3031/files/ISLE_Studio_EX07-1400-PRO-IC-LM-DS-PKG_PP-COMP_3x4_423602b9-2e20-4562-b70f-50d5e1aedf0a.png?v=1745430346&width=768",
+        "https://cdn.shopify.com/s/files/1/0281/4843/3031/files/ISLE_Studio_EX07-1400-PRO-IC-LM-DS-PKG_3-4-TAIL_1x1_7e40ad4c-3acc-4a13-8da0-c16b665a1df0.png?v=1745430346&width=768"
+      ],
       "boardType": "touring",
       "boardTypeSource": "labeledUse",
       "boardTypes": [

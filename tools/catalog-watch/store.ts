@@ -181,7 +181,15 @@ export async function listCandidatesForBoards(
   client: SupabaseClient,
   boardIds: readonly string[],
 ): Promise<
-  { boardId: string; url: string | null; status: string; sourceId: string; imageUrl: string | null }[]
+  {
+    boardId: string;
+    url: string | null;
+    status: string;
+    sourceId: string;
+    imageUrl: string | null;
+    /** A crawl idején BEGYŰJTÖTT galéria — ld. `backfill-gallery`. */
+    imageUrls: string[];
+  }[]
 > {
   const { data, error } = await client
     .from("catalog_candidates")
@@ -196,6 +204,7 @@ export async function listCandidatesForBoards(
     imageUrl: ((row.extracted as { imageUrl?: string | null } | null)?.imageUrl ?? null) as
       | string
       | null,
+    imageUrls: ((row.extracted as { imageUrls?: string[] } | null)?.imageUrls ?? []) as string[],
   }));
 }
 

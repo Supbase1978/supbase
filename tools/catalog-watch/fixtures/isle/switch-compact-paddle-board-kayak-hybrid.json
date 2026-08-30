@@ -2,7 +2,7 @@
   "source": "ISLE",
   "url": "https://islesurfandsup.com/products/switch-compact-paddle-board-kayak-hybrid",
   "capturedAt": "2026-08-30",
-  "teaches": "SUP–KAJAK HIBRID: a névben és az URL-ben is ott a „kayak”, amitől a NEVER_BOARD_KEYWORDS eldobta — pedig deszka, ülés-opcióval, a gyártó SUP-kollekciójából. A kivétel szűk: hibrid-állítás ÉS deszka-főnév együtt kell hozzá.",
+  "teaches": "SUP–KAJAK HIBRID: a névben és az URL-ben is ott a „kayak”, amitől a NEVER_BOARD_KEYWORDS eldobta — pedig deszka, ülés-opcióval, a gyártó SUP-kollekciójából. A kivétel szűk: hibrid-állítás ÉS deszka-főnév együtt kell hozzá. A képek a gyártó SAJÁT, beágyazott képlistájából jönnek — a pozíció-fallback itt zászló-ikont és életképet adott.",
   "rendered": false,
   "expected": [
     {
@@ -13,8 +13,17 @@
       "modelYear": null,
       "priceHuf": null,
       "inStock": null,
-      "imageUrl": "https://cdn.shopify.com/s/files/1/0281/4843/3031/files/Switch_Compact_UGC_Bus_1.jpg?v=1715822116&width=768&crop=center",
-      "imageUrls": [],
+      "imageUrl": "https://cdn.shopify.com/s/files/1/0281/4843/3031/files/ISLE_SW06-1006-COM-IC-SL-LM-NV_Inflatable-Stand-Up-Paddle-Board-Kayak-Hybrid_PDP-COMP_1x1_bf454f16-c6f3-4ca2-8fb1-14da4ade0a09.png?v=1711661097&width=768",
+      "imageUrls": [
+        "https://cdn.shopify.com/s/files/1/0281/4843/3031/files/ISLE_SW06-1006-COM-IC-SL-LM-NV_Inflatable-Stand-Up-Paddle-Board-Kayak-Hybrid_PP-COMP_3x4_9db935b7-0423-4fbc-a3c8-606f4831a333.png?v=1711661097&width=768",
+        "https://cdn.shopify.com/s/files/1/0281/4843/3031/files/ISLE_SW06-1006-COM-IC-SL-LM-NV_Inflatable-Stand-Up-Paddle-Board-Kayak-Hybrid_TOP_1x1_d1a899ef-d078-4064-939b-e0f3bed50487.png?v=1711661097&width=768",
+        "https://cdn.shopify.com/s/files/1/0281/4843/3031/files/ISLE_SW06-1006-COM-IC-SL-LM-NV_Inflatable-Stand-Up-Paddle-Board-Kayak-Hybrid_SIDE_1x1_6997a5d8-8811-4e22-9932-9bd0d50e7014.png?v=1711661097&width=768",
+        "https://cdn.shopify.com/s/files/1/0281/4843/3031/files/ISLE_SW06-1006-COM-IC-SL-LM-NV_Inflatable-Stand-Up-Paddle-Board-Kayak-Hybrid_BOTTOM_1x1_6d89c130-f3c6-4af6-8314-d2b00354976f.png?v=1711661097&width=768",
+        "https://cdn.shopify.com/s/files/1/0281/4843/3031/files/ISLE_SW06-1006-COM-IC-SL-LM-NV_Inflatable-Stand-Up-Paddle-Board-Kayak-Hybrid_34-TAIL-DECK-VALVE-CARRY-HANDLE_1x1_5c4491f6-cde5-4d5f-95f7-dad1af09795d.png?v=1711661097&width=768",
+        "https://cdn.shopify.com/s/files/1/0281/4843/3031/files/ISLE_SW06-1006-COM-IC-SL-LM-NV_Inflatable-Stand-Up-Paddle-Board-Kayak-Hybrid_34-TOP_1x1_7b1c6150-a6cf-464d-af99-fa5ec2e87211.png?v=1711661097&width=768",
+        "https://cdn.shopify.com/s/files/1/0281/4843/3031/files/ISLE_SW06-1006-COM-IC-SL-LM-NV_Inflatable-Stand-Up-Paddle-Board-Kayak-Hybrid_BUNGEE-DETAIL_1x1_2c5d7dd4-04c8-4a16-82a1-c07982629cf6.png?v=1711661097&width=768",
+        "https://cdn.shopify.com/s/files/1/0281/4843/3031/files/ISLE_SW06-1006-COM-IC-SL-LM-NV_Inflatable-Stand-Up-Paddle-Board-Kayak-Hybrid_ECU-EVA-EMBOSSED_1x1_525e2ae8-08db-47c9-9c39-cd9b14b854fe.png?v=1711661097&width=768"
+      ],
       "boardType": "allround",
       "boardTypeSource": "labeledUse",
       "boardTypes": [

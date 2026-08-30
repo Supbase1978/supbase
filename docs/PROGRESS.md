@@ -443,7 +443,7 @@ közti szóközt (`10′ 6″ L`) a meglévő olvasó vitte, javítani nem kelle
 
 **F2.1-utó-55 — ISLE (islesurfandsup.com) bekötve, FEJETLEN bolttal
 (2026-08-29).** Felhasználói lelet. Az eddigi LEGJOBB adatú forrásunk:
-14 deszka, **mind a hat mezővel — űrtartalommal együtt** (`hossz ✓ · szél ✓ ·
+15 deszka, **mind a hat mezővel — űrtartalommal együtt** (`hossz ✓ · szél ✓ ·
 vast ✓ · térf ✓ · súly ✓ · teher ✓`). Csak épp egyik adat sem ott volt, ahol
 eddig kerestük.
 
@@ -493,9 +493,33 @@ hüvelyk-jel láb helyett, ebből 29,5 cm lesz a valós 350 helyett (a saját
 `switch-isup` lapján ugyanez a szám helyesen `11'6"`). A gyanú-jelzés két
 indokkal is elkapta, és kivette a tömeges jóváhagyásból — moderátori döntés.
 
-**Nyitva maradt**: a galéria. A `backfill-gallery` a `/products/<handle>.json`
-végpontra épül, ami itt 404 — a képlista a beágyazott JSON-ban áll. A borító
-minden deszkán megvan.
+**A KÉPEK IS A BEÁGYAZOTT JSON-BÓL (2026-08-30, felhasználói kérésre).** A
+`backfill-gallery` a `/products/<handle>.json` végpontra épült, ami itt 404 —
+és a borítók sem voltak jók: **négy deszkáé egy ORSZÁGZÁSZLÓ-ikon** lett (a
+pénznem-választóé), a többié életkép. Fejetlen boltnál a pozíció-fallback a
+lapon TALÁLT első képet adja, a termékfotók viszont csak a beágyazott adatban
+vannak.
+
+A gyártó saját, rendezett képlistája ugyanabban a blokkban áll, közvetlenül a
+spec ELŐTT — az `embeddedImageUrls` az UTOLSÓ `media.nodes`-t veszi a horgony
+előtt (ami utána jön, az már az ajánlóké). Az első elem a borító, a többi a
+galéria. Eredmény: **mind a 15 deszka valódi termékfotót és 8 képes galériát
+kapott.**
+
+Két járulékos tanulság:
+- **A jóváhagyott jelöltet egy újracrawl szándékosan nem írja felül**, tehát a
+  már katalógusba került sorok galériája nem onnan pótolható. A
+  `backfill-gallery` ezért kapott egy második utat: ha a forrásnak van
+  beágyazott-horgonya, a TERMÉKOLDALRÓL olvassa ki a listát.
+- **A `flag-icons` útvonal sosem termékfotó** — a `displayImageUrl` mostantól
+  elutasítja, hogy ez a csapda más forrásnál se jöhessen elő.
+
+**A Sportsman hossza javítva** (felhasználói ellenőrzés: 11'6"). A
+`verify-specs` a jelöltre írta és ZÁROLTA a mezőt; a következő crawl a
+zárolást tiszteletben tartotta (a képeket frissítette, a hosszat nem), a
+deszka pedig bekerült a katalógusba. A forrás továbbra is hibás adatot közöl,
+ezért a crawl összefoglalója továbbra is gyanúsnak jelöli — az a NYERS
+kinyerésről szól, nem a tárolt sorról.
 
 **Amit MEGVIZSGÁLTUNK ÉS ELVETETTÜNK** (rendeljkinait.hu „2025 legjobb
 termékei" cikk, felhasználói lelet): szponzorált, másodlagos kompiláció. Négy

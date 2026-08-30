@@ -2,7 +2,7 @@
   "source": "ISLE",
   "url": "https://islesurfandsup.com/products/sportsman-isup",
   "capturedAt": "2026-08-30",
-  "teaches": "HIBÁS GYÁRTÓI ADAT, amit NEM javítunk ki: Length: 11.6\" — hüvelyk-jel láb helyett, ebből 29,5 cm lesz a valós 350 helyett. A gyanú-jelzésnek kell elkapnia; a fixtúra azt rögzíti, hogy nem találunk ki értéket a gyártó helyett.",
+  "teaches": "HIBÁS GYÁRTÓI ADAT, amit NEM javítunk ki: Length: 11.6\" — hüvelyk-jel láb helyett, ebből 29,5 cm lesz a valós 350 helyett. A gyanú-jelzésnek kell elkapnia; a fixtúra azt rögzíti, hogy nem találunk ki értéket a gyártó helyett. A képek a gyártó SAJÁT, beágyazott képlistájából jönnek — a pozíció-fallback itt zászló-ikont és életképet adott.",
   "rendered": false,
   "expected": [
     {
@@ -13,8 +13,17 @@
       "modelYear": null,
       "priceHuf": null,
       "inStock": null,
-      "imageUrl": "https://cdn.jsdelivr.net/gh/lipis/flag-icons/flags/4x3/us.svg",
-      "imageUrls": [],
+      "imageUrl": "https://cdn.shopify.com/s/files/1/0281/4843/3031/products/2022-Sportsman-Aqua-Navy-Featured-Image-674x1000px.jpg?v=1682436485&width=768",
+      "imageUrls": [
+        "https://cdn.shopify.com/s/files/1/0281/4843/3031/products/2022-Sportsman-Moss-Sun-Featured-Image-674x1000px.jpg?v=1682436485&width=768",
+        "https://cdn.shopify.com/s/files/1/0281/4843/3031/products/ISLE_BESPOKE_iSUP_Sportsman-Aqua-Navy.jpg?v=1681396661&width=768",
+        "https://cdn.shopify.com/s/files/1/0281/4843/3031/products/ISLE_BESPOKE_iSUP_Sportsman-Moss-Sun.jpg?v=1681396680&width=768",
+        "https://cdn.shopify.com/s/files/1/0281/4843/3031/products/Paddle-FULL_Accessories.jpg?v=1651627421&width=768",
+        "https://cdn.shopify.com/s/files/1/0281/4843/3031/files/070723_FN04-TRNG-7527_FINAL.jpg?v=1694801936&width=768",
+        "https://cdn.shopify.com/s/files/1/0281/4843/3031/products/Leash-FULL_Accessories.jpg?v=1651627661&width=768",
+        "https://cdn.shopify.com/s/files/1/0281/4843/3031/products/Bag-FRONT_Accessories.jpg?v=1651627730&width=768",
+        "https://cdn.shopify.com/s/files/1/0281/4843/3031/files/ISLE_BESPOKE_iSUP_Sportsman-Moss-Sun.jpg?v=1681396517&width=768"
+      ],
       "boardType": "allround",
       "boardTypeSource": "labeledUse",
       "boardTypes": [
