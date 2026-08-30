@@ -30,6 +30,8 @@ export const recipe: SourceRecipe = {
       // tévedett („the new touring sensation especially in choppy waters or
       // rivers" → vadvízi deszka lett volna egy túradeszkából).
       "categoryMethods": ["pinnedUrl", "categoryLine", "nameAndUrl"],
+      // GALÉRIA (F2.1-utó-56): A termékgaléria bélyegkép-csíkja — 5 kép (felül-alul nézet, akciófotó, uszony, hordszíj).
+      galleryClass: "thumbnails-carousel",
       "notes": "Nincs JSON-LD; a SIZES AND SPECS tábla CSAK böngésző-renderelés + görgetés után létezik. Egy oldal a modellcsalád MINDEN méretét hozza — méretenkénti bontással.",
       "htmlOnly": true,
       "sitemapUrl": "https://www.fanatic.com/__sitemap__/products-eu-en-0.xml",

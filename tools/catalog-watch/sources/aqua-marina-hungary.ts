@@ -16,6 +16,8 @@ export const recipe: SourceRecipe = {
   kind: "shop",
   country: "HU",
   crawlConfig: {
+      // GALÉRIA (F2.1-utó-56): A bolt `_altpic_1..4` képei a termék SAJÁT cikkszám-mappájában — 5 kép. Ez pótolja a gyártói oldalt, ami modellenként csak 1-2 fotót közöl.
+      galleryClass: "page_artdet_altpic",
       "notes": "Hivatalos HU Aqua Marina-forgalmazo (Sportstore.hu Kft), JSON-LD 9/10 mintan validalva 2026-07-31",
       "defaultBrandName": "Aqua Marina",
       "excludeUrlPatterns": [

@@ -13,7 +13,7 @@ import { decodeEntities, htmlToText } from "./html.ts";
 import { embeddedImageUrls, embeddedSpecText } from "./embedded.ts";
 import { buildCategoryMethods } from "./methods/catalog.ts";
 import type { CategoryMethod, MethodContext } from "./methods/index.ts";
-import { displayImageUrl, MAX_GALLERY_CANDIDATES } from "./images.ts";
+import { displayImageUrl, galleryByContainer, MAX_GALLERY_CANDIDATES } from "./images.ts";
 import { findProductNodes, pickPrimaryProduct } from "./jsonld.ts";
 import {
   boardTypeFromDescription,
@@ -2901,6 +2901,11 @@ export interface PageExtractionOptions {
    */
   embeddedSpecAnchor?: string;
   /**
+   * A gyártó kép-konténerének osztályneve (`crawl_config.galleryClass`) —
+   * a termék saját galériája. Ld. `galleryByContainer`.
+   */
+  galleryClass?: string;
+  /**
    * A gyártó SAJÁT kategória-feliratát viselő elem osztályneve
    * (`crawl_config.categoryClass`). Termékspecifikus jel, ezért erős.
    */
@@ -2948,6 +2953,7 @@ export function extractProductFromPage(
     modelNameFromJsonLd = false,
     rigidUrlPatterns = [],
     embeddedSpecAnchor,
+    galleryClass,
     categoryClass,
     categoryMethods,
     overrideText,
@@ -3161,6 +3167,15 @@ export function extractProductFromPage(
     extracted.imageUrls = rest
       .map((url) => displayImageUrl(absoluteUrl(url, sourceUrl)))
       .filter((url): url is string => url !== null);
+  } else if ((extracted.imageUrls?.length ?? 0) === 0) {
+    // A gyártó SAJÁT kép-konténere (`galleryClass`), ha a cikkszám-horgony
+    // nem adott galériát. Csak KIEGÉSZÍT: a borítót nem írja felül.
+    extracted.imageUrls = galleryByContainer(
+      html,
+      galleryClass,
+      extracted.imageUrl,
+      sourceUrl,
+    );
   }
 
   const classification = classifyProduct({

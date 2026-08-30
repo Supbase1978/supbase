@@ -37,6 +37,8 @@ export const recipe: SourceRecipe = {
       // módszer nem kell: a Zray leírásai a SZOMSZÉD termékekről is írnak
       // („Related Products"), ott a mondat-szintű minta is félrevezethet.
       "categoryMethods": ["pinnedUrl", "breadcrumb", "nameAndUrl"],
+      // GALÉRIA (F2.1-utó-56): A sablon nagykép-listája — 5 kép; a bélyegkép-változatokat az útvonal-azonosság szűri.
+      galleryClass: "w-bigimglist",
       "notes": "Erősen korlátozott (429 Too Many Requests) — nagy szünet kell. A spec-blokk címkézett, kettősponttal. A DESZKA SÚLYÁT nem közli (2026-08-22, gyártói oldalon ellenőrizve) — csak teherbírást ad.",
       "unpublishedFields": ["weightKg"],
       "htmlOnly": true,

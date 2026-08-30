@@ -28,6 +28,8 @@ export const recipe: SourceRecipe = {
       // rögzítéshez képest nem ad újat, viszont a hosszú navigációs blokkon
       // futna.
       "categoryMethods": ["pinnedUrl", "multiUseProse", "nameAndUrl"],
+      // GALÉRIA (F2.1-utó-56): A termékoldal saját slidere — 6 kép, kizárólag a deszkáé.
+      galleryClass: "product__main-gallery",
       "notes": "Nincs JSON-LD; kétoszlopos spec-tábla mértékegység nélkül. A méret-sor CIRILL szorzójelet használ. A kategória a gyártó catalog_activity taxonómiájából rögzítve (all-round/turizm/sport); a TÖBB kategóriába sorolt termékek szándékosan kimaradtak.",
       "htmlOnly": true,
       "sitemapUrl": "https://gladiatorsup.com/wp-sitemap-posts-catalog-1.xml",

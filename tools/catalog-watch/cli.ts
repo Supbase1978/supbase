@@ -63,6 +63,7 @@ import {
 } from "./store.ts";
 import {
   displayImageUrl,
+  galleryByContainer,
   galleryCandidates,
   galleryFromPage,
   imageFromPage,
@@ -70,6 +71,7 @@ import {
   shopifyProductJsonUrl,
   type ImageSourceCandidate,
 } from "./images.ts";
+import { planImagePruning, type BoardImages } from "./image-sharing.ts";
 import { SOURCE_RECIPES } from "./sources/index.ts";
 import { planSourceSync } from "./sources/plan.ts";
 import { htmlToText } from "./html.ts";
@@ -1632,9 +1634,15 @@ async function commandBackfillGallery(args: Args): Promise<void> {
   const kindById = new Map(sources.map((source) => [source.id, source.kind as string]));
   // A BEÁGYAZOTT KÉPLISTA horgonya forrásonként — a receptből (`embedded.ts`).
   const anchorById = new Map<string, string>();
+  const galleryClassById = new Map<string, string>();
   for (const source of sources) {
-    const anchor = (source.crawl_config as CrawlConfig | null)?.embeddedSpecAnchor;
+    const config = source.crawl_config as CrawlConfig | null;
+    const anchor = config?.embeddedSpecAnchor;
     if (typeof anchor === "string" && anchor !== "") anchorById.set(source.id, anchor);
+    const className = config?.galleryClass;
+    if (typeof className === "string" && className !== "") {
+      galleryClassById.set(source.id, className);
+    }
   }
 
   const byBoard = new Map<string, ImageSourceCandidate[]>();
@@ -1649,6 +1657,36 @@ async function commandBackfillGallery(args: Args): Promise<void> {
       sourceId: candidate.sourceId,
     });
     byBoard.set(candidate.boardId, list);
+  }
+
+  // A BOLTI ÁR-SOR IS KÉPFORRÁS (F2.1-utó-56).
+  //
+  // Ha egy bolti termék a crawl idején MÁR ISMERT deszkára illeszkedett, a
+  // figyelő nem hoz létre jelölt-sort (`refreshOnly`) — a bolt URL-je viszont
+  // ott marad a `board_prices` sorban, és AZ a lap tartalmazza a fotókat.
+  // Élesben ez 12 Aqua Marina deszkát érint, amiknek a GYÁRTÓJA modellenként
+  // csak 1-2 képet közöl, a magyar bolt viszont ötöt.
+  const idByShop = new Map(sources.map((source) => [source.name, source.id]));
+  const { data: priceRows } = await client
+    .from("board_prices")
+    .select("board_id, shop_name, url")
+    .in("board_id", targets.map((row) => row.id));
+  for (const row of (priceRows ?? []) as { board_id: string; shop_name: string; url: string | null }[]) {
+    if (row.url === null) continue;
+    const sourceId = idByShop.get(row.shop_name);
+    if (sourceId === undefined || !galleryClassById.has(sourceId)) continue;
+    const list = byBoard.get(row.board_id) ?? [];
+    if (list.some((entry) => entry.url === row.url)) continue;
+    list.push({
+      url: row.url,
+      // Az ár-sor maga a bizonyíték, hogy a bolt EZT a deszkát árulja —
+      // ugyanolyan elbírált kapcsolat, mint egy jóváhagyott jelölt.
+      status: "approved",
+      sourceKind: kindById.get(sourceId) ?? "shop",
+      storedImageUrl: null,
+      sourceId,
+    });
+    byBoard.set(row.board_id, list);
   }
 
   console.log(
@@ -1686,28 +1724,32 @@ async function commandBackfillGallery(args: Args): Promise<void> {
     // Shopify JSON-végpont 404, a lista viszont a lapon van — és a MÁR
     // JÓVÁHAGYOTT jelölt sorát egy újracrawl szándékosan nem írja felül, tehát
     // a meglévő katalógus-sorok galériája csak innen pótolható.
-    const withAnchor = ranked.find(
-      (source) => anchorById.get(source.sourceId ?? "") !== undefined,
-    );
-    if (withAnchor?.url != null) {
-      const page = await fetchOrNull(withAnchor.url);
+    // MINDEN elbírált forrást VÉGIGPRÓBÁLUNK, a rangsor szerint. Élesben
+    // (aquamarina.com) a GYÁRTÓ modellenként csak 1-2 fotót közöl, a magyar
+    // bolt viszont ötöt — a gyártói oldal elsőbbsége tehát nem jelentheti azt,
+    // hogy az üres eredménye után feladjuk.
+    let fromPage: string[] = [];
+    let fromWhere = "";
+    for (const source of ranked) {
+      const anchor = anchorById.get(source.sourceId ?? "");
+      const className = galleryClassById.get(source.sourceId ?? "");
+      if (source.url == null || (anchor === undefined && className === undefined)) continue;
+      const page = await fetchOrNull(source.url);
       await sleep(DEFAULT_MIN_DELAY_MS);
-      const gallery =
-        page === null || page.status >= 400
-          ? []
-          : galleryFromPage(
-              page.text,
-              anchorById.get(withAnchor.sourceId ?? "") ?? null,
-              row.imageUrl,
-              withAnchor.url,
-            );
-      if (gallery.length > 0) {
-        filled += 1;
-        console.log(`  ✓ ${row.modelName} — ${gallery.length} kép (a lap beágyazott listájából)`);
-        if (apply) await updateBoardGallery(client, row.id, gallery);
-        continue;
+      if (page === null || page.status >= 400) continue;
+      fromPage =
+        anchor === undefined
+          ? galleryByContainer(page.text, className, row.imageUrl, source.url)
+          : galleryFromPage(page.text, anchor, row.imageUrl, source.url);
+      if (fromPage.length > 0) {
+        fromWhere = anchor === undefined ? "a gyártó kép-konténeréből" : "a lap beágyazott listájából";
+        break;
       }
-      empty += 1;
+    }
+    if (fromPage.length > 0) {
+      filled += 1;
+      console.log(`  ✓ ${row.modelName} — ${fromPage.length} kép (${fromWhere})`);
+      if (apply) await updateBoardGallery(client, row.id, fromPage);
       continue;
     }
 
@@ -1749,6 +1791,57 @@ async function commandBackfillGallery(args: Args): Promise<void> {
       `${notShopify} nem Shopify-forrású (marad egy képes) · ${empty} üres`,
   );
   if (!apply && filled > 0) console.log("Írás: add hozzá a --apply kapcsolót.");
+}
+
+/**
+ * MEGOSZTOTT KÉPEK kigyomlálása: a CSALÁDHATÁRT átlépő galéria-kép kiesik.
+ * A döntés a `image-sharing.ts`-ben van (tiszta, tesztelt); itt csak az
+ * adatbázis van. Ld. az ottani fejlécet a mérésekkel.
+ */
+async function commandPruneSharedImages(args: Args): Promise<void> {
+  const apply = flag(args, "apply") !== undefined;
+  const client = connect();
+  const { data, error } = await client
+    .from("boards")
+    .select("id, model_name, image_url, images, brand:brands(name)")
+    .eq("kind", "board");
+  if (error) throw new Error(`boards olvasás: ${error.message}`);
+
+  const boards: BoardImages[] = (data ?? []).map((row) => {
+    const brand = row.brand as { name?: string } | { name?: string }[] | null;
+    const brandName = Array.isArray(brand) ? (brand[0]?.name ?? null) : (brand?.name ?? null);
+    const images = (row.images ?? []) as { url?: string }[];
+    return {
+      id: row.id as string,
+      brandName,
+      modelName: row.model_name as string,
+      imageUrl: (row.image_url as string | null) ?? null,
+      gallery: images.map((image) => image.url ?? "").filter((url) => url !== ""),
+    };
+  });
+
+  const actions = planImagePruning(boards);
+  if (actions.length === 0) {
+    console.log("Nincs családhatáron átnyúló megosztott kép — nincs mit tenni.");
+    return;
+  }
+
+  console.log(
+    `${apply ? "" : "[DRY-RUN] "}${actions.length} deszka galériájából esik ki kép:\n`,
+  );
+  for (const action of actions) {
+    for (const { url, sharedWith } of action.removed) {
+      console.log(
+        `  – ${action.modelName}: ${url.split("/").pop()?.slice(0, 48)} ` +
+          `(közös ezekkel: ${sharedWith.slice(0, 3).join(", ")})`,
+      );
+    }
+    if (apply) await updateBoardGallery(client, action.boardId, action.keep);
+  }
+  console.log(
+    `\n${actions.length} deszka ${apply ? "frissítve" : "érintett (DRY-RUN, nem íródott)"}.`,
+  );
+  if (!apply) console.log("Írás: add hozzá a --apply kapcsolót.");
 }
 
 async function commandLifecycle(args: Args): Promise<void> {
@@ -1804,6 +1897,9 @@ async function main(): Promise<void> {
       break;
     case "verify-specs":
       return commandVerifySpecs(args);
+    case "prune-shared-images":
+      await commandPruneSharedImages(args);
+      break;
     case "list-incomplete":
       return commandListIncomplete(args);
     default:

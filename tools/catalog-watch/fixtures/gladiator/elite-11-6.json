@@ -1,8 +1,8 @@
 {
   "source": "Gladiator",
   "url": "https://gladiatorsup.com/catalog/elite-11-6/",
-  "capturedAt": "2026-08-21",
-  "teaches": "CIRILL szorzójel (354 х 86 х 15) és MERTEKEGYSEG NELKULI ketoszlopos tabla (Volume / 245); a kategoria a boardTypeByUrl rogzitesbol jon, mert a morzsamenu csak a kiviteli vonalat adja.",
+  "capturedAt": "2026-08-30",
+  "teaches": "CIRILL szorzójel (354 х 86 х 15) és MERTEKEGYSEG NELKULI ketoszlopos tabla (Volume / 245); a kategoria a boardTypeByUrl rogzitesbol jon, mert a morzsamenu csak a kiviteli vonalat adja. A galéria a product__main-gallery konténerből — a lap TÖBBI képe (más modellek, kiegészítők) kimarad.",
   "rendered": false,
   "expected": [
     {
@@ -14,7 +14,14 @@
       "priceHuf": null,
       "inStock": null,
       "imageUrl": "https://gladiatorsup.com/wp-content/uploads/2024/11/elite-1.jpg",
-      "imageUrls": [],
+      "imageUrls": [
+        "https://gladiatorsup.com/wp-content/uploads/2026/01/6e3a8208-rotated-2.jpg",
+        "https://gladiatorsup.com/wp-content/uploads/2026/01/6e3a8209-rotated-2.jpg",
+        "https://gladiatorsup.com/wp-content/uploads/2026/01/6e3a8182-1-1.jpg",
+        "https://gladiatorsup.com/wp-content/uploads/2026/01/6e3a8185-1-1.jpg",
+        "https://gladiatorsup.com/wp-content/uploads/2026/01/6e3a8189-1-1.jpg",
+        "https://gladiatorsup.com/wp-content/uploads/2026/01/6e3a8187-1-1.jpg"
+      ],
       "boardType": "allround",
       "boardTypeSource": "pinnedUrl",
       "boardTypes": [

@@ -101,6 +101,89 @@ export function imageFromPage(
 }
 
 /**
+ * GALÉRIA A GYÁRTÓ SAJÁT KÉP-KONTÉNERÉBŐL (F2.1-utó-56).
+ *
+ * MIÉRT KELL, ÉS MIÉRT NEM ÁLTALÁNOS KULCSSZÓ: a katalógus 273 deszkájából 160
+ * EGYETLEN képpel állt, mert a galéria eddig KÉT úton jöhetett — a Shopify
+ * `/products.json`-ból és a cikkszám-horgonyból —, és a források fele egyiket
+ * sem adja. A tiltás viszont továbbra is él: a lap ÖSSZES képét begyűjteni
+ * tilos, mert a „Related Products" blokk MÁS termékek fotóit is felkínálja.
+ *
+ * A megoldás ugyanaz, mint a kategóriánál (`categoryClass`): a gyártó SAJÁT,
+ * termékspecifikus ELEMÉT nevezzük meg a receptben. A konténeren BELÜL minden
+ * kép ezé a termékéé — ezt a gyártó DOM-ja garantálja, nem a mi heurisztikánk.
+ *
+ * MÉRVE (2026-08-30): `product__main-gallery` (Gladiator) 6 kép,
+ * `w-bigimglist` (Zray) 5 kép — mindkettő tisztán a termék sajátja.
+ *
+ * A konténert TAG-MÉLYSÉG szerint vágjuk ki, nem karakter-ablakkal: egy
+ * galéria-slider tetszőlegesen mély, és a fix ablak vagy levágná a végét, vagy
+ * átnyúlna a következő blokkba.
+ */
+export function galleryByContainer(
+  html: string,
+  className: string | null | undefined,
+  coverUrl: string | null,
+  pageUrl?: string,
+): string[] {
+  if (!className) return [];
+  // TÖBB ELEM IS VISELHETI AZ OSZTÁLYT. Élesben (star-board.com) a
+  // `hdt-slider__container` HÁROMSZOR fordul elő: kétszer a variáns-bélyegek
+  // csíkjaként (2-2 kép), egyszer a termék galériájaként (8 kép). Az elsőt
+  // véve a galéria fele elveszne, ezért a LEGTÖBB képet adó elem nyer — az
+  // osztálynevet a recept már leszűkítette a gyártó saját sliderére.
+  let best: string[] = [];
+  for (const container of slicesByClass(html, className)) {
+    const urls: string[] = [];
+    for (const match of container.matchAll(
+      /(?:src|data-src|data-lazy-src|data-original|data-large_image|href)="([^"]+?\.(?:jpe?g|png|webp)(?:\?[^"]*)?)"/gi,
+    )) {
+      const url = absolute(decodeEntities(match[1] ?? ""), pageUrl);
+      if (url !== null) urls.push(url);
+    }
+    const gallery = galleryCandidates(urls, coverUrl);
+    if (gallery.length > best.length) best = gallery;
+  }
+  return best;
+}
+
+/**
+ * MINDEN adott osztálynevű elem külső HTML-je, a nyitó- és zárótag
+ * párosítását mélység szerint követve.
+ *
+ * A mélység-követés a karakter-ablak helyett azért kell, mert egy
+ * galéria-slider tetszőlegesen mély: a fix ablak vagy levágná a végét, vagy
+ * átnyúlna a következő blokkba.
+ */
+function* slicesByClass(html: string, className: string): Generator<string> {
+  const open = new RegExp(
+    `<(\\w+)[^>]*class="[^"]*${escapeRegExp(className)}[^"]*"`,
+    "gi",
+  );
+  for (let found = open.exec(html); found !== null; found = open.exec(html)) {
+    const tag = found[1];
+    if (tag === undefined) continue;
+    let depth = 1;
+    const tags = new RegExp(`</?${tag}\\b`, "gi");
+    tags.lastIndex = found.index + found[0].length;
+    let end = html.length;
+    for (let m = tags.exec(html); m !== null; m = tags.exec(html)) {
+      depth += m[0].startsWith("</") ? -1 : 1;
+      if (depth === 0) {
+        end = m.index;
+        break;
+      }
+    }
+    yield html.slice(found.index, end);
+  }
+}
+
+/** Regex-metakarakterek védelme a konfigból jövő osztálynévben. */
+function escapeRegExp(text: string): string {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/**
  * GALÉRIA EGY LETÖLTÖTT OLDALBÓL, a gyártó BEÁGYAZOTT képlistájából.
  *
  * MIÉRT KELL KÜLÖN ÚT: a `backfill-gallery` alapesetben a Shopify
@@ -123,6 +206,34 @@ export function galleryFromPage(
     .map((url) => absolute(url, pageUrl))
     .filter((url): url is string => url !== null);
   return galleryCandidates(urls, coverUrl);
+}
+
+/**
+ * A kép AZONOSSÁGA: origó + útvonal, lekérdező rész NÉLKÜL.
+ *
+ * A méretező paraméter (`?width=`, `?v=`, `?x-oss-process=…`) ugyanannak a
+ * fájlnak a másik változatát kéri — a galériában egyszer kell.
+ */
+export function imageIdentity(url: string): string {
+  const withoutQuery = (() => {
+    try {
+      const parsed = new URL(url);
+      return `${parsed.origin}${parsed.pathname}`;
+    } catch {
+      return url.split("?")[0] ?? url;
+    }
+  })();
+  // A MÉRET-KÖNYVTÁR sem tesz másik képet: `…/AMB930068_altpic_1/AMB930068.jpg`
+  // és `…/AMB930068_altpic_1/80x52/AMB930068.jpg` UGYANAZ a fotó, csak
+  // bélyegkép-méretben (aquamarinahungary.com). A `470x450` alak ugyanígy.
+  // A MÉRET A FÁJLNÉVBEN is állhat: a WordPress/WooCommerce `-800x800`
+  // utótaggal generálja a kicsinyített változatokat
+  // (`Aqua-Marina-HALO-100-s.jpg` és `…-s-800x800.jpg` ugyanaz a fotó).
+  return withoutQuery
+    .split("/")
+    .filter((segment) => !/^\d{2,4}x\d{2,4}$/.test(segment))
+    .join("/")
+    .replace(/-\d{2,4}x\d{2,4}(\.[a-z]{3,4})$/i, "$1");
 }
 
 /** Relatív képhivatkozás feloldása az oldal URL-jéhez képest. */
@@ -185,16 +296,22 @@ export function galleryCandidates(
   coverUrl: string | null,
 ): string[] {
   const cover = displayImageUrl(coverUrl);
-  const seen = new Set<string>(cover === null ? [] : [cover]);
+  // AZONOSSÁG AZ ÚTVONALON, nem a teljes URL-en (F2.1-utó-56). Ugyanaz a kép
+  // többféle ÁTMÉRETEZŐ paraméterrel is szerepelhet a lapon — élesben
+  // (zraysports.com) a galéria-konténerben ott a `…/3469216.jpg` és a
+  // `…/3469216.jpg?x-oss-process=image/resize,m_lfit,h_200,w_200` is, ami a
+  // teljes URL-re szűrve KÉT képnek látszik, holott a második a bélyegkép.
+  const seen = new Set<string>(cover === null ? [] : [imageIdentity(cover)]);
   const out: string[] = [];
   for (const raw of imageUrls) {
     if (out.length >= MAX_GALLERY_CANDIDATES) break;
     const url = displayImageUrl(raw ?? null);
     if (url === null) continue;
-    const file = url.split("/").pop() ?? "";
+    const file = imageIdentity(url).split("/").pop() ?? "";
     if (/logo|construction|technology|detail|icon|thumb|badge/i.test(file)) continue;
-    if (seen.has(url)) continue;
-    seen.add(url);
+    const identity = imageIdentity(url);
+    if (seen.has(identity)) continue;
+    seen.add(identity);
     out.push(url);
   }
   return out;
@@ -236,6 +353,10 @@ export function displayImageUrl(raw: string | null): string | null {
   // termékfotók csak a beágyazott adatban vannak. A `flag-icons` a jól ismert
   // ikonkészlet útvonala — egyértelmű, ezért szűk a szabály.
   if (raw.includes("flag-icons")) return null;
+  // VEKTORGRAFIKA nem termékfotó. Élesben (2026-08-30) a `vector-33.svg`
+  // KÉT különböző deszka galériájában is ott volt — egy sablon-ikon, amit a
+  // kép-konténer felszedett. Fotót a gyártók sosem SVG-ben adnak.
+  if (/\.svg(?:\?|$)/i.test(raw)) return null;
   let url: URL;
   try {
     // ENTITÁS-DEKÓDOLÁS ITT IS: a visszatöltés a JELÖLTBEN TÁROLT URL-lel

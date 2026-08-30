@@ -441,6 +441,86 @@ Mellékesen mérve: a `-gatorshell-` minta önmagában TÚL TÁG (a
 szegmenst is megköveteli; a NAGYBETŰS címkéket (`DIMENSIONS:`) és a láb-hüvelyk
 közti szóközt (`10′ 6″ L`) a meglévő olvasó vitte, javítani nem kellett.
 
+**F2.1-utó-56 — Galéria az egész katalógusra (2026-08-30).** Felhasználói
+kérés a validálás előtt: „szeretnék legalább 3-5 képet mindegyikről". A
+kiindulás: **273 deszkából 133-nak EGYETLEN galériaképe sem volt**, 27-nek
+csak 1-2.
+
+Az ok szerkezeti: a galéria eddig KÉT úton jöhetett — a Shopify
+`/products.json`-ból és a cikkszám-horgonyból —, és a forrásaink fele egyiket
+sem adja. A tiltás viszont továbbra is érvényes: a lap ÖSSZES képét begyűjteni
+tilos, mert a „Related Products" blokk MÁS termékek fotóit is felkínálja.
+
+A megoldás ugyanaz az elv, ami a kategóriánál (`categoryClass`) már bevált: a
+recept megnevezi a gyártó SAJÁT kép-konténerét (`galleryClass`). A konténeren
+BELÜL minden kép ezé a termékéé — ezt a gyártó DOM-ja garantálja, nem a mi
+heurisztikánk. Mérve:
+
+| forrás | konténer | kép |
+|---|---|---|
+| Gladiator | `product__main-gallery` | 6 |
+| Zray | `w-bigimglist` | 5 |
+| Fanatic | `thumbnails-carousel` | 5 |
+| Starboard | `hdt-slider__container` | 3–4 |
+| Aqua Marina Hungary | `page_artdet_altpic` | 5 |
+
+Négy mért részlet, ami nélkül rossz lett volna:
+
+- **Egy osztályt TÖBB elem is viselhet.** A Starboardnál a
+  `hdt-slider__container` háromszor fordul elő: kétszer a variáns-bélyegek
+  csíkjaként (2-2 kép), egyszer a termék galériájaként (8 kép). Az elsőt véve a
+  galéria fele elveszne — a legtöbb képet adó nyer.
+- **A konténert tag-MÉLYSÉG szerint kell kivágni**, nem karakter-ablakkal: egy
+  slider tetszőlegesen mély, a fix ablak vagy levágná a végét, vagy átnyúlna a
+  következő blokkba.
+- **Ugyanaz a kép több alakban is szerepel**: `…/3469216.jpg` és
+  `…/3469216.jpg?x-oss-process=image/resize,h_200,w_200` (Zray), illetve
+  `…/AMB930068_altpic_1/AMB930068.jpg` és ugyanaz `…/80x52/…` alatt
+  (aquamarinahungary). A képazonosság ezért a lekérdező rész NÉLKÜL és a
+  `\d+x\d+` alakú méret-könyvtárakat kihagyva dől el.
+- **Tág osztályt nem szabad megadni.** Az Indiana `gallery-placeholder`-e 8
+  képet ad — köztük sapkát, ponchót és evezőt, mert az a kapcsolódó termékek
+  területe is. Ott inkább maradjon kevesebb kép; a három Indiana-deszka a
+  cikkszám-horgonyra marad.
+
+**A GYÁRTÓ NEM MINDIG KÖZÖL ELEGET — a bolt pótolja.** Az aquamarina.com
+modellenként 1-2 fotót ad (a 2026-os lapokon 3 életképet, a régebbieken
+egyet sem), a magyar viszonteladó viszont ötöt (`_altpic_1..4`). A
+`backfill-gallery` ezért MINDEN elbírált forrást végigpróbál a rangsor
+szerint, nem áll meg az elsőnél: a gyártói oldal elsőbbsége nem jelentheti
+azt, hogy az üres eredménye után feladjuk. Ez a 43 Aqua Marina deszkából
+8-on segít — a többinek nincs bolti jelöltje.
+
+**MEGOSZTOTT KÉPEK — felhasználói észrevétel: „több deszkához ugyanaz a kép
+nagyon félrevezető".** Igaza volt, és a mérés két, gyökeresen eltérő esetet
+talált: 273 deszkából 130 osztott legalább egy képet egy másikkal, de ebből
+
+- **157 megosztás a MODELLCSALÁDON BELÜL marad** — a Starboard Whopper 11'0"
+  és 9'0" ugyanazt a „Blue Carbon" fotót viseli. Ez NEM a kinyerés hibája: a
+  gyártó SAJÁT variáns-képe is ez (a `/products.json` `variants[].image_id`-ja
+  ugyanarra a képre mutat), mert a Starboard KIVITELENKÉNT fotóz, nem
+  méretenként. Ilyen fotó nem létezik — a kivágás kevesebb képet adna, nem
+  pontosabbat.
+- **5 megosztás CSALÁDHATÁRT lép át**, és mind az öt valóban hibás: egy All
+  Star fotója a Sprinten, egy közös marketing-GIF három BOTE-modellen, egy
+  leash- és egy uszony-fotó két ISLE-deszkán, továbbá egy `vector-33.svg`
+  SABLON-IKON két különböző márkánál.
+
+A szabály ezért: a családhatáron átnyúló megosztás kiesik, a családon belüli
+marad (`prune-shared-images`, `image-sharing.ts`). Kivétel, ha a FÁJLNÉV
+megnevezi a gazdáját — az `…-All-star-3.jpg` az All Staré, hiába szerepel a
+Sprint galériájában is. **A BORÍTÓHOZ nem nyúlunk**: ha a megosztott borítókat
+is kivágnánk, 73 deszka maradna kép NÉLKÜL, ami rosszabb, mint egy családon
+belül ismétlődő fotó. Az SVG mostantól sosem termékfotó.
+
+**KÉT KÉPFORRÁS, AMI EDDIG KIMARADT.** A gyártó nem mindig közöl eleget
+(aquamarina.com: modellenként 1-2 fotó), a bolt viszont igen — a
+`backfill-gallery` ezért MINDEN elbírált forrást végigpróbál a rangsor
+szerint, és **a bolti ÁR-SORT is képforrásnak veszi**: ha egy bolti termék a
+crawl idején már ISMERT deszkára illeszkedett, jelölt-sor nem születik
+(`refreshOnly`), a bolt URL-je viszont ott marad a `board_prices` sorban — és
+az a lap tartalmazza a fotókat.
+
 **F2.1-utó-55 — ISLE (islesurfandsup.com) bekötve, FEJETLEN bolttal
 (2026-08-29).** Felhasználói lelet. Az eddigi LEGJOBB adatú forrásunk:
 15 deszka, **mind a hat mezővel — űrtartalommal együtt** (`hossz ✓ · szél ✓ ·

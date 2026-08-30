@@ -231,6 +231,19 @@ export interface CrawlConfig {
    */
   embeddedSpecAnchor?: string;
   /**
+   * A gyártó SAJÁT kép-konténerének osztályneve (részlet) — a termék
+   * galériája (F2.1-utó-56).
+   *
+   * MIÉRT KELL: a galéria eddig KÉT úton jöhetett — Shopify `/products.json`
+   * és cikkszám-horgony —, és a forrásaink fele egyiket sem adja: a katalógus
+   * 273 deszkájából 160 EGYETLEN képpel állt. A lap összes képét begyűjteni
+   * viszont tilos (a „Related Products" blokk MÁS termékek fotóit is hozza).
+   *
+   * A konténeren BELÜL minden kép ezé a termékéé — ezt a gyártó DOM-ja
+   * garantálja, nem heurisztika. Ugyanaz az elv, mint a `categoryClass`-nál.
+   */
+  galleryClass?: string;
+  /**
    * Böngésző-renderelés akkor is, ha a nyers HTML EGYETLEN terméket sem adott.
    *
    * Alapból KI van kapcsolva, mert drága: e nélkül a fallback csak ott fut,

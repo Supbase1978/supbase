@@ -2,7 +2,7 @@
   "source": "Fanatic",
   "url": "https://www.fanatic.com/en/products/fanatic-viper-air-33250-1504",
   "capturedAt": "2026-08-21",
-  "teaches": "Renderelés + görgetés után jön elő a SIZES AND SPECS tábla, és EGY oldal a modellcsalád MINDEN méretét adja — méretenként külön jelölt, ?size= URL-lel.",
+  "teaches": "Renderelés + görgetés után jön elő a SIZES AND SPECS tábla, és EGY oldal a modellcsalád MINDEN méretét adja — méretenként külön jelölt, ?size= URL-lel. A galéria a thumbnails-carousel konténerből jön.",
   "rendered": true,
   "expected": [
     {
@@ -14,7 +14,11 @@
       "priceHuf": null,
       "inStock": null,
       "imageUrl": "https://www.fanatic.com/system/product_hotspot_pictures/pictures/67c9/a247/364f/c600/c345/dc26/xxlarge/FANATIC-SUP_2025_Viper_Air_SLT_Top_Bottom_2500x2500px.png?width=768",
-      "imageUrls": [],
+      "imageUrls": [
+        "https://www.fanatic.com/system/product_picture_gallery_pictures/files/687a/4a8f/23a3/2300/c3a6/224c/original/Fanatic-ViperAir-board.png?width=768",
+        "https://www.fanatic.com/system/product_picture_gallery_pictures/files/6880/ddaa/f001/0c00/c3f3/dada/original/Fanatic-ViperAir-USP.jpg?width=768",
+        "https://www.fanatic.com/system/product_picture_gallery_pictures/files/687a/41d0/8607/ad00/d702/c123/original/Fanatic-ViperAir-Action.jpeg?width=768"
+      ],
       "boardType": "allround",
       "boardTypeSource": "categoryLine",
       "boardTypes": [

@@ -18,6 +18,8 @@ export const recipe: SourceRecipe = {
   kind: "brand_site",
   country: "EU",
   crawlConfig: {
+      // GALÉRIA (F2.1-utó-56): A gyártó sliderje. HÁROMSZOR fordul elő: kétszer a variáns-bélyegek csíkjaként (2-2 kép), egyszer a termék galériájaként — a legtöbb képet adó nyer.
+      galleryClass: "hdt-slider__container",
       "notes": "Gyártói Shopify-katalógus (/products.json). A modellnév a HIVATALOS gyártói név; ár nincs (árpolitika).",
       "shopify": {
           "productTypes": [

@@ -17,6 +17,9 @@ export const recipe: SourceRecipe = {
   kind: "shop",
   country: "HU",
   crawlConfig: {
+      // GALÉRIA (F2.1-utó-56): WooCommerce termékgaléria — 8 kép. A bolt a méretet a
+      // FÁJLNÉVBE teszi (`…-s-800x800.jpg`), ezért az azonosság a nevéből is levágja.
+      galleryClass: "woocommerce-product-gallery",
       "notes": "Multi-marka HU webshop (Aqua Marina, TooMuch), JSON-LD 8/8 mintan validalva 2026-07-31",
       "excludeUrlPatterns": [
           "kajak",

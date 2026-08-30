@@ -500,6 +500,57 @@ bemenetén. A változatok:
 - Ha egy fejetlen boltnál üres a kinyerés, **grepelj a nyers HTML-ben egy
   ismert értékre** (`"285 LBS"`, `"326"`) — a JSON-ban ott lesz.
 
+**GALÉRIA: A GYÁRTÓ SAJÁT KÉP-KONTÉNERE (`galleryClass`)**
+- A galéria sokáig KÉT úton jöhetett — Shopify `/products.json` és
+  cikkszám-horgony —, és a forrásaink FELE egyiket sem adja: a katalógus 273
+  deszkájából 160 egyetlen képpel állt.
+- A tiltás továbbra is él: a lap ÖSSZES képét begyűjteni tilos (a „Related
+  Products" MÁS termékek fotóit is hozza). A megoldás ugyanaz, mint a
+  kategóriánál: nevezd meg a gyártó SAJÁT elemét a receptben. A konténeren
+  BELÜL minden kép ezé a termékéé — ezt a gyártó DOM-ja garantálja.
+- MÉRVE (2026-08-30): `product__main-gallery` (Gladiator) 6 kép ·
+  `w-bigimglist` (Zray) 5 · `thumbnails-carousel` (Fanatic) 5 ·
+  `hdt-slider__container` (Starboard) 3–4 · `page_artdet_altpic`
+  (aquamarinahungary) 5.
+- **EGY OSZTÁLYT TÖBB ELEM IS VISELHET.** A Starboardnál a
+  `hdt-slider__container` HÁROMSZOR fordul elő: kétszer a variáns-bélyegek
+  csíkjaként (2-2 kép), egyszer a termék galériájaként (8 kép). A LEGTÖBB
+  képet adó nyer — az osztálynevet a recept már leszűkítette.
+- **A KONTÉNERT TAG-MÉLYSÉG szerint kell kivágni**, nem karakter-ablakkal: egy
+  slider tetszőlegesen mély.
+- **NE ADJ MEG TÁG OSZTÁLYT.** Az Indiana `gallery-placeholder`-e 8 képet ad,
+  de köztük sapkát, ponchót és evezőt: az a kapcsolódó termékek területe is.
+  Ott inkább maradjon kevesebb kép.
+
+**TÖBB DESZKÁN UGYANAZ A KÉP — nézd meg, ÁTLÉPI-E A CSALÁDHATÁRT**
+- Élesben 273 deszkából 130 osztott képet egy másikkal — de ebből **157
+  megosztás a modellcsaládon BELÜL** maradt (Whopper 11'0" és 9'0" ugyanaz a
+  „Blue Carbon" fotó). Az nem a mi hibánk: a gyártó SAJÁT variáns-képe is ez,
+  mert KIVITELENKÉNT fotóz, nem méretenként.
+- **Csak 5 lépte át a családhatárt, és mind az öt valóban hibás volt**: egy
+  All Star fotója a Sprinten, egy marketing-GIF három BOTE-modellen, egy
+  leash- és egy uszony-fotó két ISLE-deszkán, plusz egy `vector-33.svg`
+  sablon-ikon két márkánál.
+- A `prune-shared-images` ezért CSAK a családhatáron átnyúlót vágja ki.
+  Kivétel: ha a fájlnév megnevezi a gazdáját (`…-All-star-3.jpg`), ott marad.
+- **A BORÍTÓHOZ ne nyúlj**: a megosztott borítók kivágásával 73 deszka maradt
+  volna kép NÉLKÜL — az rosszabb, mint egy családon belül ismétlődő fotó.
+
+**UGYANAZ A KÉP TÖBB ALAKBAN — az azonosság az ÚTVONAL**
+- `…/3469216.jpg` és `…/3469216.jpg?x-oss-process=image/resize,h_200,w_200`
+  ugyanaz a fotó (Zray); `…/AMB930068_altpic_1/AMB930068.jpg` és
+  `…/AMB930068_altpic_1/80x52/AMB930068.jpg` szintén (aquamarinahungary).
+- A galéria ezért a lekérdező rész NÉLKÜL, a `\d+x\d+` alakú MÉRET-KÖNYVTÁRAKAT
+  kihagyva, és a FÁJLNÉV végi `-800x800` utótagot levágva azonosítja a képeket
+  (a WordPress/WooCommerce így generálja a kicsinyítéseket).
+
+**A GYÁRTÓ NEM MINDIG KÖZÖL ELEG KÉPET — nézd meg a BOLTOT**
+- Élesben (aquamarina.com) a gyártó modellenként 1-2 fotót ad, a magyar
+  viszonteladó viszont ötöt (`_altpic_1..4`). A `backfill-gallery` ezért
+  MINDEN elbírált forrást végigpróbál a rangsor szerint, nem áll meg az
+  elsőnél — a gyártói oldal elsőbbsége nem jelentheti azt, hogy az üres
+  eredménye után feladjuk.
+
 **FEJETLEN BOLTNÁL A KÉPEK IS A BEÁGYAZOTT JSON-BAN VANNAK**
 - Élesben (islesurfandsup.com) NÉGY deszka borítója egy ORSZÁGZÁSZLÓ-ikon lett
   (a pénznem-választóé), a többié életkép: a pozíció-fallback a lapon TALÁLT
