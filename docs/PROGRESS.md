@@ -491,6 +491,40 @@ szerint, nem áll meg az elsőnél: a gyártói oldal elsőbbsége nem jelenthet
 azt, hogy az üres eredménye után feladjuk. Ez a 43 Aqua Marina deszkából
 8-on segít — a többinek nincs bolti jelöltje.
 
+## HOL TARTUNK — a katalógus-validálás (2026-08-31, folyamatban)
+
+A felhasználó VÉGIGMEGY a moderációs soron (`/admin/katalogus`). A munkamenet:
+jegyzetel a kártyák alján → a ragadós sávban egy gombbal átadja a köteget →
+`list-notes` mutatja forrásonként → javítás → `list-notes --resolve`.
+
+**Az első köteg (12 jegyzet) feldolgozva** — ld. F2.1-utó-57 alatt. Ami MÉG
+NYITOTT, és csak akkor derül ki, ha valaki elolvassa:
+
+1. **Red-evező névismétlés.** A `Kids Cruiser Tough 3pc Fibreglass Paddle
+   Paddle Paddle` — a gyártó címe `… SUP Paddle | Red Paddle SUP Paddle`
+   alakú, és a márkanév („Red") levágása után a „Paddle" háromszor marad. A
+   hivatalos név a felhasználó szerint: „Cruiser Tough 3-Piece Adjustable
+   Fibreglass SUP Paddle". KIEGÉSZÍTŐKNÉL jön elő, deszkánál nem — több példa
+   kell hozzá, mielőtt szabályt írunk rá.
+2. **Göndör idézőjel a Red-neveknél.** `12’0″ All Ride MSL` és `17’0″ XL Ride
+   MSL` a `10'6"` alakkal szemben — a gyártó saját írásmódja a címben.
+   Egységesítendő, ha zavar.
+3. **`14'0" Sport+ MSL800`** (függő jelölt) a katalógusban lévő
+   `14'0" Sport+ MSL 800`-hoz tartozik, de a szóköz hiánya miatt a
+   duplikátum-őr nem köti össze — MODERÁTORI összefésülés kell.
+4. **Kép-borítók.** 22 deszkán reklám- vagy csomagfotó a borító, ebből 15-höz
+   van tisztább jelölt a galériában — de a csere NEM automatizálható (mérve:
+   több „tisztább" jelölt rosszabb volt, pl. másik modell fotója vagy
+   technológia-ábra). Az admin galéria-szerkesztőjében, kézzel.
+5. **Galéria-visszatöltés.** Az újonnan jóváhagyott sorok egy képpel érkeznek;
+   érdemes időnként `backfill-gallery --apply`-t futtatni.
+
+**RUTIN minden nagyobb jóváhagyási kör után:**
+`check-duplicates --fix` — ahogy új deszkák kerülnek be, újabb függő jelöltek
+válhatnak „pár nélkülivé", és egy kattintás duplikátumot csinálna belőlük.
+
+---
+
 **F2.1-utó-57 — 20 duplikátum a katalógusból, és a forrásuk elzárva
 (2026-08-31).** Felhasználói észrevétel: a rácsban kétszer szerepelt a
 `BLADE Windsurf`. A keresés 18 további csoportot talált, **20 fölösleges
