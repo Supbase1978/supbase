@@ -129,7 +129,8 @@
       "save": "Megjegyzés mentése",
       "unsent_one": "{{count}} megjegyzés vár átadásra",
       "unsent_other": "{{count}} megjegyzés vár átadásra",
-      "submit": "Kész — mehet a javításra"
+      "submit": "Kész — mehet a javításra",
+      "none": "Nincs átadásra váró megjegyzés — a kártyák alján tudsz írni a fejlesztésnek."
     }
   },
   "gear": {

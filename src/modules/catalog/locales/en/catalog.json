@@ -129,7 +129,8 @@
       "save": "Save note",
       "unsent_one": "{{count}} note waiting to be handed over",
       "unsent_other": "{{count}} notes waiting to be handed over",
-      "submit": "Done — hand over for fixing"
+      "submit": "Done — hand over for fixing",
+      "none": "No notes waiting — you can write one at the bottom of each card."
     }
   },
   "gear": {

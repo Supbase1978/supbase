@@ -248,25 +248,28 @@ export default function AdminCatalogRoute({ loaderData, actionData }: Route.Comp
       ) : null}
 
       {/*
-        JEGYZET-KÖTEG ÁTADÁSA. Csak akkor jelenik meg, ha van MÉG ÁT NEM ADOTT
-        jegyzet — egyébként néma. RAGADÓS, mert a moderációs sor hosszú: a
+        JEGYZET-KÖTEG ÁTADÁSA. RAGADÓS, mert a moderációs sor hosszú: a
         moderátor menet közben jegyzetel, és nem akar a lap tetejére görgetni,
         amikor végzett egy körrel (felhasználói kérés).
+
+        MINDIG LÁTSZIK, akkor is, ha nincs mit átadni — csak a gomb tiltott.
+        Az első változat üres állapotban elrejtette magát, és emiatt a
+        munkamenet FELFEDEZHETETLEN volt: aki nem tudta, hogy létezik, annak
+        semmi nem árulta el (élesben mérve: „de hol van a gomb?").
       */}
-      {unsentNotes > 0 ? (
-        <Form
-          method="post"
-          className="sticky top-0 z-10 -mx-2 flex flex-wrap items-center gap-3 rounded-lg border border-line bg-surface px-3 py-2 shadow-sm"
-        >
+      <div className="sticky top-0 z-10 -mx-2 rounded-lg border border-line bg-surface px-3 py-2 shadow-sm">
+        <Form method="post" className="flex flex-wrap items-center gap-3">
           <input type="hidden" name="intent" value="submitNotes" />
           <span className="text-sm text-text-2">
-            {t("admin.note.unsent", { count: unsentNotes })}
+            {unsentNotes > 0
+              ? t("admin.note.unsent", { count: unsentNotes })
+              : t("admin.note.none")}
           </span>
-          <Button type="submit" variant="secondary">
+          <Button type="submit" variant="secondary" disabled={unsentNotes === 0}>
             {t("admin.note.submit")}
           </Button>
         </Form>
-      ) : null}
+      </div>
 
       <section className="flex flex-col gap-3">
         <h2 className="text-lg font-semibold text-ink-deep">{t("admin.pending")}</h2>
