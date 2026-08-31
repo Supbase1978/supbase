@@ -271,15 +271,56 @@ nem tiltott területek evezősnek" állításunkra.
 
 - **Bányatavak.** A `239/2000. (XII. 23.) Korm. rendelet` szabályozza a
   bányatavak hasznosítását; a legtöbb bányató üzemi terület, a fürdés tilos.
-  Nevesítve: a **Lupa-tavak teljes területe** üzemelő ipari terület, fürdeni,
-  vízibiciklizni, jet-skizni tilos; az **Omszki-tavon** csak a szabályosan
-  kiépített wakeboard-pálya használható. A tiltott helyen fürdés
-  szabálysértés: a bírság 5 000–150 000 Ft (helyszíni bírság 5 000–50 000 Ft).
+  Az **Omszki-tavon** csak a szabályosan kiépített wakeboard-pálya
+  használható. A tiltott helyen fürdés szabálysértés: a bírság
+  5 000–150 000 Ft (helyszíni bírság 5 000–50 000 Ft).
+
+  **HELYESBÍTÉS (2026-08-31).** Ez a szakasz korábban azt írta, hogy „a
+  Lupa-tavak teljes területe üzemelő ipari terület", és a Lupát a tiltott
+  vizek közé sorolta. **A Lupa-tó egyik medencéjén 2016 óta a Lupa Beach
+  üzemel**, és az ÜZEMELTETŐ SAJÁT szabályzata kimondottan engedi a saját
+  eszközzel érkező SUP-ost — sőt itt rendezték a 2022-es ISA SUP-világbajnokságot.
+  A tiltás tehát a bányató-medencékre igaz, a strandra NEM; a kettőt az
+  általánosító megfogalmazás összemosta. A Lupa Beach szabályai
+  (`lupabeach.com`, üzemeltetői oldal):
+    * saját SUP-pal is be lehet menni, **surf/SUP-jegy 3 000 Ft**, bármelyik
+      bejáraton;
+    * **felelősségi nyilatkozat aláírása kötelező** a pénztárnál;
+    * **mentőmellény viselése kötelező**;
+    * nyitvatartás alatt a **bójázott fürdőterületen KÍVÜL**, zárás után a tó
+      egész területén használható;
+    * **ködben, szürkületben és sötétben TILOS** vízre szállni.
 - **Városok belterületén lévő szabad vizek és határvizek** — kijelölt
   fürdőhely kivételével (`46/2001. BM r. 2. § (1) f)`). Ez a pont
   fürdőeszközre vonatkozik; vízi sporteszközként (Duna, Tisza) az evezés
   ettől még megengedett — a kettőt nem szabad összekeverni.
 - **Táblával/bójával jelölt védőterületek**, mint az RSD Büdös-sarka.
+
+## Két víz, ami eddig kimaradt (2026-08-31, felhasználói lelet)
+
+### Tatai Öreg-tó — **evezhető, a SUP nevesítve engedélyezett**
+
+A tó hivatalos oldala (`oregtotata.hu`, „Szabályok a vízen") a SUP-ot
+KIMONDOTTAN felsorolja a tavon közlekedő eszközök között:
+
+> „Sporteszközök (jelzés nélkül): **SUP**, Kajak, kenu, Sárkányhajó"
+
+A lényeges szabályok ugyanonnan:
+  * **belső égésű motor használata TILOS** a tavon (kivétel: vitorlás
+    segédmotorja manőverezéshez, engedélyezett kereskedelmi és hatósági hajók);
+  * **elektromos hajtás engedélyezett**;
+  * vízi sporteszközzel **éjszaka és korlátozott látási viszonyok között tilos
+    közlekedni** (rendezvényi engedély kivételével).
+
+A tó egyben **nemzeti védettségű terület, Ramsari terület és Natura 2000
+madárvédelmi terület** (HUDI10006) — a vadlúd-vonulás miatt nemzetközileg
+jelentős. A madárzavarás a fenntartási terv szerint veszélyeztető tényező,
+ezért az őszi-téli vonulási időszakra vonatkozó korlátozást a helyszínen kell
+ellenőrizni; ilyet a hivatalos szabályzat szövegében nem találtunk.
+Szolgáltató a tavon: „Old Lake SUP" (a hivatalos oldal szolgáltatói között).
+
+*Teendő:* felvehető spotként. A vonulási időszak korlátozása NYITOTT kérdés —
+elsődleges forrás nélkül nem tehető ki állításként.
 
 ## Amit NEM sikerült igazolni — nyitott kérdések
 
