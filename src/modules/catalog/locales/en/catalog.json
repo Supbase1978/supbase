@@ -67,6 +67,7 @@
     "typeHint": "Source: {{source}}. This drives the Board selector's purpose matching, so review it.",
     "mergeLabel": "Merge into an existing board",
     "approve": "Approve — new board",
+    "approveAccessory": "Approve — new gear",
     "merge": "Merge",
     "reject": "Reject",
     "lifecycle": "Discontinuation candidates",

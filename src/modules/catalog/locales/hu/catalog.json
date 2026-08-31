@@ -67,6 +67,7 @@
     "typeHint": "Forrás: {{source}}. Ez vezérli a Deszkaválasztó cél-illesztését, ezért nézd át.",
     "mergeLabel": "Összefésülés meglévő deszkával",
     "approve": "Jóváhagyás — új deszka",
+    "approveAccessory": "Jóváhagyás — új felszerelés",
     "merge": "Összefésülés",
     "reject": "Elutasítás",
     "lifecycle": "Kifutás-jelöltek",

@@ -582,8 +582,15 @@ function CandidateCard({
         {kind === "accessory" ? (
           <>
             <input type="hidden" name="accessoryType" value={category} />
+            {/*
+              A FELIRAT KÖVESSE A VÁLASZTÁST. Korábban itt is a „Jóváhagyás —
+              új deszka" állt, holott ez az ág FELSZERELÉST hoz létre: a
+              moderátor egy evezőnél is azt olvasta, hogy deszkát hagy jóvá
+              (élesben mérve: „ezt miért új deszkaként tudom jóváhagyni?").
+              A művelet végig helyes volt — csak a felirat hazudott.
+            */}
             <Button type="submit" variant="primary" className="self-start">
-              {t("admin.approve")}
+              {t("admin.approveAccessory")}
             </Button>
           </>
         ) : (
