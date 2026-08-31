@@ -159,6 +159,37 @@ node tools/catalog-watch/cli.ts sync-sources --apply
 
 A szinkron **soha nem töröl**: a recept nélküli forrást csak jelenti.
 
+## RECEPT-VÁLTOZÁS UTÁN ÚJRA KELL FUTTATNI A BEJÁRÁST
+
+A recept csak a KÖVETKEZŐ kinyerésre hat. A már meglévő jelölt-sorok
+`extracted` mezője a crawl pillanatában FAGYOTT BE — a moderátor tehát
+továbbra is a régi (hibás) modellnevet látja, és jóváhagyáskor az kerül a
+katalógusba.
+
+Élesben (2026-08-31): a Red névszabályát javítottuk (`titleKeepSize`, a
+„paddle co" zajszó, a márkanév „Red"), a moderációs sorban álló 10 Red-jelölt
+viszont változatlanul „Red Paddle Co · Ride MSL" maradt — a felhasználó vette
+észre: „a jóváhagyandó deszkáknál a Red nevei nem változtak meg".
+
+```bash
+node tools/catalog-watch/cli.ts sync-sources --apply      # ELŐSZÖR EZ!
+node tools/catalog-watch/cli.ts crawl --source "<Márka>"
+```
+
+**A `sync-sources` NEM hagyható ki.** A crawl az ADATBÁZISBAN tárolt receptet
+használja, nem a repóbelit — enélkül a bejárás a RÉGI beállítással fut, és a
+javítás nyomtalan marad. Élesben (2026-08-31) pont ez történt: a recept a
+repóban már jó volt, a crawl mégis a régivel dolgozott.
+
+**A `--max` a sitemap ELEJÉTŐL számol.** A Red 309 termék-URL-jéből csak 18 a
+deszka, és a lista elején kulacsok meg köntösök állnak — `--max 40`-nel a
+bejárás NULLA deszkát ad, ami regressziónak látszik, pedig csak nem ért el
+odáig. Teljes forrásnál ne szűkítsd.
+
+A crawl a FÜGGŐ jelölteket frissíti (a már elbíráltakat szándékosan nem
+támasztja fel). A javítás tehát KÉT lépés: recept + újracrawl — és ha a hiba
+már a katalógusba is bekerült, egy harmadik: a meglévő sorok átnevezése.
+
 ## Mentsd el a forrást a REGRESSZIÓ-HÁLÓBA
 
 Amint a kinyerés jó, rögzíts egy valós termékoldalt:
