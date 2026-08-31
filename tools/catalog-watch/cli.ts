@@ -71,6 +71,12 @@ import {
   shopifyProductJsonUrl,
   type ImageSourceCandidate,
 } from "./images.ts";
+import {
+  findDuplicateBoards,
+  findUnpairedCandidates,
+  type CatalogBoard,
+  type PendingCandidate,
+} from "./duplicates.ts";
 import { planImagePruning, type BoardImages } from "./image-sharing.ts";
 import { SOURCE_RECIPES } from "./sources/index.ts";
 import { planSourceSync } from "./sources/plan.ts";
@@ -1798,6 +1804,86 @@ async function commandBackfillGallery(args: Args): Promise<void> {
  * A döntés a `image-sharing.ts`-ben van (tiszta, tesztelt); itt csak az
  * adatbázis van. Ld. az ottani fejlécet a mérésekkel.
  */
+/**
+ * DUPLIKÁTUM-ŐR: mi van bent kétszer, és mi hozna létre duplikátumot.
+ * A döntés a `duplicates.ts`-ben van (tiszta, tesztelt); itt csak az
+ * adatbázis. `--fix` a MEGELŐZŐ ágat írja (a jelölt párját) — katalógus-sort
+ * SOHA nem töröl: az moderátori döntés.
+ */
+async function commandCheckDuplicates(args: Args): Promise<void> {
+  const fix = flag(args, "fix") !== undefined;
+  const client = connect();
+
+  const { data: rawBoards, error } = await client
+    .from("boards")
+    .select(
+      "id, model_name, slug, image_url, images, board_type, length_cm, width_cm, thickness_cm, volume_l, weight_kg, max_load_kg, brand:brands(name)",
+    )
+    .eq("kind", "board");
+  if (error) throw new Error(`boards olvasás: ${error.message}`);
+
+  const boards: CatalogBoard[] = (rawBoards ?? []).map((row) => {
+    const brand = row.brand as { name?: string } | { name?: string }[] | null;
+    const specs = ["board_type", "length_cm", "width_cm", "thickness_cm", "volume_l", "weight_kg", "max_load_kg"];
+    return {
+      id: row.id as string,
+      brandName: Array.isArray(brand) ? (brand[0]?.name ?? null) : (brand?.name ?? null),
+      modelName: row.model_name as string,
+      slug: ((row.slug as { hu?: string } | null)?.hu ?? null),
+      filledFields: specs.filter((k) => (row as Record<string, unknown>)[k] != null).length,
+      imageCount: ((row.images as unknown[] | null)?.length ?? 0) + (row.image_url ? 1 : 0),
+    };
+  });
+
+  const groups = findDuplicateBoards(boards);
+  console.log(`KATALÓGUS-DUPLIKÁTUM: ${groups.length} csoport`);
+  for (const { keep, drop } of groups) {
+    console.log(`  ${keep.modelName}`);
+    console.log(`    marad    ${keep.slug} (mező ${keep.filledFields}/7 · kép ${keep.imageCount})`);
+    for (const d of drop) console.log(`    fölösleg ${d.slug} (mező ${d.filledFields}/7 · kép ${d.imageCount})`);
+  }
+  if (groups.length > 0) {
+    console.log("  A törlés MODERÁTORI döntés — ez a parancs nem töröl katalógus-sort.");
+  }
+
+  const pending: PendingCandidate[] = [];
+  for (let from = 0; ; from += 1000) {
+    const { data } = await client
+      .from("catalog_candidates")
+      .select("id, extracted, matched_board_id")
+      .eq("status", "pending")
+      .range(from, from + 999);
+    if (!data?.length) break;
+    for (const row of data) {
+      const extracted = row.extracted as ExtractedProduct | null;
+      if (!extracted) continue;
+      pending.push({
+        id: row.id as string,
+        brandName: extracted.brandName,
+        modelName: extracted.modelName,
+        matchedBoardId: (row.matched_board_id as string | null) ?? null,
+      });
+    }
+    if (data.length < 1000) break;
+  }
+
+  const unpaired = findUnpairedCandidates(pending, boards);
+  console.log(`\nPÁR NÉLKÜLI, DE MÁR LÉTEZŐ NEVŰ jelölt: ${unpaired.length}`);
+  for (const u of unpaired) console.log(`  ${u.label}`);
+  if (unpaired.length === 0) return;
+  if (!fix) {
+    console.log("\nEzek egy kattintással ÚJ sort csinálnának. A pár beírása: --fix");
+    return;
+  }
+  for (const u of unpaired) {
+    await client
+      .from("catalog_candidates")
+      .update({ matched_board_id: u.boardId, match_confidence: 1 })
+      .eq("id", u.candidateId);
+  }
+  console.log(`\n${unpaired.length} jelölt megkapta a párját — a felület mostantól Összefésülést kínál.`);
+}
+
 async function commandPruneSharedImages(args: Args): Promise<void> {
   const apply = flag(args, "apply") !== undefined;
   const client = connect();
@@ -1897,6 +1983,9 @@ async function main(): Promise<void> {
       break;
     case "verify-specs":
       return commandVerifySpecs(args);
+    case "check-duplicates":
+      await commandCheckDuplicates(args);
+      break;
     case "prune-shared-images":
       await commandPruneSharedImages(args);
       break;

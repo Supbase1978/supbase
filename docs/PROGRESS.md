@@ -491,6 +491,41 @@ szerint, nem áll meg az elsőnél: a gyártói oldal elsőbbsége nem jelenthet
 azt, hogy az üres eredménye után feladjuk. Ez a 43 Aqua Marina deszkából
 8-on segít — a többinek nincs bolti jelöltje.
 
+**F2.1-utó-57 — 20 duplikátum a katalógusból, és a forrásuk elzárva
+(2026-08-31).** Felhasználói észrevétel: a rácsban kétszer szerepelt a
+`BLADE Windsurf`. A keresés 18 további csoportot talált, **20 fölösleges
+sorral** — zömmel Starboard (Whopper, GO, iGO, Generation, Touring), plusz a
+Uone SPRINT (háromszor!) és az Aqua Marina BLADE. Egy párnál a két sor
+UGYANAZT a slugot viselte, ami a slug egyediségét sérti.
+
+**A párok mindenben egyeztek, EGYETLEN mezőt kivéve: a deszka súlyát**
+(10,7 kontra 10,9 kg; 8,76 kontra 9,67). Ugyanaz a deszka a gyártó KÉT
+modellévi termékoldaláról, ahol a közölt súly picit változott. A csoportok
+kétharmadánál a név is csak `X` kontra `x` írásmódban tért el — a Starboard a
+2024-es és a 2025-ös lapon másképp írja.
+
+**A FORRÁS:** a jelölt `matched_board_id`-ja a CRAWL pillanatában fagy meg. Ha
+a párja csak KÉSŐBB kerül a katalógusba (mert egy másik jelöltből épp akkor
+hagytuk jóvá), a régi jelölt továbbra is „új típusként" áll a moderátor előtt,
+és egy kattintás új sort csinál belőle. Az admin-felület itt nem véd: a
+`matchedBoardLabel` a TÁROLT párt mutatja, a `findDuplicateHints` pedig
+jelölt↔jelölt átfedést néz, nem jelölt↔élő deszkát. Élesben **11 függő jelölt
+állt pontosan ebben a helyzetben**.
+
+**A takarítás nem veszített adatot**: a gazdagabb sor maradt (több kitöltött
+mező, majd több kép, majd a `-2` nélküli slug), a törlendő HIÁNYZÓ mezőit és
+képeit pedig átvette — a meglévőt sosem írva felül.
+
+Új őr: `check-duplicates` (`duplicates.ts`, tiszta modul + 9 teszt). Két
+ellenőrzést végez — ami már bent van kétszer, és ami MOST hozna létre
+duplikátumot —, a `--fix` pedig az utóbbi párját írja be. Katalógus-sort SOHA
+nem töröl: az moderátori döntés.
+
+**A NÉV-EGYEZÉS SZIGORÚ, és ez mérésen alapul.** A trigram-hasonlóság ehhez
+kevés: élesben az `iCON 12'0" X 33" Deluxe` 82%-kal az `iGO 12'0" X 33"
+Deluxe`-ra illeszkedett (MÁS modell), az `iGO … 11'2"` pedig a `10'8"`-ra. Egy
+téves pár-javaslat rosszabb, mint a hiánya — a moderátor arra kattint rá.
+
 **MEGOSZTOTT KÉPEK — felhasználói észrevétel: „több deszkához ugyanaz a kép
 nagyon félrevezető".** Igaza volt, és a mérés két, gyökeresen eltérő esetet
 talált: 273 deszkából 130 osztott legalább egy képet egy másikkal, de ebből
