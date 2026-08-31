@@ -72,7 +72,12 @@ export const recipe: SourceRecipe = {
     // csak a sajátjával egyezik), és a KATEGÓRIA-szavak, amiket amúgy is
     // külön mezőben tárolunk (`board_types`). Enélkül a modellnév
     // „Allround Board Aqua Journey" lenne, a típus pedig kétszer szerepelne.
+    // A „with seat" CSOMAGOLÁSI változat, nem másik deszka: a moderátor mérte,
+    // hogy az üléses és ülés nélküli modell specifikációja MEGEGYEZIK
+    // (2026-08-31) — az ülés tartozék, nem konstrukció. A névben hagyva két
+    // katalógus-sor születne ugyanarra a deszkára.
     titleNoiseWords: [
+      "with seat",
       "hydro force",
       "hydro-force",
       "bestway",

@@ -56,10 +56,22 @@ export const recipe: SourceRecipe = {
     // viszont „Stand Up Paddle Board" áll — a „board" levágása után magára
     // marad a „Stand Up". A `package`/`bundle` a csomagajánlat jelölése, nem
     // modellnév.
-    titleNoiseWords: ["stand up", "package", "bundle"],
+    // A „paddle co" FORRÁS-SZINTŰ zajszó (2026-08-31). A katalógusban a márka
+    // „Red" — felhasználói döntés: „mindenki csak Red-ként hivatkozik rá és így
+    // értelemzavaró lenne" a teljes cégnév. A gyártó `<title>`-je viszont a
+    // teljes nevet írja, és mivel a márkanevet a KANONIKUS (rövid) alakkal
+    // vágjuk le, a maradék „Paddle Co" a MODELLNÉVBE ragadt
+    // („Paddle Co 10'6\" Ride MSL"). Csak ezt a forrást érinti.
+    titleNoiseWords: ["paddle co", "stand up", "package", "bundle"],
     minDelayMs: 1500,
     sitemapUrl: "https://red.equipment/sitemap.xml",
-    defaultBrandName: "Red Paddle Co",
+    defaultBrandName: "Red",
+    // A MÉRET A MODELLNÉV RÉSZE (felhasználói döntés, 2026-08-31). A gyártó is
+    // így nevezi a modelljeit („14'0\" Voyager MSL 800"), és NÁLUK ez nem
+    // dísz: két `Sport MSL 800` van a katalógusban, 381 és 343 cm — a méret
+    // nélkül megkülönböztethetetlenek lennének, és a duplikátum-őr összevonná
+    // őket. Ugyanaz az eset, mint a decathlon.hu-nál.
+    titleKeepSize: true,
     productUrlPatterns: ["/products/"],
     excludeUrlPatterns: ["/collections/", "/blogs/", "/pages/"],
   },

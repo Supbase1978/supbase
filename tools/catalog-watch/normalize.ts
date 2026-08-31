@@ -29,9 +29,11 @@ import { EMPTY_SPECS } from "./types.ts";
  * benne, az a bolt írásmódjával megy tovább (a moderátor javíthatja).
  */
 export const BRAND_ALIASES: Record<string, string> = {
-  "red paddle": "Red Paddle Co",
-  "red paddle co": "Red Paddle Co",
-  redpaddle: "Red Paddle Co",
+  // FELHASZNÁLÓI DÖNTÉS (2026-08-31): a márka a katalógusban „Red" — „mindenki
+  // csak Red-ként hivatkozik rá és így értelemzavaró lenne" a teljes cégnév.
+  "red paddle": "Red",
+  "red paddle co": "Red",
+  redpaddle: "Red",
   "starboard sup": "Starboard",
   starboard: "Starboard",
   "fanatic sup": "Fanatic",

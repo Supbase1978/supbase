@@ -26,8 +26,10 @@ const NOW = new Date("2026-07-28T00:00:00Z");
 
 describe("normalizeBrandName", () => {
   it.each([
-    ["red paddle", "Red Paddle Co"],
-    ["RED PADDLE CO", "Red Paddle Co"],
+    // A katalógusban a márka „Red" (felhasználói döntés, 2026-08-31): a teljes
+    // cégnév kiírása értelemzavaró, mert mindenki rövidebben hivatkozik rá.
+    ["red paddle", "Red"],
+    ["RED PADDLE CO", "Red"],
     ["Aqua  Marina", "Aqua Marina"],
     ["Ismeretlen Márka", "Ismeretlen Márka"],
     // Élesben mért: a bolt „Gladiator SUP"-ot ír oda, ahol a katalógus „Gladiator".
@@ -61,6 +63,10 @@ describe("cleanModelName", () => {
   it.each([
     [`Aqua Marina Vapor 10'4" felfújható SUP deszka 2024`, "Aqua Marina", "Vapor"],
     [`Red Paddle Co Ride 10'6" 2023-as`, "Red Paddle Co", "Ride"],
+    // A KANONIKUS márkanév rövidebb, mint amit a forrás a címébe ír — a
+    // maradék („Paddle Co") a forrás zajszó-listájából esik ki, ld.
+    // `sources/red-paddle.ts`.
+    [`Red Paddle Co Ride 10'6"`, "Red", "Paddle Co Ride"],
     ["Fanatic Ray Air Touring 320 cm", "Fanatic", "Ray Air Touring"],
     ["Gladiator PRO 12'6 | felfújható szett", "Gladiator", "PRO"],
   ])("%s (%s) → %s", (title, brand, expected) => {
