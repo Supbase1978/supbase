@@ -126,7 +126,10 @@
       "label": "Note for the developers",
       "hint": "Fill in only if the candidate's DATA is wrong (bad model name, wrong image, misplaced category) — it does not affect your decision.",
       "placeholder": "e.g. shop wording left at the end of the model name",
-      "save": "Save note"
+      "save": "Save note",
+      "unsent_one": "{{count}} note waiting to be handed over",
+      "unsent_other": "{{count}} notes waiting to be handed over",
+      "submit": "Done — hand over for fixing"
     }
   },
   "gear": {

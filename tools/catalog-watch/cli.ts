@@ -1820,18 +1820,40 @@ async function commandBackfillGallery(args: Args): Promise<void> {
  * hozza (a hiba gyakran csak jóváhagyás után derül ki).
  */
 async function commandListNotes(args: Args): Promise<void> {
+  // ALAPÉRTELMEZÉS: az ÁTADOTT, még nem javított köteg — ez a teendő-lista.
+  // A még ÍRÁS ALATT álló jegyzethez nem nyúlunk (félbehagyott gondolat), a
+  // késznek jelöltek pedig nem jönnek elő újra.
   const all = flag(args, "all") !== undefined;
+  const resolve = flag(args, "resolve") !== undefined;
   const client = connect();
-  let query = client
-    .from("catalog_candidates")
-    .select("url, status, moderator_note, extracted, source_id")
-    .not("moderator_note", "is", null);
-  if (!all) query = query.eq("status", "pending");
-  const { data, error } = await query;
+  // A KÉT ÁG KÜLÖN teljes lekérdezés, nem láncolt feltétel: a PostgREST
+  // builder típusa láncolásnál olyan mélyre megy, hogy a fordító feladja
+  // (TS2589). Két egyszerű ág olcsóbb is, olvashatóbb is.
+  const columns = "id, url, status, moderator_note, note_submitted_at, extracted, source_id";
+  const { data, error } = all
+    ? await client.from("catalog_candidates").select(columns).not("moderator_note", "is", null)
+    : await client
+        .from("catalog_candidates")
+        .select(columns)
+        .not("moderator_note", "is", null)
+        .not("note_submitted_at", "is", null)
+        .is("note_resolved_at", null);
   if (error) throw new Error(`catalog_candidates olvasás: ${error.message}`);
   if (!data?.length) {
-    console.log(all ? "Nincs egyetlen moderátori jegyzet sem." : "Nincs jegyzet a függő jelölteken.");
+    console.log(
+      all
+        ? "Nincs egyetlen moderátori jegyzet sem."
+        : "Nincs ÁTADOTT, javításra váró jegyzet. (A még írás alattiakat: --all)",
+    );
     return;
+  }
+  if (resolve) {
+    const ids = (data as { id: string }[]).map((row) => row.id);
+    await client
+      .from("catalog_candidates")
+      .update({ note_resolved_at: new Date().toISOString() })
+      .in("id", ids);
+    console.log(`${ids.length} jegyzet KÉSZRE jelölve.\n`);
   }
 
   const sources = await listAllSources(client);
@@ -1853,7 +1875,7 @@ async function commandListNotes(args: Args): Promise<void> {
         `      ${row.url ?? ""}`,
     ]);
   }
-  console.log(`MODERÁTORI JEGYZET: ${data.length} jelölten\n`);
+  console.log(`MODERÁTORI JEGYZET: ${data.length} jelölten${all ? " (MIND)" : " — átadva, javításra vár"}\n`);
   for (const [source, lines] of [...bySource].sort((a, b) => b[1].length - a[1].length)) {
     console.log(`── ${source} (${lines.length})`);
     console.log(lines.join("\n"));

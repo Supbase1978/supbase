@@ -126,7 +126,10 @@
       "label": "Megjegyzés a fejlesztésnek",
       "hint": "Csak akkor töltsd ki, ha a jelölt ADATÁVAL van baj (hibás modellnév, rossz kép, félrement kategória) — a döntésedet ez nem befolyásolja.",
       "placeholder": "pl. a modellnév végén bolti szöveg maradt: „ablakos túra 30”",
-      "save": "Megjegyzés mentése"
+      "save": "Megjegyzés mentése",
+      "unsent_one": "{{count}} megjegyzés vár átadásra",
+      "unsent_other": "{{count}} megjegyzés vár átadásra",
+      "submit": "Kész — mehet a javításra"
     }
   },
   "gear": {

@@ -30,6 +30,7 @@ import {
   rejectCandidate,
   saveCandidateNote,
   setBoardDiscontinued,
+  submitModeratorNotes,
   setBoardGallery,
 } from "@modules/catalog/data/candidates.server";
 import { findDuplicateHints } from "@modules/catalog/data/duplicate-hints";
@@ -93,6 +94,7 @@ export async function loader({ request }: Route.LoaderArgs) {
         matchedBoardLabel,
         confidence: candidate.match_confidence,
         moderatorNote: candidate.moderator_note,
+        noteSubmitted: candidate.note_submitted_at !== null,
         // A MODELLCSALÁDBÓL örökölhető kategória, ha a kinyerés nem talált.
         // A felület előre bejelöli, de MEGMONDJA, hogy örökölt — nem mérés.
         inheritedType:
@@ -185,6 +187,11 @@ export async function action({ request }: Route.ActionArgs) {
         note: String(formData.get("note") ?? ""),
       });
       break;
+    // A megírt jegyzetek ÁTADÁSA egy kötegben — a javítás így forrásonként
+    // összefogható, nem jelöltenként.
+    case "submitNotes":
+      result = await submitModeratorNotes(supabase);
+      break;
     case "discontinue":
       result = await setBoardDiscontinued(supabase, boardId, true);
       break;
@@ -216,6 +223,11 @@ export default function AdminCatalogRoute({ loaderData, actionData }: Route.Comp
   const { t } = useTranslation("catalog");
   const { candidates, boardChoices, accessoryChoicesByCategory, unseen, unseenDays, galleries } =
     loaderData;
+  // MÉG ÁT NEM ADOTT jegyzetek: van szövege, de a moderátor nem nyomta meg a
+  // „kész" gombot. Amíg nulla, a sáv sem jelenik meg.
+  const unsentNotes = candidates.filter(
+    (candidate) => candidate.moderatorNote !== null && !candidate.noteSubmitted,
+  ).length;
 
   return (
     <main className="mx-auto flex min-h-svh max-w-5xl flex-col gap-6 p-4 sm:p-6">
@@ -233,6 +245,27 @@ export default function AdminCatalogRoute({ loaderData, actionData }: Route.Comp
         <p className={actionData.ok ? "text-sm text-text-2" : "text-sm text-caution-text"}>
           {actionData.ok ? t("admin.done") : t(actionData.errorKey ?? "admin.error.updateFailed")}
         </p>
+      ) : null}
+
+      {/*
+        JEGYZET-KÖTEG ÁTADÁSA. Csak akkor jelenik meg, ha van MÉG ÁT NEM ADOTT
+        jegyzet — egyébként néma. RAGADÓS, mert a moderációs sor hosszú: a
+        moderátor menet közben jegyzetel, és nem akar a lap tetejére görgetni,
+        amikor végzett egy körrel (felhasználói kérés).
+      */}
+      {unsentNotes > 0 ? (
+        <Form
+          method="post"
+          className="sticky top-0 z-10 -mx-2 flex flex-wrap items-center gap-3 rounded-lg border border-line bg-surface px-3 py-2 shadow-sm"
+        >
+          <input type="hidden" name="intent" value="submitNotes" />
+          <span className="text-sm text-text-2">
+            {t("admin.note.unsent", { count: unsentNotes })}
+          </span>
+          <Button type="submit" variant="secondary">
+            {t("admin.note.submit")}
+          </Button>
+        </Form>
       ) : null}
 
       <section className="flex flex-col gap-3">

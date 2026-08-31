@@ -482,10 +482,38 @@ export async function saveCandidateNote(
   input: { candidateId: string; note: string },
 ): Promise<ModerationResult> {
   const note = input.note.trim();
+  // A MÓDOSÍTOTT jegyzet ÚJ mondanivaló: az átadás- és a készre-jelölést
+  // visszavonjuk, különben egy javítás után írt pontosítás sosem kerülne elő.
   const { error } = await supabase
     .from("catalog_candidates")
-    .update({ moderator_note: note === "" ? null : note })
+    .update({
+      moderator_note: note === "" ? null : note,
+      note_submitted_at: null,
+      note_resolved_at: null,
+    })
     .eq("id", input.candidateId);
+  return error ? { ok: false, errorKey: "admin.error.updateFailed" } : { ok: true };
+}
+
+/**
+ * A MEGÍRT, de még át nem adott jegyzetek ÁTADÁSA egy kötegben.
+ *
+ * MIÉRT KÖTEGBEN: a jegyzeteket egyesével feldolgozni drága (felhasználói
+ * észrevétel) — a moderátor végigmegy a soron, menet közben jegyzetel, és egy
+ * gombbal adja át az egészet. A javítás így forrásonként összefogható.
+ *
+ * Csak azt érinti, aminek VAN jegyzete és MÉG NINCS átadva; a már átadottak
+ * időbélyegét nem írja felül (különben egy második kattintás elmosná, mikor
+ * érkezett az első köteg).
+ */
+export async function submitModeratorNotes(
+  supabase: SupabaseClient,
+): Promise<ModerationResult> {
+  const { error } = await supabase
+    .from("catalog_candidates")
+    .update({ note_submitted_at: new Date().toISOString() })
+    .not("moderator_note", "is", null)
+    .is("note_submitted_at", null);
   return error ? { ok: false, errorKey: "admin.error.updateFailed" } : { ok: true };
 }
 

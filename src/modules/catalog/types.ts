@@ -280,6 +280,13 @@ export interface CatalogCandidateRow {
    * modellnévbe került. Enélkül minden ilyet kézzel kellene visszajelezni.
    */
   moderator_note: string | null;
+  /**
+   * Mikor ADTA ÁT a moderátor a jegyzetet feldolgozásra. Üres = még írja;
+   * addig a fejlesztés nem nyúl hozzá (félbehagyott gondolat).
+   */
+  note_submitted_at: string | null;
+  /** Mikor lett a jelzett hiba javítva. Üres + átadva = teendő. */
+  note_resolved_at: string | null;
   created_at: string;
 }
 
