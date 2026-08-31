@@ -496,6 +496,26 @@ export async function saveCandidateNote(
 }
 
 /**
+ * Hány MEGÍRT, de még át nem adott jegyzet van — a moderációs lap sávjához.
+ *
+ * MIÉRT KÜLÖN LEKÉRDEZÉS, és miért nem a betöltött jelölt-listából számoljuk:
+ * a lista csak a FÜGGŐ jelölteket hozza, a jegyzet viszont a döntéstől
+ * függetlenül él. Élesben (2026-08-31) a moderátor megjegyzést írt egy
+ * jelöltre, majd JÓVÁHAGYTA — a jegyzet elmentődött, de a számláló nem látta
+ * többé, a sáv „nincs átadásra váró"-t mutatott, és a jegyzet átadhatatlanná
+ * vált. Épp az a jegyzet veszett volna el, amit a moderátor a jóváhagyás
+ * PILLANATÁBAN vett észre.
+ */
+export async function countUnsentNotes(supabase: SupabaseClient): Promise<number> {
+  const { count } = await supabase
+    .from("catalog_candidates")
+    .select("id", { count: "exact", head: true })
+    .not("moderator_note", "is", null)
+    .is("note_submitted_at", null);
+  return count ?? 0;
+}
+
+/**
  * A MEGÍRT, de még át nem adott jegyzetek ÁTADÁSA egy kötegben.
  *
  * MIÉRT KÖTEGBEN: a jegyzeteket egyesével feldolgozni drága (felhasználói

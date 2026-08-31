@@ -28,6 +28,7 @@ import {
   loadFamilyTypeMap,
   mergeCandidate,
   rejectCandidate,
+  countUnsentNotes,
   saveCandidateNote,
   setBoardDiscontinued,
   submitModeratorNotes,
@@ -45,8 +46,15 @@ export async function loader({ request }: Route.LoaderArgs) {
   await requireRole(request, "moderator");
   const { supabase } = createSupabaseServerClient(request);
 
-  const [candidates, boardChoices, accessoryChoicesByCategory, boards, galleries, familyTypes] =
-    await Promise.all([
+  const [
+    candidates,
+    boardChoices,
+    accessoryChoicesByCategory,
+    boards,
+    galleries,
+    familyTypes,
+    unsentNotes,
+  ] = await Promise.all([
       listPendingCandidates(supabase),
       listBoardChoices(supabase),
       listAccessoryChoicesByCategory(supabase),
@@ -56,6 +64,9 @@ export async function loader({ request }: Route.LoaderArgs) {
       // gyártói kollekciók csak az aktuális évjáratot sorolják be, a régebbi
       // példányok kategória nélkül érkeznek — pedig ugyanaz a deszka.
       loadFamilyTypeMap(supabase),
+      // A jegyzet a DÖNTÉSTŐL FÜGGETLENÜL él, ezért nem a fenti (csak függő)
+      // listából számoljuk — ld. `countUnsentNotes`.
+      countUnsentNotes(supabase),
     ]);
 
   // Jelölt↔jelölt duplikátum-gyanú (F2.1-utó-8): a `matchedBoardLabel` csak
@@ -116,6 +127,7 @@ export async function loader({ request }: Route.LoaderArgs) {
     unseen: findDiscontinuedCandidates(boards),
     unseenDays: DEFAULT_UNSEEN_DAYS,
     galleries,
+    unsentNotes,
   };
 }
 
@@ -221,13 +233,15 @@ export const meta: Route.MetaFunction = () => {
 
 export default function AdminCatalogRoute({ loaderData, actionData }: Route.ComponentProps) {
   const { t } = useTranslation("catalog");
-  const { candidates, boardChoices, accessoryChoicesByCategory, unseen, unseenDays, galleries } =
-    loaderData;
-  // MÉG ÁT NEM ADOTT jegyzetek: van szövege, de a moderátor nem nyomta meg a
-  // „kész" gombot. Amíg nulla, a sáv sem jelenik meg.
-  const unsentNotes = candidates.filter(
-    (candidate) => candidate.moderatorNote !== null && !candidate.noteSubmitted,
-  ).length;
+  const {
+    candidates,
+    boardChoices,
+    accessoryChoicesByCategory,
+    unseen,
+    unseenDays,
+    galleries,
+    unsentNotes,
+  } = loaderData;
 
   return (
     <main className="mx-auto flex min-h-svh max-w-5xl flex-col gap-6 p-4 sm:p-6">
