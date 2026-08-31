@@ -28,6 +28,7 @@ import {
   loadFamilyTypeMap,
   mergeCandidate,
   rejectCandidate,
+  saveCandidateNote,
   setBoardDiscontinued,
   setBoardGallery,
 } from "@modules/catalog/data/candidates.server";
@@ -91,6 +92,7 @@ export async function loader({ request }: Route.LoaderArgs) {
         matchedBoardId: candidate.matched_board_id,
         matchedBoardLabel,
         confidence: candidate.match_confidence,
+        moderatorNote: candidate.moderator_note,
         // A MODELLCSALÁDBÓL örökölhető kategória, ha a kinyerés nem talált.
         // A felület előre bejelöli, de MEGMONDJA, hogy örökölt — nem mérés.
         inheritedType:
@@ -173,6 +175,15 @@ export async function action({ request }: Route.ActionArgs) {
       break;
     case "reject":
       result = await rejectCandidate(supabase, { candidateId, reviewerId: user.id });
+      break;
+    // JEGYZET a fejlesztésnek: NEM bírálja el a jelöltet, csak rögzíti, mi a
+    // gond az ADATÁVAL (hibás modellnév, rossz kép, félrement kategória). A
+    // moderátor a döntést ettől függetlenül meghozhatja.
+    case "note":
+      result = await saveCandidateNote(supabase, {
+        candidateId,
+        note: String(formData.get("note") ?? ""),
+      });
       break;
     case "discontinue":
       result = await setBoardDiscontinued(supabase, boardId, true);
@@ -628,6 +639,31 @@ function CandidateCard({
           {t("admin.reject")}
         </IntentForm>
       </div>
+
+      {/*
+        JEGYZET A FEJLESZTÉSNEK. Nem a döntés része: a moderátor akkor tölti
+        ki, ha a jelölt ADATÁVAL van baj, amit ő nem tud javítani — élesben a
+        „…BREEZE PANORAMA ablakos túra 30" modellnév, ahol a bolti cím-zaj a
+        névbe került. A `catalog-watch list-notes` gyűjti ki egyben.
+      */}
+      <Form method="post" className="mt-4 border-t border-line pt-3">
+        <input type="hidden" name="intent" value="note" />
+        <input type="hidden" name="candidateId" value={candidate.id} />
+        <label className="flex flex-col gap-1 text-sm">
+          <span className="font-medium text-text-2">{t("admin.note.label")}</span>
+          <span className="text-xs text-text-3">{t("admin.note.hint")}</span>
+          <textarea
+            name="note"
+            rows={2}
+            defaultValue={candidate.moderatorNote ?? ""}
+            placeholder={t("admin.note.placeholder")}
+            className="rounded-lg border border-line bg-surface px-2 py-1.5 text-sm text-text"
+          />
+        </label>
+        <Button type="submit" variant="secondary" className="mt-2">
+          {t("admin.note.save")}
+        </Button>
+      </Form>
     </Card>
   );
 }

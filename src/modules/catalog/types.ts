@@ -270,6 +270,16 @@ export interface CatalogCandidateRow {
   match_confidence: number | null;
   status: CandidateStatus;
   reviewed_by: string | null;
+  /**
+   * A MODERÁTOR szabad szöveges észrevétele a jelöltről — a FEJLESZTÉSNEK szól,
+   * nem a felhasználóknak (kinyerési hiba, hibás modellnév, rossz kép).
+   *
+   * MIÉRT KELL: a validálás közben olyan hibák bukkannak elő, amiket a
+   * moderátor nem tud javítani, mert a kinyerés hibái — élesben a
+   * „Hydro-Force BREEZE PANORAMA ablakos túra 30" név, ahol a bolti cím-zaj a
+   * modellnévbe került. Enélkül minden ilyet kézzel kellene visszajelezni.
+   */
+  moderator_note: string | null;
   created_at: string;
 }
 

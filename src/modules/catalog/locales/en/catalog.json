@@ -121,6 +121,12 @@
       "viewPublic": "Open the public page →",
       "emptyMeansUnknown": "An empty field means “no data”, not zero.",
       "link": "Edit"
+    },
+    "note": {
+      "label": "Note for the developers",
+      "hint": "Fill in only if the candidate's DATA is wrong (bad model name, wrong image, misplaced category) — it does not affect your decision.",
+      "placeholder": "e.g. shop wording left at the end of the model name",
+      "save": "Save note"
     }
   },
   "gear": {

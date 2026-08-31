@@ -121,6 +121,12 @@
       "viewPublic": "Megnézem az adatlapot →",
       "emptyMeansUnknown": "Az üres mező „nincs adat”-ot jelent, nem nullát.",
       "link": "Szerkesztés"
+    },
+    "note": {
+      "label": "Megjegyzés a fejlesztésnek",
+      "hint": "Csak akkor töltsd ki, ha a jelölt ADATÁVAL van baj (hibás modellnév, rossz kép, félrement kategória) — a döntésedet ez nem befolyásolja.",
+      "placeholder": "pl. a modellnév végén bolti szöveg maradt: „ablakos túra 30”",
+      "save": "Megjegyzés mentése"
     }
   },
   "gear": {

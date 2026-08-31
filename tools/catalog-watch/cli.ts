@@ -1810,6 +1810,57 @@ async function commandBackfillGallery(args: Args): Promise<void> {
  * adatbázis. `--fix` a MEGELŐZŐ ágat írja (a jelölt párját) — katalógus-sort
  * SOHA nem töröl: az moderátori döntés.
  */
+/**
+ * A MODERÁTORI JEGYZETEK egyben — ez a validálás visszacsatornája.
+ *
+ * A moderátor a kártyán odaírja, mi a gond a jelölt ADATÁVAL (hibás modellnév,
+ * rossz kép, félrement kategória); ez a parancs egyben mutatja mindet, a
+ * jelölt URL-jével és a kinyert névvel, hogy a javítás forrásonként
+ * összefogható legyen. `--all`-lal a már elbírált jelöltek jegyzeteit is
+ * hozza (a hiba gyakran csak jóváhagyás után derül ki).
+ */
+async function commandListNotes(args: Args): Promise<void> {
+  const all = flag(args, "all") !== undefined;
+  const client = connect();
+  let query = client
+    .from("catalog_candidates")
+    .select("url, status, moderator_note, extracted, source_id")
+    .not("moderator_note", "is", null);
+  if (!all) query = query.eq("status", "pending");
+  const { data, error } = await query;
+  if (error) throw new Error(`catalog_candidates olvasás: ${error.message}`);
+  if (!data?.length) {
+    console.log(all ? "Nincs egyetlen moderátori jegyzet sem." : "Nincs jegyzet a függő jelölteken.");
+    return;
+  }
+
+  const sources = await listAllSources(client);
+  const nameById = new Map(sources.map((source) => [source.id, source.name]));
+  const bySource = new Map<string, string[]>();
+  for (const row of data as {
+    url: string | null;
+    status: string;
+    moderator_note: string;
+    extracted: ExtractedProduct | null;
+    source_id: string;
+  }[]) {
+    const source = nameById.get(row.source_id) ?? "?";
+    const name = row.extracted?.modelName ?? row.url ?? "?";
+    bySource.set(source, [
+      ...(bySource.get(source) ?? []),
+      `  ${name}${row.status === "pending" ? "" : ` [${row.status}]`}\n` +
+        `      „${row.moderator_note}"\n` +
+        `      ${row.url ?? ""}`,
+    ]);
+  }
+  console.log(`MODERÁTORI JEGYZET: ${data.length} jelölten\n`);
+  for (const [source, lines] of [...bySource].sort((a, b) => b[1].length - a[1].length)) {
+    console.log(`── ${source} (${lines.length})`);
+    console.log(lines.join("\n"));
+    console.log("");
+  }
+}
+
 async function commandCheckDuplicates(args: Args): Promise<void> {
   const fix = flag(args, "fix") !== undefined;
   const client = connect();
@@ -1983,6 +2034,9 @@ async function main(): Promise<void> {
       break;
     case "verify-specs":
       return commandVerifySpecs(args);
+    case "list-notes":
+      await commandListNotes(args);
+      break;
     case "check-duplicates":
       await commandCheckDuplicates(args);
       break;

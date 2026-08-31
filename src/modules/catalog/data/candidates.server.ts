@@ -467,6 +467,29 @@ export async function rejectCandidate(
 }
 
 /**
+ * MODERÁTORI JEGYZET mentése a jelöltre.
+ *
+ * NEM bírálja el a jelöltet: a sor `status`-a és a helye a sorban változatlan
+ * marad. Ez szándékos — a jegyzet arról szól, hogy a jelölt ADATÁVAL van baj,
+ * ami a döntéstől független (a moderátor jóváhagyhatja is, meg is jegyezheti,
+ * hogy a nevet javítani kell).
+ *
+ * Az ÜRES szöveg `null`-t ír: így a jegyzetes jelöltek listája pontosan a
+ * valódi teendőket adja, nem üres sorokat.
+ */
+export async function saveCandidateNote(
+  supabase: SupabaseClient,
+  input: { candidateId: string; note: string },
+): Promise<ModerationResult> {
+  const note = input.note.trim();
+  const { error } = await supabase
+    .from("catalog_candidates")
+    .update({ moderator_note: note === "" ? null : note })
+    .eq("id", input.candidateId);
+  return error ? { ok: false, errorKey: "admin.error.updateFailed" } : { ok: true };
+}
+
+/**
  * Az életciklus-vizsgálathoz: minden deszka, kevés oszloppal.
  * `kind = 'board'` — a lista deszka-életciklusról szól (a figyelő ma csak
  * deszkát lát); a kiegészítők életciklusa a terv 3. szakaszával jön.
