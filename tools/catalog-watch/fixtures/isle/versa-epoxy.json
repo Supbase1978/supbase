@@ -4,6 +4,7 @@
   "capturedAt": "2026-08-30",
   "teaches": "Az EGYETLEN kemény ISLE-deszka: a Type: Hardboard mező dönt, nem a szöveg (a lap a felfújható modelleket is említi). A vastagság VEGYES TÖRT: 4 1/2\" = 11,4 cm — a törtnek az ablak elején kell állnia, különben a hosszba és a szélességbe is beszivárog. A képek a gyártó SAJÁT, beágyazott képlistájából jönnek — a pozíció-fallback itt zászló-ikont és életképet adott.",
   "rendered": false,
+  "series": false,
   "expected": [
     {
       "sourceUrl": "https://islesurfandsup.com/products/versa-epoxy",

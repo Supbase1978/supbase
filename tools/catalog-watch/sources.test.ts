@@ -11,7 +11,8 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { extractPageProducts } from "./crawl.ts";
+import { extractPageProducts, withSeriesText } from "./crawl.ts";
+import { htmlToText } from "./html.ts";
 import { loadFixtures } from "./fixtures/fixtures.ts";
 import { SOURCE_RECIPES } from "./sources/index.ts";
 import { planSourceSync, type ExistingSource } from "./sources/plan.ts";
@@ -116,11 +117,18 @@ describe("mentett gyártói oldalak", () => {
       });
 
       it(`ugyanazt nyeri ki (${fixture.teaches})`, () => {
+        // A SOROZAT-LEÍRÁS a hálóban is a termékoldal szövege UTÁN áll —
+        // pontosan úgy, ahogy a `crawlSource` teszi. E nélkül a ROC fixtúrája
+        // a TEHERBÍRÁS NÉLKÜLI kinyerést rögzítené elvárásként, vagyis azt a
+        // hiányt betonozná be, ami miatt a `seriesTextByUrl` megszületett.
+        const baseText = fixture.renderedText ?? htmlToText(fixture.html);
         const products = extractPageProducts(
           fixture.html,
           fixture.url,
           recipe!.crawlConfig,
-          fixture.renderedText,
+          fixture.seriesText === ""
+            ? fixture.renderedText
+            : withSeriesText(baseText, fixture.seriesText),
         );
         expect(products).toEqual(fixture.expected);
       });

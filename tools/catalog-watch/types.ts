@@ -298,6 +298,23 @@ export interface CrawlConfig {
    * `usageBars` · `prose` · `multiUseProse`.
    */
   categoryMethods?: string[];
+  /**
+   * SOROZAT-SZINTŰ LEÍRÁS a termékoldal szövege MELLÉ (F2.1-utó-58):
+   * termék-URL-részlet → a sorozat leírását adó URL.
+   *
+   * Élesben (rocoutdoors.com, 2026-09-01) a gyártó a specifikációt EGYSZER
+   * írja le, a SOROZATRA — a sorozat tagjai csak színben térnek el. A
+   * `10' Explorer` termékoldala TEHERBÍRÁST sehol nem közöl, a
+   * `/collections/explorer-series` leírása viszont igen; a `10' Scout`
+   * színváltozatok lapjáról még a vastagság is hiányzik. Teherbírás nélkül a
+   * deszka a moderációs sorban ragad, tehát ez nem szépséghiba.
+   *
+   * A megadott cím PONTOSAN egy sorozat leírását adja — a kollekció HTML-lapja
+   * erre MÉRHETŐEN alkalmatlan, mert a ROC-nál a TÖBBI sorozat leírása is ott
+   * áll rajta, és a szomszéd sorozat méretét szórná be. Shopify-boltnál a
+   * `/collections/<slug>.json` a helyes cím. Ld. `series-text.ts`.
+   */
+  seriesTextByUrl?: Record<string, string>;
   /** Szabad szöveges megjegyzés az adminnak. */
   notes?: string;
 }

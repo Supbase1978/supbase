@@ -36,6 +36,7 @@ import {
   parseRobotsTxt,
   type RobotsTxt,
 } from "./robots.ts";
+import { seriesTextFromPayload, seriesTextUrlFor } from "./series-text.ts";
 import {
   expandShopifyProduct,
   fetchShopifyCatalog,
@@ -153,6 +154,67 @@ function applySpecTable(
       maxLoadKg: product.specs.maxLoadKg ?? specs.maxLoadKg,
     },
   };
+}
+
+/**
+ * A termékhez tartozó SOROZAT-LEÍRÁS szövege (`seriesTextByUrl`), gyorstárral.
+ *
+ * Egy sorozat leírását a bejárás EGYSZER tölti le, akárhány terméke van — a
+ * ROC-nál hat Horizon-színváltozat mutat ugyanarra a kollekcióra. A gyorstár
+ * a hívó futásáé, tehát nem él túl egy crawl-menetet.
+ *
+ * HIBATŰRŐ: ha a sorozat-leírás nem érhető el, üres szöveggel tér vissza, és a
+ * termék kinyerése a saját oldaláról fut tovább. A hiba a summary-ba kerül,
+ * hogy a mezőlefedettségi sor mellett látszódjon az OKA is.
+ */
+async function seriesTextFor(
+  productUrl: string,
+  config: CrawlConfig,
+  robots: RobotsTxt,
+  origin: string,
+  deps: CrawlDeps,
+  cache: Map<string, string>,
+  summary: SourceCrawlSummary,
+): Promise<string> {
+  const map = config.seriesTextByUrl;
+  if (map === undefined) return "";
+  const url = seriesTextUrlFor(productUrl, map);
+  if (url === null) return "";
+  const cached = cache.get(url);
+  if (cached !== undefined) return cached;
+
+  let text = "";
+  try {
+    const parsed = new URL(url, origin);
+    // A SOROZAT-LEÍRÁS IS KÉRÉS: ugyanaz a robots-kapu vonatkozik rá, mint a
+    // termékoldalakra. A `robotsBlocked` számláló szándékosan NEM nő tőle —
+    // az a termék-URL-eké, és egy sorozat-leírás nem termék.
+    if (isPathAllowed(robots, `${parsed.pathname}${parsed.search}`, CRAWLER_USER_AGENT)) {
+      const page = await deps.fetchText(parsed.toString());
+      if (page.status >= 400) {
+        addError(summary, `${url}: sorozat-leírás HTTP ${page.status}`);
+      } else {
+        text = seriesTextFromPayload(page.text);
+      }
+    } else {
+      addError(summary, `${url}: sorozat-leírás robots-tiltott`);
+    }
+  } catch (error) {
+    addError(summary, `${url}: sorozat-leírás (${errorMessage(error)})`);
+  }
+  cache.set(url, text);
+  return text;
+}
+
+/**
+ * A termékoldal szövege + a SOROZAT leírása, a kinyerő `overrideText`-jeként.
+ *
+ * A sorozat-szöveg HÁTUL áll: a `parseSpecsFromText` első-találat-nyer
+ * sorrendje miatt így csak a MÉG ÜRES mezőket tölti — a termék saját,
+ * konkrétabb adata mindig üt.
+ */
+export function withSeriesText(pageText: string, seriesText: string): string {
+  return seriesText === "" ? pageText : `${pageText}\n${seriesText}`;
 }
 
 function emptySummary(source: CatalogSourceRow): SourceCrawlSummary {
@@ -709,6 +771,8 @@ export async function crawlSource(
   const boards = await deps.store.listBoardsForMatch();
   /** A futás ÖSSZES kinyert terméke — ebből lesz a mezőlefedettség. */
   const extractedAll: ExtractedProduct[] = [];
+  /** Sorozat-leírások gyorstára (`seriesTextByUrl`) — soronként egy letöltés. */
+  const seriesCache = new Map<string, string>();
 
   for (const url of urls) {
     let path: string;
@@ -733,7 +797,25 @@ export async function crawlSource(
         continue;
       }
 
-      let products = extractPageProducts(page.text, url, config, null);
+      // SOROZAT-SZINTŰ LEÍRÁS (`seriesTextByUrl`): ahol a gyártó a specifikációt
+      // a sorozatra írja le, nem a termékre. A leírást a termékoldal szövege
+      // UTÁN fűzzük — így csak a még üres mezőket tölti. Ld. `series-text.ts`.
+      const seriesText = await seriesTextFor(
+        url,
+        config,
+        robots,
+        origin,
+        deps,
+        seriesCache,
+        summary,
+      );
+
+      let products = extractPageProducts(
+        page.text,
+        url,
+        config,
+        seriesText === "" ? null : withSeriesText(htmlToText(page.text), seriesText),
+      );
       if (deps.renderText && needsRenderedText(products, config)) {
         await sleep(delayMs);
         // A RENDERELÉS BUKÁSA NEM VISZI A FUTÁST (F2.1-utó-47). A fallback
@@ -748,7 +830,12 @@ export async function crawlSource(
           return null;
         });
         if (renderedText !== null) {
-          const rerendered = extractPageProducts(page.text, url, config, renderedText);
+          const rerendered = extractPageProducts(
+            page.text,
+            url,
+            config,
+            withSeriesText(renderedText, seriesText),
+          );
           if (rerendered.length > 0) products = rerendered;
         }
       }

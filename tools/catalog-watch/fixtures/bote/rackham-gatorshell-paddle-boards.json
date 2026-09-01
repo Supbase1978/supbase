@@ -4,6 +4,7 @@
   "capturedAt": "2026-08-29",
   "teaches": "UGYANAZ A MODELLNÉV MÁSIK URL-EN: a JSON-LD itt is „Rackham Gatorshell”, de ez a lap a 14 lábast árulja (az egyes számú URL a 12 lábast). Egyetlen kínált méret mellett is bontunk, hogy a méret a névbe kerüljön.",
   "rendered": false,
+  "series": false,
   "expected": [
     {
       "sourceUrl": "https://www.boteboard.com/products/rackham-gatorshell-paddle-boards?size=14",

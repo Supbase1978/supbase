@@ -4,6 +4,7 @@
   "capturedAt": "2026-08-30",
   "teaches": "HIBÁS GYÁRTÓI ADAT, amit NEM javítunk ki: Length: 11.6\" — hüvelyk-jel láb helyett, ebből 29,5 cm lesz a valós 350 helyett. A gyanú-jelzésnek kell elkapnia; a fixtúra azt rögzíti, hogy nem találunk ki értéket a gyártó helyett. A képek a gyártó SAJÁT, beágyazott képlistájából jönnek — a pozíció-fallback itt zászló-ikont és életképet adott.",
   "rendered": false,
+  "series": false,
   "expected": [
     {
       "sourceUrl": "https://islesurfandsup.com/products/sportsman-isup",

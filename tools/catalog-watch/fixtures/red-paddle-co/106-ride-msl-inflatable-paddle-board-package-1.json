@@ -4,6 +4,7 @@
   "capturedAt": "2026-08-28",
   "teaches": "HOSSZ csak a CIMBEN (lengthFromTitle), TEHERBIRAS csak a prozaban (riders up to 100kg), KATEGORIA a gyarto Rider Style mezojebol (labeledUse). A cim &ndash; entitast visel: feloldatlanul a levagas nem tortenik meg, es a bennmarado Red Equipment a gyujtolap-szurore esik - a forras EGYETLEN terméket sem adott.",
   "rendered": false,
+  "series": false,
   "expected": [
     {
       "sourceUrl": "https://red.equipment/products/106-ride-msl-inflatable-paddle-board-package-1",

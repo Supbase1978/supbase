@@ -4,6 +4,7 @@
   "capturedAt": "2026-08-21",
   "teaches": "TRANSZPONALT spec-tabla (cimkek egy oszlopban, alattuk az ertekek); a MAX. PAYLOAD fontot ES kilogrammot is kiir (308 lbs / 140 kg), ezert kotelezo a kg a mintaban.",
   "rendered": false,
+  "series": false,
   "expected": [
     {
       "sourceUrl": "https://aquamarina.com/products/advanced-all-around/coral-nf/",

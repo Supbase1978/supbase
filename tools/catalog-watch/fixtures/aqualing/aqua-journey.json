@@ -4,6 +4,7 @@
   "capturedAt": "2026-08-29",
   "teaches": "A HÁROM SORBA TÖRDELT attribútum-tábla (címke ⏎ kettőspont ⏎ érték), ahol az EGYSÉG A CÍMKÉBEN áll („Hosszúság (cm)\", „Űrtartalom (l)\"). Ez adja azt a két mezőt, amit a gyártó saját boltja NEM közöl: űrtartalom 208 l és „Deszka nettó tömege\" 11,6 kg. A csonkolt <title> utótagja („- aquali\") is levágódik.",
   "rendered": false,
+  "series": false,
   "expected": [
     {
       "sourceUrl": "https://www.aqualing.hu/hydro-force-aqua-journey-sup-szett-274x76x12-cm-2021.html",

@@ -4,6 +4,7 @@
   "capturedAt": "2026-08-29",
   "teaches": "A teljes lengyel „Parametry\" tábla mind a hat mezőnkre: Długość deski / Szerokość / Wysokość / Pojemność / obciążenie, kettős írásmóddal (12’6″ / 381 cm). A cím szerkezete <modell> | <reklám> | Sklep Uone — a bolt-utótag után a maradék ELSŐ darabja a modell.",
   "rendered": false,
+  "series": false,
   "expected": [
     {
       "sourceUrl": "https://www.u1.net.pl/deska-sup-wanderer-132-eco-2025/",

@@ -41,6 +41,16 @@ export interface FixtureCase {
   teaches: string;
   /** Kellett-e böngésző-renderelés (ilyenkor van `<slug>.txt.gz` is). */
   rendered: boolean;
+  /**
+   * Van-e SOROZAT-LEÍRÁS (`seriesTextByUrl`) — ilyenkor `<slug>.series.txt.gz`
+   * is készül.
+   *
+   * MIÉRT KELL A HÁLÓBA: a ROC-nál a TEHERBÍRÁS kizárólag a sorozat
+   * kollekció-leírásában áll, a termékoldalon sehol. E nélkül a fixtúra a
+   * teherbírás NÉLKÜLI kinyerést rögzítené elvárásként — vagyis épp azt a
+   * hiányt betonozná be, ami miatt a mechanizmus született.
+   */
+  series: boolean;
   /** A VÁRT kinyerés — a `sources.test.ts` ehhez hasonlít. */
   expected: ExtractedProduct[];
 }
@@ -51,6 +61,8 @@ export interface LoadedFixture extends FixtureCase {
   html: string;
   /** A renderelt oldalszöveg, ha a forrás rendereléses. */
   renderedText: string | null;
+  /** A sorozat leírásának szövege, ha a recept ilyen forrásra mutat. */
+  seriesText: string;
 }
 
 /** Minden fixtúra, gyártó-mappánként. */
@@ -64,6 +76,7 @@ export function loadFixtures(): LoadedFixture[] {
       const slug = file.slice(0, -".json".length);
       const kase = JSON.parse(readFileSync(join(dir, file), "utf8")) as FixtureCase;
       const textPath = join(dir, `${slug}.txt.gz`);
+      const seriesPath = join(dir, `${slug}.series.txt.gz`);
       out.push({
         ...kase,
         id: `${brand.name}/${slug}`,
@@ -71,6 +84,9 @@ export function loadFixtures(): LoadedFixture[] {
         renderedText: existsSync(textPath)
           ? gunzipSync(readFileSync(textPath)).toString("utf8")
           : null,
+        seriesText: existsSync(seriesPath)
+          ? gunzipSync(readFileSync(seriesPath)).toString("utf8")
+          : "",
       });
     }
   }

@@ -1734,3 +1734,79 @@ describe("kép-URL entitás-dekódolás", () => {
     expect(p?.imageUrl).toContain("width=768");
   });
 });
+
+describe("melléknévi méret-lánc a prózában (parseProseDimensionChain)", () => {
+  it("kiolvassa a hármast, ahol az érték a melléknév ELŐTT áll", () => {
+    // rocoutdoors.com, Explorer — a gyártó SEMMILYEN spec-táblát nem ad.
+    const specs = parseSpecsFromText(
+      "At 10' tall, 32\" wide, and 6\" thick, these boards are built tough.",
+    );
+    expect(specs.lengthCm).toBe(304.8);
+    expect(specs.widthCm).toBe(81.3);
+    expect(specs.thicknessCm).toBe(15.2);
+  });
+
+  it("a KIÍRT egységet és a `long` alakot is viszi", () => {
+    // rocoutdoors.com, Scout (sorozat-leírás) — kiírt hüvelyk-egység.
+    const scout = parseSpecsFromText(
+      "These boards are 10’ tall, 33 inches wide and 6 inches thick with a weight capacity of 350 pounds.",
+    );
+    expect(scout.lengthCm).toBe(304.8);
+    expect(scout.widthCm).toBe(83.8);
+    expect(scout.thicknessCm).toBe(15.2);
+    expect(scout.maxLoadKg).toBe(158.8);
+
+    // rocoutdoors.com, Horizon — összetett láb-hüvelyk alak, `long` melléknév.
+    const horizon = parseSpecsFromText(
+      "At 10'6\" long, 33\" wide, and 6\" thick, each board delivers a balanced ride.",
+    );
+    expect(horizon.lengthCm).toBe(320);
+    expect(horizon.widthCm).toBe(83.8);
+    expect(horizon.thicknessCm).toBe(15.2);
+  });
+
+  it("a PÁR is elég — a vastagság tagja opcionális", () => {
+    // rocoutdoors.com, Abyss Coastline — vastagságot a gyártó nem ír.
+    const specs = parseSpecsFromText(
+      "Measuring 10'6\" long and 33\" wide with a 350-pound weight capacity, the Coastline delivers.",
+    );
+    expect(specs.lengthCm).toBe(320);
+    expect(specs.widthCm).toBe(83.8);
+    expect(specs.thicknessCm).toBeNull();
+    // A KÖTŐJELES egység (`350-pound`) is egység — enélkül a mező némán üres.
+    expect(specs.maxLoadKg).toBe(158.8);
+  });
+
+  it("ÁRVA `thick` NEM indítja el a láncot (anyagvastagság, Jobe)", () => {
+    // A `thick` puszta címkeként elrontja a Jobe-t: ott a próza a deckpad
+    // ANYAGÁRÓL ír. A védelem az ALAKZAT — hossz + szélesség tag kell elé.
+    const specs = parseSpecsFromText(
+      "It features a plush 5mm thick non-slip EVA foam deckpad for ultimate comfort.",
+    );
+    expect(specs.thicknessCm).toBeNull();
+    expect(specs.lengthCm).toBeNull();
+  });
+
+  it("a SZERKESZTETT adatot nem írja felül, csak a hiányzót tölti", () => {
+    // A címkézett olvasás ELŐBB fut, és a lánc csak a MÉG ÜRES mezőt tölti:
+    // a hossz és a szélesség a táblázaté marad, a vastagságot a próza adja.
+    const specs = parseSpecsFromText(
+      [
+        "Length: 340 cm",
+        "Width: 86 cm",
+        "",
+        "A great board for every day on the water.",
+        "",
+        "Measuring 10'6\" long and 33\" wide and 6\" thick.",
+      ].join("\n"),
+    );
+    expect(specs.lengthCm).toBe(340);
+    expect(specs.widthCm).toBe(86);
+    expect(specs.thicknessCm).toBe(15.2);
+  });
+
+  it("a HOSSZ nem lehet kisebb a szélességnél — geometriai őrszem", () => {
+    const specs = parseSpecsFromText('Its 12" long and 34" wide deck is stable.');
+    expect(specs.lengthCm).toBeNull();
+  });
+});

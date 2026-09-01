@@ -4,6 +4,7 @@
   "capturedAt": "2026-08-21",
   "teaches": "Renderelés + görgetés után jön elő a SIZES AND SPECS tábla, és EGY oldal a modellcsalád MINDEN méretét adja — méretenként külön jelölt, ?size= URL-lel. A galéria a thumbnails-carousel konténerből jön.",
   "rendered": true,
+  "series": false,
   "expected": [
     {
       "sourceUrl": "https://www.fanatic.com/en/products/fanatic-viper-air-33250-1504",

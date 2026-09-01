@@ -678,6 +678,73 @@ adatunkkal; **kettőnél 20 kg-mal TÚLBECSÜLTE a teherbírást** (Gladiator El
 Journey-nél pedig 95 kg-ot ír a két független forrásunk egybehangzó 100-a
 helyett. Épp az a mező, amire a Deszkaválasztó kemény biztonsági szűrőt épít.
 
+**F2.1-utó-58 — ROC Outdoors bekötve, és a SOROZAT-SZINTŰ leírás
+(2026-09-01).** Felhasználói lelet: „a leírás sorozatonként van megadva
+általános szövegben". Pontosan így van, és ez a forrás fő tanulsága.
+
+A gyártó a sorozat minden tagját ugyanabban a méretben árulja, csak a színük
+tér el, ezért a specifikációt EGYSZER írja le — a kollekció leírásában:
+„The Explorer series boards … are 10' tall, 32 inches wide with a **weight
+capacity of 350 pounds**". A `10' Explorer` termékoldalának TELJES HTML-jében
+a `capacity` szó ELŐ SEM FORDUL, a négy `10' Scout` színváltozat lapjáról
+pedig még a VASTAGSÁG is hiányzik. Teherbírás nélkül a deszka a moderációs
+sorban ragad és a Deszkaválasztó sem ajánlja — vagyis a gyártó KÖZLI az
+adatot, csak nem ott, ahol kerestük.
+
+Erre való az új `seriesTextByUrl` (`series-text.ts`): termék-URL-részlet → a
+sorozat leírását adó cím. A szöveg a termékoldalé UTÁN kerül, tehát csak a MÉG
+ÜRES mezőket tölti; egy sorozat leírását a bejárás EGYSZER kéri le.
+
+**A kollekció HTML-LAPJA erre alkalmatlan** — ez a mechanizmus alakját
+meghatározó mérés. Ugyanazon a lapon ott áll a TÖBBI sorozat leírása is (az
+Explorer lapján a Scout „10' tall, 33 inches wide" mondata), tehát a
+hozzáfűzés a SZOMSZÉD sorozat méretét szórná be. A cím ezért a Shopify
+`/collections/<slug>.json`: egyetlen kérés, pontosan egy `description`.
+Ugyanez a mérés mondta meg, mire NE indítsunk kérést: a ROC hat sorozatából
+csak három leírása mond többet a termékoldalnál, a `cruiser-series`-nek nincs
+is leírása.
+
+**SPEC-TÁBLA EGYÁLTALÁN NINCS.** A méret a leírás egyetlen mondatában áll,
+MELLÉKNÉVI alakban, az érték a címkéje ELŐTT: `At 10' tall, 32" wide, and 6"
+thick`. A `wide` már címke volt, a `tall`/`long`/`thick` nem — **mind a hat
+modellnél hiányzott a HOSSZ**, ami kizáró mező: a forrás nulla terméket adott
+volna. A `thick` puszta címkeként viszont továbbra is TILOS (elrontja a
+Jobe-t, ahol a próza a deckpad ANYAGÁRÓL ír, `5mm thick`), ezért nem
+szóválasztás, hanem ALAKZAT védi: a hossz és a szélesség tagjának egymás
+után, ebben a sorrendben, egy mondatnyi távolságon belül kell állnia, és a
+hossz nem lehet kisebb a szélességnél. Árva `5mm thick` sosem indítja el a
+láncot; a vastagság tagja opcionális (az Abyss mondata pár, nem hármas).
+
+Két kisebb, mért javítás:
+- **A KÖTŐJEL is elválasztó a szám és az egysége között**: `with a 350-pound
+  weight capacity`. A `\s*` ezt nem fogta, a mező NÉMÁN üresen maradt.
+- **A GYIK ellentmondhat a spec-rácsnak.** Amikor a specifikusabb `weight
+  capacity` címke ELŐRE került a needle-listán, a FunWater Island Explorerénél
+  a GYIK „up to **420 lbs**"-e ütötte a gyártó saját rácsának `Capacity
+  350LBS`-ét. A fixtúra-háló azonnal megfogta; a szerkesztett rács ÜT a
+  prózán, tehát a rács címkéje maradt elöl.
+
+**Eredmény:** 14 URL · 14 termék · 14 új jelölt · `hossz ✓ · szél ✓ ·
+vast 13/14 · térf n.a. · súly 0/14 · teher 7/14`. Hat modell: Explorer (10'),
+Kahuna, Cruiser, Horizon, Abyss Coastline (10'6"), Scout (10'). A Horizon 6, a
+Scout 4 SZÍNVÁLTOZATA külön termékoldal, azonos speckel — összefésülés a
+moderátoré (a `boards.colors` mező még nyitott tétel).
+
+**A három hiány három KÜLÖNBÖZŐ eset** — és ezt szét kell tartani:
+- **űrtartalom:** a gyártó sehol nem közli → `unpublishedFields`, deklarálva;
+- **teherbírás a Cruisernél és a hat Horizonnál:** a `cruiser-series`-nek
+  nincs leírása, a `horizon-series`-é a teherbírást kihagyja, a termékoldalukon
+  sincs. Ez NEM `unpublishedFields`: a márka a másik négy modellnél KÖZLI
+  (350 pounds), tehát forrás-szintű hiányként deklarálni hazugság lenne — a
+  `teher 7/14` a helyes, moderátori döntést kérő állapot;
+- **súly:** közli (18 pounds), de két különböző prózai fordulatban („each
+  board weighs only…", „lightweight at just…"). Mintát írni rá találgatás
+  lenne.
+
+A fixtúra-háló ezzel a sorozat-szöveget is menti (`<slug>.series.txt.gz`) —
+enélkül a ROC fixtúrája a TEHERBÍRÁS NÉLKÜLI kinyerést rögzítené elvárásként,
+vagyis épp azt a hiányt betonozná be, ami miatt a mechanizmus megszületett.
+
 **A `Kezdők_tanácsok/nepszeru_sup_markak_es_forgalmazok.md` mind a 12 márkája
 be van kötve** (+ az Indiana, az Uone és három bolt a táblázaton kívül).
 

@@ -4,6 +4,7 @@
   "capturedAt": "2026-08-29",
   "teaches": "A SPEC-TÁBLA PLATFORM-TÁBLA: 10'6\" és 11'6\" méretet is felsorol, a bolt viszont CSAK a 10'6\"-ot árulja. A kínálatot a variáns-választó puszta méret-sora mondja meg — enélkül egy nem létező deszka került a katalógusba.",
   "rendered": false,
+  "series": false,
   "expected": [
     {
       "sourceUrl": "https://www.boteboard.com/products/breeze-gatorshell-paddle-board?size=10-6",

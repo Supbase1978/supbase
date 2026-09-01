@@ -4,6 +4,7 @@
   "capturedAt": "2026-08-30",
   "teaches": "Cimkezett kettospontos spec; a kategoria a MORZSAMENUBOL; a termekkep NEM a fejleclogo. A galéria a w-bigimglist konténerből — a bélyegkép-változatokat az útvonal-azonosság szűri (ugyanaz a fájl ?x-oss-process=resize paraméterrel).",
   "rendered": false,
+  "series": false,
   "expected": [
     {
       "sourceUrl": "https://www.zraysports.com/productinfo/283788.html",

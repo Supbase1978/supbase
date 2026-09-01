@@ -90,7 +90,8 @@ működő nyer**:
 | 3 | a spec címkézett szövegként ott van | `--html-only` — ez **ÜT** a JSON-LD-n |
 | 4 | a spec csak renderelés után létezik | `--render-when-empty` (a fallback görget is) |
 | 5 | egy oldal több méretet ad | méretenkénti bontás, `?size=…` egyedi URL-lel |
-| 6 | a kategória | KÜLÖN katalógusa van — ld. a következő szakaszt |
+| 6 | a spec a SOROZAT leírásában van, nem a terméken | `seriesTextByUrl` — ld. lent |
+| 7 | a kategória | KÜLÖN katalógusa van — ld. a következő szakaszt |
 
 **A „Shopify" önmagában nem elég ok a Shopify-módra.** Élesben
 (funwaterboard.com): a bolt Shopify, a `/products.json` szolgál is — de a
@@ -385,6 +386,58 @@ bemenetén. A változatok:
   méretenként külön jelölt kell (`extractProductsFromPage`) — és a jelölt
   URL-jének is méretenként EGYEDINEK kell lennie (`?size=…`), különben a
   méretek felülírják egymást a jelölt-sorban.
+
+**A SPEC A SOROZAT LEÍRÁSÁBAN VAN, nem a termékoldalon** (`seriesTextByUrl`)
+- Élesben (rocoutdoors.com, 2026-09-01): a gyártó a sorozat minden tagját
+  ugyanabban a méretben árulja, csak a színük más, ezért az adatot EGYSZER
+  írja le — a kollekció leírásában. A `10' Explorer` termékoldalán a
+  `capacity` szó ELŐ SEM FORDUL; a `/collections/explorer-series` leírása
+  viszont kimondja: „…are 10' tall, 32 inches wide with a **weight capacity of
+  350 pounds**". A Scout lapjáról még a VASTAGSÁG is hiányzik.
+- A recept `seriesTextByUrl`-je termék-URL-részletet képez le a sorozat
+  leírását adó címre; a szöveg a termékoldalé UTÁN kerül, tehát csak a MÉG
+  ÜRES mezőket tölti. Egy sorozat leírását a bejárás EGYSZER kéri le.
+- **A kollekció HTML-LAPJA erre alkalmatlan.** Ugyanazon a lapon ott áll a
+  TÖBBI sorozat leírása is (az Explorer lapján a Scout „10' tall, 33 inches
+  wide" mondata) — a hozzáfűzés a SZOMSZÉD sorozat méretét szórná be. A cím
+  ezért Shopify-nál a `/collections/<slug>.json`: egyetlen `description` mező.
+- **Mérd meg, hogy tényleg ad-e valamit.** A ROC hat sorozatából csak három
+  leírása mond többet a termékoldalnál; a `cruiser-series`-nek NINCS is
+  leírása. Kérést indítani a többire ingyen sem érne semmit.
+
+**MÉRET MELLÉKNÉVI LÁNCBÓL, spec-tábla NÉLKÜL**
+- Van gyártó, aki spec-táblát EGYÁLTALÁN nem ad: a méret a leírás egyetlen
+  mondatában áll, az érték a címkéje ELŐTT, melléknévi alakban —
+  `At 10' tall, 32" wide, and 6" thick` /
+  `Measuring 10'6" long by 33" wide and with a thickness of 6"`.
+- A `wide` régóta címke volt, a `tall`/`long`/`thick` nem: a ROC hat
+  modelljéből EGYNÉL SEM jött ki a HOSSZ, ami kizáró mező — a forrás nulla
+  terméket adott volna.
+- **A `thick` puszta címkeként továbbra is TILOS** (elrontja a Jobe-t: ott a
+  próza a deckpad ANYAGÁRÓL ír, `5mm thick`). A védelem ezért nem szóválasztás,
+  hanem ALAKZAT: a hossz és a szélesség tagjának EGYMÁS UTÁN, ebben a
+  sorrendben, egy mondatnyi távolságon belül kell állnia, és a hossz nem lehet
+  kisebb a szélességnél. Árva `5mm thick` sosem indítja el a láncot.
+- A vastagság tagja opcionális: a pár (`10'6" long and 33" wide`) is elég.
+
+**A KÖTŐJEL IS ELVÁLASZTÓ a szám és az egysége között**
+- `with a 350-pound weight capacity` — a jelzői alakot az angol így írja, és a
+  `\s*` ezt nem fogja meg. A mező NÉMÁN üresen maradt.
+
+**A GYIK ÉS A MARKETINGSZÖVEG ELLENTMONDHAT A SPEC-RÁCSNAK**
+- Élesben (funwaterboard.com, Island Explorer): a gyártó rácsa `Capacity
+  350LBS`, a lap alján a GYIK viszont „a weight capacity of up to **420 lbs**".
+  Amikor a specifikusabb `weight capacity` címke ELŐRE került a needle-listán,
+  a GYIK száma nyert — a fixtúra-háló azonnal megfogta.
+- A szabály ugyanaz, mint mindenütt: **a szerkesztett rács ÜT a prózán**, tehát
+  a rács címkéje megy elöl a listán, akkor is, ha rövidebb.
+
+**A LAP ELSŐ `<title>`-je NEM feltétlen az, amit a grep talál**
+- A Shopify-sablonok SVG-ikonjai saját `<title>` elemet viselnek (`Facebook`,
+  `Toggle menu`, `Visa`) — tucatnyit. A valódi cím a `<head>`-ben van, tehát
+  elöl, de TÖBB SORBA tördelve: a soron belüli `grep '<title>[^<]*</title>'`
+  emiatt az első IKON címét mutatja. A kinyerő `[\s\S]*?` mintája jól veszi;
+  ez a jegyzet a KÉZI ellenőrzésnek szól, ahol kétszer is félrevitt.
 
 **Csak görgetés után megjelenő spec**
 - A Fanatic termékoldalán a `SIZES AND SPECS` tábla LUSTA betöltésű: sem a nyers

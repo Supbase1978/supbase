@@ -4,6 +4,7 @@
   "capturedAt": "2026-08-29",
   "teaches": "A <title> a KAYAK szót viseli (LowRider Aero Tandem Duo Paddle Board | SUP Kayak Hybrid), amitől a classifyProduct kajaknak nézte és eldobta a deszkát — a modellnév a Product JSON-LD-ből jön (modelNameFromJsonLd). A Board Weight a deszkáé, a Seat Weight a tartozék ülésé.",
   "rendered": false,
+  "series": false,
   "expected": [
     {
       "sourceUrl": "https://www.boteboard.com/products/lowrider-aero-tandem-hybrid-paddle-board",

@@ -43,6 +43,7 @@ import { recipe as indiana } from "./indiana.ts";
 import { recipe as isle } from "./isle.ts";
 import { recipe as jobe } from "./jobe.ts";
 import { recipe as redPaddle } from "./red-paddle.ts";
+import { recipe as rocOutdoors } from "./roc-outdoors.ts";
 import { recipe as starboard } from "./starboard.ts";
 import { recipe as supDeszka } from "./sup-deszka.ts";
 import { recipe as uone } from "./uone.ts";
@@ -65,6 +66,7 @@ export const SOURCE_RECIPES: readonly SourceRecipe[] = [
   isle,
   jobe,
   redPaddle,
+  rocOutdoors,
   starboard,
   supDeszka,
   uone,

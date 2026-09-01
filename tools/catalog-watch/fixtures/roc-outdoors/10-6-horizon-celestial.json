@@ -1,0 +1,39 @@
+{
+  "source": "ROC Outdoors",
+  "url": "https://www.rocoutdoors.com/products/10-6-horizon-celestial",
+  "capturedAt": "2026-09-01",
+  "teaches": "SOROZAT-SZOVEG NELKULI ROC-lap: a meret a prozai lancbol jon (At 10'6\" long, 33\" wide, and 6\" thick), TEHERBIRAST viszont a gyarto ennel a sorozatnal SEHOL nem kozol - sem a termekoldalon, sem a horizon-series leirasaban. A szinnev (Celestial) a modellnevben marad, az osszefesules moderatori dontes.",
+  "rendered": false,
+  "series": false,
+  "expected": [
+    {
+      "sourceUrl": "https://www.rocoutdoors.com/products/10-6-horizon-celestial",
+      "brandName": "ROC",
+      "modelName": "Horizon Celestial",
+      "rawTitle": "10' 6\" Horizon – Celestial",
+      "modelYear": null,
+      "priceHuf": null,
+      "inStock": null,
+      "imageUrl": "https://www.rocoutdoors.com/cdn/shop/files/celestial_horizon_without_seat_1024x1024.png?v=1776791629&width=768",
+      "imageUrls": [],
+      "boardType": "allround",
+      "boardTypeSource": "pinnedUrl",
+      "boardTypes": [
+        {
+          "type": "allround",
+          "source": "pinnedUrl"
+        }
+      ],
+      "specs": {
+        "lengthCm": 320,
+        "widthCm": 83.8,
+        "thicknessCm": 15.2,
+        "volumeL": null,
+        "weightKg": null,
+        "maxLoadKg": null,
+        "inflatable": true
+      },
+      "accessoryType": null
+    }
+  ]
+}

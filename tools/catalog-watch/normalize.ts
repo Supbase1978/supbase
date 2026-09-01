@@ -582,6 +582,20 @@ const SPEC_LABELS = {
     "max load",
     "max weight",
     "capacity",
+    // Élesben mért alak (rocoutdoors.com, 2026-09-01): „…with a 350-pound
+    // weight capacity, the Coastline delivers…". Az ÉRTÉK a címke ELŐTT áll,
+    // de nem közvetlenül: a `weight` szó beékelődik, ezért a puszta
+    // „capacity" needle mellett az „érték a címke előtt" ág nem illeszkedik.
+    // Az összetett címke mellett a trailing-ablak pontosan a `350-pound`
+    // darabon végződik.
+    //
+    // MIÉRT ÁLL A „capacity" UTÁN, pedig specifikusabb: mert az összetett
+    // alakot a MARKETINGSZÖVEG is használja. Élesben (funwaterboard.com,
+    // Island Explorer) a GYIK-blokk azt írja, hogy „a weight capacity of up
+    // to 420 lbs", miközben a gyártó saját spec-rácsa `Capacity 350LBS` —
+    // előre sorolva a GYIK száma nyert, és a fixtúra azonnal meg is fogta.
+    // A szerkesztett rács ÜT a prózán, tehát a rács címkéje megy elöl.
+    "weight capacity",
     // A MAXIMÁLIS TERHELÉS ELŐBBRE VALÓ AZ AJÁNLOTTNÁL (felhasználói döntés,
     // 2026-08-28: „szinte mindenütt a maximális terhelést írtuk be").
     //
@@ -724,7 +738,10 @@ function parseWeightKg(window: string): number | null {
   // Kilograms` — a rövidítés-only minta ezeket nem látta.
   const kg = head.match(/(\d+(?:[.,]\d+)?)\s*(?:kg\b|kilogramm?s?\b)/i);
   if (kg) return toNumber(kg[1] ?? "");
-  const lbs = head.match(/(\d+(?:[.,]\d+)?)\s*(?:lbs?|pounds?)\b/i);
+  // A KÖTŐJEL is elválasztó a szám és az egység között: a jelzői alakot az
+  // angol így írja („a 350-pound weight capacity", rocoutdoors.com). A
+  // `\s*` ezt nem fogja meg, és emiatt a mező némán üresen maradt.
+  const lbs = head.match(/(\d+(?:[.,]\d+)?)[\s-]*(?:lbs?|pounds?)\b/i);
   if (lbs) {
     const value = toNumber(lbs[1] ?? "");
     return value === null ? null : round1(value * KG_PER_POUND);
@@ -1059,7 +1076,10 @@ function labelSearch(
                   //    `11\u20196\u201d`). Elöl áll: külön nézve a hüvelyk-részt adná.
                   "\\d+(?:[.,]\\d+)?\\s*['\u2032\u2019]\\s*\\d+(?:[.,]\\d+)?\\s*(?:''|\"|\u201d|\u2033)" +
                   // b) SZÓ-alakú egységek — itt kell a szóhatár
-                  "|\\d+(?:[.,]\\d+)?\\s*(?:kg|lbs?|pounds?|l|liter|litre|cm|mm|m|inch(?:es)?|in|feet|foot|ft)\\b" +
+                  // A KÖTŐJEL is elválasztó a szám és az egység között
+                  // (`350-pound weight capacity`, rocoutdoors.com) — a
+                  // jelzői alak angolul így áll.
+                  "|\\d+(?:[.,]\\d+)?[\\s-]*(?:kg|lbs?|pounds?|l|liter|litre|cm|mm|m|inch(?:es)?|in|feet|foot|ft)\\b" +
                   // c) JEL-alakú egységek — a szóhatár itt értelmetlen lenne
                   "|\\d+(?:[.,]\\d+)?\\s*(?:''|\"|\u201d|\u2033|'|\u2032|\u2019)" +
                   ")" +
@@ -1222,6 +1242,95 @@ function findBareTripleDimension(
 }
 
 /**
+ * MELLÉKNÉVI MÉRET-LÁNC A PRÓZÁBAN: „At 10' tall, 32\" wide, and 6\" thick"
+ * (F2.1-utó-58, rocoutdoors.com 2026-09-01).
+ *
+ * MIÉRT KELL: van gyártó, aki spec-táblát EGYÁLTALÁN nem közöl — a méret
+ * kizárólag a leírás egyetlen mondatában áll, melléknévi alakban, az érték a
+ * címkéje ELŐTT. A `wide` már eddig is címke volt (`SPEC_LABELS.widthCm`), a
+ * `tall`/`long`/`thick` viszont nem: a ROC hat modelljéből EGYNÉL SEM jött ki
+ * a hossz, ami a kinyerés kizáró mezője — vagyis a forrás nulla terméket adott
+ * volna.
+ *
+ * MIÉRT NEM CÍMKEKÉNT, HANEM LÁNCKÉNT: a `thick` puszta címkeként MÉRHETŐEN
+ * ELRONTJA a Jobe-t, ahol a próza az ANYAG vastagságáról ír („5mm thick
+ * non-slip EVA foam deckpad") — abból 0,5 cm vastag deszka lenne. Ugyanez a
+ * kockázat a `tall`-nál (egy evezős testmagassága). A védelem ezért nem
+ * szóválasztás, hanem ALAKZAT: a hossz és a szélesség tagjának EGYMÁS UTÁN,
+ * ebben a SORRENDBEN, egy mondatnyi távolságon belül kell állnia. Egyetlen
+ * árva `5mm thick` sosem indítja el a láncot; a Jobe-fixtúra ezt őrzi.
+ *
+ * A vastagság csak RÁADÁS: a lánc a hossz+szélesség párra épül, és a
+ * vastagság tagja opcionális (a ROC Abyss mondata pár, nem hármas).
+ */
+const PROSE_DIMENSION_VALUE_SRC =
+  // a) LÁB + HÜVELYK összetett alak — EGY érték (`10'6"`, `10' 6"`).
+  //    Elöl áll: külön nézve a hüvelyk-részt adná hossznak.
+  "\\d+(?:[.,]\\d+)?\\s*['′’]\\s*\\d+(?:[.,]\\d+)?\\s*(?:''|\"|”|″)" +
+  // b) SZÓ-alakú egységek (`33 inches wide`, `11 feet long`).
+  "|\\d+(?:[.,]\\d+)?[\\s-]*(?:cm|mm|inch(?:es)?|feet|foot|ft)\\b" +
+  // c) JEL-alakú egységek (`32\" wide`, `10' tall`).
+  "|\\d+(?:[.,]\\d+)?\\s*(?:''|\"|”|″|'|′|’)";
+
+/** A melléknév → mező leképezés. A `wide` a lánc HORGONYA, ld. lent. */
+const PROSE_DIMENSION_ADJECTIVES: readonly {
+  readonly word: string;
+  readonly key: "lengthCm" | "widthCm" | "thicknessCm";
+}[] = [
+  { word: "long", key: "lengthCm" },
+  { word: "tall", key: "lengthCm" },
+  { word: "wide", key: "widthCm" },
+  { word: "thick", key: "thicknessCm" },
+];
+
+const PROSE_DIMENSION_RE = new RegExp(
+  `(${PROSE_DIMENSION_VALUE_SRC})` +
+    // A ZÁRÓJELES ÁTVÁLTÁS az érték és a melléknév KÖZÉ ékelődhet
+    // (`11'6"(335cm) long`) — ugyanaz a jelenség, mint a `labelSearch`-ben.
+    "(?:\\s*\\([^)]*\\))?" +
+    `\\s*(${PROSE_DIMENSION_ADJECTIVES.map((a) => a.word).join("|")})\\b`,
+  "gi",
+);
+
+/** Két lánctag legfeljebb ennyi karakterre állhat egymástól (egy mondat). */
+const PROSE_DIMENSION_GAP = 60;
+
+function parseProseDimensionChain(
+  text: string,
+): { lengthCm: number; widthCm: number; thicknessCm: number | null } | null {
+  const hits: { key: "lengthCm" | "widthCm" | "thicknessCm"; end: number; cm: number }[] =
+    [];
+  for (const match of text.matchAll(PROSE_DIMENSION_RE)) {
+    const word = (match[2] ?? "").toLowerCase();
+    const entry = PROSE_DIMENSION_ADJECTIVES.find((a) => a.word === word);
+    const cm = parseDimensionCm(match[1] ?? "");
+    if (entry === undefined || cm === null) continue;
+    hits.push({ key: entry.key, end: (match.index ?? 0) + match[0].length, cm });
+  }
+
+  for (let i = 0; i < hits.length - 1; i += 1) {
+    const length = hits[i];
+    const width = hits[i + 1];
+    if (length === undefined || width === undefined) continue;
+    if (length.key !== "lengthCm" || width.key !== "widthCm") continue;
+    if (width.end - length.end > PROSE_DIMENSION_GAP) continue;
+    // GEOMETRIAI ŐRSZEM: a hossz nem lehet kisebb a szélességnél. Ugyanaz az
+    // elv, ami a spec-tábla hármasát a próza fölé sorolja — egy 30 cm hosszú,
+    // 86 cm széles deszka nem létezik, tehát ott a mondat félreolvasott.
+    if (length.cm < width.cm) continue;
+    const third = hits[i + 2];
+    const thickness =
+      third !== undefined &&
+      third.key === "thicknessCm" &&
+      third.end - width.end <= PROSE_DIMENSION_GAP
+        ? third.cm
+        : null;
+    return { lengthCm: length.cm, widthCm: width.cm, thicknessCm: thickness };
+  }
+  return null;
+}
+
+/**
  * "381 x 79 cm" jellegű, csak hossz×szélesség PÁR — élesben mért eset
  * (aquamarinahungary.com): néhány oldal a "méretei" címke alatt csak a
  * hosszt és szélességet adja együtt, a vastagságot KÜLÖN "deszka vastagság"
@@ -1349,6 +1458,25 @@ export function parseSpecsFromText(text: string): BoardSpecs {
       if (specs.widthCm === null) specs.widthCm = bareTriple.widthCm;
       if (specs.thicknessCm === null)
         specs.thicknessCm = bareTriple.thicknessCm;
+    }
+  }
+
+  // MELLÉKNÉVI MÉRET-LÁNC A PRÓZÁBAN — LEGUTOLSÓKÉNT a méret-olvasók közül,
+  // és CSAK a még üres mezőket tölti. Ez a leglazább alak (szabad mondat,
+  // nem szerkesztett táblázat), ezért mindent, amit a táblázat vagy a
+  // címkézett olvasás már megadott, érintetlenül hagy. Ld. a függvény
+  // doc-kommentjét arról, miért ALAKZAT és nem címkeszó védi.
+  if (
+    specs.lengthCm === null ||
+    specs.widthCm === null ||
+    specs.thicknessCm === null
+  ) {
+    const chain = parseProseDimensionChain(text);
+    if (chain !== null) {
+      if (specs.lengthCm === null) specs.lengthCm = chain.lengthCm;
+      if (specs.widthCm === null) specs.widthCm = chain.widthCm;
+      if (specs.thicknessCm === null && chain.thicknessCm !== null)
+        specs.thicknessCm = chain.thicknessCm;
     }
   }
 

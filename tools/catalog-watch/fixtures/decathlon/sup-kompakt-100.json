@@ -4,6 +4,7 @@
   "capturedAt": "2026-08-28",
   "teaches": "A GYÁRTÓ SAJÁT ADATHIBÁI, amiket NEM találunk ki helyette: a vastagság sora „14' (35,5 cm)\" (a 14 hüvelyket váltották át lábként; a deszka 15 cm vastag), az űrtartalom sora pedig „Szélesség: 325 liter.\" címkével áll — ezért a térfogat üresen MARAD. Ha a kinyerés egyszer értéket kezdene adni ezekre, az találgatás lenne.",
   "rendered": false,
+  "series": false,
   "expected": [
     {
       "sourceUrl": "https://www.decathlon.hu/p/sup-kompakt-100-as/_/R-p-332301",

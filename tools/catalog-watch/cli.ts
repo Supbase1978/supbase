@@ -24,6 +24,7 @@ import {
   DEFAULT_MIN_DELAY_MS,
   extractPageProducts,
   needsRenderedText,
+  withSeriesText,
   type CrawlDeps,
   type FetchText,
 } from "./crawl.ts";
@@ -45,6 +46,7 @@ import {
   type IncompleteRow,
 } from "./report.ts";
 import { CRAWLER_USER_AGENT } from "./robots.ts";
+import { seriesTextFromPayload, seriesTextUrlFor } from "./series-text.ts";
 import {
   approveCandidateRow,
   createDryRunStore,
@@ -746,7 +748,25 @@ async function commandCaptureFixture(args: Args): Promise<void> {
   }
   if (page.status !== 200) throw new Error(`HTTP ${page.status}`);
 
-  let products = extractPageProducts(page.text, url, recipe.crawlConfig, null);
+  // A SOROZAT-LEÍRÁS is a fixtúra része (`seriesTextByUrl`). A ROC-nál a
+  // teherbírás KIZÁRÓLAG ott áll — enélkül a rögzített elvárás a hiányos
+  // kinyerés lenne, épp az, ami ellen a mechanizmus készült.
+  const seriesUrl = seriesTextUrlFor(url, recipe.crawlConfig.seriesTextByUrl ?? {});
+  let seriesText = "";
+  if (seriesUrl !== null) {
+    const seriesPage = await realFetch(seriesUrl);
+    if (seriesPage.status !== 200) {
+      throw new Error(`sorozat-leírás HTTP ${seriesPage.status}: ${seriesUrl}`);
+    }
+    seriesText = seriesTextFromPayload(seriesPage.text);
+  }
+
+  let products = extractPageProducts(
+    page.text,
+    url,
+    recipe.crawlConfig,
+    seriesText === "" ? null : withSeriesText(htmlToText(page.text), seriesText),
+  );
   let renderedText: string | null = null;
   if (needsRenderedText(products, recipe.crawlConfig)) {
     const fetcher = createRenderFetcher();
@@ -756,7 +776,12 @@ async function commandCaptureFixture(args: Args): Promise<void> {
       await fetcher.close();
     }
     if (renderedText !== null) {
-      const rerendered = extractPageProducts(page.text, url, recipe.crawlConfig, renderedText);
+      const rerendered = extractPageProducts(
+        page.text,
+        url,
+        recipe.crawlConfig,
+        withSeriesText(renderedText, seriesText),
+      );
       if (rerendered.length > 0) products = rerendered;
       else renderedText = null;
     }
@@ -768,12 +793,19 @@ async function commandCaptureFixture(args: Args): Promise<void> {
   if (renderedText !== null) {
     writeFileSync(join(dir, `${slug}.txt.gz`), gzipSync(Buffer.from(renderedText, "utf8")));
   }
+  if (seriesText !== "") {
+    writeFileSync(
+      join(dir, `${slug}.series.txt.gz`),
+      gzipSync(Buffer.from(seriesText, "utf8")),
+    );
+  }
   const kase = {
     source: recipe.name,
     url,
     capturedAt: new Date().toISOString().slice(0, 10),
     teaches,
     rendered: renderedText !== null,
+    series: seriesText !== "",
     expected: products,
   };
   writeFileSync(join(dir, `${slug}.json`), `${JSON.stringify(kase, null, 2)}\n`);

@@ -4,6 +4,7 @@
   "capturedAt": "2026-08-21",
   "teaches": "A huvelyk-jelet ASCII dupla aposztroffal irja (Width Foot/Inch: 32''), amit lab-jelkent olvasva 32 lab = 975 cm jonne ki a valos 81,3 helyett.",
   "rendered": false,
+  "series": false,
   "expected": [
     {
       "sourceUrl": "https://indiana-paddlesurf.com/en_ch/indiana-11-5-heavy-duty-rent-station-2051sn.html",

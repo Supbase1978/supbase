@@ -4,6 +4,7 @@
   "capturedAt": "2026-08-30",
   "teaches": "SUP–KAJAK HIBRID: a névben és az URL-ben is ott a „kayak”, amitől a NEVER_BOARD_KEYWORDS eldobta — pedig deszka, ülés-opcióval, a gyártó SUP-kollekciójából. A kivétel szűk: hibrid-állítás ÉS deszka-főnév együtt kell hozzá. A képek a gyártó SAJÁT, beágyazott képlistájából jönnek — a pozíció-fallback itt zászló-ikont és életképet adott.",
   "rendered": false,
+  "series": false,
   "expected": [
     {
       "sourceUrl": "https://islesurfandsup.com/products/switch-compact-paddle-board-kayak-hybrid",

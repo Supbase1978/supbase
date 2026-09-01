@@ -4,6 +4,7 @@
   "capturedAt": "2026-08-28",
   "teaches": "A gyártó KETTŐS írásmódja (Hosszúság: 14' (426 cm)) — a zárójeles centiméter nyer —, és a KÉT terhelési szám: a „maximális terhelhetőség: 350 kg\" a térfogattal (350 l) azonos arkhimédészi merülési határ, a valós korlát az ajánlott evezős-súly (140 kg). A súly a „Súly (csak a deszka)\" mezőből jön, nem a lap alján ismételt teljes szett tömegéből (13,5 kg).",
   "rendered": false,
+  "series": false,
   "expected": [
     {
       "sourceUrl": "https://www.decathlon.hu/p/sup-explo-900/_/R-p-365164",

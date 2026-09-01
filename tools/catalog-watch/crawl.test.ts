@@ -624,3 +624,106 @@ describe("crawlSource — Shopify kizárt kollekciók", () => {
     expect(candidates[0]?.extracted.boardType).toBe("allround");
   });
 });
+
+describe("crawlSource — SOROZAT-SZINTŰ leírás (seriesTextByUrl)", () => {
+  /**
+   * A gyártó a specifikációt a SOROZATRA írja le, nem a termékre — élesben
+   * (rocoutdoors.com) a teherbírás a termékoldalon SEHOL nem áll. A
+   * termékoldal itt szándékosan csak a méretet adja.
+   */
+  const SERIES_ORIGIN = "https://gyarto.com";
+  const SERIES_SOURCE: CatalogSourceRow = {
+    ...SOURCE,
+    base_url: SERIES_ORIGIN,
+    crawl_config: {
+      htmlOnly: true,
+      minDelayMs: 0,
+      productUrlPatterns: ["/products/"],
+      defaultBrandName: "ROC",
+      seriesTextByUrl: {
+        "/products/": `${SERIES_ORIGIN}/collections/explorer-series.json`,
+      },
+    },
+  };
+
+  function seriesNetwork() {
+    const page = (title: string) =>
+      `<html><head><title>${title}</title></head><body>` +
+      `<p>At 10' tall, 32" wide, and 6" thick, built tough.</p>` +
+      `<p>This inflatable board packs into a backpack.</p></body></html>`;
+    return makeNetwork({
+      [`${SERIES_ORIGIN}/robots.txt`]: { text: "User-agent: *\n" },
+      [`${SERIES_ORIGIN}/sitemap.xml`]: {
+        text: `<urlset>
+          <url><loc>${SERIES_ORIGIN}/products/explorer</loc></url>
+          <url><loc>${SERIES_ORIGIN}/products/explorer-green</loc></url>
+        </urlset>`,
+      },
+      [`${SERIES_ORIGIN}/products/explorer`]: { text: page("Explorer") },
+      [`${SERIES_ORIGIN}/products/explorer-green`]: { text: page("Explorer Green") },
+      [`${SERIES_ORIGIN}/collections/explorer-series.json`]: {
+        text: JSON.stringify({
+          collection: {
+            description: "<p>These boards have a weight capacity of 350 pounds.</p>",
+          },
+        }),
+      },
+    });
+  }
+
+  it("a sorozat leírásából pótolja a termékoldalon HIÁNYZÓ teherbírást", async () => {
+    const network = seriesNetwork();
+    const { store, candidates } = makeStore([]);
+
+    await crawlSource(SERIES_SOURCE, { fetchText: network.fetchText, store });
+
+    expect(candidates).toHaveLength(2);
+    for (const candidate of candidates) {
+      // A méret a termékoldalról, a teherbírás a sorozat leírásából.
+      expect(candidate.extracted.specs.lengthCm).toBe(304.8);
+      expect(candidate.extracted.specs.maxLoadKg).toBe(158.8);
+    }
+  });
+
+  it("egy sorozat leírását EGYSZER tölti le, akárhány terméke van", async () => {
+    // A színváltozatok mind ugyanarra a kollekcióra mutatnak — gyorstár
+    // nélkül a bejárás minden terméknél újra lekérné ugyanazt.
+    const network = seriesNetwork();
+    const { store } = makeStore([]);
+
+    await crawlSource(SERIES_SOURCE, { fetchText: network.fetchText, store });
+
+    const seriesCalls = network.requested.filter((url) =>
+      url.includes("/collections/explorer-series.json"),
+    );
+    expect(seriesCalls).toHaveLength(1);
+  });
+
+  it("elérhetetlen sorozat-leírás NEM viszi el a termék kinyerését", async () => {
+    const network = makeNetwork({
+      [`${SERIES_ORIGIN}/robots.txt`]: { text: "User-agent: *\n" },
+      [`${SERIES_ORIGIN}/sitemap.xml`]: {
+        text: `<urlset><url><loc>${SERIES_ORIGIN}/products/explorer</loc></url></urlset>`,
+      },
+      [`${SERIES_ORIGIN}/products/explorer`]: {
+        text:
+          `<html><head><title>Explorer</title></head><body>` +
+          `<p>At 10' tall, 32" wide, and 6" thick, built tough.</p>` +
+          `<p>This inflatable board packs into a backpack.</p></body></html>`,
+      },
+      // A kollekció-JSON hiányzik → 404.
+    });
+    const { store, candidates } = makeStore([]);
+
+    const summary = await crawlSource(SERIES_SOURCE, {
+      fetchText: network.fetchText,
+      store,
+    });
+
+    expect(candidates).toHaveLength(1);
+    expect(candidates[0]?.extracted.specs.lengthCm).toBe(304.8);
+    expect(candidates[0]?.extracted.specs.maxLoadKg).toBeNull();
+    // A hiba nem néma: a summary megmondja, MIÉRT üres a mező.
+    expect(summary.errors.join(" ")).toContain("sorozat-leírás HTTP 404");
+  });
+});

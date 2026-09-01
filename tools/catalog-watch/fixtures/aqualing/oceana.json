@@ -4,6 +4,7 @@
   "capturedAt": "2026-08-29",
   "teaches": "A táblázat ÜT a prózán: a „Vastagság (cm) / 12\" cellából korábban 12000 lett, mert egy lazább, szabad szövegben kereső minta felülírta a helyes értéket. A kategóriát a bolt saját „Típus: All-around/Általános\" mezője adja (labeledUse), és a csonkolt <title> („- a\") utótagja is levágódik.",
   "rendered": false,
+  "series": false,
   "expected": [
     {
       "sourceUrl": "https://www.aqualing.hu/hydro-force-oceana-sup-szett-305x84x12-cm-2021.html",

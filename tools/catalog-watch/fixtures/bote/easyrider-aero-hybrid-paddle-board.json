@@ -4,6 +4,7 @@
   "capturedAt": "2026-08-29",
   "teaches": "A <title> a modellnevet KI SEM MONDJA (Beginner Inflatable Paddle Board — SUP & Kayak | BOTE) — enélkül a jelölt neve SEO-mondat lenne, a JSON-LD name viszont pontosan EasyRider Aero.",
   "rendered": false,
+  "series": false,
   "expected": [
     {
       "sourceUrl": "https://www.boteboard.com/products/easyrider-aero-hybrid-paddle-board",

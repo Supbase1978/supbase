@@ -1,0 +1,39 @@
+{
+  "source": "ROC Outdoors",
+  "url": "https://www.rocoutdoors.com/products/explorer",
+  "capturedAt": "2026-09-01",
+  "teaches": "Spec-tabla NELKULI gyarto: a meret a prozai mellekvevi lancbol (At 10' tall, 32\" wide, and 6\" thick), a TEHERBIRAS pedig a sorozat kollekcio-leirasabol (/collections/explorer-series.json) - a termekoldal HTML-jeben a capacity szo elo sem fordul. A cimben feloldatlan &ndash; entitas all.",
+  "rendered": false,
+  "series": true,
+  "expected": [
+    {
+      "sourceUrl": "https://www.rocoutdoors.com/products/explorer",
+      "brandName": "ROC",
+      "modelName": "Explorer",
+      "rawTitle": "10' Explorer",
+      "modelYear": null,
+      "priceHuf": null,
+      "inStock": null,
+      "imageUrl": "https://www.rocoutdoors.com/cdn/shop/files/navy-explorer-w-out-seat_120x120.png?v=1775754367&width=768",
+      "imageUrls": [],
+      "boardType": "allround",
+      "boardTypeSource": "pinnedUrl",
+      "boardTypes": [
+        {
+          "type": "allround",
+          "source": "pinnedUrl"
+        }
+      ],
+      "specs": {
+        "lengthCm": 304.8,
+        "widthCm": 81.3,
+        "thicknessCm": 15.2,
+        "volumeL": null,
+        "weightKg": null,
+        "maxLoadKg": 158.8,
+        "inflatable": true
+      },
+      "accessoryType": null
+    }
+  ]
+}

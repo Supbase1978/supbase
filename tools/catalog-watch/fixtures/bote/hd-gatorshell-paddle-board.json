@@ -4,6 +4,7 @@
   "capturedAt": "2026-08-29",
   "teaches": "Láb és hüvelyk KÖZÖTT SZÓKÖZ a méret-hármasban (10′ 6″ L × 30″ W × 4.5″ D), NAGYBETŰS spec-címkék, kemény deszka (inflatable=false), és FEL NEM OLDOTT Liquid-helyőrző a képben ({{ firstImageSrc }}) → a kép NULL. A spec-tábla 10'6\"-ot is felsorol, de a bolt CSAK a 12'-t árulja.",
   "rendered": false,
+  "series": false,
   "expected": [
     {
       "sourceUrl": "https://www.boteboard.com/products/hd-gatorshell-paddle-board?size=12",

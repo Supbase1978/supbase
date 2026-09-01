@@ -4,6 +4,7 @@
   "capturedAt": "2026-08-21",
   "teaches": "JSON-LD-ag; a JSON-LD markaneve a termekek egy reszen Bluefin-testing (a bolt oldalan maradt teszt-adat), es a kep width=1920 parametert visel (1656 kB) - a displayImageUrl normalizalja.",
   "rendered": false,
+  "series": false,
   "expected": [
     {
       "sourceUrl": "https://bluefinsupboards.eu/products/gecko-blue-cruise-inflatable-paddleboard",

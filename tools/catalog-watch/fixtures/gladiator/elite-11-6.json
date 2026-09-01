@@ -4,6 +4,7 @@
   "capturedAt": "2026-08-30",
   "teaches": "CIRILL szorzójel (354 х 86 х 15) és MERTEKEGYSEG NELKULI ketoszlopos tabla (Volume / 245); a kategoria a boardTypeByUrl rogzitesbol jon, mert a morzsamenu csak a kiviteli vonalat adja. A galéria a product__main-gallery konténerből — a lap TÖBBI képe (más modellek, kiegészítők) kimarad.",
   "rendered": false,
+  "series": false,
   "expected": [
     {
       "sourceUrl": "https://gladiatorsup.com/catalog/elite-11-6/",

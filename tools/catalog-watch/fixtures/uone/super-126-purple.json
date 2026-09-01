@@ -4,6 +4,7 @@
   "capturedAt": "2026-08-29",
   "teaches": "A SZŰRŐ-OLDALSÁV csapdája: a termékoldal szűrő-panelje ugyanazokat a címkéket viseli, mint a spec-tábla, és felsorolja az ÖSSZES értéket („Typ deski\" ⏎ „Deski SUP – Allround\" ⏎ …), ráadásul ELŐBB — emiatt minden deszka allround lett a valódi „Typ deski: Touring\" helyett. A kettőspontos alak elsőbbsége oldja meg. Plusz: a „Wysokość\" a deszka vastagsága, a teherbírás mezője két számot ad (150kg/300kg) és az AJÁNLOTT áll elöl.",
   "rendered": false,
+  "series": false,
   "expected": [
     {
       "sourceUrl": "https://www.u1.net.pl/deska-sup-super-126-2025-purple/",
