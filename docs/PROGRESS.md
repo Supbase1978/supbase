@@ -678,6 +678,89 @@ adatunkkal; **kettőnél 20 kg-mal TÚLBECSÜLTE a teherbírást** (Gladiator El
 Journey-nél pedig 95 kg-ot ír a két független forrásunk egybehangzó 100-a
 helyett. Épp az a mező, amire a Deszkaválasztó kemény biztonsági szűrőt épít.
 
+**F2.1-utó-59 — validálási kör: névszabvány, geometriai kapu, slugok
+(2026-09-01…09-06).** A felhasználó három kötegben adott át összesen 23
+moderátori jegyzetet. Amit a feldolgozásuk hozott:
+
+**A NÉVSZABVÁNY, és miért nem tartalmazza a márkát.** A moderációs felület és
+a kártya is `márka + modellnév`-et fűz össze (`admin.katalogus.tsx`,
+`BoardCard.tsx`), ezért a jegyzetekben látott teljes név (`Funwater Mariner
+10'6"`) NEM a `model_name`-be megy — különben duplázódna a márka. A tárolt
+alak: FunWaternél `<modell> <hossz>` (`Mariner 10'6"`), ROC-nál és Rednél
+`<hossz> <modell>` (`10'6" Kahuna`, `10'6" Ride MSL`). Átnevezve 32 + 3 élő
+sor és 39 függő jelölt.
+
+**A KÖTŐJEL-JAVÍTÁS EGY MÁSIK GYÁRTÓT IS MEGJAVÍTOTT.** A `350-pound` miatt
+bevezetett `[\s-]*` a FunWater `Mariner` szélességét is helyretette: a lap
+prózája `Its 33-inch width…`, és a kötőjel hiányában a parser a címke MÖGÖTTI
+`10'6"`-ot vette, amiből 320 cm SZÉLES deszka lett (a hossz értéke). Ez a
+fajta hiba csendes: minden más mező hihető marad mellette.
+
+**GEOMETRIAILAG LEHETETLEN KERESZTMETSZET ELDOBÁSA** (`dropImpossibleCross-
+Section`). Élesben (FunWater `Zone 11'`) a gyártó a SAJÁT spec-táblájában írja
+`Dimensions: 11'×30'×6'` alakban — láb-jelet mindhárom tagon, holott a
+szélesség és a vastagság hüvelyk. Ebből 335 × 914 × 183 cm lett. Kijavítani
+helyette nem szabad (találgatás volna), de LEHETETLEN értéket tárolni sem: a
+Deszkaválasztó a szélességre stabilitást számol. Ha a szélesség eléri a
+hosszt, a szélesség ÉS a vastagság is kiesik — mindkettő ugyanabból a
+félreolvasott hármasból jön. Őrszem: csak HIHETŐ hossz mellett dönt, különben
+a fordított esetet (`Its 12" length` = 30 cm egy 86 cm széles deszkán)
+rontaná el. A 45 függő FunWater-sorból egyet sem érintett a Zone-on kívül.
+
+**„EZ NEM SUP, EZ SÁTOR."** A `tent`, `gift box` és `magnetic cup` bekerült a
+`NEVER_BOARD_KEYWORDS`-be. Az ok tanulságos: a sátor 580 × 440 × 205
+méret-hármasa ÖNMAGÁBAN ELLENTMONDÁSMENTES (a hossz a legnagyobb), ezért a
+geometriai rövidzár átengedte — a nevén kívül semmi nem árulta el.
+
+**AQUATONE: nem duplikátum, hanem MÉRET.** A „miért van ebből kettő?" kérdésre
+a válasz: a `WAVE` és a `WAVE PLUS` két-két külön MÉRET (320/305 és 366/335
+cm), az Aquatone `<title>`-je viszont puszta modellnév méret nélkül. A
+`titleKeepSize` itt NEM segít (a címben nincs méret); a nevekbe kézzel került
+be a hossz. Valódi duplikátum csak a `SUPERPUMP V2` (kétszer, azonos adattal).
+
+**SLUG-ÚJRAGENERÁLÁS.** 50 slug újraszámolva a `slugify(márka + modellnév)`
+szabállyal — ugyanaz, amit a jóváhagyás használ. Menet közben 11
+Starboard-sorról lejött az árva `-2` utótag: azok a duplikátum miatt kaptak
+sorszámot, a duplikátumot viszont azóta összevonták. A művelet idempotens (a
+második futtatás 0 változást javasol).
+
+**A SZÍNVÁLTOZAT-KÉRDÉS: a mérés cáfolta a feltevést.** A felhasználó úgy
+látta, hogy a FunWater külön termékoldalon listázza a színváltozatokat. Mind a
+39 függő lap `Color` mezőjét kigyűjtve kiderült, hogy **a színek EGY lapon
+belül állnak** (`Courage 10'6"`: 7 szín, `Camouflage 10'`: 5, `Manta Ray 10'`:
+4). A külön oldalak tehát nem egymás színváltozatai. A valódi szerkezet más:
+a FunWater TÖBB ALMÁRKÁT forgalmaz — a spec-tábla `Brand` mezője hol
+`Feath-R-Lite`, hol `Tuxedo Sailor` —, ezért van ugyanazon a 320 × 83,8
+hajótesten 8,7 és 12,5 kg-os deszka is.
+
+**EGY MODERÁTORI JEGYZET TÉVEDETT, és a mérés a fordítottját adta.** A jegyzet
+szerint „a gyártói oldal csak Funwater Tiki 10'6"-ként nevezi" az `Ocean
+Tiki`-t. A gyártói `<title>` viszont szó szerint `Ocean Tiki 10'6" Stand Up
+Paddle Board`; a MÁSIK deszka az, amit a gyártó `New Tiki 10'6"`-nak hív
+(`…-tiki-deepblue-…`). Az átnevezés két külön deszkát olvasztott volna egy
+névre (320×81, 8,6 kg, 127 kg kontra 320×84, 12,5 kg, 150 kg), és a slug is
+ütközött volna. Az `Ocean Tiki` maradt, a `Tiki 10'6"` lett `New Tiki 10'6"`.
+
+### NYITOTT SZÁLAK a következő munkamenetnek
+
+- **`Manta Ray 10'` KÉTSZER szerepel élő sorként, azonos néven**
+  (`funwater-manta-ray-10`: 32" széles, 10 kg · `funwater-manta-ray-10-2`:
+  31", 10,25 kg). A gyártó két külön oldalon árulja; a 3%-os eltérés a dedupe
+  5%-os küszöbe ALATT van, tehát összevonhatók — moderátori döntés.
+- **Összevonásra váró FunWater-hármas** (azonos hajótest, súly ÉS teherbírás):
+  `New Tiki 10'6"` + `Tiki Blue 10'6"` + `Courage 10'6"`; továbbá
+  `Azure Glide 10'` + `Rainbow Snake 10'`.
+- **Red `8'10" Compact MSL Pact`**: szörf-SUP, ilyen `board_type` nincs
+  (`allround · touring · race · yoga · kids · fishing · river`). Felhasználói
+  döntés szerint EGYELŐRE besorolatlan marad.
+- **`Aquatone SUPERPUMP V2` kétszer** — valódi duplikátum, összevonandó.
+- **`Sunstream All Around for Beginners…`** új FunWater-jelölt teherbírás
+  nélkül; a lapja JS-ből rendeli a spec-rácsot.
+- A 2026-09-03-i FunWater-crawl ~6 lapon `fetch failed`-del elszállt (Falcon,
+  Manta Cruise, Blue Cruise, …) — azok a sorok a korábbi adatukkal maradtak.
+  A skill szabálya szerint ez „először töltsd le újra" eset.
+- A `boards.colors` mező továbbra is nyitott fejlesztési tétel.
+
 **F2.1-utó-58 — ROC Outdoors bekötve, és a SOROZAT-SZINTŰ leírás
 (2026-09-01).** Felhasználói lelet: „a leírás sorozatonként van megadva
 általános szövegben". Pontosan így van, és ez a forrás fő tanulsága.

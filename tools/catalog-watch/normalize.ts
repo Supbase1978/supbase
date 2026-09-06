@@ -1529,8 +1529,53 @@ export function parseSpecsFromText(text: string): BoardSpecs {
   // üresen maradt mezőket tölti (ld. `fillFromLabelledLines`).
   fillFromLabelledLines(text, specs);
 
+  dropImpossibleCrossSection(specs);
   specs.inflatable = detectInflatable(text);
   return specs;
+}
+
+/**
+ * GEOMETRIAILAG LEHETETLEN KERESZTMETSZET ELDOBÁSA (F2.1-utó-59).
+ *
+ * Élesben mérve (funwaterboard.com, `Zone 11'`, 2026-09-03): a gyártó a SAJÁT
+ * spec-táblájában `Dimensions: 11'×30'×6'` alakot ír — LÁB-jelet mindhárom
+ * tagon, holott a szélesség és a vastagság hüvelyk. Ebből 335 × 914 × 183 cm
+ * lett: egy 9 méter széles, 1,8 méter vastag deszka.
+ *
+ * NEM JAVÍTJUK KI a gyártó helyett — a hüvelykre átértelmezés találgatás
+ * volna, és a katalógus szabálya szerint a hiányzó érték hiányzó marad. Amit
+ * viszont nem szabad: LEHETETLEN értéket TÁROLNI. A Deszkaválasztó a
+ * szélességre stabilitást számol, a moderátor pedig a jelölt-soron ránézésre
+ * hihetőnek látja a többi mezőt — a 914 csendben végigmenne.
+ *
+ * A szabály nem küszöb, hanem TÉNY: a deszka sosem szélesebb, mint amilyen
+ * hosszú (ugyanaz az állítás, amit a `dimensionsAreCoherent` már kimond).
+ * Ilyenkor a szélesség ÉS a vastagság is megy — mindkettő ugyanabból a
+ * félreolvasott hármasból jön, tehát az egyiket megtartani önkényes volna.
+ *
+ * ŐRSZEM: csak HIHETŐ hossz mellett dönt. Ha maga a hossz a hibás (élesben:
+ * `Its 12" length` = 30 cm egy 86 cm széles deszkán), akkor nem a szélesség a
+ * rossz adat — azt az esetet a „spec-tábla üt a prózán" ág javítja, és ez a
+ * menet nem szólhat bele.
+ */
+function dropImpossibleCrossSection(specs: BoardSpecs): void {
+  const { lengthCm, widthCm, thicknessCm } = specs;
+  if (lengthCm === null || lengthCm < BOARD_LENGTH_MIN_CM || lengthCm > BOARD_LENGTH_MAX_CM) {
+    return;
+  }
+  if (widthCm !== null && widthCm >= lengthCm) {
+    specs.widthCm = null;
+    specs.thicknessCm = null;
+    return;
+  }
+  // A vastagság sosem éri el a szélességet — ez akkor is igaz, ha a szélesség
+  // önmagában hihető maradt.
+  if (
+    thicknessCm !== null &&
+    ((widthCm !== null && thicknessCm >= widthCm) || thicknessCm >= lengthCm)
+  ) {
+    specs.thicknessCm = null;
+  }
 }
 
 /**
@@ -1920,6 +1965,17 @@ const NEVER_BOARD_KEYWORDS = [
   // a spec-blokkjukban is adnak szélességet — a nevük dönt.
   "backpack",
   "camera mount",
+  // SÁTOR (moderátori jegyzet, 2026-09-03: „ez nem SUP, ez sátor"). Élesben
+  // (funwaterboard.com): `Large Tents for Outdoor Camping with Instant Setup`,
+  // 580 × 440 × 205 cm. A bolt vegyes kempingcikk-katalógust is árul, és a
+  // sátor méret-hármasa ÖNMAGÁBAN ELLENTMONDÁSMENTES (a hossz a legnagyobb),
+  // ezért a geometriai rövidzár átengedte.
+  "tent",
+  // AJÁNDÉKDOBOZ és POHÁR — ugyanabból a vegyes katalógusból. Szűk alakban,
+  // mert az önmagában álló „cup" a „cup holder" tartozékot is elvinné, a
+  // „box" pedig a csomagolást említő deszkaleírásokat.
+  "gift box",
+  "magnetic cup",
 ];
 
 /** A deszka-mivolt pozitív jelei a névben/leírásban. */

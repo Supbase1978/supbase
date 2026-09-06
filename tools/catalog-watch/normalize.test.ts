@@ -1810,3 +1810,37 @@ describe("melléknévi méret-lánc a prózában (parseProseDimensionChain)", ()
     expect(specs.lengthCm).toBeNull();
   });
 });
+
+describe("geometriailag lehetetlen keresztmetszet eldobása", () => {
+  it("a gyártó SAJÁT táblájának láb-jel hibáját nem tárolja el", () => {
+    // funwaterboard.com, `Zone 11'` (2026-09-03): a spec-tábla
+    // `Dimensions: 11'×30'×6'` — láb-jel mindhárom tagon, holott a szélesség
+    // és a vastagság hüvelyk. Ebből 335 × 914 × 183 cm lenne.
+    const specs = parseSpecsFromText("Dimensions: 11'×30'×6' Capacity：280 Pounds");
+    expect(specs.lengthCm).toBe(335.3);
+    // NEM találgatunk hüvelyket: a hibás érték HIÁNYZIK, nem javul.
+    expect(specs.widthCm).toBeNull();
+    expect(specs.thicknessCm).toBeNull();
+  });
+
+  it("a vastagság sem érheti el a szélességet", () => {
+    const specs = parseSpecsFromText("Length: 320 cm\nWidth: 84 cm\nThickness: 90 cm");
+    expect(specs.lengthCm).toBe(320);
+    expect(specs.widthCm).toBe(84);
+    expect(specs.thicknessCm).toBeNull();
+  });
+
+  it("HIHETŐ hossz nélkül nem szól bele (a hossz lehet a hibás)", () => {
+    // `Its 12" length` = 30,5 cm egy 86 cm széles deszkán — ott NEM a
+    // szélesség a rossz adat, azt a „spec-tábla üt a prózán" ág javítja.
+    const specs = parseSpecsFromText('Its 12" length and 34" width make it stable.');
+    expect(specs.widthCm).toBe(86.4);
+  });
+
+  it("az ép hármashoz nem nyúl", () => {
+    const specs = parseSpecsFromText("Dimensions: 320 x 84 x 15 cm");
+    expect(specs.lengthCm).toBe(320);
+    expect(specs.widthCm).toBe(84);
+    expect(specs.thicknessCm).toBe(15);
+  });
+});
