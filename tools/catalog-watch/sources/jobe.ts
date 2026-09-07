@@ -36,6 +36,29 @@ export const recipe: SourceRecipe = {
       "productUrlPatterns": [
           "-sup-",
           "paddle-board"
+      ],
+      // A HÍREK ROVAT a `-sup-` mintára illeszkedik (élesben mérve, 2026-09-06:
+      // `/en/newsflash/introducing-the-sup-concept-series-3019/`). Egy cikk
+      // sosem termék: a kinyerés 23 cm „hosszt" talált a prózában, és a
+      // moderátornak kellett elutasítania. A kizáró minta erősebb, mint a
+      // befoglaló, ezért a rovat egésze kiesik.
+      "excludeUrlPatterns": [
+          "/newsflash/"
+      ],
+      // A SZÍNVÁLTOZAT NEM KÜLÖN MODELL (moderátori jegyzetek, 2026-09-06).
+      // A Jobe címsablonja `… Package <Szín>` alakú — a szín MINDIG a végén,
+      // a csomag-szó után áll —, és ugyanaz a deszka két-három színnel is
+      // szerepel a sitemapben: `Aero Yarra … Package Purple` és
+      // `… Package Steel Blue` egyetlen modell. A szín a névből kimarad, amíg
+      // a `boards.colors` mező meg nem születik (halasztott fejlesztési tétel);
+      // addig a duplikátum-felismerés is így fésüli össze őket.
+      // A SORREND SZÁMÍT: a „steel blue" a „blue" ELŐTT áll, különben árva
+      // „Steel" maradna a névben.
+      "titleNoiseWords": [
+          "steel blue",
+          "blues",
+          "purple",
+          "blue"
       ]
   },
 };

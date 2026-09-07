@@ -1819,7 +1819,7 @@ export function boardTypeFromProse(text: string): BoardType | null {
  * az utóbbi szűkebb esete, és a substring-illesztés a legelső találatot veszi.
  * Csak a `GEAR_CATEGORIES` (catalog modul, `gear.ts`) 8 kategóriáját fedi le.
  */
-const ACCESSORY_CATEGORY_RULES: [GearCategory, string[]][] = [
+const ACCESSORY_CATEGORY_RULES: [GearCategory, (string | RegExp)[]][] = [
   // A TÁSKA/TARTÓ előrébb van, mint az „evezo": az „evezőtáska" és az
   // „evezőtartó" a substring miatt evezőnek látszana, pedig az egyik táska,
   // a másik rögzítő — élesben mérve mindkettő megjelent a jelöltek közt.
@@ -1840,7 +1840,15 @@ const ACCESSORY_CATEGORY_RULES: [GearCategory, string[]][] = [
   // Az „oars" viszont egyértelmű: evezőlapát, sosem deszka (élesben:
   // zraysports.com „ALUMINUM OARS"). A csupasz „oar" SZÁNDÉKOSAN hiányzik: a
   // „b-oar-d" részstringje lenne, tehát minden deszkára illeszkedne.
-  ["evezo", ["evezo", "paddle blade", "oars"]],
+  //
+  // A „SUP PADDLE" viszont egyértelmű, ha nem követi a „board" (élesben mérve,
+  // 2026-09-06: `Jobe Freedom Stick SUP Paddle Kids` DESZKAKÉNT jött be,
+  // `kids` besorolással és 137 × 18 cm „mérettel"). A csupasz „paddle" itt
+  // sem használható — a márkanév is lehet („Red Paddle Co"), és a
+  // „Stand Up Paddle Board" is tartalmazza —, a `sup paddle` viszont a
+  // gyártók evező-címeinek állandó fordulata. A negatív előretekintés az
+  // „Inflatable SUP Paddle Board" alakot zárja ki, ami DESZKA.
+  ["evezo", ["evezo", "paddle blade", "oars", /sup paddle(?!\s?board)/]],
   // A „gearbag" egybeírva is táska (fanatic.com: `fanatic-gearbag-pocket-isup`).
   [
     "taska",
@@ -2012,7 +2020,10 @@ export const TRACKED_ACCESSORY_TYPES: readonly GearCategory[] = [
 /** Kategorizált kiegészítő-egyezés a névben, specifikus→általános sorrendben. */
 function guessAccessoryCategory(folded: string): GearCategory | null {
   for (const [category, needles] of ACCESSORY_CATEGORY_RULES) {
-    if (needles.some((needle) => folded.includes(needle))) return category;
+    const hit = needles.some((needle) =>
+      typeof needle === "string" ? folded.includes(needle) : needle.test(folded),
+    );
+    if (hit) return category;
   }
   return null;
 }
@@ -2051,6 +2062,43 @@ export type ProductClassification =
  *
  * Hiányzó mező nem ellentmondás: ott nincs mit összevetni.
  */
+/**
+ * A DESZKA-MEZŐK LESZEDÉSE a kiegészítő-jelöltről.
+ *
+ * ÉLESBEN MÉRT HIBA (zraysports.com, 2026-09-06 — a 2026-08-20-i rövidzár
+ * MÁSIK FELE). A pumpa-oldalakon nincs saját spec-blokk, a „Related Products"
+ * viszont deszkákat sorol fel („X-RIDER XL 13' - X5 … 13' x 36" x 6""), és a
+ * laza szöveg-parse onnan szedi a méretet: 13' = 396,2 cm. A `classifyProduct`
+ * ezt HELYESEN kiegészítőnek sorolta be (a rövidzár nem szólalt meg), de a
+ * hamis méret RAJTA MARADT a jelölten, és a jóváhagyás beírta a
+ * `boards.length_cm`-be — a moderátor egy 396 cm „hosszú" pumpa-adaptert
+ * hagyott jóvá. A besorolás védelme tehát önmagában kevés: ha a termék NEM
+ * deszka, a deszka-szabályokkal olvasott méret nem róla szól.
+ *
+ * A vágás mértéke szándékosan kétszintű, mert a kiegészítőnek IS van valódi
+ * mérete (Jobe `SUP Pump 12V`: 29,5 × 13,5 × 16 cm — ez a pumpa doboza, jó
+ * adat):
+ *  * a TÉRFOGAT és a TEHERBÍRÁS deszka-fogalom, kiegészítőn sosem értelmes →
+ *    mindig kiesik (a hamis „150 kg teherbírású pumpa" is innen jött);
+ *  * a méret-hármas csak akkor esik ki, ha bármelyik tagja eléri a
+ *    `BOARD_LENGTH_MIN_CM`-et: egy KÖVETETT kiegészítő (evező, mentőmellény,
+ *    pumpa) sosem 2,4 m-es, tehát ekkora érték csak deszkából szivároghatott
+ *    át. Mindhárom tag megy, mert ugyanabból a félreolvasott hármasból jön.
+ */
+export function stripBoardOnlySpecs(specs: BoardSpecs): BoardSpecs {
+  const leaked = [specs.lengthCm, specs.widthCm, specs.thicknessCm].some(
+    (value) => value !== null && value >= BOARD_LENGTH_MIN_CM,
+  );
+  return {
+    ...specs,
+    volumeL: null,
+    maxLoadKg: null,
+    lengthCm: leaked ? null : specs.lengthCm,
+    widthCm: leaked ? null : specs.widthCm,
+    thicknessCm: leaked ? null : specs.thicknessCm,
+  };
+}
+
 export function dimensionsAreCoherent(specs: BoardSpecs): boolean {
   const { lengthCm, widthCm, thicknessCm } = specs;
   if (lengthCm === null) return true;
@@ -2372,7 +2420,7 @@ export function extractProduct(
     boardType,
     boardTypeSource,
     boardTypes,
-    specs,
+    specs: classification.kind === "accessory" ? stripBoardOnlySpecs(specs) : specs,
     accessoryType:
       classification.kind === "accessory" ? classification.accessoryType : null,
   };
@@ -3371,6 +3419,9 @@ export function extractProductFromPage(
   if (classification.kind === "ignore") return null;
   extracted.accessoryType =
     classification.kind === "accessory" ? classification.accessoryType : null;
+  if (classification.kind === "accessory") {
+    extracted.specs = stripBoardOnlySpecs(extracted.specs);
+  }
   return extracted;
 }
 

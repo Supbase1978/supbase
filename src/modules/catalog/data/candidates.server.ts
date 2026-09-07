@@ -254,6 +254,47 @@ export function buildBoardInsert(
 }
 
 /**
+ * Egy KÖVETETT kiegészítő (evező, mentőmellény, pumpa) sosem 2,4 m-es — ez a
+ * figyelő deszka-alsóhatára is (`BOARD_LENGTH_MIN_CM`). A konstans itt
+ * SZÁNDÉKOSAN duplán szerepel: a modul csak a `@core`-tól és önmagától
+ * függhet, a figyelő pedig `tools/` alatt él (modul-szerződés 1.).
+ */
+const ACCESSORY_LENGTH_CEILING_CM = 240;
+
+/**
+ * A DESZKA-MEZŐK LESZEDÉSE a kiegészítő-jelöltről — a figyelő
+ * `stripBoardOnlySpecs`-ének párja a jóváhagyási ágon.
+ *
+ * ÉLESBEN MÉRT HIBA (zraysports.com, 2026-09-06): a pumpa-oldalakon nincs
+ * saját spec-blokk, a „Related Products" viszont deszkákat sorol fel, és a
+ * szöveg-parse onnan szedte a méretet — 13' = 396,2 cm. A besorolás helyesen
+ * mondta kiegészítőnek, a hamis méret mégis bekerült a `boards.length_cm`-be:
+ * a moderátor egy 396 cm „hosszú" pumpa-adaptert hagyott jóvá.
+ *
+ * A jelölt `extracted` mezője a CRAWL IDEJÉN fagy be, ezért a figyelő-oldali
+ * javítás a MÁR SORBAN ÁLLÓ jelölteken nem segít — ez itt az utolsó kapu.
+ *
+ * A vágás kétszintű, mert a kiegészítőnek IS van valódi mérete (Jobe
+ * `SUP Pump 12V`: 29,5 × 13,5 × 16 cm — jó adat): a térfogat és a teherbírás
+ * deszka-fogalom, ezért mindig kiesik; a méret-hármas csak akkor, ha bármelyik
+ * tagja eléri a deszka-alsóhatárt — ekkora érték csak deszkából szivároghatott
+ * át, és mindhárom tag ugyanabból a félreolvasott hármasból jön.
+ */
+export function stripBoardOnlySpecs(specs: ExtractedBoardSpecs): ExtractedBoardSpecs {
+  const leaked = [specs.lengthCm, specs.widthCm, specs.thicknessCm].some(
+    (value) => value !== null && value >= ACCESSORY_LENGTH_CEILING_CM,
+  );
+  return {
+    ...specs,
+    volumeL: null,
+    maxLoadKg: null,
+    lengthCm: leaked ? null : specs.lengthCm,
+    widthCm: leaked ? null : specs.widthCm,
+    thicknessCm: leaked ? null : specs.thicknessCm,
+  };
+}
+
+/**
  * Tiszta leképezés: kinyert jelölt-adat → `boards` insert-payload, KIEGÉSZÍTŐ
  * ágon (F2.3 3. szakasz). A `buildBoardInsert` párja — szándékosan KÜLÖN
  * függvény, nem egy közös `kind`-elágazós verzió: a két alak (`board_type`
@@ -264,7 +305,7 @@ export function buildAccessoryInsert(
   extracted: ExtractedBoardData,
   options: { brandId: string; accessoryType: GearCategory; slug: string; seenAt: string },
 ): Record<string, unknown> {
-  const specs: ExtractedBoardSpecs = extracted.specs;
+  const specs: ExtractedBoardSpecs = stripBoardOnlySpecs(extracted.specs);
   return {
     brand_id: options.brandId,
     model_name: extracted.modelName === "" ? extracted.rawTitle : extracted.modelName,

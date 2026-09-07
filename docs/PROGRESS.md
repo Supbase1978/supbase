@@ -678,6 +678,93 @@ adatunkkal; **kettőnél 20 kg-mal TÚLBECSÜLTE a teherbírást** (Gladiator El
 Journey-nél pedig 95 kg-ot ír a két független forrásunk egybehangzó 100-a
 helyett. Épp az a mező, amire a Deszkaválasztó kemény biztonsági szűrőt épít.
 
+**F2.1-utó-60 — Jobe-validálás: színváltozat, hírrovat, evező — és a
+kiegészítőkre szivárgott deszka-méret (2026-09-06).** A felhasználó a Jobe
+sorát végigvitte (7 jegyzet), közben pedig jóváhagyott egy Zray pumpa-adaptert,
+aminek „nem stimmelt a hossza". A kettő független, de mindkettő ugyanazt a
+mintát mutatja: a besorolás védelme önmagában kevés, ha a hamis adat utána is
+rajta marad a soron.
+
+**A ZRAY-ADAPTER: 396 cm „hosszú" pumpa.** A gyártó kiegészítő-oldalain nincs
+saját spec-blokk, a „Related Products" viszont deszkákat sorol fel
+(`X-RIDER XL 13' - X5 … 13' x 36" x 6"`) — és 13' = 396,2 cm, 30" = 76,2 cm.
+Ezt a szivárgást 2026-08-20-ban MÁR MEGFOGTUK, de csak félig: a
+`classifyProduct` geometriai rövidzára helyesen KIEGÉSZÍTŐNEK sorolta be a
+pumpát (nem lett belőle hamis deszka), a szomszéd deszka mérete viszont
+ott maradt a jelölt `specs` mezőjében, és a jóváhagyás beírta a
+`boards.length_cm`-be. **A besorolás helyes volt, az adat nem** — a moderátor
+a soron egy hihető méretet látott, és leokézta.
+
+Az új `stripBoardOnlySpecs` ezt a felet zárja le: ha a termék nem deszka, a
+deszka-szabályokkal olvasott méret nem róla szól. A vágás KÉTSZINTŰ, mert a
+kiegészítőnek is van valódi mérete (Jobe `SUP Pump 12V`: 29,5 × 13,5 × 16 cm —
+ez a pumpa doboza, jó adat):
+
+* a **térfogat és a teherbírás** deszka-fogalom, kiegészítőn sosem értelmes →
+  mindig kiesik (innen jött a „150 kg teherbírású pumpa" is);
+* a **méret-hármas** csak akkor, ha bármelyik tagja eléri a `BOARD_LENGTH_MIN_CM`
+  (240 cm) határt: egy KÖVETETT kiegészítő (evező, mentőmellény, pumpa) sosem
+  2,4 m-es. Mindhárom tag megy, mert ugyanabból a félreolvasott hármasból jön.
+
+**A KAPU KÉT HELYEN ÁLL**, és ez nem óvatoskodás: a jelölt `extracted` mezője a
+CRAWL IDEJÉN fagy be, tehát a figyelő-oldali javítás a MÁR SORBAN ÁLLÓ
+jelölteken nem segít. Ezért a jóváhagyási ág (`approve.ts` és a modul
+`candidates.server.ts`-e) is átereszti rajta a specs-et. A modul-szerződés
+miatt a modul nem importálhat a `tools/`-ból, ezért ott a függvény és a 240-es
+küszöb szándékosan duplán szerepel.
+
+Adatoldalon: a `Air Pump Adaptor` 396 × 396-ja és a `Double Action Air Pump`
+150 kg-ja törölve. A két 76 cm-es „hossz" (`Double Action`, `Portable Electric`)
+az általános szabályon ÁTMENT volna — 76 cm hihető egy pumpánál —, de a Zraynál
+tudjuk, hogy a kiegészítő-lapokon egyáltalán nincs saját adat, tehát az is a
+szomszéd deszka 30"-ja: külön, forrás-ismereten alapuló javítással törölve.
+
+**JOBE — a 7 jegyzet négy csoportban.**
+
+*Színváltozat (4 jegyzet).* A Jobe címsablonja `… Package <Szín>`, és ugyanaz a
+deszka két-három színnel is szerepel a sitemapben (`Aero Yarra … Package Purple`
+és `… Package Steel Blue`). A szín a `titleNoiseWords`-be került — SORREND
+SZÁMÍT, a „steel blue" a „blue" ELŐTT áll, különben árva „Steel" maradna a
+névben. A moderátor a párokat már összefésülte (mindkét pár ugyanarra a
+`matched_board_id`-ra mutat), így csak az élő sorok átnevezése maradt:
+`Aero Duna Board 11.6 Purple` → `Aero Duna Board 11.6`,
+`Aero Yarra Board 10.6 Steel Blue` → `Aero Yarra Board 10.6`, slugostul.
+A `boards.colors` mező továbbra is nyitott tétel — addig a szín a névből kimarad.
+
+*Hírrovat termékként.* A `/en/newsflash/introducing-the-sup-concept-series-3019/`
+a `-sup-` befoglaló mintára illeszkedett, és a cikk prózájából 23 cm „hossz"
+lett. Egy cikk sosem termék: `excludeUrlPatterns: ["/newsflash/"]`, ami erősebb
+a befoglaló mintánál. A bejárás 81 URL-re szűkült.
+
+*Evező deszkaként.* A `Jobe Freedom Stick SUP Paddle Kids` `kids` DESZKAKÉNT
+jött be, 137 × 18 cm „mérettel". A csupasz „paddle" szándékosan nincs a
+kiegészítő-kulcsszavak közt — a „paddle board" is tartalmazza, és MÁRKANÉV is
+lehet (`Red Paddle Co`) —, a `sup paddle` viszont a gyártók evező-címeinek
+állandó fordulata. Ezért az `evezo` szabály mostantól regexet is elbír:
+`/sup paddle(?!\s?board)/`. A negatív előretekintés az `Inflatable SUP Paddle
+Board` alakot zárja ki, ami deszka. **Az újracrawl 15 evező-jelöltet hozott be**
+(Stream Carbon, Fusion Stick, Bamboo Classic…) — ezek eddig hiányoztak a
+felszerelés-ágból.
+
+*Csomag-változat.* A `Mohaka 10.2 + Sail 3.5 m2` már helyesen ugyanarra a
+deszkára van fésülve, mint a `Mohaka 10.2` — a jegyzet megerősítés, nincs teendő.
+
+### NYITOTT SZÁLAK a következő munkamenetnek
+
+- **Két `Jobe Pump 12V` élő sor AZONOS sluggal** (`jobe-pump-12v`, mindkettő
+  2026-09-06). A `resolveUniqueSlug` ezt megelőzné, tehát vagy egyidejű
+  jóváhagyás, vagy két külön termék-URL ugyanarra a pumpára. Törlés =
+  moderátori döntés.
+- **A `check-duplicates` a KIEGÉSZÍTŐKET nem nézi** — a fenti azonos slugú párt
+  nem jelentette. A deszka-ág duplikátumait viszont igen (`WIND 11.6`,
+  `ORIGIN 12.6S`, `Manta Ray 10'`).
+- **A `list-notes --resolve` mindent lezár, szűrni nem lehet.** A Jobe-köteg
+  ezért célzott frissítéssel lett készre jelölve, hogy a -59 kör valódi nyitott
+  szálai (FunWater `Manta Ray`, Red szörf-SUP, Aquatone `SUPERPUMP V2`) a listán
+  maradjanak. Ha ez ismétlődik, a parancs megérdemel egy `--source` kapcsolót.
+- A `Paddle Float Support` `evezo`-ként jött be — evező-úszó, valójában más
+  kategória. Moderátori döntés.
+
 **F2.1-utó-59 — validálási kör: névszabvány, geometriai kapu, slugok
 (2026-09-01…09-06).** A felhasználó három kötegben adott át összesen 23
 moderátori jegyzetet. Amit a feldolgozásuk hozott:

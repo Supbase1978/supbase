@@ -13,6 +13,7 @@
  * payload változik és ez a másolat nem, a teszt elhasal.
  */
 import type { GearCategory } from "../../src/modules/catalog/gear.ts";
+import { stripBoardOnlySpecs } from "./normalize.ts";
 import type { BoardType, ExtractedProduct } from "./types.ts";
 
 /**
@@ -72,7 +73,12 @@ export function buildAccessoryInsertPayload(
   extracted: ExtractedProduct,
   options: { brandId: string; accessoryType: GearCategory; slug: string; seenAt: string },
 ): Record<string, unknown> {
-  const specs = extracted.specs;
+  // MÁSODIK KAPU a deszka-mezőkre. A crawl azóta tisztán írja a kiegészítő-
+  // jelöltet (`stripBoardOnlySpecs`), de a jelölt `extracted` mezője a CRAWL
+  // IDEJÉN fagy be: a most sorban álló, régebbi jelöltek még a hamis „396 cm
+  // hosszú pumpa" adatot hordozzák. A jóváhagyás az utolsó pont, ahol ez még
+  // nem került az élő katalógusba.
+  const specs = stripBoardOnlySpecs(extracted.specs);
   return {
     brand_id: options.brandId,
     model_name: extracted.modelName === "" ? extracted.rawTitle : extracted.modelName,

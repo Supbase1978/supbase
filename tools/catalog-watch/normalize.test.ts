@@ -20,6 +20,7 @@ import {
   parsePriceHuf,
   parsePriceString,
   parseSpecsFromText,
+  stripBoardOnlySpecs,
 } from "./normalize.ts";
 
 const NOW = new Date("2026-07-28T00:00:00Z");
@@ -652,6 +653,20 @@ describe("classifyProduct", () => {
     ["Férfi rövidnadrág Maui Férfi Boardshorts SUP", null, { kind: "ignore" }],
     ["Race Board Handle (1 pcs)", null, { kind: "ignore" }],
     ["Foil Board Nose Handle (1 pcs)", null, { kind: "ignore" }],
+    // ÉLESBEN MÉRT (jobesports.com, 2026-09-06): a gyerek-evező DESZKAKÉNT jött
+    // be, `kids` besorolással — a csupasz „paddle" szándékosan nincs a
+    // kulcsszavak közt, a „SUP Paddle" viszont egyértelmű.
+    [
+      "Jobe Freedom Stick SUP Paddle Kids",
+      "kids" as const,
+      { kind: "accessory", accessoryType: "evezo" },
+    ],
+    ["Cruiser Tough 3-Piece Adjustable Fibreglass SUP Paddle", null, {
+      kind: "accessory",
+      accessoryType: "evezo",
+    }],
+    // …de a „SUP Paddle Board" DESZKA marad: erre való a negatív előretekintés.
+    ["Bluefin Cruise 10.8 Inflatable SUP Paddle Board", null, { kind: "board" }],
   ])("%s → %o", (rawTitle, boardType, expected) => {
     expect(
       classifyProduct({ rawTitle, modelName: rawTitle, boardType, specs: NO_SPECS }),
@@ -669,6 +684,18 @@ describe("classifyProduct", () => {
     ).toEqual({ kind: "board" });
   });
 
+  it('a MÁRKANÉVBEN álló „paddle” nem tesz evezővé (Red Paddle Co)', () => {
+    // A csupasz „paddle" ezért nem lehet kulcsszó: a márkanév is viseli.
+    expect(
+      classifyProduct({
+        rawTitle: "Red Paddle Co 10'6\" Ride MSL",
+        modelName: "10'6\" Ride MSL",
+        boardType: null,
+        specs: { ...NO_SPECS, lengthCm: 320, widthCm: 81, maxLoadKg: 120 },
+      }),
+    ).toEqual({ kind: "board" });
+  });
+
   it("a deszka-tartományon kívüli hossz önmagában nem elég, de a KÖVETETT kulcsszó felülír", () => {
     expect(
       classifyProduct({
@@ -678,6 +705,42 @@ describe("classifyProduct", () => {
         specs: { ...NO_SPECS, lengthCm: 180, volumeL: 2 },
       }),
     ).toEqual({ kind: "accessory", accessoryType: "evezo" });
+  });
+});
+
+/**
+ * ÉLESBEN MÉRT (zraysports.com, 2026-09-06): a pumpa-oldal „Related Products"
+ * blokkjából felszedett DESZKA-méret rajta maradt a kiegészítő-jelölten, és a
+ * jóváhagyás beírta az élő sorba — 396 cm „hosszú" pumpa-adapter.
+ */
+describe("stripBoardOnlySpecs", () => {
+  const SPECS = {
+    lengthCm: null as number | null,
+    widthCm: null as number | null,
+    thicknessCm: null as number | null,
+    volumeL: null as number | null,
+    weightKg: null as number | null,
+    maxLoadKg: null as number | null,
+    inflatable: null as boolean | null,
+  };
+
+  it("a szomszéd deszkából átszivárgott méret-hármast eldobja", () => {
+    expect(
+      stripBoardOnlySpecs({ ...SPECS, lengthCm: 396.2, widthCm: 396.2, maxLoadKg: 150 }),
+    ).toEqual({ ...SPECS, lengthCm: null, widthCm: null, maxLoadKg: null });
+  });
+
+  it("a kiegészítő SAJÁT, hihető méretét megtartja", () => {
+    // Jobe SUP Pump 12V — ez a pumpa doboza, jó adat.
+    expect(
+      stripBoardOnlySpecs({ ...SPECS, lengthCm: 29.5, widthCm: 13.5, thicknessCm: 16 }),
+    ).toEqual({ ...SPECS, lengthCm: 29.5, widthCm: 13.5, thicknessCm: 16 });
+  });
+
+  it("a térfogat és a teherbírás DESZKA-fogalom — hihető méret mellett is kiesik", () => {
+    expect(
+      stripBoardOnlySpecs({ ...SPECS, lengthCm: 180, volumeL: 2, maxLoadKg: 150 }),
+    ).toEqual({ ...SPECS, lengthCm: 180, volumeL: null, maxLoadKg: null });
   });
 });
 
