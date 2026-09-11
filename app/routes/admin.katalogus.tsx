@@ -513,6 +513,19 @@ function CandidateCard({
           label={t("spec.maxLoad")}
           value={specs.maxLoadKg === null ? null : `${specs.maxLoadKg} kg`}
         />
+        {/*
+          A TÖMEG A KÁRTYÁN (moderátori jelzés, 2026-09-11). A Starboardnál
+          ugyanaz a hajótest több KIVITELBEN fut (`Blue Carbon`, `Lite Tech`,
+          `ASAP`…), és a méret, a térfogat, a teherbírás mind AZONOS — egyedül
+          a tömeg tér el, a 10'0" × 34"-en 10,1-től 11,9 kg-ig. A kártya eddig
+          nem mutatta, ezért a moderátor jogosan látta ugyanannak a deszkának a
+          hat kivitelt, és színváltozatként akarta összevonni őket. Egy mező
+          hiánya itt rossz katalógus-döntést okozott volna.
+        */}
+        <SpecItem
+          label={t("spec.weight")}
+          value={specs.weightKg === null ? null : `${specs.weightKg} kg`}
+        />
         <SpecItem label={t("spec.year")} value={extracted.modelYear?.toString() ?? null} />
       </dl>
 

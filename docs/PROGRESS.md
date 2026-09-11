@@ -743,8 +743,29 @@ fájlban; élesben ellenőrizve, hogy a dupla beszúrást az adatbázis utasítj
 (`23505 … boards_slug_hu_unique_idx`). Előfeltételként a `zray-vigour-airmat`
 árva ikersora törölve (felhasználói döntés).
 
+**A FELHASZNÁLÓ VISSZAVONTA A SZÍN-FELTEVÉST (2026-09-11), a gyártó saját
+spec-táblája alapján.** A `TALLTWIN` táblázatán látszik, hogy a kivitel nem
+csak tömegben tér el: MÁS a fin box és az uszonykészlet is (`Carbon Reflex:
+1 × FCSII Center` kontra `Xtec Carbon: 1 × Surf Box Center`). Rögzítve:
+**a Starboard-kiviteleket SOHA nem vonjuk össze.** A duplikátum-jelzés ezt
+szerkezetileg nem is tudja: azonos forráson belül TELJES névazonosságot kér, a
+kivitel pedig a modellnév része.
+
+**EGY MEZŐ HIÁNYA majdnem rossz katalógus-döntést okozott.** A moderációs
+kártya a hosszat, szélességet, vastagságot, térfogatot, teherbírást és évjáratot
+mutatta — ezek a Whopper mind a hat kivitelén AZONOSAK. A tömeg, az egyetlen
+eltérő mező (10,1 – 11,9 kg a 10'0" × 34"-en), nem volt a kártyán. A moderátor
+ezért jogosan látta ugyanannak a hat deszkát. A `spec.weight` kulcs létezett,
+csak a kártya nem használta.
+
 ### NYITOTT SZÁLAK a következő munkamenetnek
 
+- **`Whopper 10'0" X 34" Rhino`: a 2024-es lap 13,2 kg-ot adott, a 2025-ös és a
+  2026-os 11,9/11,85-öt.** A modellév-összevonáskor a 2025-ös maradt. A 13,2
+  vélhetően kinyerési hiba, nem termékváltozás: ugyanarról a 2024-es lapról a
+  TÉRFOGAT is hiányzott, a Shopify-variánsok súlya pedig mindenhol `0` (a
+  spec-táblát JS tölti). Ha kiderül, hogy valós, a jelölt `extracted` mezője
+  megőrizte az adatot, tehát a sor visszaállítható.
 - **A `VIGOUR AIRMAT` besorolása nyitva** (felhasználói döntés: „egyelőre
   semmi"). Az `airmat` 2026-08-22 óta a „sosem deszka" listán van, ez a jelölt
   viszont 08-20-án került be, és a besorolása a crawl idején befagyott.
