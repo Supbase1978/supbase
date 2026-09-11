@@ -46,6 +46,14 @@ export const recipe: SourceRecipe = {
       "titleSuffixes": [
           "-Zray Official Site"
       ],
+      // A GYÁRTÓI CÍM MÁR A KÍVÁNT NÉV (moderátori jegyzetek, 2026-09-10):
+      // `VIGOUR 10'8" - V1`, `Max Canary 11'6 - M2-B`. A Zraynál a TÍPUSKÓD
+      // (`V1`, `M2-B`, `XP-3`) azonosít — ugyanaz a modellnév két méretben és
+      // két kódon is fut —, ezért se a méret, se a kötőjel nem zaj itt. Az
+      // általános takarítás mindkettőt elvitte (`Max Canary M2 B`), amiből hat
+      // moderátori jegyzet lett.
+      "titleKeepSize": true,
+      "titleKeepHyphen": true,
       "defaultBrandName": "Zray",
       "productUrlPatterns": [
           "/productinfo/"

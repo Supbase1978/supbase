@@ -678,6 +678,84 @@ adatunkkal; **kettőnél 20 kg-mal TÚLBECSÜLTE a teherbírást** (Gladiator El
 Journey-nél pedig 95 kg-ot ír a két független forrásunk egybehangzó 100-a
 helyett. Épp az a mező, amire a Deszkaválasztó kemény biztonsági szűrőt épít.
 
+**F2.1-utó-61 — Zray-névszabvány, Starboard-kivitelek, és a moderátor által
+LÁTOTT adat (2026-09-08…09-11).** A felhasználó végigvitte a Zray sorát; 15
+jegyzet érkezett három forrásból.
+
+**A FELÜLET HAZUDOTT — ez szülte a jegyzetek harmadát.** Három jegyzet arról
+szólt, hogy „a hossz nem lehet 396 cm" és „max terhelés 150 kg egy pumpánál?",
+miközben az élő sorokra ekkor MÁR `null` ment: az F2.1-utó-60 óta a jóváhagyás
+leszedi a kiegészítőkről a deszka-mezőket. A kártya viszont a jelölt `extracted`
+mezőjét rajzolta ki, ami a CRAWL IDEJÉN fagyott be — a moderátor tehát olyan
+adatról írt jegyzetet, ami sosem került volna be. A szűrő ezért kiköltözött egy
+közös modul-fájlba (`catalog/accessory-specs.ts`), amit a `.server.ts` ÉS a
+kártya is használ. Tanulság a visszacsatornáról: **ha a javítás csak az írási
+ágon áll, a moderátori sor tovább termeli a fantom-jegyzeteket.**
+
+**A STARBOARD-UTÓTAG NEM SZÍN, HANEM KIVITEL.** A felhasználói feltevés szerint
+„a modellek és méretek egyezésekor az utótag csak színbeli eltérést jelent". A
+gyártó saját `/products.json`-ja megcáfolta: a variáns-tengely neve `Construction`
+(`Blue Carbon`, `Starlite`, `Lite Tech`, `ASAP`, `Rhino`), és ugyanazon a
+304,8 × 86,4 cm-es, 172 literes hajótesten **10,1 – 11,9 kg** a szórás. Az
+összevonás öt deszkából egyet csinált volna, és eltüntette volna a márka fő
+ár-differenciálóját — ezért a kivitelek MARADTAK.
+
+A jegyzetek viszont valós hibát fogtak, csak más okból: mind a három pár
+**azonos modell + méret + kivitel, két MODELLÉVBŐL** (`Whopper 10'0" X 34"
+ASAP` 2024 és 2025). A modellnév nem viseli az évet, ezért ütköztek. Két élő
+pár összevonva (a 2025-ös maradt, nála megvan a 172 l; a `Rhino`-nál ez egy
+13,2 → 11,9 kg-os adatjavítás is), a jelölt-hivatkozások átmutattak.
+
+**MIÉRT NEM SZÓLT A FELÜLET**: a duplikátum-gyanú `if (a.sourceId === b.sourceId)
+continue`-val ÁTUGROTTA az azonos forrásból jövő párokat — a jelzés két BOLT
+fedő katalógusára készült (F2.1-utó-8). A gyártó viszont maga is háromszor adja
+ugyanazt a deszkát: `2024-`, `2025-` és `2026-` termékoldalon. Azonos forráson
+belül mostantól is jelez, de csak TELJES névazonosságnál — a modellnév a
+méretet és a kivitelt is viseli, így a `Whopper 10'0"` ⇄ `Whopper 11'0"` nem
+kerülhet össze. Ez 21 fölösleges pending jelöltet is megjelöl. A régi teszt
+épp a megcáfolt feltevést rögzítette („a crawler már véd a saját duplikátumai
+ellen"); átírva a mért viselkedésre.
+
+**ZRAY: A GYÁRTÓI CÍM MÁR A KÍVÁNT NÉV VOLT.** Hat jegyzet kérte a
+`Max Canary 11'6 - M2-B` alakot — és a nyers `<title>` pontosan ez. A
+`cleanModelName` rontotta el két lépésben: levágta a méretet, majd a kötőjelet
+szóközre cserélte (`Max Canary M2 B`). A Zraynál viszont a TÍPUSKÓD azonosít
+(ugyanaz a modellnév két méretben és két kódon fut), tehát egyik sem zaj itt.
+Új forrás-szintű kapcsoló: `titleKeepHyphen` (a `titleKeepSize` párja).
+
+A kötőjel KÉT dolgot jelöl, és meg kell különböztetni őket: amelyiknek van
+szóköz legalább az egyik oldalán, az ELVÁLASZTÓ (` - `), amelyiknek egyik
+oldalán sincs, az a név/kód része (`M2-B`, `X-RIDER`). Enélkül `M2 - B` lett
+volna.
+
+**A GYÁRTÓ NÉGYFÉLEKÉPPEN ÍRJA UGYANAZT**: `10'10" - X2`, `10'10'' -- X2`,
+`10 '2"`, `11' 8"- F4-A`. A `titleKeepSize` mellett ezekből NÉGY KÜLÖNBÖZŐ
+modellnév lett volna egyetlen deszkára, ezért a méret-írásmód egységesítése a
+kapcsolóval együtt kellett: kettős aposztróf → hüvelyk-jel, szóköz a szám és a
+láb-jel közül, szóköz a láb és a hüvelyk közül, több kötőjel → egy. A `”`-t
+SZÁNDÉKOSAN nem írjuk át: az már érvényes jel, és az átírása az Aqua Marina
+bevált nevét változtatta meg (regressziós teszt fogta meg).
+
+Eredmény: 54 élő sor átnevezve + slug, 0 ütközéssel; a művelet idempotens.
+
+**A `boards.slug` MOSTANTÓL EGYEDI** (`20260717099400`). A migráció indoklása a
+fájlban; élesben ellenőrizve, hogy a dupla beszúrást az adatbázis utasítja el
+(`23505 … boards_slug_hu_unique_idx`). Előfeltételként a `zray-vigour-airmat`
+árva ikersora törölve (felhasználói döntés).
+
+### NYITOTT SZÁLAK a következő munkamenetnek
+
+- **A `VIGOUR AIRMAT` besorolása nyitva** (felhasználói döntés: „egyelőre
+  semmi"). Az `airmat` 2026-08-22 óta a „sosem deszka" listán van, ez a jelölt
+  viszont 08-20-án került be, és a besorolása a crawl idején befagyott.
+- **21 pending Starboard jelölt** modellév-duplikátum; a felületen mostantól
+  meg vannak jelölve, az összevonás moderátori döntés. A tömeges jóváhagyó nem
+  tudja rendezni őket: mind a 82 pending fennakad hiányzó biztonsági mezőn.
+- A 2026-09-11-i Zray-crawl hat lapon hálózati hibával elszállt (`fetch
+  failed`, `This operation was aborted`), és a `last_crawled_at` frissítése sem
+  ment át — a forrás erősen korlátoz.
+- Egy élő Zray-sorhoz nem tartozik jelölt, ezért az átnevezés kihagyta.
+
 **F2.1-utó-60 — Jobe-validálás: színváltozat, hírrovat, evező — és a
 kiegészítőkre szivárgott deszka-méret (2026-09-06).** A felhasználó a Jobe
 sorát végigvitte (7 jegyzet), közben pedig jóváhagyott egy Zray pumpa-adaptert,

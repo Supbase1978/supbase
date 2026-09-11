@@ -670,6 +670,7 @@ export function extractPageProducts(
     titleCutAfter: config.titleCutAfter ?? [],
     titleNoiseWords: config.titleNoiseWords ?? [],
     titleKeepSize: config.titleKeepSize === true,
+    titleKeepHyphen: config.titleKeepHyphen === true,
     lengthFromTitle: config.lengthFromTitle ?? false,
     modelNameFromJsonLd: config.modelNameFromJsonLd ?? false,
     rigidUrlPatterns: config.rigidUrlPatterns ?? [],

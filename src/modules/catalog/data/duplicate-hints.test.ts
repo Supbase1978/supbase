@@ -28,22 +28,53 @@ describe("findDuplicateHints", () => {
     expect(hints.get("a")?.score).toBeGreaterThanOrEqual(DUPLICATE_HINT_THRESHOLD);
   });
 
-  it("azonos forrásból SOSEM ad gyanút (a crawler már véd a saját duplikátumai ellen)", () => {
+  /**
+   * ÉLESBEN MÉRT (star-board.com, 2026-09-10): a gyártó ugyanazt a deszkát a
+   * `2024-`, `2025-` és `2026-` termékoldalon is árulja, azonos modellnévvel,
+   * mérettel és kivitellel. A korábbi szabály („azonos forrásból sosem")
+   * emiatt elnémította a jelzést, a moderátor két Whoppert párhuzamosan
+   * jóváhagyott, és moderátori jegyzet lett belőle.
+   */
+  it("azonos forrásból is ad gyanút, ha a modellnév TELJESEN azonos", () => {
     const hints = findDuplicateHints([
       {
         id: "a",
-        sourceId: "sup-deszka",
-        brandName: "Aqua Marina",
-        modelName: "Fusion BT 23FUP",
-        modelYear: null,
+        sourceId: "starboard",
+        brandName: "Starboard",
+        modelName: `Whopper 10'0" X 34" ASAP`,
+        modelYear: 2024,
         accessoryType: null,
       },
       {
         id: "b",
-        sourceId: "sup-deszka",
-        brandName: "Aqua Marina",
-        modelName: "Fusion BT 23FUP",
-        modelYear: null,
+        sourceId: "starboard",
+        brandName: "Starboard",
+        modelName: `Whopper 10'0" x 34" ASAP`, // a gyártó évjáratonként mást ír
+        modelYear: 2025,
+        accessoryType: null,
+      },
+    ]);
+
+    expect(hints.get("a")?.candidateId).toBe("b");
+    expect(hints.get("b")?.candidateId).toBe("a");
+  });
+
+  it("azonos forráson belül a PUSZTA HASONLÓSÁG nem elég — a szomszéd méret nem duplikátum", () => {
+    const hints = findDuplicateHints([
+      {
+        id: "a",
+        sourceId: "starboard",
+        brandName: "Starboard",
+        modelName: `Whopper 10'0" X 34" ASAP`,
+        modelYear: 2025,
+        accessoryType: null,
+      },
+      {
+        id: "b",
+        sourceId: "starboard",
+        brandName: "Starboard",
+        modelName: `Whopper 11'0" X 36" ASAP`,
+        modelYear: 2025,
         accessoryType: null,
       },
     ]);

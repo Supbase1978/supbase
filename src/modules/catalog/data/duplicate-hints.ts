@@ -53,6 +53,17 @@ export interface DuplicateHint {
 }
 
 /**
+ * Névazonosság a jelzéshez: kis-nagybetű és a szóközök nem különböztetnek meg
+ * két terméket. Élesben (star-board.com) ugyanaz a deszka `10'0" X 34"` és
+ * `10'0" x 34"` alakban is szerepel, mert a gyártó évjáratonként másképp írja.
+ */
+function sameModelName(a: string, b: string): boolean {
+  const norm = (value: string) => value.toLowerCase().replace(/\s+/g, " ").trim();
+  const left = norm(a);
+  return left !== "" && left === norm(b);
+}
+
+/**
  * Minden bemeneti jelölthöz megkeresi a legjobban egyező, MÁSIK FORRÁSBÓL
  * származó, AZONOS típusú (deszka↔deszka vagy azonos kategóriájú kiegészítő)
  * pending jelöltet — ha a pontszám eléri a küszöböt.
@@ -74,8 +85,20 @@ export function findDuplicateHints(
     for (let j = 0; j < candidates.length; j++) {
       if (i === j) continue;
       const b = candidates[j]!;
-      if (a.sourceId === b.sourceId) continue;
       if (a.accessoryType !== b.accessoryType) continue;
+      // AZONOS FORRÁSON BELÜL is van valódi duplikátum, csak szigorúbb a
+      // bizonyíték. Eredetileg a forrás-azonosság kizárt (a jelzés két BOLT
+      // fedő katalógusára készült), élesben viszont a GYÁRTÓ maga is háromszor
+      // adja ugyanazt a deszkát: a `2024-`, `2025-` és `2026-` termékoldal
+      // ugyanarra a modellre, méretre és kivitelre. A moderátor emiatt nem
+      // kapott jelzést, két Whopper párhuzamosan bekerült a katalógusba, és
+      // moderátori jegyzet lett belőle.
+      //
+      // A küszöb itt NEM elég: egy márkán belül a szomszédos modellek nevei is
+      // hasonlóak (`Whopper 10'0"` ⇄ `Whopper 11'0"`), ezért azonos forrásnál
+      // csak a TELJES névazonosság számít. A modellnév a méretet és a kivitelt
+      // is viseli, tehát az azonosság itt ugyanazt a terméket jelenti.
+      if (a.sourceId === b.sourceId && !sameModelName(a.modelName, b.modelName)) continue;
 
       const brandScore = a.brandName && b.brandName ? similarity(a.brandName, b.brandName) : 0;
       const modelScore = similarity(a.modelName, b.modelName);

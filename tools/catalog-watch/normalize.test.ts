@@ -667,6 +667,9 @@ describe("classifyProduct", () => {
     }],
     // …de a „SUP Paddle Board" DESZKA marad: erre való a negatív előretekintés.
     ["Bluefin Cruise 10.8 Inflatable SUP Paddle Board", null, { kind: "board" }],
+    // A „paddle float" az evezőre húzható védő — se nem deszka, se nem evező,
+    // és nem KÖVETETT kategória (moderátori jegyzet, 2026-09-10).
+    ["Jobe SUP Paddle Float Support", null, { kind: "ignore" }],
   ])("%s → %o", (rawTitle, boardType, expected) => {
     expect(
       classifyProduct({ rawTitle, modelName: rawTitle, boardType, specs: NO_SPECS }),
@@ -741,6 +744,41 @@ describe("stripBoardOnlySpecs", () => {
     expect(
       stripBoardOnlySpecs({ ...SPECS, lengthCm: 180, volumeL: 2, maxLoadKg: 150 }),
     ).toEqual({ ...SPECS, lengthCm: 180, volumeL: null, maxLoadKg: null });
+  });
+});
+
+/**
+ * ZRAY (moderátori jegyzetek, 2026-09-10): a gyártó saját címe MÁR a kívánt
+ * modellnév, csak a takarítás vitte el belőle a méretet és a kötőjelet. A
+ * gyártó írásmódja ráadásul következetlen — ugyanaz a deszka `10'10" - X2`,
+ * `10'10'' -- X2` és `10 '2"` alakban is szerepel —, ezért az egységesítés
+ * nélkül EGY deszkából három modellnév lenne.
+ */
+describe("cleanModelName — méret és kötőjel megtartva (Zray)", () => {
+  it.each([
+    [`VIGOUR 10'8" - V1`, `VIGOUR 10'8" - V1`],
+    [`Max Canary 11'6 - M2-B`, `Max Canary 11'6 - M2-B`],
+    [`Mehndi Cyan 10'6" - H2-A`, `Mehndi Cyan 10'6" - H2-A`],
+    // A gyártó NÉGY írásmódja ugyanarra a deszkára — egyetlen névre kell futniuk.
+    [`X-RIDER DELUXE 10'10" - X2`, `X-RIDER DELUXE 10'10" - X2`],
+    [`X-RIDER DELUXE 10'10'' -- X2`, `X-RIDER DELUXE 10'10" - X2`],
+    [`X-RIDER 10 '2" - X1`, `X-RIDER 10'2" - X1`],
+    [`X-RIDER 10'2'' -- X1`, `X-RIDER 10'2" - X1`],
+    // Szóköz nélküli elválasztó, és szóköz a láb–hüvelyk között.
+    [`FURY AIR 11' 8"- F4-A`, `FURY AIR 11'8" - F4-A`],
+  ])("%s → %s", (raw, expected) => {
+    expect(cleanModelName(raw, "Zray", [], true, true)).toBe(expected);
+  });
+
+  it("a KÓDON BELÜLI kötőjel nem elválasztó — nem kap szóközt", () => {
+    // `M2-B` és `X-RIDER` a név része; csak a szóközzel határolt kötőjel az.
+    expect(cleanModelName(`X-Rider Plus 11'2" - XP-3`, "Zray", [], true, true)).toBe(
+      `X-Rider Plus 11'2" - XP-3`,
+    );
+  });
+
+  it("kötőjel-megtartás NÉLKÜL a régi viselkedés marad", () => {
+    expect(cleanModelName(`VIGOUR 10'8" - V1`, "Zray")).toBe("VIGOUR V1");
   });
 });
 

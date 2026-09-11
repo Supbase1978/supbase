@@ -249,6 +249,18 @@ export function cleanModelName(
    * duplikátum-felismerés két KÜLÖNBÖZŐ deszkát vonna össze.
    */
   keepSize = false,
+  /**
+   * A KÖTŐJEL A NÉV RÉSZE MARAD (`crawl_config.titleKeepHyphen`, F2.1-utó-61).
+   *
+   * Élesben (zraysports.com) a gyártó saját címe MÁR a kívánt alak —
+   * `VIGOUR 10'8" - V1`, `Max Canary 11'6 - M2-B` —, ahol a kötőjel KÉT
+   * dolgot jelöl: a modell és a TÍPUSKÓD elválasztását, és a kódon belüli
+   * tagolást (`M2-B`). Az általános takarítás mindkettőt szóközre cserélte
+   * (`Max Canary M2 B`), amiből a moderátornak hat jegyzete lett. A kötőjel a
+   * legtöbb forrásnál viszont valóban elválasztó-zaj, ezért ez forrás-szintű
+   * kapcsoló, nem globális viselkedés.
+   */
+  keepHyphen = false,
 ): string {
   // Az entitás-feloldás ITT történik, mert a nyers cím nem csak HTML-ből jön:
   // a Shopify `/products.json` és a JSON-LD `name` mezője is entitást ad
@@ -260,6 +272,17 @@ export function cleanModelName(
   // a jelet, és a márkanév levágása után árva `™` maradna a név elején.
   let text = decodeEntities(rawTitle)
     .replace(/[®™©]/g, " ")
+    // LÁB- ÉS HÜVELYK-JEL EGYSÉGESÍTÉSE. Csak ott avatkozunk be, ahol SZÁM áll
+    // a jel előtt — tehát méretről van szó, nem idézőjelről. Élesben
+    // (zraysports.com) ugyanaz a deszka `10'10" - X2` és `10'10'' -- X2`
+    // alakban is szerepel, egy harmadik lapon `10 '2"`-ként: a `titleKeepSize`
+    // mellett ezekből három KÜLÖNBÖZŐ modellnév lenne ugyanarra a deszkára.
+    .replace(/(\d)\s+'/g, "$1'")
+    // LÁB ÉS HÜVELYK KÖZÖTT sincs szóköz: `11' 8"` ugyanaz, mint `11'8"`.
+    .replace(/(\d')\s+(\d)/g, "$1$2")
+    // CSAK a kettős aposztróf megy át hüvelyk-jelre: a `”` már érvényes jel,
+    // az átírása fölöslegesen változtatna meg más gyártók bevált nevét.
+    .replace(/(\d)\s*(?:''|’’)/g, '$1"')
     .replace(/\s+/g, " ")
     .trim();
 
@@ -291,17 +314,34 @@ export function cleanModelName(
     text = text.replace(wholeWordRegExp(word), " ");
   }
 
-  return stripEdgeStopWords(
-    text
+  const separated = text
       // A VESSZŐ IS ELVÁLASZTÓ (F2.1-utó-50). A decathlon.hu címei vesszős
       // felsorolások („SUP szett, 9'6, felfújható, egy személynek, 80 kg-ig -
       // 100-as"); a zajszavak kivétele után az árván maradt vesszők
       // BENNMARADTAK a névben („, , , 100"). Modellnév nem kezdődik és nem
       // végződik írásjellel.
-      .replace(/[|/\\~·•–—,;-]+/g, " ")
+      .replace(keepHyphen ? /[|/\\~·•–—,;]+/g : /[|/\\~·•–—,;-]+/g, " ")
       .replace(/\s+/g, " ")
-      .trim(),
-  );
+      .trim();
+
+  // A MEGTARTOTT KÖTŐJEL RENDBETÉTELE. A gyártó saját írásmódja következetlen
+  // (`10'10'' -- X2`), a zajszavak kivétele pedig árva kötőjelet hagyhat a
+  // széleken. A jelentés — „modell — típuskód" — EGYETLEN kötőjel, körülötte
+  // egy-egy szóközzel.
+  const tidied = keepHyphen
+    ? separated
+        .replace(/\s*-{2,}\s*/g, " - ")
+        // ELVÁLASZTÓ kontra KÓDON BELÜLI kötőjel: amelyiknek van szóköz
+        // legalább az egyik oldalán, az elválasztó (`11'8"- F4-A` → `… - F4-A`);
+        // amelyiknek egyik oldalán sincs, az a név/kód része marad (`M2-B`,
+        // `X-RIDER`). Ez a megkülönböztetés a gyártó saját írásmódját követi.
+        .replace(/\s*-\s+|\s+-\s*/g, " - ")
+        .replace(/^[\s-]+|[\s-]+$/g, "")
+        .replace(/\s+/g, " ")
+        .trim()
+    : separated;
+
+  return stripEdgeStopWords(tidied);
 }
 
 /**
@@ -1848,7 +1888,12 @@ const ACCESSORY_CATEGORY_RULES: [GearCategory, (string | RegExp)[]][] = [
   // „Stand Up Paddle Board" is tartalmazza —, a `sup paddle` viszont a
   // gyártók evező-címeinek állandó fordulata. A negatív előretekintés az
   // „Inflatable SUP Paddle Board" alakot zárja ki, ami DESZKA.
-  ["evezo", ["evezo", "paddle blade", "oars", /sup paddle(?!\s?board)/]],
+  // A „PADDLE FLOAT" nem evező, hanem az evezőre húzható védő (moderátori
+  // jegyzet, 2026-09-10: „ez egy evezőre tehető kiegészítő, ami lehetővé
+  // teszi, hogy az evező ne sértse a SUP-ot"). Nem KÖVETETT kategória, tehát
+  // a `MISC_NON_BOARD_KEYWORDS`-re kell esnie — ahhoz viszont ELŐBB ki kell
+  // maradnia az `evezo`-ból, mert a kategória-szabályok előbb futnak.
+  ["evezo", ["evezo", "paddle blade", "oars", /sup paddle(?!\s?board)(?!\s?float)/]],
   // A „gearbag" egybeírva is táska (fanatic.com: `fanatic-gearbag-pocket-isup`).
   [
     "taska",
@@ -1871,6 +1916,7 @@ const ACCESSORY_CATEGORY_RULES: [GearCategory, (string | RegExp)[]][] = [
  * deszka-besorolást, de nem termelnek jelöltet SEM (`ignore`, nem `accessory`).
  */
 const MISC_NON_BOARD_KEYWORDS = [
+  "paddle float",
   "napszemuveg",
   "szemuveg",
   "sunglass",
@@ -3100,6 +3146,8 @@ export interface PageExtractionOptions {
   titleNoiseWords?: readonly string[];
   /** A méret a modellnév része marad (`crawl_config.titleKeepSize`). */
   titleKeepSize?: boolean;
+  /** A kötőjel a modellnév része marad (`crawl_config.titleKeepHyphen`). */
+  titleKeepHyphen?: boolean;
   /** A hossz a cím elejéről, ha egyetlen mező sem adja (`lengthFromTitle`). */
   lengthFromTitle?: boolean;
   /**
@@ -3183,6 +3231,7 @@ export function extractProductFromPage(
     titleCutAfter = [],
     titleNoiseWords = [],
     titleKeepSize = false,
+    titleKeepHyphen = false,
     lengthFromTitle = false,
     modelNameFromJsonLd = false,
     rigidUrlPatterns = [],
@@ -3295,7 +3344,13 @@ export function extractProductFromPage(
   specs = applyRigidUrl(specs, sourceUrl, rigidUrlPatterns);
 
   const brandName = normalizeBrandName(defaultBrandName);
-  const modelName = cleanModelName(rawTitle, brandName, titleNoiseWords, titleKeepSize);
+  const modelName = cleanModelName(
+    rawTitle,
+    brandName,
+    titleNoiseWords,
+    titleKeepSize,
+    titleKeepHyphen,
+  );
   if (modelName === "") return null;
 
   // A gyártó használat-értékelése. Ha a SZÖRF vezet, a terméket NEM gyűjtjük

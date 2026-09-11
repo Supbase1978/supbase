@@ -2,14 +2,14 @@
   "source": "Zray",
   "url": "https://www.zraysports.com/productinfo/283788.html",
   "capturedAt": "2026-08-30",
-  "teaches": "Cimkezett kettospontos spec; a kategoria a MORZSAMENUBOL; a termekkep NEM a fejleclogo. A galéria a w-bigimglist konténerből — a bélyegkép-változatokat az útvonal-azonosság szűri (ugyanaz a fájl ?x-oss-process=resize paraméterrel).",
+  "teaches": "Cimkezett kettospontos spec; a kategoria a MORZSAMENUBOL; a termekkep NEM a fejleclogo. A galéria a w-bigimglist konténerből — a bélyegkép-változatokat az útvonal-azonosság szűri (ugyanaz a fájl ?x-oss-process=resize paraméterrel). A modellnev a GYARTOI cim, meretestol-kotojelestol (titleKeepSize + titleKeepHyphen): a Zraynal a tipuskod azonosit.",
   "rendered": false,
   "series": false,
   "expected": [
     {
       "sourceUrl": "https://www.zraysports.com/productinfo/283788.html",
       "brandName": "Zray",
-      "modelName": "X RIDER XL",
+      "modelName": "X-RIDER XL 13'",
       "rawTitle": "X-RIDER XL 13'",
       "modelYear": null,
       "priceHuf": null,

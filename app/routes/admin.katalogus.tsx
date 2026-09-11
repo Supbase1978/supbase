@@ -34,6 +34,7 @@ import {
   submitModeratorNotes,
   setBoardGallery,
 } from "@modules/catalog/data/candidates.server";
+import { stripBoardOnlySpecs } from "@modules/catalog/accessory-specs";
 import { findDuplicateHints } from "@modules/catalog/data/duplicate-hints";
 import { inferBoardType } from "@modules/catalog/family-type";
 import { GEAR_CATEGORIES, isGearCategory, type GearCategory } from "@modules/catalog/gear";
@@ -471,6 +472,17 @@ function CandidateCard({
     return null;
   }
 
+  // AMIT A MODERÁTOR LÁT, AZ LEGYEN AZ, AMI BE FOG KERÜLNI. A jelölt
+  // `extracted` mezője a crawl idején fagyott be, a jóváhagyás viszont a
+  // kiegészítőkről leszedi a deszka-mezőket — enélkül a kártya olyan méretet
+  // mutatna, ami sosem íródik ki. Élesben ez három fölösleges moderátori
+  // jegyzetet szült („a hossz nem lehet 396 cm", „max terhelés 150 kg egy
+  // pumpánál?"), miközben az élő sorokra már `null` ment.
+  //
+  // A `kind` a MODERÁTOR kapcsolója, nem a kinyerésé: ha átváltja deszkára, a
+  // nyers adat azonnal visszajön — ilyenkor az ő döntése az erősebb.
+  const specs = kind === "accessory" ? stripBoardOnlySpecs(extracted.specs) : extracted.specs;
+
   const title = [extracted.brandName, extracted.modelName].filter(Boolean).join(" ");
   const confidence =
     candidate.confidence === null ? null : `${Math.round(candidate.confidence * 100)}%`;
@@ -490,16 +502,16 @@ function CandidateCard({
       <p className="mt-1 text-xs text-text-3">{extracted.rawTitle}</p>
 
       <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-sm sm:grid-cols-3">
-        <SpecItem label={t("spec.length")} value={formatCm(extracted.specs.lengthCm)} />
-        <SpecItem label={t("spec.width")} value={formatCm(extracted.specs.widthCm)} />
-        <SpecItem label={t("spec.thickness")} value={formatCm(extracted.specs.thicknessCm)} />
+        <SpecItem label={t("spec.length")} value={formatCm(specs.lengthCm)} />
+        <SpecItem label={t("spec.width")} value={formatCm(specs.widthCm)} />
+        <SpecItem label={t("spec.thickness")} value={formatCm(specs.thicknessCm)} />
         <SpecItem
           label={t("spec.volume")}
-          value={extracted.specs.volumeL === null ? null : `${extracted.specs.volumeL} l`}
+          value={specs.volumeL === null ? null : `${specs.volumeL} l`}
         />
         <SpecItem
           label={t("spec.maxLoad")}
-          value={extracted.specs.maxLoadKg === null ? null : `${extracted.specs.maxLoadKg} kg`}
+          value={specs.maxLoadKg === null ? null : `${specs.maxLoadKg} kg`}
         />
         <SpecItem label={t("spec.year")} value={extracted.modelYear?.toString() ?? null} />
       </dl>

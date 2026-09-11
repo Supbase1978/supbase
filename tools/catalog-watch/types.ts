@@ -148,6 +148,8 @@ export interface CrawlConfig {
    * duplikátum-felismerésben. Opt-in, mérés után.
    */
   titleKeepSize?: boolean;
+  /** A kötőjel a modellnév része marad (`cleanModelName` `keepHyphen`). */
+  titleKeepHyphen?: boolean;
   /**
    * A LETÖLTÉS BÖNGÉSZŐN KERESZTÜL (F2.1-utó-50) — nem fallback, hanem az
    * EGYETLEN csatorna ennél a forrásnál.
