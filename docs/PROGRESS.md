@@ -678,6 +678,56 @@ adatunkkal; **kettőnél 20 kg-mal TÚLBECSÜLTE a teherbírást** (Gladiator El
 Journey-nél pedig 95 kg-ot ír a két független forrásunk egybehangzó 100-a
 helyett. Épp az a mező, amire a Deszkaválasztó kemény biztonsági szűrőt épít.
 
+**F2.1-utó-62 — modellévek: mikor egy sor, mikor kettő (2026-09-13).**
+Moderátori kérdés a Starboard-soron: „ezek az évjáratok valódi dolgokban is
+különböznek, vagy csak névben?" A válasz mérésből jött, és a feltevés
+ellenkezőjét adta.
+
+**126 Starboard-modell szerepel több modellévben.** Mezőnként összevetve, a
+hüvelyk→cm átváltás kerekítési zaját LEVÁLASZTVA (`20` ⇄ `20,1` cm és
+`14,2` ⇄ `14,22` kg nem termékváltozás — 40 ilyen eset volt):
+
+| | |
+|---|---|
+| minden mérhető mező azonos | 65 |
+| csak a HIÁNYZÓ adat tér el | 15 |
+| **érdemben különbözik** | **46** |
+
+Az eltérés ott sem kozmetikai: **tömeg 32 modellnél** (10,1 → 9,3 kg),
+**TEHERBÍRÁS 15-nél** (85 → 120, 155 → 115, 90 → 70 kg), **vastagság 5-nél**
+(15 → 12 cm, azaz 6" helyett 4,75" — áttervezés). A teherbírás BIZTONSÁGI
+mező: a modellévek vak összevonása ugyanaz a hiba lett volna, mint a
+kiviteleké, csak súlyosabb — egy 70 kg-os deszka 90-esként jelent volna meg.
+
+**FELHASZNÁLÓI DÖNTÉS**: „mivel korábbi évjáratokat is nézhetnek a használók",
+ahol SEMMI különbség nincs, ott EGY sor áll, és a felirat kötőjellel felsorolja
+az összes évjáratot (`2024-2025`) — így a vevő látja, hogy azok között nincs
+eltérés. Ahol van, ott évjáratonként külön sor marad a saját adatával.
+
+Ehhez új oszlop (`20260717099500`): **`model_years int[]`**. A `model_year`
+EGYETLEN szám marad, mert a Deszkaválasztó frissesség-pontozása azzal számol —
+az összevont sornál ez a legfrissebb év. A felirat a `model-years.ts`
+`modelYearLabel`-jéből jön, és HÁROM helyen kell: a moderációs
+merge-legördülőn, a publikus deszka-kártyán és az adatlapon — ezért nem a
+`.server.ts`-ben él. A felirat NEM rövidít tartományt: a hiányzó közbenső évet
+nem hidalja át, mert az olyat állítana, amit nem mértünk.
+
+**A MODELLNÉV NEM VISELI AZ ÉVET.** Egy forrása van az igazságnak: a nevet a
+gyártói cím adja, az évjáratot a `model_years`. A két külön sor slugja
+különbözik (`…-asap-2024`), a nevük azonos, és a felirat különbözteti meg őket.
+
+**AMIT A FELIRAT HIÁNYA OKOZOTT.** A merge-legördülő eddig `Márka Modellnév`
+volt, évjárat nélkül — a moderátor tehát a döntés pillanatában azonos feliratot
+látott a kártya címén ÉS a felkínált merge-célponton, vagyis a „Jóváhagyás — új
+deszka" és az „Összefésülés" ugyanarra a névre mutatott. Így keletkezett két
+duplikátum-pár (`Whopper 10'0" X 34" Lite Tech` és `Blue Carbon`). Az évjárat
+most ott van a feliratban.
+
+**VISSZAÁLLÍTVA**: az F2.1-utó-61-ben összevont `Whopper 10'0" X 34" ASAP` és
+`Rhino` 2024-es sora újra létezik — mindkettőnél a teherbírás 110 ⇄ 120 kg, ami
+a mostani szabály szerint érdemi eltérés. Az adat a jelöltek `extracted`
+mezőjéből jött vissza; ez a befagyás egyszer végre javunkra vált.
+
 **F2.1-utó-61 — Zray-névszabvány, Starboard-kivitelek, és a moderátor által
 LÁTOTT adat (2026-09-08…09-11).** A felhasználó végigvitte a Zray sorát; 15
 jegyzet érkezett három forrásból.

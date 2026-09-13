@@ -26,6 +26,8 @@ export async function loader({ request }: Route.LoaderArgs) {
     slug: pickTranslated(board.slug, locale),
     modelName: board.model_name,
     brandName: board.brand?.name ?? null,
+    modelYears: board.model_years ?? null,
+    modelYear: board.model_year,
     boardType: board.board_type,
     lengthCm: board.length_cm,
     widthCm: board.width_cm,

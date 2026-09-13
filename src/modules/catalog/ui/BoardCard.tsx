@@ -12,6 +12,7 @@ import { useTranslation } from "react-i18next";
 
 import { Card, ProductImage } from "@core/ui";
 
+import { modelYearLabel } from "../model-years";
 import type { BoardType } from "../types";
 
 export interface BoardCardData {
@@ -19,6 +20,14 @@ export interface BoardCardData {
   slug: string;
   modelName: string;
   brandName: string | null;
+  /**
+   * Melyik modellévekre érvényes ez a sor. Több elem = a gyártó több évben
+   * AZONOS adattal hozta (`2024-2025`); ahol érdemben változott, ott
+   * évjáratonként külön kártya áll. A modellnév maga NEM viseli az évet, hogy
+   * egy forrása legyen az igazságnak.
+   */
+  modelYears: number[] | null;
+  modelYear: number | null;
   boardType: BoardType;
   lengthCm: number | null;
   widthCm: number | null;
@@ -34,6 +43,7 @@ export interface BoardCardProps {
 
 export function BoardCard({ board, className }: BoardCardProps) {
   const { t } = useTranslation("catalog");
+  const years = modelYearLabel(board.modelYears, board.modelYear);
 
   return (
     <Card className={className}>
@@ -49,6 +59,7 @@ export function BoardCard({ board, className }: BoardCardProps) {
         <div className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between sm:gap-2">
           <span className="text-base leading-snug font-semibold text-ink-deep sm:text-lg">
             {board.modelName}
+            {years ? <span className="font-normal text-text-2"> ({years})</span> : null}
           </span>
           <span className="w-fit shrink-0 rounded-full bg-mist px-2.5 py-1 text-xs font-semibold text-text-2">
             {t(`boardType.${board.boardType}`)}

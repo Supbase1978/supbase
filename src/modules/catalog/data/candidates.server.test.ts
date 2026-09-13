@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { buildAccessoryInsert, buildBoardInsert } from "./candidates.server";
+import { modelYearLabel } from "../model-years";
 import type { ExtractedBoardData } from "../types";
 
 const EXTRACTED: ExtractedBoardData = {
@@ -38,6 +39,7 @@ describe("buildBoardInsert", () => {
       brand_id: "brand-1",
       model_name: "Vapor",
       model_year: 2024,
+      model_years: [2024],
       slug: { hu: "aqua-marina-vapor", en: "aqua-marina-vapor" },
       kind: "board",
       board_type: "allround",
@@ -141,6 +143,7 @@ describe("buildAccessoryInsert", () => {
       brand_id: "brand-2",
       model_name: "Karbon evező",
       model_year: 2024,
+      model_years: [2024],
       slug: { hu: "jobe-karbon-evezo", en: "jobe-karbon-evezo" },
       kind: "accessory",
       accessory_type: "evezo",
@@ -196,5 +199,69 @@ describe("buildBoardInsert — galéria", () => {
 
   it("kép-lista nélküli jelöltre ÜRES tömb (egy képes deszka)", () => {
     expect(buildBoardInsert(EXTRACTED, OPTIONS).images).toEqual([]);
+  });
+});
+
+/**
+ * TÖBB MODELLÉV EGY SORON (felhasználói döntés, 2026-09-13). A mérés szerint a
+ * Starboard 126 több-évjáratos modelljéből 65 MINDEN mezőben azonos — azok egy
+ * sorba mehetnek —, 46 viszont érdemben eltér (tömeg, TEHERBÍRÁS, vastagság),
+ * és külön sor marad. Az összevont sor neve mondja ki, mely évekre érvényes,
+ * különben a korábbi évjáratot kereső használó azt hiszi, nincs meg a deszkája.
+ */
+describe("modelYearLabel", () => {
+  it("egyetlen évjáratot simán kiír", () => {
+    expect(modelYearLabel([2025], 2025)).toBe("2025");
+  });
+
+  it("több évjáratot kötőjellel fűz össze, növekvő sorrendben", () => {
+    expect(modelYearLabel([2025, 2024], 2025)).toBe("2024-2025");
+  });
+
+  it("NEM hidalja át a hiányzó közbenső évet", () => {
+    // A `2024-2026` csak akkor állhat elő, ha 2025 is a listán van — különben
+    // olyat állítanánk a 2025-ös kiadásról, amit nem mértünk.
+    expect(modelYearLabel([2024, 2026], 2026)).toBe("2024-2026");
+    expect(modelYearLabel([2024, 2025, 2026], 2026)).toBe("2024-2025-2026");
+  });
+
+  it("ismétlődést összevon", () => {
+    expect(modelYearLabel([2024, 2024, 2025], 2025)).toBe("2024-2025");
+  });
+
+  it("üres listánál a `model_year`-re esik vissza", () => {
+    expect(modelYearLabel([], 2024)).toBe("2024");
+    expect(modelYearLabel(null, 2024)).toBe("2024");
+  });
+
+  it("évjárat nélkül nincs felirat — a gyártók többsége nem közli", () => {
+    expect(modelYearLabel(null, null)).toBeNull();
+  });
+});
+
+describe("buildBoardInsert — modellév-lista", () => {
+  it("a beszúrt sor egyelemű évjárat-listát kap", () => {
+    const payload = buildBoardInsert(EXTRACTED, {
+      brandId: "brand-1",
+      boardType: "allround",
+      slug: "aqua-marina-vapor",
+      seenAt: "2026-09-13T00:00:00.000Z",
+    });
+    expect(payload.model_year).toBe(2024);
+    expect(payload.model_years).toEqual([2024]);
+  });
+
+  it("évjárat nélkül ÜRES a lista, nem [null]", () => {
+    const payload = buildBoardInsert(
+      { ...EXTRACTED, modelYear: null },
+      {
+        brandId: "brand-1",
+        boardType: "allround",
+        slug: "aqua-marina-vapor",
+        seenAt: "2026-09-13T00:00:00.000Z",
+      },
+    );
+    expect(payload.model_year).toBeNull();
+    expect(payload.model_years).toEqual([]);
   });
 });

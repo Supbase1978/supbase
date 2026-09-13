@@ -16,6 +16,7 @@ import { slugify } from "@core/text/slug";
 
 import { buildFamilyTypeMap, type TypedExample } from "../family-type";
 import { stripBoardOnlySpecs } from "../accessory-specs";
+import { modelYearLabel } from "../model-years";
 import { GEAR_CATEGORIES, type GearCategory } from "../gear";
 import type {
   BoardImage,
@@ -41,9 +42,29 @@ export interface ModerationResult {
 }
 
 /** Egy deszka rövid megnevezése a moderációs listákhoz. */
-function boardLabel(row: { model_name: string; brand?: { name?: string } | null }): string {
+/**
+ * A MODELLÉV A FELIRAT RÉSZE, ha ismert (moderátori jelzés, 2026-09-13).
+ *
+ * A modellnév nem viseli az évjáratot, ezért ugyanaz a deszka két évből
+ * BETŰRE AZONOS néven jelenik meg. A moderációs űrlapon ez pont a döntés
+ * pillanatában vezetett félre: a kártya címe és a felkínált merge-célpont is
+ * `Starboard Whopper 10'0" X 34" Lite Tech` volt, tehát a „Jóváhagyás — új
+ * deszka" és az „Összefésülés" ugyanarra a névre mutatott, és nem látszott,
+ * hogy a meglévő sor a 2025-ös kiadás. Élesben így keletkezett két
+ * duplikátum-pár.
+ *
+ * Évjárat nélküli sornál a felirat változatlan — a legtöbb gyártó nem közli.
+ */
+function boardLabel(row: {
+  model_name: string;
+  model_year?: number | null;
+  model_years?: number[] | null;
+  brand?: { name?: string } | null;
+}): string {
   const brand = row.brand?.name;
-  return brand ? `${brand} ${row.model_name}` : row.model_name;
+  const name = brand ? `${brand} ${row.model_name}` : row.model_name;
+  const years = modelYearLabel(row.model_years, row.model_year);
+  return years ? `${name} (${years})` : name;
 }
 
 /** A jóváhagyásra váró jelöltek, legfrissebb elöl. */
@@ -52,7 +73,9 @@ export async function listPendingCandidates(
 ): Promise<CandidateWithContext[]> {
   const { data, error } = await supabase
     .from("catalog_candidates")
-    .select("*, source:catalog_sources(name), matched:boards(model_name, brand:brands(name))")
+    .select(
+      "*, source:catalog_sources(name), matched:boards(model_name, model_year, model_years, brand:brands(name))",
+    )
     .eq("status", "pending")
     .order("created_at", { ascending: false });
   if (error || !data) {
@@ -62,7 +85,12 @@ export async function listPendingCandidates(
   return (data as unknown[]).map((row) => {
     const typed = row as CatalogCandidateRow & {
       source: { name: string } | null;
-      matched: { model_name: string; brand: { name: string } | null } | null;
+      matched: {
+        model_name: string;
+        model_year: number | null;
+        model_years: number[] | null;
+        brand: { name: string } | null;
+      } | null;
     };
     return {
       candidate: typed,
@@ -86,7 +114,7 @@ export async function listBoardChoices(
 ): Promise<{ id: string; label: string }[]> {
   const { data, error } = await supabase
     .from("boards")
-    .select("id, model_name, brand:brands(name)")
+    .select("id, model_name, model_year, model_years, brand:brands(name)")
     .eq("kind", "board")
     .order("model_name");
   if (error || !data) {
@@ -94,7 +122,13 @@ export async function listBoardChoices(
   }
   return (data as unknown[])
     .map((row) => {
-      const typed = row as { id: string; model_name: string; brand: { name: string } | null };
+      const typed = row as {
+        id: string;
+        model_name: string;
+        model_year: number | null;
+        model_years: number[] | null;
+        brand: { name: string } | null;
+      };
       return { id: typed.id, label: boardLabel(typed) };
     })
     // A LÁTHATÓ FELIRAT szerint rendezünk, nem a modellnév szerint. A felirat
@@ -122,7 +156,7 @@ export async function listAccessoryChoicesByCategory(
   ) as Record<GearCategory, { id: string; label: string }[]>;
   const { data, error } = await supabase
     .from("boards")
-    .select("id, model_name, accessory_type, brand:brands(name)")
+    .select("id, model_name, model_year, model_years, accessory_type, brand:brands(name)")
     .eq("kind", "accessory")
     .order("model_name");
   if (error || !data) {
@@ -132,6 +166,8 @@ export async function listAccessoryChoicesByCategory(
     const typed = row as {
       id: string;
       model_name: string;
+      model_year: number | null;
+      model_years: number[] | null;
       accessory_type: GearCategory;
       brand: { name: string } | null;
     };
@@ -228,6 +264,7 @@ export function buildBoardInsert(
     brand_id: options.brandId,
     model_name: extracted.modelName === "" ? extracted.rawTitle : extracted.modelName,
     model_year: extracted.modelYear,
+    model_years: extracted.modelYear === null ? [] : [extracted.modelYear],
     slug: { hu: options.slug, en: options.slug },
     // A `kind` KIÍRVA megy be, nem a séma default-jára hagyatkozva: a jóváhagyás
     // deszkát hoz létre, és ezt a szándékot a payload mondja ki (a kiegészítő-ág
@@ -270,6 +307,7 @@ export function buildAccessoryInsert(
     brand_id: options.brandId,
     model_name: extracted.modelName === "" ? extracted.rawTitle : extracted.modelName,
     model_year: extracted.modelYear,
+    model_years: extracted.modelYear === null ? [] : [extracted.modelYear],
     slug: { hu: options.slug, en: options.slug },
     kind: "accessory",
     accessory_type: options.accessoryType,
@@ -419,6 +457,29 @@ export async function mergeCandidate(
   const patch: Record<string, unknown> = { last_seen_at: new Date().toISOString() };
   if (extracted.inStock !== null) {
     patch.availability_hu = extracted.inStock;
+  }
+
+  // AZ ÖSSZEFÉSÜLÉS ÖRÖKLI A BEOLVASZTOTT ÉVJÁRATOT (felhasználói döntés,
+  // 2026-09-13). A moderátor akkor fésül össze, ha a két sor adata azonos —
+  // ilyenkor a katalógusnak ki KELL mondania, hogy mindkét évjáratra érvényes,
+  // különben a korábbi évet néző használó azt hiszi, nincs meg a deszkája.
+  // A `model_year` a LEGFRISSEBB marad: a Deszkaválasztó frissesség-pontozása
+  // egyetlen számmal dolgozik.
+  if (extracted.modelYear !== null) {
+    const { data: target } = await supabase
+      .from("boards")
+      // kind-AGNOSZTIKUS: a merge-célpontot a moderátor választotta ki, és
+      // ELSŐDLEGES KULCSRA kérdezünk — a `kind` itt nem szűkít, viszont
+      // kizárná a kiegészítő-ág összefésülését (egy evező-jelölt evezőbe megy).
+      .select("model_year, model_years")
+      .eq("id", input.boardId)
+      .maybeSingle();
+    const current = target as { model_year: number | null; model_years: number[] | null } | null;
+    const years = new Set(current?.model_years ?? []);
+    if (current?.model_year) years.add(current.model_year);
+    years.add(extracted.modelYear);
+    patch.model_years = [...years].sort((a, b) => a - b);
+    patch.model_year = Math.max(...years);
   }
   const { error: boardError } = await supabase
     .from("boards")

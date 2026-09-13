@@ -64,6 +64,12 @@ export interface CatalogItemRowBase {
   brand_id: string;
   model_name: string;
   model_year: number | null;
+  /**
+   * Mely modellévekre érvényes ez a sor. Több elem = a gyártó több évben AZONOS
+   * adattal hozta; a `model_year` ezek közül a legfrissebb (a Deszkaválasztó
+   * frissesség-pontozása egyetlen számmal dolgozik).
+   */
+  model_years: number[] | null;
   slug: Record<string, string>;
   length_cm: number | null;
   width_cm: number | null;
