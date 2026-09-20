@@ -735,6 +735,29 @@ stabilitási index a szélességből jön.
 mért adat átvétele ROSSZABB lenne a névlegesnél: a címkézetlen sorokat továbbra
 is az első oszlop nyerné, csak most már felül is írná a jelölt saját adatát.
 
+**AZ ÉLŐ SOROK ÁTVEZETÉSE HÁROM DRY-RUNT igényelt, és mindhárom kör a SAJÁT
+hibámat fogta meg** — érdemes megjegyezni a mintát, mert egy deszkához TÖBB
+jelölt tartozik, és egyik sem cserélhető fel a másikkal:
+
+| kör | a hiba | mi árulta el |
+|---|---|---|
+| 1. | a méretet a JELÖLT nevéből vettem, nem a soréból | 20,5"-os All Starra 62 cm szélesség |
+| 2. | a termékoldalt a LEGFRISSEBB jelöltből választottam | a 2024-es Whopper Starlite a 2025-ös teherbírását kapta (110 → 120) |
+| 3. | — | a lista tiszta |
+
+A szabály tehát: a sor **neve** adja a méretet és a kivitelt, az **évjárata**
+pedig azt, melyik termékoldal a mérvadó. Ha a sor évjáratához nincs egyező
+jelölt, a sort KIHAGYJUK — nem tippelünk helyette, mert a teherbírás biztonsági
+mező, és ott a hiányzó adat olcsóbb a rossznál.
+
+JÓZANSÁGI PRÓBA a szélességre: a javasolt cm-nek a névleges hüvelyk 2,5 cm-es
+környezetébe kell esnie (`28"` ≈ 71 cm). Az első kör ezen bukott el
+látványosan, a harmadik 10/10-et adott. Ilyen olcsó ellenőrzés nélkül a rossz
+oszlop NÉMÁN ment volna ki: minden érték hihető.
+
+Eredmény: 139 élő sorból 26 javítva (2 lapon nincs tábla, 17-nél a méret nem
+illeszkedett — azok érintetlenek).
+
 **MELLÉKES, DE IDŐT VITT**: a renderelő `null`-t adott minden oldalra, és úgy
 tűnt, a gyártó levette a táblát. Valójában a böngésző nem tudott a
 `/var/folders` ideiglenes könyvtárba írni (`EACCES … mkdtemp
@@ -873,6 +896,16 @@ csak a kártya nem használta.
 
 ### NYITOTT SZÁLAK a következő munkamenetnek
 
+- **`Avanti 11'0" X 36" Lite Tech` 335 cm maradt**, miközben a testvérei
+  (Blue Carbon, Starlite, ASAP) 337-re javultak. Ugyanaz a hajótest, ugyanaz a
+  méret — az átvezetés kihagyta (nincs évjárat-egyező jelöltje vagy a méret nem
+  illeszkedett). Ilyen „féloldalas" sor még lehet a 17 kihagyott között.
+- **17 élő sornál a méret nem illeszkedett a gyártói tábla fejlécéhez**, 2 lapon
+  pedig nincs tábla — ezek érintetlenek maradtak. Érdemes megnézni, a
+  `normalizeSizeKey` min bukik el (pl. `31+"`, `10'10''`).
+- **A `boards` táblán NINCS mezőzár.** A jelölteknél a `verify-specs` zárolja a
+  kézzel megadott mezőket, az élő soroknál viszont nincs nyilvántartás — egy
+  ilyen tömeges átvezetés a kézi javítást is felülírja, visszakereshetetlenül.
 - **`Whopper 10'0" X 34" Rhino`: a 2024-es lap 13,2 kg-ot adott, a 2025-ös és a
   2026-os 11,9/11,85-öt.** A modellév-összevonáskor a 2025-ös maradt. A 13,2
   vélhetően kinyerési hiba, nem termékváltozás: ugyanarról a 2024-es lapról a
