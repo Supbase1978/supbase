@@ -128,12 +128,32 @@ export interface CrawlDeps {
 }
 
 /**
- * A gyártói spec-tábla ráolvasása egy méret-jelöltre. CSAK a HIÁNYZÓ mezőket
- * tölti: amit a `/products.json` már adott (hossz/szélesség a variáns-címből),
- * azt nem írja felül — az a konkrét variánsra vonatkozik, a tábla oszlopa
- * pedig illesztés eredménye.
+ * A gyártói spec-tábla ráolvasása egy méret-jelöltre.
+ *
+ * A GYÁRTÓ MÉRT ADATA AZ ERŐSEBB (felhasználói döntés, 2026-09-20: „minden
+ * esetben a gyártó adata a mérvadó, az a hiteles"). Korábban fordítva volt: a
+ * tábla csak a HIÁNYZÓ mezőket töltötte, mert a variáns-címből jött méret „a
+ * konkrét variánsra vonatkozik". A mérés ezt megcáfolta — a variáns CÍME
+ * NÉVLEGES méret, a tábla pedig a ténylegesen mért:
+ *
+ *   GO Surf 9'6"  → a címből 289,6 cm, a gyártó táblájában 297,2 cm (7,6 cm!)
+ *   GO 11'2"      → a címből 340,4 cm, a táblában 347,0 cm
+ *   Avanti 11'0"  → a címből 335,3 cm, a táblában 337,3 cm
+ *
+ * 94 Starboard-termékoldalon mérve 109 jelölt hossza és 119 szélessége tért el
+ * a gyártó saját adatától. Ez nem szépséghiba: a Deszkaválasztó hosszra és
+ * szélességre pontoz, a stabilitási index a szélességből jön.
+ *
+ * A CSERE CSAK AZ OSZLOP-HOZZÁRENDELÉSSEL EGYÜTT biztonságos (`spec-table.ts`
+ * `parseSpecTable`): ugyanarra a méretre több oszlop is állhat, kivitelenként,
+ * és a címkézetlen sorokat (hossz/szélesség/vastagság) korábban az ELSŐ oszlop
+ * nyerte. Enélkül a mért adat átvétele rosszabb lenne a névlegesnél.
+ *
+ * A jelölt megtartja a mezőt ott, ahol a tábla hallgat.
  */
-function applySpecTable(
+// EXPORTÁLVA a teszthez: a gyártói adat elsőbbsége biztonsági kérdés (a
+// Deszkaválasztó hosszra/szélességre pontoz), ezért nem maradhat lefedetlenül.
+export function applySpecTable(
   product: ExtractedProduct,
   sizeLabel: string,
   bySize: ReadonlyMap<string, BoardSpecs>,
@@ -146,12 +166,12 @@ function applySpecTable(
     ...product,
     specs: {
       ...product.specs,
-      lengthCm: product.specs.lengthCm ?? specs.lengthCm,
-      widthCm: product.specs.widthCm ?? specs.widthCm,
-      thicknessCm: product.specs.thicknessCm ?? specs.thicknessCm,
-      volumeL: product.specs.volumeL ?? specs.volumeL,
-      weightKg: product.specs.weightKg ?? specs.weightKg,
-      maxLoadKg: product.specs.maxLoadKg ?? specs.maxLoadKg,
+      lengthCm: specs.lengthCm ?? product.specs.lengthCm,
+      widthCm: specs.widthCm ?? product.specs.widthCm,
+      thicknessCm: specs.thicknessCm ?? product.specs.thicknessCm,
+      volumeL: specs.volumeL ?? product.specs.volumeL,
+      weightKg: specs.weightKg ?? product.specs.weightKg,
+      maxLoadKg: specs.maxLoadKg ?? product.specs.maxLoadKg,
     },
   };
 }

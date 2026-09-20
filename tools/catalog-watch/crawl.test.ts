@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 
-import { crawlAll, crawlSource, type CandidateInput, type CrawlStore } from "./crawl.ts";
+import {
+  applySpecTable,
+  crawlAll,
+  crawlSource,
+  type CandidateInput,
+  type CrawlStore,
+} from "./crawl.ts";
+import { EMPTY_SPECS, type ExtractedProduct } from "./types.ts";
 import type { BoardForMatch, CatalogSourceRow } from "./types.ts";
 
 const ORIGIN = "https://bolt.hu";
@@ -725,5 +732,52 @@ describe("crawlSource — SOROZAT-SZINTŰ leírás (seriesTextByUrl)", () => {
     expect(candidates[0]?.extracted.specs.maxLoadKg).toBeNull();
     // A hiba nem néma: a summary megmondja, MIÉRT üres a mező.
     expect(summary.errors.join(" ")).toContain("sorozat-leírás HTTP 404");
+  });
+});
+
+/**
+ * A GYÁRTÓ MÉRT ADATA AZ ERŐSEBB (felhasználói döntés, 2026-09-20).
+ *
+ * A Shopify variáns-CÍME névleges méretet ad (`9'6"` → 289,6 cm), a gyártó
+ * spec-táblája a ténylegesen mértet (297,2 cm). 94 Starboard-termékoldalon
+ * mérve 109 jelölt hossza és 119 szélessége tért el a gyártó saját adatától.
+ */
+describe("applySpecTable — a gyártói tábla üti a variáns-címet", () => {
+  const product: ExtractedProduct = {
+    sourceUrl: "https://star-board.com/products/2024-go-surf-paddle-board?variant=1",
+    brandName: "Starboard",
+    modelName: `GO Surf 9'6" X 31" Lite Tech`,
+    rawTitle: `2024 GO Surf Paddle Board 9'6" X 31" Lite Tech`,
+    modelYear: 2024,
+    priceHuf: null,
+    inStock: true,
+    imageUrl: null,
+    boardType: "allround",
+    // A variáns CÍMÉBŐL: névleges 9'6" = 289,6 cm.
+    specs: { ...EMPTY_SPECS, lengthCm: 289.6, widthCm: 78.7 },
+    accessoryType: null,
+  };
+
+  it("felülírja a névleges méretet a gyártó mért értékével", () => {
+    const table = new Map([
+      ["9'6x31", { ...EMPTY_SPECS, lengthCm: 297.2, widthCm: 79.1, maxLoadKg: 120 }],
+    ]);
+    const result = applySpecTable(product, `9'6" X 31"`, table);
+    expect(result.specs.lengthCm).toBe(297.2);
+    expect(result.specs.widthCm).toBe(79.1);
+    expect(result.specs.maxLoadKg).toBe(120);
+  });
+
+  it("ahol a tábla HALLGAT, ott a jelölt adata marad", () => {
+    const table = new Map([["9'6x31", { ...EMPTY_SPECS, maxLoadKg: 120 }]]);
+    const result = applySpecTable(product, `9'6" X 31"`, table);
+    expect(result.specs.lengthCm).toBe(289.6);
+    expect(result.specs.widthCm).toBe(78.7);
+    expect(result.specs.maxLoadKg).toBe(120);
+  });
+
+  it("nem illeszkedő mérethez nem nyúl", () => {
+    const table = new Map([["10'0x34", { ...EMPTY_SPECS, lengthCm: 304.8 }]]);
+    expect(applySpecTable(product, `9'6" X 31"`, table).specs.lengthCm).toBe(289.6);
   });
 });

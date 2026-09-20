@@ -319,10 +319,46 @@ export function parseSpecTable(
     result.set(key, { ...EMPTY_SPECS });
   }
 
+  // MELYIK OSZLOP KIÉ. A gyártó ugyanazt a méretet több oszlopban is hozhatja,
+  // kivitelenként — a 2025-ös Whoppernél HÁROM `10'0" x 34"` oszlop áll
+  // egymás mellett (Starlite/Lite Tech/Blue Carbon/Limited Series · ASAP ·
+  // Rhino). A méret-kulcs mindháromnál AZONOS, tehát egy vödörbe esnének, és
+  // az első nem-null érték nyerne — kivitelre való tekintet nélkül.
+  //
+  // A CÍMKÉZETT sorok (Volume, Weight, Fins) elárulják, melyik oszlop kié.
+  // Ha a keresett kivitelt egy oszlop KIMONDJA, akkor ehhez a mérethez csak az
+  // ilyen oszlopok szólnak — a CÍMKÉZETLEN cellák (Length, Width, Thickness)
+  // is onnan jönnek. Enélkül a Rhino a szomszéd oszlop vastagságát kapná
+  // (10,9 helyett 10,4 cm), mert azon a soron nincs kivitel-címke.
+  const claimedBy = new Map<number, boolean>();
+  if (construction !== null) {
+    for (const index of columns.keys()) {
+      let mentionsAny = false;
+      let mentionsUs = false;
+      for (const row of rows.slice(1)) {
+        const raw = (row[index] ?? "").trim();
+        if (raw === "") continue;
+        // A cella akkor „címkézett", ha a kivitel-szűkítés egyáltalán talál
+        // benne szegmenst — ezt az jelzi, hogy más eredményt ad, mint a nyers.
+        const mine = cellForConstruction(raw, construction);
+        if (mine !== raw) {
+          mentionsAny = true;
+          if (mine !== "") mentionsUs = true;
+        }
+      }
+      claimedBy.set(index, mentionsUs || !mentionsAny);
+    }
+    // Csak akkor szűkítünk, ha a keresett kivitelt legalább egy oszlop KIMONDJA
+    // — különben (címkézetlen tábla) minden oszlop marad, a régi viselkedéssel.
+    const anyExplicit = [...columns.keys()].some((index) => claimedBy.get(index) === false);
+    if (!anyExplicit) claimedBy.clear();
+  }
+
   for (const row of rows.slice(1)) {
     const field = fieldForLabel(row[0] ?? "");
     if (!field) continue;
     for (const [index, key] of columns) {
+      if (claimedBy.get(index) === false) continue;
       // A cellát ELŐBB a saját kivitelünkre szűkítjük (ld. cellForConstruction).
       const cell = cellForConstruction((row[index] ?? "").trim(), construction);
       if (cell === "") continue;

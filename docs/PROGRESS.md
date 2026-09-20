@@ -678,6 +678,69 @@ adatunkkal; **kettőnél 20 kg-mal TÚLBECSÜLTE a teherbírást** (Gladiator El
 Journey-nél pedig 95 kg-ot ír a két független forrásunk egybehangzó 100-a
 helyett. Épp az a mező, amire a Deszkaválasztó kemény biztonsági szűrőt épít.
 
+**F2.1-utó-63 — a gyártó mért adata a mérvadó, és a spec-tábla oszlop-csapdája
+(2026-09-20).** Moderátori kérdésből indult: „ezek az évjáratok valódi
+dolgokban is különböznek, vagy csak névben?" A gyártói tábla leellenőrzése a
+feltevésem ellenkezőjét adta.
+
+**A WHOPPER RHINO: nem a 2024-es érték volt hibás, hanem a 2025-ös.** A gyártó
+JS-sel betöltött táblája szerint a Rhino MINDKÉT évben 13,2 kg:
+
+```
+2024  Weight | … ASAP: 11.9 kg (Avg.)   Rhino: 13.2 kg (Est.)
+2025  Model  | 10'0" x 34" [NEW] | 10'0" x 34" | 10'0" x 34"
+      Volume | …Limited Series: 172 L | ASAP: 183 L | Rhino: 168 L
+      Weight | …Blue Carbon: 10.1 kg  | ASAP: 11.9 kg | Rhino: 13.22 kg
+```
+
+A 2025-ös Rhino-jelölt az **ASAP oszlopának** adatát kapta. Az „évjárat-eltérés",
+ami miatt a sort szétválasztottuk, a mi hibánk volt.
+
+**HÁROM DEFEKT, EGYMÁSRA RAKÓDVA.**
+
+1. `cellForConstruction` ismeretlen kivitelnél a TELJES cellát adta vissza,
+   arra építve, hogy „a parse-olók több-értékűként elutasítják". Ez csak több
+   értéknél igaz — az `ASAP: 11.9 kg` egyértékű cellát semmi nem utasította el.
+   A hiba NÉMA volt: hihető számot adott. Mostantól üreset ad.
+2. A vesszővel felsorolt kivitelek közül csak az UTOLSÓ illeszkedett
+   (`Starlite, Lite Tech, Blue Carbon,Limited Series: 172 L`), mert a vessző
+   nem fér a címke-mintába. A címke-zóna most a kettőspontig tart — de a
+   megelőző szakaszt CSAK vesszős záródásnál olvassuk címkének, különben az
+   előző szegmens ÉRTÉKE csúszna be (a mért `Deluxe` ⇄ `Deluxe Lite` csapda).
+3. **OSZLOP-HOZZÁRENDELÉS.** A CÍMKÉZETLEN sorok (hossz, szélesség, vastagság)
+   ott maradtak az első oszlopnál, mert azokon nincs kivitel-név. A Rhino így a
+   szomszéd oszlop vastagságát kapta (10,9 helyett 10,4 cm). A címkézett sorok
+   (Volume, Weight, Fins) viszont elárulják, melyik oszlop kié — ha egy oszlop
+   KIMONDJA a keresett kivitelt, ehhez a mérethez csak az ilyen oszlopok
+   szólnak, a címkézetlen celláik is. Címkézetlen táblánál a viselkedés
+   változatlan.
+
+**A GYÁRTÓ MÉRT ADATA ÜTI A VARIÁNS CÍMÉT** (felhasználói döntés: „minden
+esetben a gyártó adata a mérvadó, az a hiteles"). Eddig fordítva volt: a tábla
+csak a HIÁNYZÓ mezőket töltötte, mert a variáns-címből jött méret „a konkrét
+variánsra vonatkozik". A mérés ezt megcáfolta — a cím NÉVLEGES méretet ad:
+
+| modell | a címből | a gyártó táblájából |
+|---|---|---|
+| `GO Surf 9'6"` | 289,6 cm | **297,2 cm** |
+| `GO 11'2"` | 340,4 cm | 347,0 cm |
+| `Avanti 11'0"` | 335,3 cm | 337,3 cm |
+
+94 Starboard-termékoldalon mérve **158 jelölt** tért el a gyártó adatától:
+szélesség 119, hossz 109, tömeg 6, térfogat 4 (a többség tized-centis, de ~65
+érdemi). Ez nem szépséghiba: a Deszkaválasztó hosszra és szélességre pontoz, a
+stabilitási index a szélességből jön.
+
+**A CSERE CSAK A 3. PONTTAL EGYÜTT BIZTONSÁGOS.** Oszlop-hozzárendelés nélkül a
+mért adat átvétele ROSSZABB lenne a névlegesnél: a címkézetlen sorokat továbbra
+is az első oszlop nyerné, csak most már felül is írná a jelölt saját adatát.
+
+**MELLÉKES, DE IDŐT VITT**: a renderelő `null`-t adott minden oldalra, és úgy
+tűnt, a gyártó levette a táblát. Valójában a böngésző nem tudott a
+`/var/folders` ideiglenes könyvtárba írni (`EACCES … mkdtemp
+playwright-artifacts`) — ugyanaz a jogosultsági csapda, ami a teszteket is
+elvitte. `TMPDIR` a megoldás; a `renderTables` fail-safe volta elrejtette az okot.
+
 **F2.1-utó-62 — modellévek: mikor egy sor, mikor kettő (2026-09-13).**
 Moderátori kérdés a Starboard-soron: „ezek az évjáratok valódi dolgokban is
 különböznek, vagy csak névben?" A válasz mérésből jött, és a feltevés
