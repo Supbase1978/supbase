@@ -313,9 +313,31 @@ describe("cellForConstruction", () => {
     expect(cellForConstruction(`6" / 15 cm`, "Deluxe Lite")).toBe(`6" / 15 cm`);
   });
 
-  it("ismeretlen kivitelnél NEM tippel — a teljes cellát adja vissza", () => {
-    // A hívó parse-olói ezt több-értékűként elutasítják → marad null.
-    expect(cellForConstruction(CELL, "Blue Carbon")).toBe(CELL);
+  it("ismeretlen kivitelnél ÜRESET ad — a cella nem rólunk szól", () => {
+    // ÉLESBEN MÉRT (star-board.com, 2026-09-20): korábban a teljes cellát adta
+    // vissza, arra építve, hogy a parse-olók „több-értékűként elutasítják".
+    // Ez csak több értéknél igaz — egyetlen értékű, MÁS kivitelről szóló
+    // cellából némán hamis adat lett.
+    expect(cellForConstruction(CELL, "Blue Carbon")).toBe("");
+  });
+
+  it("EGYÉRTÉKŰ, más kivitelről szóló cellát sem fogad el", () => {
+    // A 2025-ös Whopper táblájában három oszlop visel azonos méret-fejlécet,
+    // és mindegyik EGYETLEN kivitelé. A Rhino-jelölt így az ASAP oszlopából
+    // vette a súlyt: 13,22 helyett 11,9 kg.
+    expect(cellForConstruction("ASAP: 11.9 kg (Avg.)", "Rhino")).toBe("");
+    expect(cellForConstruction("Rhino: 13.22 kg (Est.)", "Rhino")).toBe("13.22 kg (Est.)");
+  });
+
+  it("VESSZŐVEL felsorolt kivitelek mindegyikére érvényes az érték", () => {
+    // A gyártó egy szegmenshez több kivitelt is felsorol; a vessző nem fér a
+    // címke-mintába, ezért a felsorolás eleje a MEGELŐZŐ szegmens értékébe
+    // csúszik — mindkét helyről ki kell olvasni.
+    const volume = "Starlite, Lite Tech, Blue Carbon,Limited Series: 172 L";
+    for (const c of ["Starlite", "Lite Tech", "Blue Carbon", "Limited Series"]) {
+      expect(cellForConstruction(volume, c), c).toBe("172 L");
+    }
+    expect(cellForConstruction(volume, "Rhino")).toBe("");
   });
 
   it("kivitel nélkül (null) sem választ — a teljes cellát adja", () => {

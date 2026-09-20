@@ -218,19 +218,62 @@ export function cellForConstruction(cell: string, construction: string | null): 
   }
 
   const wanted = construction.toLowerCase().replace(/\s+/g, " ").trim();
+  // EGY SZEGMENS TÖBB KIVITELÉ is lehet: a gyártó vesszővel sorolja fel őket
+  // („Starlite, Lite Tech, Blue Carbon,Limited Series: 172 L"). A címke-mintába
+  // a vessző nem fér bele, ezért a felsorolásból csak az UTOLSÓ tag illeszkedik,
+  // a többi a találat ELŐTTI szövegben marad.
+  //
+  // A megelőző szakaszt CSAK akkor olvassuk címkének, ha VESSZŐVEL zárul —
+  // ekkor a kettőspontos címke a felsorolás utolsó tagja. Enélkül az előző
+  // szegmens ÉRTÉKE csúszna be címkének: a `Deluxe: 60-105 kgDeluxe Lite:`
+  // cellában a `Deluxe Lite` elé a `60-105 kg` ragad, és a saját címkéje
+  // veszne el (élesben mért `Deluxe` ⇄ `Deluxe Lite` csapda).
+  const labelsOf = (index: number): string[] => {
+    const current = matches[index];
+    if (!current) return [];
+    const own = (current[1] ?? "").toLowerCase().replace(/\s+/g, " ").trim();
+    const previous = index > 0 ? matches[index - 1] : null;
+    const zoneStart = previous ? (previous.index ?? 0) + previous[0].length : 0;
+    const zone = cell.slice(zoneStart, current.index ?? 0);
+    if (!zone.trimEnd().endsWith(",")) return [own];
+    const extra = zone
+      .split(",")
+      .map((part) => part.toLowerCase().replace(/\s+/g, " ").trim())
+      // A zóna ELEJÉN az előző szegmens értéke is ott lehet („174 L…") — a
+      // számmal kezdődő tag nem kivitel-név.
+      .filter((part) => part !== "" && !/^\d/.test(part));
+    return [...extra, own];
+  };
+
   // 1) teljes egyezés, 2) a kivitel-név ELEJE (a tábla rövidíthet: a
   //    „Deluxe Airline" variánshoz a tábla „Deluxe" szegmense tartozhat).
-  const exact = segments.find((s) => s.label.toLowerCase().replace(/\s+/g, " ") === wanted);
-  if (exact) return exact.value;
-  const prefix = segments
-    .filter((s) => wanted.startsWith(s.label.toLowerCase().replace(/\s+/g, " ")))
-    // A LEGHOSSZABB illeszkedő címke nyer: „Deluxe Lite" verjen a „Deluxe"-t.
-    .sort((a, b) => b.label.length - a.label.length)[0];
-  if (prefix) return prefix.value;
+  for (let i = 0; i < segments.length; i += 1) {
+    if (labelsOf(i).includes(wanted)) return segments[i]!.value;
+  }
+  let best: { value: string; length: number } | null = null;
+  for (let i = 0; i < segments.length; i += 1) {
+    for (const label of labelsOf(i)) {
+      // A LEGHOSSZABB illeszkedő címke nyer: „Deluxe Lite" verjen a „Deluxe"-t.
+      if (wanted.startsWith(label) && (!best || label.length > best.length)) {
+        best = { value: segments[i]!.value, length: label.length };
+      }
+    }
+  }
+  if (best) return best.value;
 
-  // Ismeretlen kivitel: nem tippelünk, a teljes cellát adjuk vissza (a
-  // parse-olók több-értékűként elutasítják).
-  return cell;
+  // ISMERETLEN KIVITEL: a cella KIMONDJA, kikről szól, és mi nem vagyunk
+  // köztük — tehát erről a kivitelről NINCS adata. Üres jelzés megy vissza.
+  //
+  // ÉLESBEN MÉRT HIBA (star-board.com, 2026-09-20). Korábban itt a TELJES
+  // cellát adtuk vissza, arra építve, hogy „a parse-olók több-értékűként
+  // elutasítják". Ez csak akkor igaz, ha a cella többféle értéket sorol fel.
+  // A 2025-ös Whopper táblájában viszont HÁROM oszlop visel azonos
+  // méret-fejlécet (`10'0" x 34"`), és mindegyik EGYETLEN kivitelé:
+  // `ASAP: 11.9 kg` külön oszlopban. A Rhino-jelölt így az ASAP oszlopából
+  // vette a súlyt (11,9 helyett 13,22 kg), a térfogatot (172 helyett 168 l)
+  // és a vastagságot (10,9 helyett 10,4 cm) — egyetlen értékű cellából, amit
+  // semmi nem utasított el. A hiba NÉMA volt: hihető számokat adott.
+  return "";
 }
 
 /** Melyik spec-mezőhöz tartozik ez a sor-címke? */
