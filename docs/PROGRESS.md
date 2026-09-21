@@ -678,6 +678,54 @@ adatunkkal; **kettőnél 20 kg-mal TÚLBECSÜLTE a teherbírást** (Gladiator El
 Journey-nél pedig 95 kg-ot ír a két független forrásunk egybehangzó 100-a
 helyett. Épp az a mező, amire a Deszkaválasztó kemény biztonsági szűrőt épít.
 
+**F2.1-utó-64 — `surf` deszkatípus (2026-09-21).** Négy moderátori jegyzet
+kérte ugyanezt, két gyártótól: a Red `8'10" Compact MSL Pact` („ez egy szörf
+sup, amilyen kategóriánk még nincsen"), a Starboard `Hyper Nut 7'4"` és `8'0"`
+(„tengeri SUP — kellene egy ilyen kategória") és a `GO Surf 10'6"`. A meglévő
+hét típus egyikébe sem fér: a szörf-SUP rövid, kis térfogatú, hullámra
+tervezett deszka. Besorolás híján ezek a jelöltek a sorban ragadtak.
+
+**A MIGRÁCIÓ NÉV SZERINT NEM TUDTA ELDOBNI a régi kényszert**, és ez csendes
+hiba lett volna: a `board_type` CHECK-je INLINE született (`20260717091000`),
+tehát a nevét a Postgres generálta. Rossz néven a `drop constraint if exists`
+NÉMÁN nem csinál semmit, az `add` pedig a régi mellé kerülne — a `surf`
+továbbra is tiltott maradna, a migráció mégis sikeresnek látszana. Ezért a
+DEFINÍCIÓ alapján keressük meg őket (a CHECK, ami az értéklistát tartalmazza).
+A `boards_kind_shape` SZÁNDÉKOSAN kimarad: az is hivatkozik a `board_type`-ra,
+de értéket nem sorol — a `board_type`-ra hivatkozó összes kényszer vak eldobása
+azt a szerkezeti védelmet is elvinné.
+
+**A PUSZTA „surf" NEM LEHET KULCSSZÓ.** A gyártók minden deszkára ráírják a
+marketingszövegben (a Whopper leírása: „great surf 'n cruise paddle boards"), a
+Starboard pedig a KIVITEL nevében használja a rokon `Wave` szót (`Deluxe Wave`,
+`Lite Tech Wave`) — az egy iGO/Touring változat, nem szörfdeszka. Csak az
+összetett, termék-azonosító alak számít (`surf-paddle-board`, `surf sup`), ami
+a gyártó saját URL-slugjában áll. A lefedettség így RÉSZLEGES: a `Hyper Nut`,
+`Wedge`, `Spice` nevéből a szörf-jelleg nem derül ki — azokat a moderátor
+sorolja be kézzel.
+
+**A DESZKAVÁLASZTÓ EGYELŐRE NEM AJÁNL szörfdeszkát.** A varázsló cél-kérdésének
+nincs „szörf" opciója, ezért a `surf` egyetlen `USE_BOARD_TYPES` bejegyzésben
+sem szerepel, és a kemény szűrésen nem jut át. Szándékos: a katalógusban
+böngészhető és adatlapja van, de ajánlani csak a hozzá tartozó varázsló-kérdés
+megszületése után fogjuk.
+
+Adatoldalon: 6 élő sor átsorolva (`GO Surf` vonal + Red `Compact MSL Pact`).
+
+### NYITOTT SZÁLAK
+
+- **A Starboard `surf-paddleboards` kollekciója KIZÁRVA** (`excludeCollections`,
+  felhasználói döntés 2026-08-19, amikor még nem volt hova sorolni őket). Most
+  már van: a kizárás feloldása és `collectionTypes: { "surf-paddleboards":
+  "surf" }` egy csapásra behozná és besorolná a `Wedge`/`Spice`/`Pro` vonalat.
+  Termékdöntés: sok új deszkát jelent.
+- **HAMIS ÖSSZEVONÁSI JAVASLAT**: a két `Hyper Nut` jelölt `matched_board_id`-ja
+  a `Whopper 9'0" x 33" Limited Series`-re mutat — teljesen más deszka. Egy
+  kattintás az „Összefésülés"-en, és a Hyper Nut beleolvadt volna a Whopperbe.
+- **Bodyboardok élő deszkaként**: a Zray `Grain/Marine/Flower Bodyboard`
+  (122 cm) `allround`-ként szerepel. A Zray-recept kimondja, hogy a
+  bodyboarding NEM SUP — ezeknek nem kellene a katalógusban lenniük.
+
 **F2.1-utó-63 — a gyártó mért adata a mérvadó, és a spec-tábla oszlop-csapdája
 (2026-09-20).** Moderátori kérdésből indult: „ezek az évjáratok valódi
 dolgokban is különböznek, vagy csak névben?" A gyártói tábla leellenőrzése a

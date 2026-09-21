@@ -1775,6 +1775,29 @@ export function guessBoardType(text: string): BoardType | null {
     // A „rapid" és a „wild river" a gyártói kategória-slugokban szerepel
     // (aquamarina.com/products/rapid/, .../wildriver/).
     ["river", ["river", "folyo", "whitewater", "vadviz", "rapid"]],
+    // SZÖRF-SUP. A puszta „surf" SZÁNDÉKOSAN NEM kulcsszó: a gyártók a
+    // marketingszövegben minden deszkára ráírják („surf 'n cruise", „SUP &
+    // Surf"), a Starboard pedig a KIVITEL nevében is használja a rokon „Wave"
+    // szót (`Deluxe Wave`, `Lite Tech Wave`) — az egy iGO/Touring változat,
+    // nem szörfdeszka. Csak az összetett, termék-azonosító alak számít, ami a
+    // gyártó saját URL-slugjában és kategórianevében áll.
+    //
+    // A LEFEDETTSÉG ÍGY RÉSZLEGES: a `Hyper Nut`, `Wedge`, `Spice` nevéből a
+    // szörf-jelleg nem derül ki. Azokat a moderátor sorolja be kézzel — a
+    // teljes automatizáláshoz a gyártó kollekció-leképezése kell
+    // (`collectionTypes`), ld. a nyitott szálat a PROGRESS-ben.
+    [
+      "surf",
+      [
+        "surf-paddleboard",
+        "surf paddleboard",
+        "surf-paddle-board",
+        "surf paddle board",
+        "surf sup",
+        "sup surf",
+        "szorf",
+      ],
+    ],
     ["race", ["race", "verseny", "racing"]],
     ["yoga", ["yoga", "joga", "fitness", "pilates"]],
     ["touring", ["touring", "tura", "explorer", "adventure"]],

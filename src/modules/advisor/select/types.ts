@@ -44,7 +44,15 @@ export type AdvisorBoardType =
   | "yoga"
   | "kids"
   | "fishing"
-  | "river";
+  | "river"
+  /**
+   * SZÖRF-SUP. A katalógusban böngészhető, de a varázsló EGYELŐRE NEM ajánlja:
+   * a cél-kérdésnek nincs „szörf" opciója, ezért a `surf` egyetlen
+   * `USE_BOARD_TYPES` bejegyzésben sem szerepel, és a kemény szűrésen nem jut
+   * át. Szándékos: ajánlani csak akkor fogjuk, ha a varázsló megkapja a hozzá
+   * tartozó kérdést (külön termékdöntés).
+   */
+  | "surf";
 
 /** A wizard válaszai (5.2 1–2. réteg bemenete). */
 export interface AdvisorInputs {

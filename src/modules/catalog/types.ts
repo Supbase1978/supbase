@@ -12,7 +12,8 @@ export type BoardType =
   | "yoga"
   | "kids"
   | "fishing"
-  | "river";
+  | "river"
+  | "surf";
 
 export const BOARD_TYPES: readonly BoardType[] = [
   "allround",
@@ -22,6 +23,9 @@ export const BOARD_TYPES: readonly BoardType[] = [
   "kids",
   "fishing",
   "river",
+  // SZÖRF-SUP (2026-09-21): rövid, kis térfogatú, hullámra tervezett deszka.
+  // Négy moderátori jegyzet kérte — a meglévő hét típus egyikébe sem fért.
+  "surf",
 ];
 
 /**

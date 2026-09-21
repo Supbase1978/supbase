@@ -617,6 +617,34 @@ describe("parseAvailability", () => {
   });
 });
 
+/**
+ * SZÖRF-SUP (2026-09-21): négy moderátori jegyzet kérte, mert a meglévő hét
+ * típus egyikébe sem fért. A kulcsszó SZŰK — a puszta „surf" a marketingszöveg
+ * és a Starboard `Wave` KIVITELE miatt hamis pozitívokat adna.
+ */
+describe("guessBoardType — szörf", () => {
+  it.each([
+    ["https://star-board.com/products/2025-go-surf-paddle-board", "surf"],
+    ["2025 Longboard Surf Paddle Board", "surf"],
+    ["Szörf SUP deszka", "surf"],
+  ])("%s → %s", (text, expected) => {
+    expect(guessBoardType(text)).toBe(expected);
+  });
+
+  it("a KIVITEL-névben álló `Wave` NEM tesz szörfdeszkává", () => {
+    // `iGO 10'8" X 33" Deluxe Wave` — ez egy allround iGO változata.
+    expect(guessBoardType(`iGO 10'8" X 33" Deluxe Wave`)).not.toBe("surf");
+    expect(guessBoardType(`Touring 12'6" X 28" Deluxe Wave`)).not.toBe("surf");
+  });
+
+  it("a marketingszöveg `surf` szava sem elég", () => {
+    // A Whopper leírása: „great surf 'n cruise paddle boards" — allround.
+    expect(guessBoardType("The Whopper range features great surf 'n cruise boards")).not.toBe(
+      "surf",
+    );
+  });
+});
+
 describe("classifyProduct", () => {
   const NO_SPECS = {
     lengthCm: null,
