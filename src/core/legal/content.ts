@@ -4,8 +4,9 @@
  * `LegalPage` rendereli. A cégadatok az `entity.ts`-ből (placeholder, kitöltendő).
  *
  * FONTOS: tájékoztató jellegű, adaptált MINTA (a Hullám-projekt ÁSZF-struktúrája
- * alapján, a SUP-platformra szabva). Élesítés előtt szakjogásszal ellenőrzendő és
- * a `[KITÖLTENDŐ: …]` mezők pótlandók. NEM jogi tanács.
+ * alapján, a SUP-platformra szabva). A Szolgáltató adatai 2026-09-21 óta
+ * kitöltve; a SZÖVEGEK szakjogászi ellenőrzése továbbra is hátravan.
+ * NEM jogi tanács.
  */
 import type { Locale } from "@core/i18n/config";
 
@@ -23,29 +24,42 @@ export interface LegalDocument {
   sections: LegalSection[];
 }
 
-const impresszumHu: string[] = [
-  `Szolgáltató neve: ${LEGAL_ENTITY.name}`,
-  `Székhely: ${LEGAL_ENTITY.seat}`,
-  `Adószám: ${LEGAL_ENTITY.taxNumber}`,
-  `Cégjegyzék-/nyilvántartási szám: ${LEGAL_ENTITY.registrationNumber}`,
-  `Nyilvántartásba vevő hatóság: ${LEGAL_ENTITY.registrationAuthority}`,
-  `E-mail: ${LEGAL_ENTITY.email}`,
-  `Telefon: ${LEGAL_ENTITY.phone}`,
-  `Weboldal: ${LEGAL_ENTITY.website}`,
-  `Tárhelyszolgáltató: ${LEGAL_ENTITY.hostingProvider}`,
-];
+/**
+ * Impresszum-sor csak KITÖLTÖTT mezőből.
+ *
+ * MIÉRT: nem minden vállalkozási formának van minden azonosítója — egyéni
+ * vállalkozónál nincs cégjegyzékszám (felhasználói adat, 2026-09-21). A
+ * korábbi, feltétel nélküli felsorolás ilyenkor csonka sort adott
+ * („Cégjegyzék-/nyilvántartási szám:" érték nélkül), ami az impresszumon
+ * hiányos adatnak látszik, holott a mező nem értelmezhető.
+ */
+function impresszumLines(pairs: readonly [string, string][]): string[] {
+  return pairs.filter(([, value]) => value.trim() !== "").map(([label, value]) => `${label}: ${value}`);
+}
 
-const impresszumEn: string[] = [
-  `Service provider: ${LEGAL_ENTITY.name}`,
-  `Registered seat: ${LEGAL_ENTITY.seat}`,
-  `Tax number: ${LEGAL_ENTITY.taxNumber}`,
-  `Company/registration number: ${LEGAL_ENTITY.registrationNumber}`,
-  `Registering authority: ${LEGAL_ENTITY.registrationAuthority}`,
-  `Email: ${LEGAL_ENTITY.email}`,
-  `Phone: ${LEGAL_ENTITY.phone}`,
-  `Website: ${LEGAL_ENTITY.website}`,
-  `Hosting provider: ${LEGAL_ENTITY.hostingProvider}`,
-];
+const impresszumHu: string[] = impresszumLines([
+  ["Szolgáltató neve", LEGAL_ENTITY.name],
+  ["Székhely", LEGAL_ENTITY.seat],
+  ["Adószám", LEGAL_ENTITY.taxNumber],
+  ["Cégjegyzék-/nyilvántartási szám", LEGAL_ENTITY.registrationNumber],
+  ["Nyilvántartásba vevő hatóság", LEGAL_ENTITY.registrationAuthority],
+  ["E-mail", LEGAL_ENTITY.email],
+  ["Telefon", LEGAL_ENTITY.phone],
+  ["Weboldal", LEGAL_ENTITY.website],
+  ["Tárhelyszolgáltató", LEGAL_ENTITY.hostingProvider],
+]);
+
+const impresszumEn: string[] = impresszumLines([
+  ["Service provider", LEGAL_ENTITY.name],
+  ["Registered seat", LEGAL_ENTITY.seat],
+  ["Tax number", LEGAL_ENTITY.taxNumber],
+  ["Company/registration number", LEGAL_ENTITY.registrationNumber],
+  ["Registering authority", LEGAL_ENTITY.registrationAuthority],
+  ["Email", LEGAL_ENTITY.email],
+  ["Phone", LEGAL_ENTITY.phone],
+  ["Website", LEGAL_ENTITY.website],
+  ["Hosting provider", LEGAL_ENTITY.hostingProvider],
+]);
 
 export const termsDocument: Record<Locale, LegalDocument> = {
   hu: {
