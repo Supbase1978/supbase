@@ -85,6 +85,41 @@ export function constructionConflicts(
   return a !== null && b !== null && a !== b;
 }
 
+/**
+ * KIZÁRÓ ELTÉRÉS: a két név MÁS MÉRETET mond.
+ *
+ * ÉLESBEN MÉRT HIBA (star-board.com, 2026-09-21): a
+ * `Hyper Nut 7'4" X 30" Limited Series` jelölt a
+ * `Whopper 9'0" x 33" Limited Series` deszkára kapott összevonási javaslatot,
+ * 0,57-es bizalommal. Két teljesen más modell — a hasonlóságot a KÖZÖS
+ * KIVITEL-utótag („Limited Series") és az azonos méret-FORMÁTUM húzta fel, nem
+ * a modellnév. Egy kattintás az „Összefésülés"-en, és a Hyper Nut beleolvadt
+ * volna a Whopperbe.
+ *
+ * A SUP-nál a MÉRET maga a termék (a Deszkaválasztó hosszra és szélességre
+ * pontoz), ezért ez nem küszöb-hangolás: két deszka, amelyik más méretet visel
+ * a nevében, sosem lehet ugyanaz a katalógus-sor. A kizárás KEMÉNY, de csak
+ * akkor él, ha MINDKÉT név hordoz méretet — méret nélküli névnél nincs mit
+ * összevetni (a gyártók fele nem teszi a névbe).
+ */
+export function sizeConflicts(candidateName: string, boardName: string): boolean {
+  const a = sizeToken(candidateName);
+  const b = sizeToken(boardName);
+  return a !== null && b !== null && a !== b;
+}
+
+/**
+ * A névben álló méret normalizált alakja (`10'0" X 34"` → `10'0x34`), vagy
+ * `null`, ha a név nem mond méretet. A hüvelyk- és lábjelek, a szóközök és a
+ * kis/nagybetű nem különböztet meg — a gyártók írásmódja következetlen
+ * (`10'0" X 34"`, `10'0" x 34"`, `10'10'' -- X2`).
+ */
+function sizeToken(name: string): string | null {
+  const match = name.match(/(\d+)\s*'\s*(\d*)\s*["'\u2019\u201d]*\s*[xX×]\s*(\d+(?:[.,]\d+)?)/);
+  if (!match) return null;
+  return `${match[1]}'${match[2] || "0"}x${(match[3] ?? "").replace(",", ".")}`;
+}
+
 /** Egy jelölt–deszka pár összesített pontszáma (0–1). */
 export function scorePair(
   candidate: Pick<ExtractedProduct, "brandName" | "modelName" | "modelYear">,
@@ -122,6 +157,7 @@ export function matchCandidate(
 
   for (const board of boards) {
     if (constructionConflicts(candidate, board)) continue;
+    if (sizeConflicts(candidate.modelName, board.modelName)) continue;
     const { score, brandScore } = scorePair(candidate, board);
     if (!best || score > best.score) best = { board, score, brandScore };
   }

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   KNOWN_THRESHOLD,
+  sizeConflicts,
   matchCandidate,
   planApproval,
   scorePair,
@@ -207,5 +208,36 @@ describe("planApproval", () => {
     expect(planApproval({ brandName: "Zray", modelName: "Max Azure", modelYear: null }, []).kind).toBe(
       "create",
     );
+  });
+});
+
+/**
+ * ÉLESBEN MÉRT (star-board.com, 2026-09-21): a `Hyper Nut 7'4" X 30" Limited
+ * Series` a `Whopper 9'0" x 33" Limited Series`-re kapott összevonási
+ * javaslatot 0,57-es bizalommal. A hasonlóságot a KÖZÖS KIVITEL-utótag és az
+ * azonos méret-FORMÁTUM húzta fel, nem a modellnév.
+ */
+describe("sizeConflicts", () => {
+  it("a más méretet viselő nevek SOSEM ugyanazok", () => {
+    expect(
+      sizeConflicts(`Hyper Nut 7'4" X 30" Limited Series`, `Whopper 9'0" x 33" Limited Series`),
+    ).toBe(true);
+  });
+
+  it("az AZONOS méret átengedi (modellév-párok összevonhatók maradnak)", () => {
+    expect(
+      sizeConflicts(`Whopper 10'0" X 34" ASAP`, `Whopper 10'0" x 34" ASAP`),
+    ).toBe(false);
+  });
+
+  it("a gyártó KÖVETKEZETLEN írásmódja nem számít különbségnek", () => {
+    // `10'0" X 34"` ⇄ `10'0” x 34` — ugyanaz a méret, más jelekkel.
+    expect(sizeConflicts(`GO 10'0" X 34" Deluxe`, `GO 10'0” x 34 Deluxe`)).toBe(false);
+  });
+
+  it("méret NÉLKÜLI névnél nincs mit összevetni — nem zár ki", () => {
+    // A gyártók fele nem teszi a méretet a névbe; ott a pontszám dönt.
+    expect(sizeConflicts("Aqua Marina Vapor", `Whopper 9'0" x 33"`)).toBe(false);
+    expect(sizeConflicts("Aqua Marina Vapor", "Aqua Marina Fusion")).toBe(false);
   });
 });

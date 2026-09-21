@@ -30,11 +30,20 @@ export const recipe: SourceRecipe = {
           "collectionTypes": {
               "race-paddleboards": "race",
               "expedition-paddleboards": "touring",
+              // A SORREND SZÁMÍT (az ELSŐ egyezés nyer), és a `surf` ELŐRE
+              // került: a Whopper és a GO Surf EGYSZERRE szerepel az
+              // „all-round / wave" és a „surf" kollekcióban. A gyártó
+              // mindkét használatra ajánlja őket, a vásárlónak viszont a
+              // szűkebb, jellemzőbb besorolás mond többet.
+              "surf-paddleboards": "surf",
               "all-round-wave-paddleboards": "allround",
               "entry-level-inflatable-paddleboards": "allround"
           },
+          // A `surf-paddleboards` 2026-08-19 óta KIZÁRVA volt, mert nem volt
+          // hova sorolni a termékeit. A `surf` deszkatípus (2026-09-21)
+          // megszületésével az ok megszűnt — a kizárás feloldva, a kollekció
+          // mostantól besorolást AD.
           "excludeCollections": [
-              "surf-paddleboards",
               "entry-level-wingboards"
           ]
       },

@@ -23,8 +23,14 @@ export const BOARD_TYPES: readonly BoardType[] = [
   "kids",
   "fishing",
   "river",
-  // SZÖRF-SUP (2026-09-21): rövid, kis térfogatú, hullámra tervezett deszka.
+  // TENGERI (2026-09-21): rövid, kis térfogatú, hullámra tervezett deszka.
   // Négy moderátori jegyzet kérte — a meglévő hét típus egyikébe sem fért.
+  //
+  // A KULCS `surf` MARAD, a FELIRAT lett „Tengeri" (felhasználói döntés,
+  // 2026-09-21): a „szörf" magyarul hullámlovaglást sugall, és a vásárlók
+  // másra gondolnának. A kulcs a gyártók saját szóhasználatát követi
+  // (`surf-paddleboards`), így a besorolási szabályok és a gyártói
+  // kollekció-leképezés olvashatók maradnak.
   "surf",
 ];
 

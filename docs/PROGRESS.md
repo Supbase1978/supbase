@@ -712,19 +712,31 @@ megszületése után fogjuk.
 
 Adatoldalon: 6 élő sor átsorolva (`GO Surf` vonal + Red `Compact MSL Pact`).
 
-### NYITOTT SZÁLAK
+**A FELIRAT „TENGERI", a kulcs `surf`** (felhasználói döntés, 2026-09-21): a
+„szörf" magyarul hullámlovaglást sugall, a vásárlók másra gondolnának. A kulcs
+a gyártók szóhasználatát követi (`surf-paddleboards`), így a besorolási
+szabályok és a kollekció-leképezés olvashatók maradnak.
 
-- **A Starboard `surf-paddleboards` kollekciója KIZÁRVA** (`excludeCollections`,
-  felhasználói döntés 2026-08-19, amikor még nem volt hova sorolni őket). Most
-  már van: a kizárás feloldása és `collectionTypes: { "surf-paddleboards":
-  "surf" }` egy csapásra behozná és besorolná a `Wedge`/`Spice`/`Pro` vonalat.
-  Termékdöntés: sok új deszkát jelent.
-- **HAMIS ÖSSZEVONÁSI JAVASLAT**: a két `Hyper Nut` jelölt `matched_board_id`-ja
-  a `Whopper 9'0" x 33" Limited Series`-re mutat — teljesen más deszka. Egy
-  kattintás az „Összefésülés"-en, és a Hyper Nut beleolvadt volna a Whopperbe.
-- **Bodyboardok élő deszkaként**: a Zray `Grain/Marine/Flower Bodyboard`
-  (122 cm) `allround`-ként szerepel. A Zray-recept kimondja, hogy a
-  bodyboarding NEM SUP — ezeknek nem kellene a katalógusban lenniük.
+**A `surf-paddleboards` KIZÁRÁSA FELOLDVA.** 2026-08-19 óta ki volt zárva,
+mert nem volt hova sorolni a termékeit; az ok megszűnt. A kollekció mostantól
+BESOROLÁST ad (`collectionTypes`), és a lista ELEJÉN áll: a Whopper és a GO
+Surf egyszerre szerepel az „all-round / wave" és a „surf" kollekcióban, az első
+egyezés nyer, a vásárlónak pedig a szűkebb besorolás mond többet.
+
+**MÁS MÉRET = MÁS DESZKA (`sizeConflicts`).** A `Hyper Nut 7'4" X 30" Limited
+Series` a `Whopper 9'0" x 33" Limited Series`-re kapott összevonási javaslatot,
+0,57-es bizalommal — a hasonlóságot a KÖZÖS KIVITEL-utótag és az azonos
+méret-FORMÁTUM húzta fel, nem a modellnév. Egy kattintás, és a Hyper Nut
+beleolvadt volna a Whopperbe. Az új kizárás kemény, de csak akkor él, ha
+MINDKÉT név hordoz méretet. **Nem egyedi eset volt: a 91 javaslatból 26 (minden
+negyedik) más méretű deszkára mutatott** — mind a `Limited Series` / `Carbon
+Reflex` / `Xtec Carbon` kivitel-utótag miatt. A javaslatok törölve.
+
+**A BODYBOARDOK KIVÉVE.** A Zray `Grain/Marine/Flower Bodyboard` (122 cm)
+`allround`-ként állt a katalógusban. A `bodyboard` 2026-08-22 óta rajta van a
+„sosem deszka" listán — ezek a sorok korábbról maradtak bent (ugyanaz a minta,
+mint a `VIGOUR AIRMAT`-nál: a jelölt besorolása a crawl idején fagyott be). A
+három sor törölve, a jelöltjük elutasítva.
 
 **F2.1-utó-63 — a gyártó mért adata a mérvadó, és a spec-tábla oszlop-csapdája
 (2026-09-20).** Moderátori kérdésből indult: „ezek az évjáratok valódi

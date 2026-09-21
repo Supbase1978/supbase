@@ -22,6 +22,7 @@
 import {
   BRAND_THRESHOLD,
   constructionConflicts,
+  sizeConflicts,
   KNOWN_THRESHOLD,
   scorePair,
 } from "./match.ts";
@@ -112,6 +113,8 @@ export function isSameBoard(a: DedupeCandidate, b: DedupeCandidate): boolean {
   // „Rackham Gatorshell" (kemény) nevének trigram-hasonlósága magas, de sosem
   // ugyanaz a deszka (boteboard.com, 2026-08-29).
   if (constructionConflicts(a.extracted, asBoard)) return false;
+  // Ugyanaz a védelem a jelölt↔jelölt ágon: más méret = más deszka.
+  if (sizeConflicts(a.extracted.modelName, b.extracted.modelName)) return false;
   const { score, brandScore } = scorePair(a.extracted, asBoard);
   if (score < KNOWN_THRESHOLD || brandScore < BRAND_THRESHOLD) return false;
 
