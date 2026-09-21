@@ -31,3 +31,7 @@ for_validate/
 # Munkaközbeni jegyzet-docx-ek (személyes, átláthatóság kedvéért, nem tartalom,
 # a catalog-watch havi validálási körökhöz — SUP adatok.docx, _élő.docx, _2.docx stb.)
 Kezdők_tanácsok/SUP adatok*.docx
+
+# Személyes/vállalkozói adatok — a jogi oldalakra az `entity.ts`-en át kerülnek,
+# a nyers jegyzet nem tartozik a repóba.
+vállalkozói adatok.md
