@@ -24,7 +24,7 @@
 | F2.3 Felszerelés (kiegészítők), 1–3. szakasz | ✅ kész + élesítve (2026-07-29) | 1.: `/felszereles` útmutató-oldalak. 2.: `kind`/`would_recommend` migráció (élesítve, REST-tel verifikálva) + `kind='board'` szűrő mindenhol + `/felszereles/:kategoria/:slug` termékadatlap. 3.: catalog-watch `classifyProduct` (evező/mentőmellény/pumpa jelöltté válik) + admin deszka/kiegészítő kapcsoló. Valós forrás-adat MEGÉRKEZETT (2026-07-31, ld. F2.1) — evező/mentőmellény/pumpa jelöltek a 168 pendingben, moderációra várnak |
 | F2.4 Direkt bolti ár eltávolítása | ✅ kész (2026-07-30) | A deszka- és kiegészítő-adatlapról (fejléc-ár + „Hol kapható" blokk + JSON-LD `offers`) eltávolítva — felhasználói döntés, ld. F2.4-szakasz. A `board_prices` gyűjtés (catalog-watch) VÁLTOZATLAN, a Deszkaválasztó budget-szűrője/eredmény-ára is VÁLTOZATLAN (felhasználói döntés szerint) |
 | F1.10 Záró audit + élesítés | ✅ audit **26/26** (2026-07-27) | **`docs/AUDIT_F1.md`**: az audit két mérés-jellegű hiánya pótolva (vizuális regresszió 07-26, teljesítmény-budget 07-27). HÁTRA az F1 lezárásához a publikussá tétel — a lépések a `RUNBOOK.md` **élesítési checklistjében** (domain → Resend-SMTP → Turnstile → cégadatok → `SITE_PUBLIC=true`), mind felhasználói döntés/adat |
-| F2.5 Alapvető információk | ✅ kész + BŐVÍTVE + FORRÁSOLVA (2026-09-26) | `/alapinfo` + `/alapinfo/:viz`, 10 víz; 28 spot. 2026-09-26: forráslinkek minden víz/spot oldalon (`src/modules/spots/sources.ts`), negyedéves automatikus forrás-ellenőrzés (`source-check.yml` → GitHub issue); az első kör 6 tartalmi hibát javított (köztük a balatoni SUP-parttávolság). Források: `docs/VIZTESTEK_KUTATAS.md` |
+| F2.5 Alapvető információk | ✅ kész + BŐVÍTVE + FORRÁSOLVA + ÉLESÍTVE (2026-09-26, `12fc812`) | `/alapinfo` + `/alapinfo/:viz`, 10 víz; 28 spot. 2026-09-26: forráslinkek minden víz/spot oldalon (`src/modules/spots/sources.ts`), negyedéves automatikus forrás-ellenőrzés (`source-check.yml` → GitHub issue); az első kör 6 tartalmi hibát javított (köztük a balatoni SUP-parttávolság). Források: `docs/VIZTESTEK_KUTATAS.md` |
 
 ## ITINER a következő sessionnek (2026-07-28-i állapot)
 
@@ -727,9 +727,39 @@ mindhárom workflow-ban v7-re (node24, SHA-pinnelve) frissítve. MARADT: a
 `supabase/setup-cli` v1.7.1 (node20, a GitHub node24-en futtatja) — a v2/v3
 Bun-alapú telepítő, a CI RLS/e2e-jobján külön, validált lépésben cserélendő.
 
-NYITOTT: a Lupa üzemeltetői SUP-szabályzata (saját SUP-jegy, nyilatkozat,
-mellény) 2026-09-26-án nem volt az oldalon; a korai (F1-seed) spotok saját
-szövegének nincs spot-szintű forrása — ld. a kutatási jegyzetet.
+**Élesítés (2026-09-26).** Commitok: `4d38209` (négy új spot + migráció),
+`bfb7117` (forrás-nyilvántartás, „Források" blokk, 6 tartalmi javítás),
+`12fc812` (runner-blokkok, node24 action-ök, `[deploy]`). A `20260717099700`
+migráció `db push`-sal élesen, `migration list` szerint alkalmazva; a Netlify-
+deploy `12fc812`-re `ready`; a CI mind a négy jobja (semgrep, gates,
+rls-tests, e2e) zöld az új v7-es action-ökkel. Az #1-es issue (a runner-
+hálózat 7 hamis riasztása) magyarázattal lezárva.
+
+**Két tanulság a munkamenetből:**
+- Az első `db push` elbukott (`invalid input syntax for type json`): a magyar
+  „surf" záró idézőjele egyenes `"` volt, ami lezárta a JSON-stringet.
+  Tranzakció visszagördült, éles adat nem sérült. Magyar szövegben a záró jel
+  mindig `”`; migráció előtt a JSON-literálok Pythonnal validálhatók.
+- A WebFetch-összefoglaló kétszer állított olyat, ami a forrásban nincs (Bánk:
+  „saját SUP tárolási díj"; kitalált PDF-linkek). Jogi/biztonsági tény csak a
+  NYERS forrásszövegből igazolható — ezt a `tools/source-check` is így teszi.
+
+**NYITOTT teendők:**
+1. **A `source-check` workflow kézi újrafuttatása** (Actions → source-check →
+   Run workflow) — a várt eredmény zöld futás + issue a 3 kézi teendővel. A
+   helyi `gh` PAT-nak nincs `actions:write` joga, ezért a felhasználó indítja.
+2. **Az éles tartalom szemrevételezése** — a `supperz.netlify.app` HTTP Basic
+   kapu mögött van, a belépési adat nincs a `.env`-ben; helyi rendereléssel a
+   javított szöveg és a „Források" blokk ellenőrizve.
+3. **`supabase/setup-cli` v1.7.1 → v2/v3** (az utolsó node20 action a CI-ban;
+   a v2/v3 Bun-alapú telepítő, külön, CI-validált lépésben).
+4. **Lupa Beach SUP-szabályzata** — 2026-09-26-án nem volt az üzemeltetői
+   oldalon (valószínűleg szezonális); a 2027-es szezonnyitáskor újra nézni.
+5. **A korai (F1-seed) spotok saját szövegének** nincs spot-szintű forrása —
+   ld. `docs/VIZTESTEK_KUTATAS.md`, nyitott kérdések.
+6. **A felhasználó összesítőjének további jelöltjei** (Mártély, Maros, Pest
+   környéki strandtavak) — elsődleges forrás hiányában nem spot; ld. a
+   kutatási jegyzet „Országos bővítés" szakaszát.
 
 **F2.1-utó-64 — `surf` deszkatípus (2026-09-21).** Négy moderátori jegyzet
 kérte ugyanezt, két gyártótól: a Red `8'10" Compact MSL Pact` („ez egy szörf
