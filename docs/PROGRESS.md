@@ -716,6 +716,17 @@ njt.hu csak a HSZ elejét adja böngésző nélkül (→ `checkUrl` a net.jogtar
 a kovizig.hu rossz köztes tanúsítványt küld (→ `intermediates.pem`, csak
 köztes, a gyökér a 2009-es Microsec, ami már a Node tárában van).
 
+**Az első éles runner-futás (2026-09-26):** a workflow jól működött (issue
+#1), de 7 „eltérése" hamis volt: az njt.hu a GitHub-runnert nem szolgálja ki
+(→ a 4 jogszabály `checkUrl`-je a net.jogtar.hu), a Tata/Deseda-oldal 403-at,
+a Gyömrő 451-et ad adatközponti IP-re (→ `ciBlocked`: a runner nem tölti le,
+az issue-ba „kézi ellenőrzés" teendőként kerül, kész `npm run sources:check
+-- --only …` paranccsal; kilépési kód 3 = zöld futás, de issue). A Node 20
+elavulás miatt a `checkout`/`setup-node`/`upload-artifact`/`setup-python`
+mindhárom workflow-ban v7-re (node24, SHA-pinnelve) frissítve. MARADT: a
+`supabase/setup-cli` v1.7.1 (node20, a GitHub node24-en futtatja) — a v2/v3
+Bun-alapú telepítő, a CI RLS/e2e-jobján külön, validált lépésben cserélendő.
+
 NYITOTT: a Lupa üzemeltetői SUP-szabályzata (saját SUP-jegy, nyilatkozat,
 mellény) 2026-09-26-án nem volt az oldalon; a korai (F1-seed) spotok saját
 szövegének nincs spot-szintű forrása — ld. a kutatási jegyzetet.

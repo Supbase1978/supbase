@@ -32,6 +32,12 @@ export interface WaterSource {
    * a teljes szöveg a net.jogtar.hu-n olvasható.
    */
   checkUrl?: string;
+  /**
+   * Ha a forrás a GitHub-runnerről (amerikai adatközponti IP) NEM érhető el,
+   * az ok. A negyedéves futás ilyenkor nem tölti le, hanem „kézi ellenőrzés"
+   * teendőként teszi az issue-ba — helyben (`npm run sources:check`) megy.
+   */
+  ciBlocked?: string;
   title: { hu: string; en: string };
   /** Szó szerinti szövegdarabok, amelyekre az állításunk épül. */
   expect: readonly string[];
@@ -43,6 +49,9 @@ export const SOURCES = {
   // --- Jogszabályok --------------------------------------------------------
   vkt: {
     url: "https://njt.hu/jogszabaly/2000-42-00-00",
+    // Az njt.hu a GitHub-runnert nem szolgálja ki („fetch failed", 2026-09-26);
+    // a net.jogtar.hu ugyanazt a hatályos szöveget adja, onnan is.
+    checkUrl: "https://net.jogtar.hu/jogszabaly?docid=a0000042.tv",
     title: {
       hu: "2000. évi XLII. törvény a víziközlekedésről (Nemzeti Jogszabálytár)",
       en: "Act XLII of 2000 on water transport (National Legislation Database)",
@@ -70,6 +79,7 @@ export const SOURCES = {
   },
   bm46: {
     url: "https://njt.hu/jogszabaly/2001-46-20-0A",
+    checkUrl: "https://net.jogtar.hu/jogszabaly?docid=a0100046.bm",
     title: {
       hu: "46/2001. (XII. 27.) BM rendelet — a szabad vízen tartózkodás alapvető szabályai",
       en: "Decree 46/2001 (XII. 27.) BM — basic rules for being in open water",
@@ -82,6 +92,7 @@ export const SOURCES = {
   },
   kovim17: {
     url: "https://njt.hu/jogszabaly/2002-17-20-93",
+    checkUrl: "https://net.jogtar.hu/jogszabaly?docid=a0200017.kov",
     title: {
       hu: "17/2002. (III. 7.) KöViM rendelet — a víziutak jegyzéke",
       en: "Decree 17/2002 (III. 7.) KöViM — list of waterways",
@@ -98,6 +109,7 @@ export const SOURCES = {
   },
   korm30: {
     url: "https://njt.hu/jogszabaly/2003-30-20-22",
+    checkUrl: "https://net.jogtar.hu/jogszabaly?docid=a0300030.kor",
     title: {
       hu: "30/2003. (III. 18.) Korm. rendelet — környezetvédelmi víziközlekedési korlátozások",
       en: "Government Decree 30/2003 (III. 18.) — environmental restrictions on water transport",
@@ -211,6 +223,7 @@ export const SOURCES = {
   // --- Spot-szintű (üzemeltető, önkormányzat) ------------------------------
   oregtoSzabalyok: {
     url: "https://oregtotata.hu/index.php/szabalyok-a-vizen",
+    ciBlocked: "HTTP 403 a GitHub-runnerről (2026-09-26)",
     title: { hu: "Tatai Öreg-tó — Szabályok a vízen", en: "Tata Old Lake — Rules on the water (in Hungarian)" },
     expect: ["sporteszközök (jelzés nélkül, kifejezetten sport céllal): - sup"],
     reviewedAt: "2026-09-26",
@@ -235,6 +248,7 @@ export const SOURCES = {
   },
   desedaTo: {
     url: "https://www.deseda.hu/a-to-bemutatasa",
+    ciBlocked: "HTTP 403 a GitHub-runnerről (2026-09-26)",
     title: { hu: "Deseda — a tó bemutatása", en: "Deseda — about the lake (in Hungarian)" },
     expect: ["kaposvári sporthorgász egyesület"],
     reviewedAt: "2026-09-26",
@@ -297,6 +311,7 @@ export const SOURCES = {
   // --- Csak a kutatási jegyzethez (nincs spot/víz), de a checker figyeli ---
   gyomroTofurdo: {
     url: "http://gyomroitofurdo.hu/",
+    ciBlocked: "HTTP 451 (földrajzi blokkolás) a GitHub-runnerről (2026-09-26)",
     title: { hu: "Gyömrői Tófürdő", en: "Gyömrő Lake Bath (in Hungarian)" },
     expect: ["a tófürdőn a sup használata nem lehetséges"],
     reviewedAt: "2026-09-26",

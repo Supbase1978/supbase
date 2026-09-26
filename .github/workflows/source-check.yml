@@ -31,8 +31,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 22
 
@@ -40,26 +40,32 @@ jobs:
       # `npm ci` NEM kell: a CLI csak Node-beépítettet és a repó fájljait használja.
       - run: sudo apt-get update -q && sudo apt-get install -y -q poppler-utils
 
+      # Kilépési kód: 0 = rendben · 1 = eltérés · 3 = csak kézi teendő (a
+      # runnerről blokkolt forrás, ld. `ciBlocked` a sources.ts-ben). A kódot
+      # kimenetként adjuk tovább, a lépés maga nem bukik el.
       - name: Ellenőrzés
         id: check
-        continue-on-error: true
         env:
           # A kovizig.hu hiányos TLS-láncának pótlása — ld. a fájl fejlécét.
           NODE_EXTRA_CA_CERTS: tools/source-check/intermediates.pem
-        run: node tools/source-check/cli.ts --report report.md
+        run: |
+          set +e
+          node tools/source-check/cli.ts --ci --report report.md
+          echo "code=$?" >> "$GITHUB_OUTPUT"
 
       - name: Jelentés mentése
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: source-check-report
           path: report.md
           if-no-files-found: ignore
 
-      - name: Issue eltérés esetén
-        if: steps.check.outcome == 'failure'
+      - name: Issue eltérés vagy kézi teendő esetén
+        if: steps.check.outputs.code != '0'
         env:
           GH_TOKEN: ${{ github.token }}
+          CHECK_CODE: ${{ steps.check.outputs.code }}
         run: |
           if [ ! -s report.md ]; then
             echo "A forrás-ellenőrzés jelentés nélkül állt le — nézd meg a futás naplóját: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" > report.md
@@ -70,8 +76,9 @@ jobs:
           if [ -n "$existing" ]; then
             gh issue comment "$existing" --body-file report.md
           else
-            gh issue create --title "Vízi források: eltérés ($(date -u +%F))" \
+            gh issue create --title "Vízi források: negyedéves ellenőrzés ($(date -u +%F))" \
               --label forras-ellenorzes --body-file report.md
           fi
-          # A futás is legyen piros, hogy az Actions-listában is látszódjon.
-          exit 1
+          # Valódi eltérésnél a futás is legyen piros; a puszta kézi teendő
+          # (blokkolt forrás) nem hiba, csak emlékeztető.
+          if [ "$CHECK_CODE" != "3" ]; then exit 1; fi

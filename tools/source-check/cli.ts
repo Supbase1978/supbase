@@ -1,11 +1,15 @@
 /**
  * source-check CLI — a vízi forrás-nyilvántartás negyedéves ellenőrzése.
  *
- *   node tools/source-check/cli.ts [--report jelentes.md] [--only id1,id2]
+ *   node tools/source-check/cli.ts [--ci] [--report jelentes.md] [--only id1,id2]
  *
  * Minden forrást letölt, és megnézi, szerepel-e benne még minden `expect`
- * kifejezés. Kilépési kód: 0 = minden rendben, 1 = legalább egy forrás
- * eltért vagy elérhetetlen (a workflow ilyenkor GitHub issue-t nyit).
+ * kifejezés. `--ci`: a runnerről blokkolt (`ciBlocked`) forrásokat nem tölti
+ * le, hanem „kézi ellenőrzés" teendőként listázza.
+ *
+ * Kilépési kód: 0 = minden rendben · 1 = legalább egy forrás eltért vagy
+ * elérhetetlen · 3 = nincs eltérés, de van kézi teendő. A workflow 1-nél
+ * és 3-nál issue-t nyit, de csak 1-nél piros.
  *
  * PDF-hez a `pdftotext` (poppler-utils) kell; a runneren a workflow telepíti.
  */
@@ -38,6 +42,16 @@ interface Result {
   url: string;
   missing: string[];
   error: string | null;
+  /** `--ci` alatt a runnerről blokkolt forrás: nem töltöttük le (az ok). */
+  skipped: string | null;
+}
+
+/** A `fetch failed` mögötti valódi ok (DNS, TLS, kapcsolat) — a jelentésbe. */
+function describeError(error: unknown): string {
+  if (!(error instanceof Error)) return String(error);
+  const cause = (error as Error & { cause?: { code?: string; message?: string } }).cause;
+  const detail = cause?.code ?? cause?.message;
+  return detail ? `${error.message} (${detail})` : error.message;
 }
 
 async function fetchText(url: string): Promise<string> {
@@ -72,14 +86,21 @@ function pdfToText(bytes: Uint8Array): string {
   return run.stdout.toString("utf-8");
 }
 
-async function checkOne(id: SourceId, source: WaterSource): Promise<Result> {
+async function checkOne(id: SourceId, source: WaterSource, ci: boolean): Promise<Result> {
   const url = source.checkUrl ?? source.url;
+  if (ci && source.ciBlocked) {
+    return { id, url, missing: [], error: null, skipped: source.ciBlocked };
+  }
   try {
     const text = await fetchText(url);
-    return { id, url, missing: findMissing(text, source.expect), error: null };
+    return { id, url, missing: findMissing(text, source.expect), error: null, skipped: null };
   } catch (error) {
-    return { id, url, missing: [], error: error instanceof Error ? error.message : String(error) };
+    return { id, url, missing: [], error: describeError(error), skipped: null };
   }
+}
+
+function isFailure(r: Result): boolean {
+  return r.error !== null || r.missing.length > 0;
 }
 
 /** Melyik víz / spot használja az adott forrást — a jelentésbe. */
@@ -95,17 +116,35 @@ function usersOf(id: SourceId): string[] {
 }
 
 export function renderReport(results: readonly Result[], date: string): string {
-  const failed = results.filter((r) => r.error !== null || r.missing.length > 0);
+  const failed = results.filter(isFailure);
+  const skipped = results.filter((r) => r.skipped !== null);
   const lines = [
     `# Vízi forrás-ellenőrzés — ${date}`,
     "",
-    `${results.length} forrás, ebből **${failed.length} eltérés**.`,
+    `${results.length} forrás, ebből **${failed.length} eltérés**` +
+      (skipped.length > 0 ? `, **${skipped.length} kézi ellenőrzést igényel**.` : "."),
     "",
   ];
+  if (skipped.length > 0) {
+    lines.push(
+      "## Kézi ellenőrzés",
+      "",
+      "Ezek a források a GitHub-runnerről (amerikai adatközponti IP) nem érhetők el.",
+      "Magyar hálózatról futtasd:",
+      "",
+      "```",
+      `npm run sources:check -- --only ${skipped.map((r) => r.id).join(",")}`,
+      "```",
+      "",
+    );
+    for (const r of skipped) lines.push(`- \`${r.id}\` — ${SOURCES[r.id].title.hu} (${r.skipped})`);
+    lines.push("");
+  }
   if (failed.length === 0) {
-    lines.push("Minden forrásban megtalálható minden elvárt kifejezés.");
+    lines.push("A többi forrásban megtalálható minden elvárt kifejezés.");
     return lines.join("\n");
   }
+  lines.push("## Eltérések", "");
   lines.push(
     "Teendő forrásonként: nyisd meg, és döntsd el, hogy a SZABÁLY változott (→ a",
     "`/alapinfo` / spot szövegét javítani kell), vagy csak az OLDAL (→ az `expect`",
@@ -133,6 +172,7 @@ async function main(): Promise<void> {
   const args = process.argv.slice(2);
   const reportPath = args.includes("--report") ? args[args.indexOf("--report") + 1] : undefined;
   const onlyArg = args.includes("--only") ? args[args.indexOf("--only") + 1] : undefined;
+  const ci = args.includes("--ci");
   const only = onlyArg ? new Set(onlyArg.split(",")) : null;
 
   const entries = (Object.entries(SOURCES) as [SourceId, WaterSource][]).filter(
@@ -141,20 +181,28 @@ async function main(): Promise<void> {
   const results: Result[] = [];
   for (let i = 0; i < entries.length; i += CONCURRENCY) {
     const batch = entries.slice(i, i + CONCURRENCY);
-    results.push(...(await Promise.all(batch.map(([id, source]) => checkOne(id, source)))));
+    results.push(...(await Promise.all(batch.map(([id, source]) => checkOne(id, source, ci)))));
   }
 
   for (const r of results) {
-    const status = r.error !== null ? `HIBA: ${r.error}` : r.missing.length > 0 ? `HIÁNYZIK ${r.missing.length}` : "ok";
+    const status =
+      r.skipped !== null
+        ? "KÉZI"
+        : r.error !== null
+          ? `HIBA: ${r.error}`
+          : r.missing.length > 0
+            ? `HIÁNYZIK ${r.missing.length}`
+            : "ok";
     console.log(`${status.padEnd(24)} ${r.id}`);
     for (const phrase of r.missing) console.log(`    - ${phrase}`);
   }
 
   const report = renderReport(results, new Date().toISOString().slice(0, 10));
   if (reportPath) writeFileSync(reportPath, report);
-  const failedCount = results.filter((r) => r.error !== null || r.missing.length > 0).length;
-  console.log(`\n${results.length} forrás, ${failedCount} eltérés.`);
-  process.exitCode = failedCount > 0 ? 1 : 0;
+  const failedCount = results.filter(isFailure).length;
+  const skippedCount = results.filter((r) => r.skipped !== null).length;
+  console.log(`\n${results.length} forrás, ${failedCount} eltérés, ${skippedCount} kézi.`);
+  process.exitCode = failedCount > 0 ? 1 : skippedCount > 0 ? 3 : 0;
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
