@@ -1,0 +1,77 @@
+# source-check — a vízi forrás-nyilvántartás negyedéves ellenőrzése.
+#
+# Mit csinál: letölti a `src/modules/spots/sources.ts` minden forrását
+# (jogszabály, hatóság, nemzeti park, üzemeltető), és megnézi, szerepel-e
+# bennük még az a szó szerinti mondat, amire a spot- és az `/alapinfo`-
+# oldalak állításai épülnek. Eltérésnél GitHub issue-t nyit (vagy a nyitott
+# issue-hoz szól hozzá) — erről e-mail-értesítés megy.
+#
+# NEM ír semmit: se adatbázist, se repót. Titkot nem használ.
+#
+# A `uses:` hivatkozások TELJES COMMIT-SHA-ra pinnelve — indoklás a ci.yml
+# fejlécében (mozgó tag = ellátási lánc kockázat).
+name: source-check
+
+on:
+  schedule:
+    # Negyedévente: január, április, július, október 1., hajnal (UTC).
+    - cron: "23 4 1 1,4,7,10 *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: source-check
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+
+      # A PDF-forrásokhoz (pl. a Bánki-tó SUP-szabályzata) kell a pdftotext.
+      # `npm ci` NEM kell: a CLI csak Node-beépítettet és a repó fájljait használja.
+      - run: sudo apt-get update -q && sudo apt-get install -y -q poppler-utils
+
+      - name: Ellenőrzés
+        id: check
+        continue-on-error: true
+        env:
+          # A kovizig.hu hiányos TLS-láncának pótlása — ld. a fájl fejlécét.
+          NODE_EXTRA_CA_CERTS: tools/source-check/intermediates.pem
+        run: node tools/source-check/cli.ts --report report.md
+
+      - name: Jelentés mentése
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: source-check-report
+          path: report.md
+          if-no-files-found: ignore
+
+      - name: Issue eltérés esetén
+        if: steps.check.outcome == 'failure'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ ! -s report.md ]; then
+            echo "A forrás-ellenőrzés jelentés nélkül állt le — nézd meg a futás naplóját: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" > report.md
+          fi
+          gh label create forras-ellenorzes --color D93F0B \
+            --description "Negyedéves vízi forrás-ellenőrzés" 2>/dev/null || true
+          existing=$(gh issue list --label forras-ellenorzes --state open --json number --jq '.[0].number')
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --body-file report.md
+          else
+            gh issue create --title "Vízi források: eltérés ($(date -u +%F))" \
+              --label forras-ellenorzes --body-file report.md
+          fi
+          # A futás is legyen piros, hogy az Actions-listában is látszódjon.
+          exit 1

@@ -160,7 +160,7 @@
       "safetyTitle": "Safety notes",
       "practicalTitle": "Practical info",
       "legalBasisTitle": "Legal basis",
-      "lastVerified": "Last verified: 2026-08-29. Rules change from time to time — if in doubt, check the current notice from the local authority or operator.",
+      "lastVerified": "Last verified: 2026-09-26. Rules change from time to time — if in doubt, check the sources listed below or the current notice from the local authority or operator.",
       "relatedTitle": "Don't forget",
       "relatedLeash": "Leash — what it's for and which type you need",
       "relatedPfd": "Life vest — when you can't skip it",
@@ -180,7 +180,7 @@
       "level1": {
         "level": "Level I",
         "signal": "about 45 flashes/minute · gusts of 40–60 km/h expected, signals at least 30 minutes before the wind arrives",
-        "action": "stay within 500 m of the shore"
+        "action": "swimmers: within 500 m of the shore · on Lake Balaton on a SUP: within 100 m"
       },
       "level2": {
         "level": "Level II",
@@ -189,7 +189,7 @@
       }
     },
     "legalBasis": {
-      "0": "Act XLII of 2000, Section 87 § point 43 — on water transport",
+      "0": "Act XLII of 2000, Section 87, point 44 — definition of “water sports equipment” (Water Transport Act)",
       "1": "Decree 57/2011 (XI. 22.) NFM — Navigation Regulations",
       "2": "Decree 46/2001 (XII. 27.) BM — basic rules for being on open water",
       "3": "Decree 17/2002 (III. 7.) KöViM — the register of designated waterways (this determines which waters the Navigation Regulations apply to)"
@@ -199,9 +199,9 @@
         "title": "Lake Balaton",
         "tag": "Classified as bathing equipment · storm warning system active",
         "rules": {
-          "0": "On Lake Balaton, a SUP is legally classified as \"bathing equipment\" — it may only be used where swimming is also permitted.",
-          "1": "As a result, wearing a life vest is not a legal requirement here — the rule differs on the Danube, the Tisza and Lake Tisza, where a life vest or safety ankle leash is mandatory (see below). Wearing one is still strongly recommended here too.",
-          "2": "Distance from shore: up to 1000 m on the Somogy (southern) shore, up to 500 m on the Veszprém/Zala (northern) shore — which means the lake cannot be crossed at the Tihany strait.",
+          "0": "Lake Balaton is a waterway, so the Navigation Rules apply here: by law a SUP is “water sports equipment” (a buoyant, steerable craft that is neither a ship nor a boat) — not bathing equipment.",
+          "1": "Paddlers aged 14+ who can swim must wear at least a buoyancy aid OR a safety ankle leash (Navigation Rules Part II, Article 4.05, point 3). The only exception is learning: at a bathing site, right next to the shore, without disturbing swimmers, with a person able to help.",
+          "2": "Distance from shore on a SUP, on both shores: normally up to 500 m; at a level I storm warning — and, while the warning service is paused, in wind of Beaufort 4–6 — up to 100 m; at a level II warning, or while the service is paused in wind above Beaufort 6, being on the water is prohibited (Navigation Rules Part II, Article 9.12, point 4a).",
           "3": "Launching is forbidden in shipping lanes, near harbours and docks, near navigation buoys, in designated windsurfing, kayaking and wakeboarding zones, near bridges (e.g. the Tihany strait), anywhere marked with a prohibition sign, and in protected nature areas.",
           "4": "Wearing a life vest is always mandatory for anyone under 14 and for non-swimmers."
         },
@@ -219,10 +219,10 @@
         "title": "Lake Velence",
         "tag": "Classified as bathing equipment · storm warning system in operation",
         "rules": {
-          "0": "As on Lake Balaton, a SUP is treated here as bathing equipment: it may be used where bathing is permitted, and a life vest is not legally mandatory. Wearing one is still strongly recommended.",
+          "0": "Lake Velence is a waterway, so the Navigation Rules apply: a SUP is “water sports equipment”. Paddlers aged 14+ who can swim need at least a buoyancy aid OR a safety ankle leash; under-14s and non-swimmers need a life jacket (Part II, Article 4.05, point 3).",
           "1": "Operating small craft and boats with internal combustion engines is prohibited across the ENTIRE lake — this is what makes Lake Velence a quiet water.",
-          "2": "The law sets no GENERAL distance-from-shore limit for Lake Velence: the bathing decree names only Lake Balaton and Lake Tisza. The widely quoted “500 metre rule” is in fact the level I storm warning ban (see below) — day to day, the buoys are your guide.",
-          "3": "Bathing — and therefore moving about on bathing equipment — is prohibited in the navigation channel, within 100 metres of channel-marking buoys, in and within 100 metres of harbours and water sports courses, and anywhere a prohibition sign is posted.",
+          "2": "The Lake Velence chapter of the Navigation Rules (Article 9.21) sets no distance-from-shore limit for SUPs — only for boats and sailing sports equipment. The widely quoted “500 metre rule” is the level I storm warning limit for swimmers and boats; it is sensible to keep to it on a SUP too (see below).",
+          "3": "Swimming is prohibited in the fairway, within 100 m of the buoys marking it, in and within 100 m of harbours and water sports courses, and wherever a sign forbids it — avoid these places on a SUP too.",
           "4": "No water sports course may be designated within 150 metres of a designated bathing area — the strip in front of the beaches belongs to swimmers.",
           "5": "Most of the lake is reed bed; open water is reached through channels and entrances. It is easy to get lost in the reeds, and you cannot land just anywhere."
         },
@@ -242,7 +242,7 @@
         "rules": {
           "0": "Here a SUP is legally classified as \"water sports equipment\" — unlike Lake Balaton and Lake Velence. For a swimmer aged 14 or over doing normal paddling, wearing a life vest OR a safety ankle leash is enough; the local operator (SUP Bázis) cites this directly, with a precise legal reference.",
           "1": "Wearing a life vest is always mandatory for anyone under 14, for non-swimmers, and for everyone while fishing or using a boat hook.",
-          "2": "Distance from shore without escort: up to 500 m.",
+          "2": "The bathing decree lets swimmers go up to 500 m from the shore of Lake Tisza without an escort. The Navigation Rules set no separate distance for SUPs — keeping within 500 m is still sensible.",
           "3": "Motor-restricted nature reserve zones — Porong-tava, Ispán-tava, Hód, Gaznyilas, Partos-fenék, Óhalászi-holtág — allow paddling/SUP and electric motors but not combustion engines: these are, somewhat counterintuitively, the quieter, calmer stretches for paddlers, not no-go zones.",
           "4": "Southwest of route 33, combustion engines are capped at 4 kW.",
           "5": "Right of way on the water: large vessels first, then sailboats, then paddlers/SUP, and only then motorboats — motorised rental boats must give way to paddlers."
@@ -261,8 +261,8 @@
         "title": "Lake Fertő",
         "tag": "Waterway · national park · reed channels",
         "rules": {
-          "0": "Lake Fertő is a designated waterway and at the same time part of Fertő–Hanság National Park. According to the national park, the ENTIRE water surface may be used for water sports, and you may paddle individually with your own equipment.",
-          "1": "The EXCEPTION is the strictly protected area marked with signs: currently Fertőrákos Bay and its associated waters (Kládler Lake, Kis-kládler, Püspök Lake) plus certain channels. Boats are not permitted in Fertőrákos Bay.",
+          "0": "Lake Fertő is a waterway and also part of Fertő–Hanság National Park. According to the national park, nearly 90% of the Hungarian side is reed marsh, broken only by the inner lakes and a network of channels; the whole area is protected, and parts of it strictly protected.",
+          "1": "You may paddle individually with your own gear — EXCEPT in strictly protected areas marked by signs. According to the national park, the open water on the Hungarian side can be reached from Fertőrákos Bay (North Harbour), from the Virágosmajor harbour and channel, and from the Sopron Channel. Which inner lakes and channels are open at any given time is set by the signs on site — always follow them.",
           "2": "Operating small craft and boats with internal combustion engines is prohibited across the entire lake.",
           "3": "The Sopron channels and the loop channels connected to them are navigable; launch from there or from the lake's harbours (Virágosmajor, Fertőrákos)."
         },
@@ -307,7 +307,7 @@
           "1": "COMPLETELY CLOSED AREA: at Rózsa Island, in the western side branch of the arm (Büdös-sarok), a protected zone is marked with signs and buoys where travel by any watercraft is prohibited.",
           "2": "At the Kvassay lock it is prohibited to enter the power plant branch by boat or to moor there.",
           "3": "Operating small craft and boats with internal combustion engines is restricted for environmental reasons, and between 21:00 and 06:00 it is prohibited along the entire arm — which makes this the quietest Danube water near the capital.",
-          "4": "Between river km 24.5 and 32.5, combustion engines are entirely prohibited in the right-side branches (Opera, Sóskás, Cifrus, Raffás and Csupics islands); in the main channel over the same stretch the limit is 5 km/h, without creating waves or suction. The same 5 km/h applies at the Dömsöd ferry, between river km 10 and 11.5.",
+          "4": "Between river km 24.5 and 32.5, combustion engines are entirely prohibited in the right-side branches (per the decree, along the Opera, Sóskás, Ráfás and Csupi islands); in the main channel over the same stretch the limit is 5 km/h, without creating waves or suction. The same 5 km/h applies at the Dömsöd ferry, between river km 10 and 11.5.",
           "5": "Between river km 35 and 43 there are prohibited and speed-restricted stretches protecting floating bogs (the Dunavarsány floating bog, the Taksony backwater, and the right-bank strip between Taksony Vezér Bridge and Taksony Island) — avoid the bogs on a paddleboard too.",
           "6": "Keep clear of locks and hydraulic structures by 300 metres, and of bridges, ferry crossings and water intakes by 100 metres. The arm is closed at both ends by the Kvassay and Tass locks."
         },
@@ -318,7 +318,7 @@
         },
         "practical": {
           "0": "Known launch points: Ráckeve, Szigetszentmiklós, Dunavarsány, Tass, and on the Budapest side the Soroksár stretch.",
-          "1": "The side branches closed to combustion engines (Opera, Sóskás, Cifrus, Raffás and Csupics islands) are the quietest and best SUP water on the whole arm.",
+          "1": "The side branches closed to combustion engines (Opera, Sóskás, Ráfás and Csupi islands) are the quietest and best SUP water on the whole arm.",
           "2": "The navigation restrictions and the lock operating schedule are published by the Central Danube Valley Water Directorate — worth a look before a longer tour."
         }
       },
@@ -326,7 +326,7 @@
         "title": "Tisza river",
         "tag": "River · water level is the main safety factor",
         "rules": {
-          "0": "A SUP is presumably classified as \"water sports equipment\" here too, as on the Danube — we couldn't find a Tisza-specific legal citation, but the same life-vest-or-leash rule is likely under the general framework of the Navigation Regulations. Ask local tour operators if you're unsure.",
+          "0": "The main Hungarian stretches of the Tisza are waterways (Decree 17/2002 KöViM), so the Navigation Rules apply: a SUP is “water sports equipment”. Paddlers aged 14+ who can swim need at least a buoyancy aid OR a safety ankle leash; under-14s and non-swimmers need a life jacket (Part II, Article 4.05, point 3). On moving water, use a quick-release leash attached at the waist.",
           "1": "On some river sections, commercial tour operators ask for a registration form before you set off — that's operator policy, not a legal requirement."
         },
         "safetyNotes": {
@@ -349,7 +349,7 @@
           "1": "The floodplain belongs to Körös–Maros National Park. Combustion-engine boats may only travel on the river itself — they are prohibited on the backwaters and borrow pits inside the floodplain. That is no restriction for paddlers; it is exactly what makes the backwaters the quietest water here.",
           "2": "Choose your speed so that the waves and noise you create are as small as possible.",
           "3": "In a protected natural area you may not leave waste behind, and fires may only be lit at designated fire sites.",
-          "4": "Paddling downstream from Gyomaendrőd, the Békésszentandrás weir closes the river. The ONLY way through is the navigation lock, for touring canoes and kayaks, typically between 08:00–09:00 and 16:00–17:00, arranged in advance with the operating staff."
+          "4": "Paddling downstream from Gyomaendrőd, the Békésszentandrás weir closes the river. The ONLY way through is the navigation lock, for touring canoes and kayaks, according to the water directorate, single boats between 08:00–09:00 and 16:00–18:00, and groups continuously 08:00–18:00 from 1 March to 30 November — water conditions permitting. Call the lock before setting out (+36 30 743 3729)."
         },
         "safetyNotes": {
           "0": "NEVER try to pass over a weir or spillway — it can be fatal. At the Békésszentandrás weir the navigation lock is the only viable route, and it has to be arranged in advance.",
@@ -407,5 +407,11 @@
         }
       }
     }
+  },
+  "sources": {
+    "title": "Sources",
+    "hint": "What we say about the rules on this page comes from these sources. Rules can change: check the source and the signs on site before you set out — if they differ, they take precedence. We also check the sources automatically every quarter.",
+    "reviewed": "reviewed: {{date}}",
+    "newTab": "opens in a new tab"
   }
 }

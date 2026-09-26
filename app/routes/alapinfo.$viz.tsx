@@ -31,6 +31,8 @@ import {
   WATER_INFO_COUNTS,
   type WaterInfoSlug,
 } from "@modules/spots/waterinfo";
+import { sourceListItems, WATER_SOURCES } from "@modules/spots/sources";
+import { SourceList } from "@modules/spots/ui/SourceList";
 
 import type { Route } from "./+types/alapinfo.$viz";
 
@@ -54,7 +56,16 @@ export async function loader({ request, params }: Route.LoaderArgs) {
     description: t("waterInfo.seo.detail.description", { water: waterTitle }),
   });
 
-  return { seo, water: viz };
+  const dateFormat = new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-GB", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+  const sources = sourceListItems(WATER_SOURCES[viz], locale, (isoDate) =>
+    t("sources.reviewed", { date: dateFormat.format(new Date(`${isoDate}T12:00:00Z`)) }),
+  );
+
+  return { seo, water: viz, sources };
 }
 
 export const meta: Route.MetaFunction = ({ data }) => data?.seo ?? [];
@@ -203,6 +214,15 @@ export default function WaterInfoDetailRoute({ loaderData }: Route.ComponentProp
           </li>
         </ul>
       </Card>
+
+      <SourceList
+        items={loaderData.sources}
+        labels={{
+          title: t("sources.title"),
+          hint: t("sources.hint"),
+          newTab: t("sources.newTab"),
+        }}
+      />
 
       <p className="text-xs text-text-3">{t("waterInfo.detail.lastVerified")}</p>
     </main>

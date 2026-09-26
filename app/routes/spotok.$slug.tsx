@@ -43,6 +43,8 @@ import {
   type WeatherSnapshotRow,
 } from "@modules/spots/types";
 import { waterInfoSlugForSpot } from "@modules/spots/waterinfo";
+import { sourceIdsForSpot, sourceListItems } from "@modules/spots/sources";
+import { SourceList } from "@modules/spots/ui/SourceList";
 import type { SupIndexConfig } from "@modules/weather/sup-index/config";
 import { loadSupIndexConfig } from "@modules/weather/sup-index/config.server";
 import { evaluateSnapshot } from "@modules/weather/sup-index/reading";
@@ -150,6 +152,17 @@ export async function loader({ request, params }: Route.LoaderArgs) {
         })
       : null;
 
+  const waterInfoSlug = waterInfoSlugForSpot({
+    waterType: spotRow.water_type,
+    stormWarningRegion: spotRow.storm_warning_region,
+    name: spotRow.name,
+  });
+  const sourceDateFormat = new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-GB", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+
   return {
     seo,
     jsonLd,
@@ -162,11 +175,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
       waterType: spotRow.water_type,
       difficulty: spotRow.difficulty,
       stormWarningRegion: spotRow.storm_warning_region,
-      waterInfoSlug: waterInfoSlugForSpot({
-        waterType: spotRow.water_type,
-        stormWarningRegion: spotRow.storm_warning_region,
-        name: spotRow.name,
-      }),
+      waterInfoSlug,
       seasonInfo: pickTranslated(spotRow.season_info, locale) || null,
       accessInfo: pickTranslated(spotRow.access_info, locale) || null,
       safetyNotes: pickTranslated(spotRow.safety_notes, locale) || null,
@@ -208,6 +217,10 @@ export async function loader({ request, params }: Route.LoaderArgs) {
       isLoggedIn: Boolean(user),
       isEmailConfirmed: isEmailConfirmed(user),
     },
+    // A spot saját forrásai + a vízéi (`src/modules/spots/sources.ts`).
+    sources: sourceListItems(sourceIdsForSpot(spotRow.id, waterInfoSlug), locale, (isoDate) =>
+      t("sources.reviewed", { date: sourceDateFormat.format(new Date(`${isoDate}T12:00:00Z`)) }),
+    ),
   };
 }
 
@@ -552,6 +565,15 @@ export default function SpotDetailRoute({ loaderData, actionData }: Route.Compon
           ) : null}
         </dl>
       </Card>
+
+      <SourceList
+        items={loaderData.sources}
+        labels={{
+          title: t("sources.title"),
+          hint: t("sources.hint"),
+          newTab: t("sources.newTab"),
+        }}
+      />
 
       {spot.lat !== null && spot.lng !== null ? (
         <section aria-label={t("map.focusMap")} className="flex flex-col gap-2">

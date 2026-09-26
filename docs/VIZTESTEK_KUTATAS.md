@@ -214,12 +214,15 @@ jogszabályból IGAZOLNI lehet:
 **Víziút** (tó), egyben a Fertő–Hanság Nemzeti Park területe. Amit a nemzeti
 park közöl:
 
-- **A tó teljes vízfelülete használható vízi sportra**; a vadregényes részek
-  kajakkal-kenuval járhatók be a legjobban.
-- **Egyéni, saját eszközzel való közlekedés megengedett**, KIVÉVE a táblával
-  jelzett fokozottan védett területeket — jelenleg a **Fertőrákosi-öböl** és a
-  hozzá tartozó vizek (**Kládler-tó, Kis-kládler, Püspök-tó**) és egyes
-  csatornák. A Fertőrákosi-öbölben csónak használata nem megengedett.
+- ~~A tó teljes vízfelülete használható vízi sportra~~ — **HELYESBÍTÉS
+  (2026-09-26):** ezt a nemzeti park oldalán nem találtuk. A GYIK szó szerint:
+  „Egyénileg, saját kenuval is mehetek a Fertőre? Igen, a táblával jelzett
+  fokozottan védett területek kivételével egyénileg, saját kenuval is lehet
+  közlekedni. Jelenleg a Fertőrákosi-öböl és a hozzá kapcsolódó vizek
+  (Kládler tó, Kis-kládler, Püspök-tó) és néhány csatorna." Ugyanez az oldal a
+  **Fertőrákosi-öblöt nyílt vízi MEGKÖZELÍTÉSI pontnak** nevezi (Északi-kikötő).
+  A korábbi „az öböl a tiltott terület" olvasatunk a kétértelmű „Jelenleg…"
+  mondatból jött; az oldalon most a forrás tényleges állításai szerepelnek.
 - A soproni csatornák és a hozzájuk kapcsolódó hurokcsatornák járhatók;
   vízre szállás onnan vagy a kikötőkből (Virágosmajor, Fertőrákos).
 - Belső égésű motor a teljes tavon tilos (`2000. évi XLII. tv. 58. § (1)`).
@@ -370,7 +373,48 @@ rendelkezik.
   egyetértünk az összesítő értékelésével: fürdőhelyként nyilvántartottak, de a
   SUP-ra az üzemeltető dönt. Egyiket sem vettük fel.
 
+## Forrás-ellenőrzés (2026-09-26) — amit a meglévő oldalakon találtunk
+
+Minden `/alapinfo`- és spot-állításhoz elsődleges forrást rendeltünk
+(`src/modules/spots/sources.ts`), és a forrás SZÓ SZERINTI szövegét vetettük
+össze azzal, amit írunk. Negyedévente ugyanezt automatikusan is lefuttatjuk
+(`tools/source-check/`). Az első kör ezeket javította:
+
+- **A SUP a Balatonon és a Velencei-tavon NEM fürdőeszköz.** Mindkét tó
+  víziút, a Vkt. 87. § 44. pontja szerint a SUP vízi sporteszköz, a HSZ
+  II. rész 4.05 cikk 3. pontja szerint 14 év felett mellény VAGY leash
+  kötelező. A 3a. pont kivétele: tanulás fürdőhelyen, a part mellett,
+  segítővel. A korábbi „fürdőeszköz" besorolás a rendőrségi tájékoztatók
+  laza szóhasználatából (bérelhető „műanyag fürdőeszközök és SUP-ok") eredhet.
+- **Balatoni parttávolság SUP-pal: HSZ II. rész 9.12 cikk 4a. pont** —
+  alapesetben 500 m (mindkét parton), I. fokú jelzésnél és szünetelés alatt
+  Bf 4–6-os szélben 100 m, II. foknál és szünetelés alatt Bf 6 felett tilos.
+  Az 1000/500 m a FÜRDŐZŐK szabálya (46/2001. BM r. 2. § (1) g)).
+- **A Velencei-tóra (9.21) és a Fertőre (9.31) a HSZ SUP-ra nem ad
+  parttávolságot**, csak csónakra és vitorlás sporteszközre. A Tisza-tavon
+  (7.73) 200 m-en belül és csatornában 10 km/h sebességkorlát van.
+- **Fertő** — ld. a „Fertő tó" szakasz fölött: a GYIK a Fertőrákosi-öblöt
+  nyílt vízi megközelítési pontnak nevezi; a korábbi „tiltott öböl"
+  értelmezésünk a GYIK kétértelmű mondatából jött.
+- **Békésszentandrás** — KÖVIZIG: egyéni csónaknak 8–9 és 16–18 óra,
+  csoportnak márc. 1.–nov. 30. 8–18 folyamatosan (a „16–17" téves volt).
+- **Tatai Öreg-tó** — a „Szabályok a vízen" oldal ma is nevesíti a SUP-ot
+  („Sporteszközök (jelzés nélkül, kifejezetten sport céllal): - SUP").
+
 ## Amit NEM sikerült igazolni — nyitott kérdések
+
+0. **Lupa Beach SUP-szabályzata (2026-09-26).** A 2026-08-31-én rögzített
+   szabályok (saját SUP-jegy 3 000 Ft, felelősségi nyilatkozat, kötelező
+   mentőmellény, köd/szürkület/sötétség tilalom) ma NINCSENEK az üzemeltetői
+   oldalon (házirend, GYIK, jegyvásárlás átnézve) — valószínűleg szezonális
+   aloldal volt. A GYIK csak annyit mond: a vizes sportbázison SUP elérhető.
+   A spot szövege szigorító jellegű, ezért maradt; *teendő:* a 2027-es
+   szezonnyitáskor újra ellenőrizni.
+0. **A korai (F1-seed) spotok saját szövege** (Balaton-, Velencei-tó-,
+   Tisza-tó-parti települések, Szeged, Győr, Római-part, Fertőrákos,
+   Orfű) — ezeknek csak a VÍZ-szintű forrásai vannak meg; a spot-szintű
+   mondatokhoz („Rév melletti vízre szállás", „Erős áramlás a tihanyi
+   szorosban") nincs rögzített elsődleges forrás.
 
 Ezek nem kerülhetnek ki az oldalra, amíg elsődleges forrás nem támasztja alá:
 

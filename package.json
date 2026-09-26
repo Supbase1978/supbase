@@ -11,6 +11,7 @@
     "security": "semgrep scan --error --metrics=off --config=p/typescript --config=p/react --config=p/secrets --config=p/owasp-top-ten --config=p/sql-injection --exclude=node_modules --exclude=build --exclude=.react-router && npm run typecheck && npm audit --omit=dev",
     "test": "vitest run --passWithNoTests",
     "sb": "bash scripts/sb.sh",
+    "sources:check": "cross-env NODE_EXTRA_CA_CERTS=tools/source-check/intermediates.pem node tools/source-check/cli.ts",
     "prepare": "git config core.hooksPath .githooks || true",
     "e2e": "playwright test --project=chromium --project=mobile",
     "e2e:ui": "playwright test --ui",

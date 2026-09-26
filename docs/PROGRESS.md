@@ -24,7 +24,7 @@
 | F2.3 Felszerelés (kiegészítők), 1–3. szakasz | ✅ kész + élesítve (2026-07-29) | 1.: `/felszereles` útmutató-oldalak. 2.: `kind`/`would_recommend` migráció (élesítve, REST-tel verifikálva) + `kind='board'` szűrő mindenhol + `/felszereles/:kategoria/:slug` termékadatlap. 3.: catalog-watch `classifyProduct` (evező/mentőmellény/pumpa jelöltté válik) + admin deszka/kiegészítő kapcsoló. Valós forrás-adat MEGÉRKEZETT (2026-07-31, ld. F2.1) — evező/mentőmellény/pumpa jelöltek a 168 pendingben, moderációra várnak |
 | F2.4 Direkt bolti ár eltávolítása | ✅ kész (2026-07-30) | A deszka- és kiegészítő-adatlapról (fejléc-ár + „Hol kapható" blokk + JSON-LD `offers`) eltávolítva — felhasználói döntés, ld. F2.4-szakasz. A `board_prices` gyűjtés (catalog-watch) VÁLTOZATLAN, a Deszkaválasztó budget-szűrője/eredmény-ára is VÁLTOZATLAN (felhasználói döntés szerint) |
 | F1.10 Záró audit + élesítés | ✅ audit **26/26** (2026-07-27) | **`docs/AUDIT_F1.md`**: az audit két mérés-jellegű hiánya pótolva (vizuális regresszió 07-26, teljesítmény-budget 07-27). HÁTRA az F1 lezárásához a publikussá tétel — a lépések a `RUNBOOK.md` **élesítési checklistjében** (domain → Resend-SMTP → Turnstile → cégadatok → `SITE_PUBLIC=true`), mind felhasználói döntés/adat |
-| F2.5 Alapvető információk | ✅ kész + BŐVÍTVE (2026-08-29) | Statikus SUP-szabály/biztonság/gyakorlati-infó oldalak a Spotok modulban, `/alapinfo` + `/alapinfo/:viz`. Kezdetben 4 vízre (2026-08-13), **2026-08-29-től 10-re**: + RSD, Hármas-Körös, Velencei-tó, Fertő tó, Szigetköz, Orfű. Kétkörös forráskutatás (jogszabály-hivatkozásokkal); bizonytalan tények szándékosan kihagyva. hu/en kulcs-paritás ellenőrizve. Források: `docs/VIZTESTEK_KUTATAS.md` |
+| F2.5 Alapvető információk | ✅ kész + BŐVÍTVE + FORRÁSOLVA (2026-09-26) | `/alapinfo` + `/alapinfo/:viz`, 10 víz; 28 spot. 2026-09-26: forráslinkek minden víz/spot oldalon (`src/modules/spots/sources.ts`), negyedéves automatikus forrás-ellenőrzés (`source-check.yml` → GitHub issue); az első kör 6 tartalmi hibát javított (köztük a balatoni SUP-parttávolság). Források: `docs/VIZTESTEK_KUTATAS.md` |
 
 ## ITINER a következő sessionnek (2026-07-28-i állapot)
 
@@ -677,6 +677,48 @@ adatunkkal; **kettőnél 20 kg-mal TÚLBECSÜLTE a teherbírást** (Gladiator El
 11,6: 220 kontra 200; Starboard iGO 10'8": 120 kontra 100), a Bestway Aqua
 Journey-nél pedig 95 kg-ot ír a két független forrásunk egybehangzó 100-a
 helyett. Épp az a mező, amire a Deszkaválasztó kemény biztonsági szűrőt épít.
+
+**F2.5-utó-2 — négy új víz, forráslinkek és negyedéves forrás-ellenőrzés
+(2026-09-26).** A felhasználó országos víz-összesítőjéből (kb. 20 új jelölt)
+négy víz került be spotként, mert ezeknél elsődleges forrás igazolja a
+SUP-használatot: Deseda, Szelidi-tó, Tőserdő, Bánki-tó (`20260717099700`,
+élesítve). A többi jelölt és a kizárás oka: `docs/VIZTESTEK_KUTATAS.md`.
+
+A felhasználó kérésére minden víz- és spot-állításunkhoz **elsődleges forrás
+került**: `src/modules/spots/sources.ts` (27 forrás, URL + szó szerinti
+„elvárt kifejezés"), „Források" blokk a spot- és az `/alapinfo`-oldalon.
+**Negyedéves ellenőrzés:** `.github/workflows/source-check.yml` (jan/ápr/júl/
+okt 1.) → `tools/source-check/` letölt és kifejezést keres → eltérésnél GitHub
+issue (`forras-ellenorzes` címke). Helyben: `npm run sources:check`.
+
+**A forrásellenőrzés az első körben hat TÉNYLEGES tartalmi hibát talált** az
+éles `/alapinfo`-oldalakon (javítva, hu+en):
+1. **Balaton — biztonsági hiba.** „A SUP fürdőeszköz, mentőmellény nem
+   kötelező, parttávolság 1000/500 m, I. fokon 500 m." A hatályos jog:
+   a Balaton víziút, a SUP vízi sporteszköz (Vkt. 87. § 44.), 14 év felett
+   mellény VAGY leash kötelező (HSZ II. rész 4.05/3), parttávolság **500 m
+   mindkét parton, I. fokon 100 m**, II. fokon tilos (HSZ 9.12/4a). A
+   viharjelzés-táblázat I. foka most megkülönbözteti a fürdőzőt és a SUP-ot.
+2. **Velencei-tó** — ugyanez a „fürdőeszköz" tévedés (HSZ 9.21 SUP-ra
+   parttávolságot nem ad).
+3. **Tisza-tó** — a fürdőzők 500 m-es korlátja SUP-szabályként szerepelt.
+4. **Fertő** — a Fertőrákosi-öblöt tiltott területnek írtuk; a nemzeti park
+   GYIK-je szerint ez nyílt vízi MEGKÖZELÍTÉSI pont. A „teljes vízfelület
+   használható" állítás forrás nélküli volt.
+5. **Hármas-Körös** — a zsilip egyéni csónaknak 16:00–**18:00** (nem 17:00),
+   csoportnak márc. 1.–nov. 30. 8–18 folyamatosan (KÖVIZIG).
+6. **Jogszabály-hivatkozás** — a vízi sporteszköz fogalma a Vkt. 87. §
+   **44.** pontja (nem 43.); az RSD-szigetnevek a 30/2003. Korm. r. szerint.
+
+Csapdák, amiket a checker kezel: iso-8859-2 oldal (bank-falu.hu), névvel
+ellátott ékezet-entitások (toserdo.hu), latin-1-kori õ/û (szelidi-to.hu), az
+njt.hu csak a HSZ elejét adja böngésző nélkül (→ `checkUrl` a net.jogtar.hu-ra),
+a kovizig.hu rossz köztes tanúsítványt küld (→ `intermediates.pem`, csak
+köztes, a gyökér a 2009-es Microsec, ami már a Node tárában van).
+
+NYITOTT: a Lupa üzemeltetői SUP-szabályzata (saját SUP-jegy, nyilatkozat,
+mellény) 2026-09-26-án nem volt az oldalon; a korai (F1-seed) spotok saját
+szövegének nincs spot-szintű forrása — ld. a kutatási jegyzetet.
 
 **F2.1-utó-64 — `surf` deszkatípus (2026-09-21).** Négy moderátori jegyzet
 kérte ugyanezt, két gyártótól: a Red `8'10" Compact MSL Pact` („ez egy szörf
