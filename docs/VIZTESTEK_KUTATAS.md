@@ -295,6 +295,12 @@ nem tiltott területek evezősnek" állításunkra.
   fürdőeszközre vonatkozik; vízi sporteszközként (Duna, Tisza) az evezés
   ettől még megengedett — a kettőt nem szabad összekeverni.
 - **Táblával/bójával jelölt védőterületek**, mint az RSD Büdös-sarka.
+- **Gyömrői Tófürdő** (2026-09-26). Az üzemeltető saját oldala
+  (`gyomroitofurdo.hu`) szó szerint: „Felhívjuk a kedves vendégeink
+  figyelmét, hogy a Tófürdőn a **SUP használata nem lehetséges**!" A helyi
+  sajtó (`2230.hu`, 2026) szerint a város a wakeboard-pálya esetleges
+  elbontása után a lezárt részen SUP-ot és csónakázást tervez — ez TERV,
+  nem hatályos engedély.
 
 ## Két víz, ami eddig kimaradt (2026-08-31, felhasználói lelet)
 
@@ -322,6 +328,48 @@ Szolgáltató a tavon: „Old Lake SUP" (a hivatalos oldal szolgáltatói közö
 *Teendő:* felvehető spotként. A vonulási időszak korlátozása NYITOTT kérdés —
 elsődleges forrás nélkül nem tehető ki állításként.
 
+## Országos bővítés (2026-09-26)
+
+A kiindulópont a felhasználó országos összesítője
+(`Kezdők_tanácsok/magyar-sup-vizteruletek.html`, nincs a repóban): kb. húsz,
+nálunk még nem szereplő víz, öt fokozatú státuszrendszerrel. Minden jelöltet
+elsődleges forrásnál ellenőriztünk. **Módszertani tanulság:** a WebFetch-
+összefoglaló kétszer is állított olyat, ami a forrásban nincs. A Bánki-tónál
+„saját SUP tárolási díjat" írt, a PDF-linkeket pedig kitalálta (404). Ezért
+minden itt rögzített tény a NYERS oldalszövegből vagy PDF-ből származik.
+
+### Spotként felvéve (`20260717099700` migráció)
+
+| víz | igazoló forrás | amit igazol |
+|---|---|---|
+| **Deseda-tó**, Kaposvár | `egeszseges.kaposvar.hu` (önkormányzat) | a KVSC-nél SUP bérelhető; a tó 8 km, 245 ha, önkormányzati tulajdon |
+| **Szelidi-tó**, Dunapataj | `szelidi-to.hu`, `knp.hu`, horgászrend | kajak/kenu/„surf" bérlés; KNP természetvédelmi terület (1976, 360 ha); motor csak szolgálati célra, nádfalba bemenni tilos |
+| **Tőserdő**, Lakitelki Holt-Tisza | `toserdo.hu`, `knp.hu` | SUP-túrák, csónakkölcsönző a holtágon; szabad strand |
+| **Bánki-tó**, Bánk | `bank-falu.hu` + SUP-szabályzat PDF | a strand SUP-szabályzata: csak a bójákon kívül, mentőmellény kötelező, max. 1 fő |
+
+Egyik sem víziút, és egyiken sincs viharjelző szolgálat. A Bánki-tónál csak a
+KÖLCSÖNZÖTT SUP szabályozott; a saját deszkáról az önkormányzati oldal nem
+rendelkezik.
+
+### Jelölt, de még NEM spot — hiányzik az elsődleges forrás
+
+- **Mártélyi Holt-Tisza** — a Mártélyi Tájvédelmi Körzet része (KNP). A
+  SUP-kölcsönzést csak szálláshely-oldalak és a `suplife.hu` állítja; a
+  kezelő (Dobó Ferenc HE) horgászrendje szerint csónakot csak a mólókhoz
+  szabad kötni.
+- **Maros** — nem víziút; a KMNP a túrákra „korlátozottan ad engedélyt".
+  Elsődleges, SUP-ra vonatkozó szabályt nem találtunk.
+- **Pest környéki strandtavak** (Rukkel-tó, Brendon Beach, D-Beach
+  Domonyvölgy, Délegyházi Nomád strand, veresegyházi Malom-tó, Pázsit-tó) —
+  ahol van SUP, ott a strand KÖLCSÖNÖZ (pl. Rukkel: 4 000 Ft/óra, üzemeltetői
+  oldal). Saját eszköz behozatalát egyiknél sem tudtuk igazolni. Két oldal
+  (`astrand.hu`, `brendonpark.hu`) a lekérdezéskor elérhetetlen volt.
+- **Az összesítő „szürke/narancs" vizei** (Arlói-, Hársas-, Vadása-tó,
+  Szajki-tavak, Sárvíz-tó, Kustánszegi- és Szálkai-tározó, Kunfehértói- és
+  Vadkerti-tó, kecskeméti záportározó, Mórahalom, Nyékládháza, Győr-Gyirmót) —
+  egyetértünk az összesítő értékelésével: fürdőhelyként nyilvántartottak, de a
+  SUP-ra az üzemeltető dönt. Egyiket sem vettük fel.
+
 ## Amit NEM sikerült igazolni — nyitott kérdések
 
 Ezek nem kerülhetnek ki az oldalra, amíg elsődleges forrás nem támasztja alá:
@@ -335,11 +383,12 @@ Ezek nem kerülhetnek ki az oldalra, amíg elsődleges forrás nem támasztja al
    gyakorlata (stég, kölcsönzők) jól dokumentált, a formális szabályzat nem.
 3. **Dráva — SUP-specifikus előírás és a Duna–Dráva NP engedélyezési rendje.**
    Csak annyi biztos, hogy engedélyköteles terület.
-4. **Deseda-tó és Szelidi-tó.** Egyik vízhez sem találtunk hiteles,
-   evezésre vonatkozó szabályt. A Szelidi-tó a Kiskunsági Nemzeti Parkhoz
-   kötődik (üdülés, horgászat, természetvédelem hármas hasznosítás), a
-   Deseda Magyarország leghosszabb mesterséges tava — mindkettőnél helyi
-   utánakérdezés kell.
+4. **Deseda-tó és Szelidi-tó.** *Részben lezárva (2026-09-26):* mindkettőn
+   igazolt az evezős használat, és spotként felvettük őket (ld. „Országos
+   bővítés"). NYITOTT maradt: a Deseda használatát szabályozó kaposvári
+   önkormányzati rendelet (a `net.jogtar.hu` nem volt elérhető) és a
+   Szelidi-tó SUP-specifikus üzemeltetői szabálya. Ha ezek meglesznek, a
+   két tó `/alapinfo`-oldalt kaphat.
 5. **Gemenc engedélyezés pontos hatósága és menete.** Az E-PAPÍR-os út
    említett, de nem ellenőriztük hivatalos forrásban.
 6. **Rába, Maros, Mura, Berettyó.** Nem víziutak, tehát nem a Hajózási
