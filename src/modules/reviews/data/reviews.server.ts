@@ -64,6 +64,27 @@ export async function listAllPublishedReviews(supabase: SupabaseClient): Promise
   return data as BoardReviewRow[];
 }
 
+/**
+ * A legutóbb publikált vélemények, board-tól függetlenül, a legfrissebb elöl —
+ * a kezdőlap „Friss vélemények" blokkjának kell. A `limit` a kezdőlapi
+ * teaser-szám (a hívó dönti el, hány kártya fér el).
+ */
+export async function listRecentPublishedReviews(
+  supabase: SupabaseClient,
+  limit: number,
+): Promise<BoardReviewRow[]> {
+  const { data, error } = await supabase
+    .from("board_reviews")
+    .select("*, author:profiles_public(display_name)")
+    .eq("status", "published")
+    .order("created_at", { ascending: false })
+    .limit(limit);
+  if (error || !data) {
+    return [];
+  }
+  return data as BoardReviewRow[];
+}
+
 /** Az adott user véleménye erre a deszkára (unique board_id+user_id), null ha nincs. */
 export async function getUserReview(
   supabase: SupabaseClient,

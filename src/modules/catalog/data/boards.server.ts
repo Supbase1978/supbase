@@ -6,7 +6,12 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { GearCategory } from "../gear";
-import type { AccessoryWithBrand, BoardPriceRow, BoardWithBrand } from "../types";
+import type {
+  AccessoryWithBrand,
+  BoardPriceRow,
+  BoardWithBrand,
+  CatalogItemWithBrand,
+} from "../types";
 
 /** Slug-alak: kisbetű/szám/kötőjel — minden seed-slug ilyen (3.1 jsonb slug). */
 const SLUG_PATTERN = /^[a-z0-9-]+$/;
@@ -103,6 +108,31 @@ export async function listAccessories(
     return [];
   }
   return data as unknown as AccessoryWithBrand[];
+}
+
+/**
+ * Katalógus-tételek (deszka VAGY kiegészítő) id-lista alapján. SZÁNDÉKOSAN
+ * kind-AGNOSZTIKUS: a kezdőlap „Friss vélemények" blokkjának kell, ahol a
+ * `board_reviews.board_id` deszkára ÉS kiegészítőre is mutathat (F2.3 óta a
+ * `boards` tábla mindkettőt hordozza) — a hívó a visszakapott `kind` mezőn
+ * dönt (lásd `app/routes/home.tsx`). Üres `ids` esetén nincs lekérdezés.
+ */
+export async function getCatalogItemsByIds(
+  supabase: SupabaseClient,
+  ids: readonly string[],
+): Promise<CatalogItemWithBrand[]> {
+  if (ids.length === 0) {
+    return [];
+  }
+  const { data, error } = await supabase
+    .from("boards")
+    // kind-AGNOSZTIKUS (szándékos): lásd a függvény-kommentet.
+    .select("*, brand:brands(*)")
+    .in("id", ids);
+  if (error || !data) {
+    return [];
+  }
+  return data as unknown as CatalogItemWithBrand[];
 }
 
 /** Egy deszka bolti árai, legolcsóbb elöl (ár-sávos „X e Ft-tól" megjelenítéshez). */

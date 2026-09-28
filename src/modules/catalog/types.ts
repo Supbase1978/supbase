@@ -195,6 +195,9 @@ export interface AccessoryWithBrand extends AccessoryRow {
   brand: BrandRow | null;
 }
 
+/** Bármelyik katalógus-tétel (deszka VAGY kiegészítő) + brand-join, kind szerint diszkriminálva. */
+export type CatalogItemWithBrand = BoardWithBrand | AccessoryWithBrand;
+
 /**
  * `catalog_candidates.status` — a moderációs sor állapotai
  * (docs/CATALOG_WATCH_TERV.md 3. pont).

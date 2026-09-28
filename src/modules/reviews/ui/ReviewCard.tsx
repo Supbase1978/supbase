@@ -7,6 +7,7 @@
 import type { ReactNode } from "react";
 
 import { useTranslation } from "react-i18next";
+import { Link } from "react-router";
 
 import { Card, StatusBadge } from "@core/ui";
 
@@ -28,9 +29,18 @@ export interface ReviewCardProps {
   review: ReviewCardData;
   /** Flag-affordancia (a route adja, ha a user jelenthet). */
   children?: ReactNode;
+  /**
+   * Opcionális, a tétel (deszka/kiegészítő) nevére mutató fejléc-link — a
+   * board-adatlapon belül fölösleges (a kontextus már egyértelmű), a
+   * kezdőlap „Friss vélemények" blokkjában viszont KELL, mert ott több
+   * különböző tétel véleménye keveredik. `itemName` nélkül `itemHref` nem
+   * jelenik meg.
+   */
+  itemName?: string;
+  itemHref?: string;
 }
 
-export function ReviewCard({ review, children }: ReviewCardProps) {
+export function ReviewCard({ review, children, itemName, itemHref }: ReviewCardProps) {
   const { t, i18n } = useTranslation("reviews");
 
   const date = new Date(review.createdAt);
@@ -40,6 +50,11 @@ export function ReviewCard({ review, children }: ReviewCardProps) {
 
   return (
     <Card className="flex flex-col gap-2">
+      {itemName && itemHref ? (
+        <Link to={itemHref} className="text-sm font-semibold text-petrol-text underline">
+          {itemName}
+        </Link>
+      ) : null}
       <div className="flex items-center justify-between gap-2">
         {/* A SZERZŐ NEVE (F2.4-02). Aki a saját neve alatt ír, máshogy ír —
             ez a gépi hozzászólások elleni védelem társas fele. */}

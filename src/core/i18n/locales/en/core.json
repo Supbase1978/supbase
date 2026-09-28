@@ -17,7 +17,21 @@
   "home": {
     "phase": "Suptime — F1 (MVP) under development",
     "appName": "Suptime",
-    "tagline": "Board advisor · Catalog + common ground · Spot map + SUP index · Provider directory"
+    "tagline": "Board advisor · Catalog + common ground · Spot map + SUP index · Provider directory",
+    "hero": {
+      "title": "Which SUP suits you?",
+      "lead": "5 questions, 3 minutes — we suggest 3 boards, with reasons.",
+      "cta": "Let's start"
+    },
+    "spots": {
+      "title": "Water conditions right now",
+      "viewAll": "Map",
+      "empty": "No measurable spot data yet."
+    },
+    "reviews": {
+      "title": "Recent reviews",
+      "empty": "No published reviews yet."
+    }
   },
   "seo": {
     "home": {

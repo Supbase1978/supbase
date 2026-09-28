@@ -25,6 +25,7 @@
 | F2.4 Direkt bolti ár eltávolítása | ✅ kész (2026-07-30) | A deszka- és kiegészítő-adatlapról (fejléc-ár + „Hol kapható" blokk + JSON-LD `offers`) eltávolítva — felhasználói döntés, ld. F2.4-szakasz. A `board_prices` gyűjtés (catalog-watch) VÁLTOZATLAN, a Deszkaválasztó budget-szűrője/eredmény-ára is VÁLTOZATLAN (felhasználói döntés szerint) |
 | F1.10 Záró audit + élesítés | ✅ audit **26/26** (2026-07-27) | **`docs/AUDIT_F1.md`**: az audit két mérés-jellegű hiánya pótolva (vizuális regresszió 07-26, teljesítmény-budget 07-27). HÁTRA az F1 lezárásához a publikussá tétel — a lépések a `RUNBOOK.md` **élesítési checklistjében** (domain → Resend-SMTP → Turnstile → cégadatok → `SITE_PUBLIC=true`), mind felhasználói döntés/adat |
 | F2.5 Alapvető információk | ✅ kész + BŐVÍTVE + FORRÁSOLVA + ÉLESÍTVE (2026-09-26, `12fc812`) | `/alapinfo` + `/alapinfo/:viz`, 10 víz; 28 spot. 2026-09-26: forráslinkek minden víz/spot oldalon (`src/modules/spots/sources.ts`), negyedéves automatikus forrás-ellenőrzés (`source-check.yml` → GitHub issue); az első kör 6 tartalmi hibát javított (köztük a balatoni SUP-parttávolság). Források: `docs/VIZTESTEK_KUTATAS.md` |
+| F2.6 Kezdőlap tartalom | ✅ kész (2026-09-27, javítás 2026-09-28) | A design "Hajnali tótükör" 1a-signature-je (`_design-source/`) F1.0 óta implementálatlan maradt — a `home.tsx` puszta cím+alcím volt. Pótolva: hero-CTA a Deszkaválasztóhoz, „Vízkörülmények most" spotlight-rács (spots+weather összekötés route-rétegben, `evaluateSpotSnapshot` duplikálva a spotok.tsx mintájára), „Friss vélemények" teaser-rács (reviews+catalog összekötés, `getCatalogItemsByIds` — kind-AGNOSZTIKUS, a `deszkavalaszto.kind.test.ts` őrszem jelöléssel átengedve). Böngészőben verifikálva (desktop+mobil screenshot, valós adattal). Mellékesen talált `SpotCard` duplikált „Elavult adat" hiba (a `/spotok` élő oldalon is megvolt) másnap javítva — részletek lent |
 
 ## ITINER a következő sessionnek (2026-07-28-i állapot)
 
@@ -5621,3 +5622,55 @@ aliasból → hiba · relatív érték-import → hiba · inline `{ type X }` �
 értéket re-exportáló barrel minden importálójába behúzta volna a szerverkódot.
 
 **Kapuk:** typecheck · lint · test (83 fájl / 1170 teszt) · build:web — zöld.
+
+## F2.6 — Kezdőlap tartalom (2026-09-27)
+
+Design-felmérés derítette ki: a `_design-source/SUP Explorations.dc.html`
+elfogadott iránya ("Hajnali tótükör") a 2a/2b/2c körben (tokenek + minden
+funkcionális képernyő) rég implementálva volt, de a fájl ELSŐ felében élő
+kezdőlap-signature (`1a HOME`, 569–681. sor) SOHA nem épült be — a `home.tsx`
+F1.0 óta puszta cím+alcím placeholder maradt (`git log --follow` szerint azóta
+csak SEO-meta és layout-szélesség miatt nyúltak hozzá).
+
+**Pótolva, a design 1a-HOME-jának adaptálásával:**
+- **Hero-CTA** (`bg-ink-deep` kártya, amber gomb) a Deszkaválasztóra mutat —
+  ugyanaz a `Link`-mintás gomb-stílus, mint az `AdvisorResult` restart-CTA-ja
+  (a `Button` primitíva nem tud `Link`-ként renderelni).
+- **„Vízkörülmények most"** spotlight-rács: a design "közeli spotok" ötlete
+  GEOLOKÁCIÓRA épül, ami ezen a platformon NINCS — ezért a szekció a
+  legjobb AKTUÁLIS SUP-index-szel rendelkező spotokat mutatja, valós adattal
+  (nem kényszerített állapot-variációval, ahogy a design mockup demózza). A
+  spots+weather összekötés a route-rétegben történik, az `evaluateSpotSnapshot`
+  helper SZÁNDÉKOSAN harmadszor is duplikálva (lásd `spotok.tsx`/`spotok.$slug.tsx`
+  azonos mintája, 1.3 modul-szerződés).
+- **„Friss vélemények"** teaser-rács: a `board_reviews` legutóbbi publikált
+  sorai, tétel-névvel + linkkel. Új réteg-függvények: `listRecentPublishedReviews`
+  (reviews) + `getCatalogItemsByIds` (catalog — deszka ÉS kiegészítő egyszerre,
+  mert `board_reviews.board_id` mindkettőre mutathat). Ez utóbbi SZÁNDÉKOSAN
+  kind-AGNOSZTIKUS, a `deszkavalaszto.kind.test.ts` őrszem meglévő
+  `kind-AGNOSZTIKUS` jelölésével átengedve (ugyanaz a mintázat, mint a
+  slug-ütközés vizsgálatánál). A `ReviewCard` opcionális `itemName`/`itemHref`
+  propokkal bővült (a board-adatlapon belül nem kell, a kezdőlapon viszont
+  igen, mert ott több tétel véleménye keveredik) — a két meglévő hívás
+  (`deszkak.$slug.tsx`, `felszereles.$kategoria.$slug.tsx`) változatlan marad.
+
+**Böngészőben verifikálva** (dev-szerver, valós élő adattal): desktop + mobil
+screenshot, mindhárom szekció valós tartalommal renderel (3 spot valós
+SUP-indexszel, 1 valós vélemény a helyes deszka-linkkel), egyetlen link-cél
+sem törött.
+
+**Mellékesen felfedezett hiba, UTÓLAG JAVÍTVA:** a `SpotCard` (spots-modul,
+`/spotok` élő oldalon is) elavult spotnál KÉTSZER írta ki az „Elavult adat"
+feliratot — a `StatusBadge status="stale"` ÉS a `DataAge stale` ugyanazt a
+feliratot kapta. Ez a kezdőlap-munkától FÜGGETLEN, már élesben is jelenlévő
+hiba volt (a `/spotok` HTML-je is duplikálta). Javítás: a `DataAge` elavult
+állapotban mostantól a `spots:stale.hint`-et mutatja ("A mérés több mint 30
+perce frissült — nem aktuális.") a `stale.label` szó szerinti megismétlése
+helyett — pontosan úgy, ahogy a spot-adatlap (`spotok.$slug.tsx`) már a
+badge mellé teszi a hint-magyarázatot. Élő adaton jelenleg nincs elavult
+spot (minden snapshot friss), ezért a végeredmény vizuálisan csak kód-szinten
+ellenőrizhető — de a logika egyezik a már verifikált adatlap-mintával.
+
+**Kapuk:** typecheck · lint · test (90 fájl / 1386 teszt) · e2e
+`public-paths.spec.ts` (32/32, chromium + mobile projekt, benne a „SOHA nem
+csúszik el vízszintesen" teszt a `/`-ra) — mind zöld.

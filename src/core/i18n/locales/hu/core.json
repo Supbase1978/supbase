@@ -17,7 +17,21 @@
   "home": {
     "phase": "Suptime — F1 (MVP) fejlesztés alatt",
     "appName": "Suptime",
-    "tagline": "Deszkaválasztó · Katalógus + Közös nevező · Spot-térkép + SUP-index · Szolgáltatói directory"
+    "tagline": "Deszkaválasztó · Katalógus + Közös nevező · Spot-térkép + SUP-index · Szolgáltatói directory",
+    "hero": {
+      "title": "Melyik SUP való neked?",
+      "lead": "5 kérdés, 3 perc — ajánlunk 3 deszkát, indoklással.",
+      "cta": "Kezdjük"
+    },
+    "spots": {
+      "title": "Vízkörülmények most",
+      "viewAll": "Térkép",
+      "empty": "Egyelőre nincs mérhető spot-adat."
+    },
+    "reviews": {
+      "title": "Friss vélemények",
+      "empty": "Még nincs közzétett vélemény."
+    }
   },
   "seo": {
     "home": {

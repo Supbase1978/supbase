@@ -80,9 +80,13 @@ export function SpotCard({ spot, evaluation, className }: SpotCardProps) {
       : WATERLINE_STATE[evaluation.status]
     : null;
 
+  // Elavult adatnál a StatusBadge már kiadja a rövid "Elavult adat" feliratot
+  // (szín + ikon + szöveg) — a DataAge itt NEM ismételheti szó szerint,
+  // hanem a `stale.hint`-tel magyarázza MIÉRT (a 30 perces küszöb), ugyanúgy,
+  // ahogy a spot-adatlap (spotok.$slug.tsx) a badge mellé teszi a hint-et.
   const dataAgeLabel = evaluation
     ? stale
-      ? t("stale.label")
+      ? t("stale.hint")
       : t("dataAge.updatedMinutesAgo", {
           ns: "core",
           minutes: Math.max(0, Math.round(minutesSince(evaluation.fetchedAt))),
