@@ -28,8 +28,20 @@ export const spotsModule: ModuleManifest = {
     { path: "alapinfo/:viz", file: "routes/alapinfo.$viz.tsx" },
   ],
   nav: [
-    { labelKey: "nav.spots", path: "/spotok", placement: "primary", order: 20 },
-    { labelKey: "waterInfo.nav", path: "/alapinfo", placement: "primary", order: 21 },
+    {
+      labelKey: "nav.spots",
+      path: "/spotok",
+      placement: "primary",
+      order: 20,
+      tile: { descriptionKey: "tile.spots", icon: "spot" },
+    },
+    {
+      labelKey: "waterInfo.nav",
+      path: "/alapinfo",
+      placement: "primary",
+      order: 21,
+      tile: { descriptionKey: "tile.waterInfo", icon: "info" },
+    },
   ],
   i18nNamespace: "spots",
 };

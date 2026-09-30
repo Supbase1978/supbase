@@ -11,9 +11,21 @@ import { expect, test } from "@playwright/test";
 test.describe("Publikus felület", () => {
   test("a kezdőlap renderel, és a nav a modulokból épül", async ({ page }) => {
     await page.goto("/");
-    await expect(page.getByRole("navigation", { name: "Főnavigáció" })).toBeVisible();
+    const mainNav = page.getByRole("navigation", { name: "Főnavigáció" });
+    await expect(mainNav).toBeVisible();
     for (const label of ["Deszkaválasztó", "Deszkák", "Felszerelés", "Spotok", "Szolgáltatók"]) {
-      await expect(page.getByRole("link", { name: label })).toBeVisible();
+      // Scope-olva a fő navigációra: a hero alatti csemperács (lásd lent)
+      // ugyanezekkel a felirat-ekkel MÁSODSZOR is megjeleníti a linkeket —
+      // szigorú kereséssel enélkül a teszt elhasalna.
+      await expect(mainNav.getByRole("link", { name: label })).toBeVisible();
+    }
+
+    // Csemperács (F2.6-utó): a modulok registry-éből épül, a hero alatt —
+    // mobilon ez a "főmenü" (a felső nav-sáv vége kilóg a képernyőről).
+    const tileNav = page.getByRole("navigation", { name: "Böngéssz" });
+    await expect(tileNav).toBeVisible();
+    for (const href of ["/deszkak", "/felszereles", "/spotok", "/szolgaltatok", "/alapinfo"]) {
+      await expect(tileNav.locator(`a[href="${href}"]`)).toBeVisible();
     }
   });
 

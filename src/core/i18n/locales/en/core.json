@@ -23,6 +23,9 @@
       "lead": "5 questions, 3 minutes — we suggest 3 boards, with reasons.",
       "cta": "Let's start"
     },
+    "tiles": {
+      "label": "Browse"
+    },
     "spots": {
       "title": "Water conditions right now",
       "viewAll": "Map",

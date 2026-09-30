@@ -18,7 +18,15 @@ export const providersModule: ModuleManifest = {
     { path: "szolgaltatok/uj", file: "routes/szolgaltatok.uj.tsx", requiresAuth: true },
     { path: "szolgaltatok/:slug", file: "routes/szolgaltatok.$slug.tsx" },
   ],
-  nav: [{ labelKey: "nav.providers", path: "/szolgaltatok", placement: "primary", order: 20 }],
+  nav: [
+    {
+      labelKey: "nav.providers",
+      path: "/szolgaltatok",
+      placement: "primary",
+      order: 20,
+      tile: { descriptionKey: "tile.providers", icon: "provider" },
+    },
+  ],
   i18nNamespace: "providers",
   adminPanels: [{ path: "szolgaltatok", file: "routes/admin.szolgaltatok.tsx" }],
 };

@@ -14,12 +14,13 @@
  * deszkára VAGY kiegészítőre mutathat, F2.3 óta) is itt köt össze.
  */
 import { useTranslation } from "react-i18next";
-import { Link } from "react-router";
+import { Link, useLocation } from "react-router";
 
 import { recordEvent } from "@core/analytics/analytics.server";
 import { createSupabaseServerClient } from "@core/auth/supabase.server";
-import { getLocaleFromPath, pickTranslated, serverT } from "@core/i18n";
+import { getLocaleFromPath, localizePath, pickTranslated, serverT } from "@core/i18n";
 import { buildPageSeo } from "@core/seo/page-seo";
+import { HomeTile } from "@core/ui";
 import { getCatalogItemsByIds } from "@modules/catalog/data/boards.server";
 import { listRecentPublishedReviews } from "@modules/reviews/data/reviews.server";
 import { ReviewCard, type ReviewCardData } from "@modules/reviews/ui/ReviewCard";
@@ -30,8 +31,15 @@ import { loadSupIndexConfig } from "@modules/weather/sup-index/config.server";
 import type { SupIndexConfig } from "@modules/weather/sup-index/config";
 import { evaluateSnapshot } from "@modules/weather/sup-index/reading";
 import type { SupIndexInput } from "@modules/weather/sup-index/types";
+// A csempe-adat a modulok registry-éből épül (1.3 modul-szerződés) — új
+// modul + `tile` = új csempe, ehhez a fájlhoz nem kell nyúlni. Lásd
+// `app/nav.tsx` `primaryNav`-mintáját.
+import { buildHomeTiles } from "~/home-tiles";
+import { modules } from "@modules/registry";
 
 import type { Route } from "./+types/home";
+
+const homeTiles = buildHomeTiles(modules);
 
 /** Ennyi spot-kártya és ennyi vélemény-teaser fér el kényelmesen a kezdőlapon. */
 const HOME_SPOT_LIMIT = 3;
@@ -181,6 +189,7 @@ export const meta: Route.MetaFunction = ({ data }) => data?.seo ?? [];
 export default function Home({ loaderData }: Route.ComponentProps) {
   const { t } = useTranslation("core");
   const { spotlightSpots, recentReviews } = loaderData;
+  const locale = getLocaleFromPath(useLocation().pathname);
 
   return (
     <main className="mx-auto flex min-h-svh max-w-5xl flex-col gap-10 p-4 sm:p-6">
@@ -199,6 +208,24 @@ export default function Home({ loaderData }: Route.ComponentProps) {
           {t("home.hero.cta")} →
         </Link>
       </section>
+
+      {/* Csemperács: mobilon a felső nav-sáv vége kilóg a képernyőről, ezért
+          itt a hero alatt is elérhető minden szekció — a modulok registry-
+          éből épül (1.3 modul-szerződés), lásd `app/home-tiles.ts`. */}
+      <nav aria-label={t("home.tiles.label")}>
+        <ul className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+          {homeTiles.map((tile) => (
+            <li key={`${tile.namespace}:${tile.path}`} className="h-full">
+              <HomeTile
+                to={localizePath(tile.path, locale)}
+                icon={tile.icon}
+                title={t(tile.labelKey, { ns: tile.namespace })}
+                description={t(tile.descriptionKey, { ns: tile.namespace })}
+              />
+            </li>
+          ))}
+        </ul>
+      </nav>
 
       <section className="flex flex-col gap-4">
         <div className="flex items-baseline justify-between gap-2">

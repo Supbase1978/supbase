@@ -116,6 +116,13 @@ A Claude Design 2. körének kimenete. **Ezek az értékek véglegesek**, a `src
   --text-3: #5A6B6E;        /* min 12px, AA fehéren */
   --line: #C4CDCE;
 
+  /* kezdőlap-csempe ikon-párok (navigáció, NEM státusz), F2.6-utó 2026-09-29 */
+  --tile-board-bg: #E2EEF8;    --tile-board-ink: #255C8A;    /* égkék */
+  --tile-gear-bg: #ECE6DD;     --tile-gear-ink: #6A5B4A;     /* homok/taupe */
+  --tile-spot-bg: #DCEEF0;     --tile-spot-ink: #0E5F68;     /* petrol */
+  --tile-provider-bg: #ECE7F6; --tile-provider-ink: #5B4A9A; /* liláskék */
+  --tile-info-bg: #E4E8F7;     --tile-info-ink: #3A4C92;     /* indigó */
+
   /* biztonsági — brandfüggetlen, FIX, tilos módosítani */
   --safe: #1B8A4B;    --safe-text: #166B3D;    --safe-bg: #E3F2E8;
   --caution: #B87500; --caution-text: #8F5C00; --caution-bg: #F7ECD8;   /* designból pótolva (Óvatosan-badge háttér) */
@@ -138,6 +145,19 @@ A Claude Design 2. körének kimenete. **Ezek az értékek véglegesek**, a `src
 5. **Adatkor**: minden időjárás/vízadat mellett `frissítve X perce`; 30 percnél régebbi adat automatikusan "Elavult adat" state-be vált (vonal szaggatottra, mérce csíkozottra). Cache-elt viharjelzés SOHA nem jelenhet meg aktuálisként.
 6. **Kontraszt-kapuk** (a designban validálva): text 12,9:1 · text-2 7,0:1 · text-3 4,9:1 · CTA 7,6:1 · danger-text 6,3:1 · safe-text 6,2:1. Új szín-párosítás csak AA fölött.
 7. Amber CTA-n mindig sötét (`--text`) felirat; a `--danger` család kizárólag veszélyt jelölhet, interakciós elemen (gomb, link) tilos.
+
+**Kezdőlap-csempék ikon-színei (variant B, F2.6-utó, 2026-09-29):** az öt
+csempe (`HomeTile`) ikon-doboza csempénként saját pasztell háttér + azonos
+árnyalatú, sötétebb ikon-tinta párt kap (board=égkék, gear=homok/taupe,
+spot=petrol, provider=liláskék, info=indigó, mind ≥5,3:1 kontraszt — a
+nem-szöveg elváráshoz elég 3:1). A szín KIZÁRÓLAG az ikon-dobozon jelenik
+meg: a csempe háttere marad `--surface`, a cím sosem kap színt, és ez
+navigáció, nem státusz — a biztonsági (szín+ikon+szöveg) szabály itt nem
+értelmezhető. A hueök tudatosan távol vannak a biztonsági blokktól
+(zöld/amber/piros/szürke), hogy összetéveszthetetlenek legyenek vele; a
+legközelebbi pár (gear/homok) is jól elkülönül a `--caution-bg`-től, mert
+láthatóan hűvösebb/szürkébb, nem meleg-sárgás. A felhasználó 3 makett közül
+választotta ezt a variánst.
 
 ---
 

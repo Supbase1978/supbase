@@ -20,6 +20,13 @@ export interface ModuleRoute {
   requiresAuth?: boolean;
 }
 
+/**
+ * Zárt ikon-unió a kezdőlap csempe-navigációjához (`HomeTile`, `app/home-tiles.ts`).
+ * A core adja, hogy a modulok csak ebből választhassanak — új ikon = core-módosítás,
+ * nem tetszőleges string a modul oldalán.
+ */
+export type TileIcon = "board" | "gear" | "spot" | "provider" | "info";
+
 export interface ModuleNavEntry {
   /** i18n kulcs a felirathoz (a modul saját namespace-éből). */
   labelKey: string;
@@ -27,6 +34,17 @@ export interface ModuleNavEntry {
   /** Megjelenés a fő navigációban vagy csak a láblécben. */
   placement: "primary" | "footer";
   order: number;
+  /**
+   * Opcionális: a bejegyzés megjelenik-e a kezdőlap csemperácsában
+   * (`app/home-tiles.ts`). Csak `placement: "primary"` bejegyzéshez van
+   * értelme. Az advisor (Deszkaválasztó) SZÁNDÉKOSAN nem kap `tile`-t — azt a
+   * hero képviseli a kezdőlapon.
+   */
+  tile?: {
+    /** i18n kulcs a csempe leírásához (a modul saját namespace-éből). */
+    descriptionKey: string;
+    icon: TileIcon;
+  };
 }
 
 export interface ModuleManifest {

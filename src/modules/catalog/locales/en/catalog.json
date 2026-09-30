@@ -3,6 +3,10 @@
     "boards": "Boards",
     "gear": "Gear"
   },
+  "tile": {
+    "boards": "Catalog, reviews",
+    "gear": "Paddle, PFD, pump"
+  },
   "seo": {
     "list": {
       "title": "SUP board catalog — specs, reviews, prices | Suptime",

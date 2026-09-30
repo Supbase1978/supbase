@@ -3,6 +3,10 @@
     "boards": "Deszkák",
     "gear": "Felszerelés"
   },
+  "tile": {
+    "boards": "Katalógus, vélemények",
+    "gear": "Evező, mellény, pumpa"
+  },
   "seo": {
     "list": {
       "title": "SUP-deszkák katalógusa — paraméterek, vélemények, árak | Suptime",

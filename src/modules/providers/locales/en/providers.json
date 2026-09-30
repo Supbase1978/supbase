@@ -2,6 +2,9 @@
   "nav": {
     "providers": "Providers"
   },
+  "tile": {
+    "providers": "Schools, rentals, tours"
+  },
   "seo": {
     "list": {
       "title": "SUP providers — rental, tours, lessons, stays | Suptime",

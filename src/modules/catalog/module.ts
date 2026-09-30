@@ -25,10 +25,22 @@ export const catalogModule: ModuleManifest = {
     { path: "felszereles/:kategoria/:slug", file: "routes/felszereles.$kategoria.$slug.tsx" },
   ],
   nav: [
-    { labelKey: "nav.boards", path: "/deszkak", placement: "primary", order: 10 },
+    {
+      labelKey: "nav.boards",
+      path: "/deszkak",
+      placement: "primary",
+      order: 10,
+      tile: { descriptionKey: "tile.boards", icon: "board" },
+    },
     // Boards (10) és Spotok/Szolgáltatók (20) közé — önálló menüpont, NEM
     // "Kiegészítők" (az kereskedelmi hangot adna a mentőmellénynek).
-    { labelKey: "nav.gear", path: "/felszereles", placement: "primary", order: 15 },
+    {
+      labelKey: "nav.gear",
+      path: "/felszereles",
+      placement: "primary",
+      order: 15,
+      tile: { descriptionKey: "tile.gear", icon: "gear" },
+    },
   ],
   i18nNamespace: "catalog",
   // catalog-watch moderáció (F2): a piacfigyelő jelöltjeinek elbírálása.

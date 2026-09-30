@@ -10,6 +10,9 @@ export type { ButtonProps, ButtonVariant } from "./Button";
 export { Card } from "./Card";
 export type { CardProps } from "./Card";
 
+export { HomeTile } from "./HomeTile";
+export type { HomeTileProps } from "./HomeTile";
+
 export { StatusBadge } from "./StatusBadge";
 export type { StatusBadgeProps, StatusSeverity } from "./StatusBadge";
 

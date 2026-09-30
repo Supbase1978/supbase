@@ -2,6 +2,10 @@
   "nav": {
     "spots": "Spotok"
   },
+  "tile": {
+    "spots": "Élő SUP-index a vizeken",
+    "waterInfo": "Szabályok, biztonság"
+  },
   "list": {
     "title": "Spotok",
     "lead": "Fedezd fel Magyarország SUP-spotjait — aktuális vízi körülmények és SUP-index minden helyszínen.",

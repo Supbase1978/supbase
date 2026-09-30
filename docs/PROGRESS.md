@@ -25,7 +25,7 @@
 | F2.4 Direkt bolti ár eltávolítása | ✅ kész (2026-07-30) | A deszka- és kiegészítő-adatlapról (fejléc-ár + „Hol kapható" blokk + JSON-LD `offers`) eltávolítva — felhasználói döntés, ld. F2.4-szakasz. A `board_prices` gyűjtés (catalog-watch) VÁLTOZATLAN, a Deszkaválasztó budget-szűrője/eredmény-ára is VÁLTOZATLAN (felhasználói döntés szerint) |
 | F1.10 Záró audit + élesítés | ✅ audit **26/26** (2026-07-27) | **`docs/AUDIT_F1.md`**: az audit két mérés-jellegű hiánya pótolva (vizuális regresszió 07-26, teljesítmény-budget 07-27). HÁTRA az F1 lezárásához a publikussá tétel — a lépések a `RUNBOOK.md` **élesítési checklistjében** (domain → Resend-SMTP → Turnstile → cégadatok → `SITE_PUBLIC=true`), mind felhasználói döntés/adat |
 | F2.5 Alapvető információk | ✅ kész + BŐVÍTVE + FORRÁSOLVA + ÉLESÍTVE (2026-09-26, `12fc812`) | `/alapinfo` + `/alapinfo/:viz`, 10 víz; 28 spot. 2026-09-26: forráslinkek minden víz/spot oldalon (`src/modules/spots/sources.ts`), negyedéves automatikus forrás-ellenőrzés (`source-check.yml` → GitHub issue); az első kör 6 tartalmi hibát javított (köztük a balatoni SUP-parttávolság). Források: `docs/VIZTESTEK_KUTATAS.md` |
-| F2.6 Kezdőlap tartalom | ✅ kész (2026-09-27, javítás 2026-09-28) | A design "Hajnali tótükör" 1a-signature-je (`_design-source/`) F1.0 óta implementálatlan maradt — a `home.tsx` puszta cím+alcím volt. Pótolva: hero-CTA a Deszkaválasztóhoz, „Vízkörülmények most" spotlight-rács (spots+weather összekötés route-rétegben, `evaluateSpotSnapshot` duplikálva a spotok.tsx mintájára), „Friss vélemények" teaser-rács (reviews+catalog összekötés, `getCatalogItemsByIds` — kind-AGNOSZTIKUS, a `deszkavalaszto.kind.test.ts` őrszem jelöléssel átengedve). Böngészőben verifikálva (desktop+mobil screenshot, valós adattal). Mellékesen talált `SpotCard` duplikált „Elavult adat" hiba (a `/spotok` élő oldalon is megvolt) másnap javítva — részletek lent |
+| F2.6 Kezdőlap tartalom | ✅ kész (2026-09-27, javítás 2026-09-28, csemperács 2026-09-29, csempe-finomhangolás 2026-09-29) | A design "Hajnali tótükör" 1a-signature-je (`_design-source/`) F1.0 óta implementálatlan maradt — a `home.tsx` puszta cím+alcím volt. Pótolva: hero-CTA a Deszkaválasztóhoz, „Vízkörülmények most" spotlight-rács (spots+weather összekötés route-rétegben, `evaluateSpotSnapshot` duplikálva a spotok.tsx mintájára), „Friss vélemények" teaser-rács (reviews+catalog összekötés, `getCatalogItemsByIds` — kind-AGNOSZTIKUS, a `deszkavalaszto.kind.test.ts` őrszem jelöléssel átengedve). Böngészőben verifikálva (desktop+mobil screenshot, valós adattal). Mellékesen talált `SpotCard` duplikált „Elavult adat" hiba (a `/spotok` élő oldalon is megvolt) másnap javítva. 2026-09-29: hero alá csemperács került (mobilon a felső nav-sáv vége kilógott) — részletek lent |
 
 ## ITINER a következő sessionnek (2026-07-28-i állapot)
 
@@ -5674,3 +5674,90 @@ ellenőrizhető — de a logika egyezik a már verifikált adatlap-mintával.
 **Kapuk:** typecheck · lint · test (90 fájl / 1386 teszt) · e2e
 `public-paths.spec.ts` (32/32, chromium + mobile projekt, benne a „SOHA nem
 csúszik el vízszintesen" teszt a `/`-ra) — mind zöld.
+
+### Utó: csemperács a hero alatt (2026-09-29)
+
+Felhasználói ötlet (PecApp-minta): mobilon a felső nav-sáv vízszintesen
+görgethető, és a vége (Felszerelés, Szolgáltatók, Alapvető információk) ki
+sem látszik — a hero alá ezért csemperács került, ami a mobil „főmenüje"
+lett (nincs új alsó sáv/hamburger, a `Suptime` logó a visszaút `/`-ra).
+
+- **Modul-szerződés bővítve** (`src/core/module-contract.ts`): `ModuleNavEntry`
+  opcionális `tile?: { descriptionKey: string; icon: TileIcon }` mezőt kapott,
+  `TileIcon = "board" | "gear" | "spot" | "provider" | "info"` zárt unióval —
+  a csempék, akárcsak a fejléc-nav, a modulok registry-éből épülnek (új modul
+  + `tile` = új csempe, `home.tsx`-hez nem kell nyúlni). `tile`-t kapott:
+  Deszkák/Felszerelés (catalog), Spotok/Alapvető információk (spots),
+  Szolgáltatók (providers) — mind a saját modul namespace-ébe felvett
+  `tile.*` i18n-kulccsal (hu forrás + en tükör). A Deszkaválasztó
+  SZÁNDÉKOSAN nem kapott csempét, azt a hero képviseli.
+- **Tiszta függvény** `app/home-tiles.ts` → `buildHomeTiles(modules)`: csak a
+  `primary` + `tile`-os bejegyzések, `order` szerint rendezve, a modul
+  namespace-ével együtt — a `nav.tsx` `primaryNav`-mintáját követi. Unit-teszt
+  `app/home-tiles.test.ts`.
+- **`HomeTile` core-primitíva** (`src/core/ui/HomeTile.tsx`, exportálva a
+  `core/ui` barrelből): a teljes csempe egy `Link`, kizárólag tokenekből épül
+  (`bg-surface`, `bg-mist`, `text-ink-deep`, `text-petrol`, `text-text-3`,
+  `--radius-card`, `--tap-min`), inline SVG-ikonok `aria-hidden`-nel — ÚJ
+  szín/árnyalat nem került be, és a biztonsági tokenek (safe/caution/danger/
+  stale családok) NEM jelennek meg rajta (ez navigáció, nem státusz).
+  **Reszponzív egy komponensben, JS-ág nélkül:** mobilon nagy, függőleges
+  csempe (ikon fent, cím + leírás lent, `grid-cols-2`); `lg:`-től kompakt,
+  egysoros változat (`lg:flex-row`, kisebb ikon és padding, a leírás
+  `lg:line-clamp-1`, `lg:grid-cols-5`), hogy asztalin ne tolja le az élő
+  „Vízkörülmények most"/„Friss vélemények" szekciókat. Teszt:
+  `src/core/ui/HomeTile.test.tsx` (link-cél, cím+leírás, ikon `aria-hidden`,
+  `--tap-min`).
+- **`home.tsx`**: a hero alatt új `<nav aria-label={t("home.tiles.label")}>`
+  (`core.json` hu: „Böngéssz”, en: „Browse”), benne a `buildHomeTiles`
+  kimenete. A loader VÁLTOZATLAN.
+- **e2e igazítás**: a „kezdőlap renderel…” teszt a fő navigációra (`Főnavigáció`
+  landmark) szűkítette a link-kereséseket, mert a csempék ugyanazokkal a
+  felirat-okkal MÁSODSZOR is megjelentek a szigorú `getByRole` számára; új
+  assert ellenőrzi, hogy a csempe-nav (`Böngéssz`) mind az 5 linket
+  (`/deszkak`, `/felszereles`, `/spotok`, `/szolgaltatok`, `/alapinfo`)
+  tartalmazza.
+
+Böngészőben verifikálva (dev-szerver, 390 px és 1280 px screenshot): mobilon
+2 oszlopos nagy csempék, asztalin 5 oszlopos kompakt sor, a logóra kattintva
+bármelyik aloldalról visszajut a `/`-ra.
+
+**Kapuk:** typecheck · lint · test (92 fájl / 1394 teszt) · e2e
+`public-paths.spec.ts` (32/32, chromium + mobile) — mind zöld.
+
+### Utó: egyenlő csempe-magasság + variant B ikon-színek (2026-09-29)
+
+Desktop review után a felhasználó két finomítást kért:
+
+- **Egyenlő magasság:** az „Alapvető információk" csempe címe 2 sorra tört,
+  ezért az a sor magasabb volt, mint a többi. A `<li>` és a csempe-`Link`
+  `h-full`-t kapott (a szülő `grid` sor amúgy is stretch-eli a `<li>`-t,
+  ez csak a láncot zárja le a csempéig); a kompakt (`lg:`) leírás
+  `lg:line-clamp-1` → `lg:line-clamp-2`-re nőtt, és a sor `lg:items-center` →
+  `lg:items-start`-ra váltott, hogy az ikon a cím tetejével legyen egy
+  vonalban akkor is, ha a leírás alatta két sorra nő. Mobil elrendezés
+  változatlan.
+- **Csempénkénti pasztell ikon-szín (variant B, 3 makett közül választva):**
+  eddig minden ikon-doboz azonos `bg-mist text-petrol` volt; most csempénként
+  saját pasztell háttér + azonos árnyalatú, sötétebb ikon-tinta van — a
+  csempe maga `bg-surface` marad, a CÍM sosem kap színt, ez navigáció, nem
+  státusz. 10 új token került a `tokens.css` BRAND részébe (`--tile-*-bg`/
+  `--tile-*-ink`, board=égkék, gear=homok/taupe, spot=petrol, provider=
+  liláskék, info=indigó — mind ≥5.3:1 kontraszt), a biztonsági blokk
+  (safe/caution/danger/stale) érintetlen. `app/app.css` hidat kapott hozzájuk
+  (`--color-tile-*`), a `HomeTile.tsx` egy `Record<TileIcon, string>`
+  literál-osztálytérképpel (`ICON_BOX_CLASSES`) választja ki az ikon-doboz
+  class-párját — a szín az ikonhoz, nem a modulhoz van kötve, a
+  modul-szerződés nem változott. Lásd `SUP_PLATFORM_FEJLESZTESI_DOKUMENTACIO.md`
+  2. fejezet, „Kezdőlap-csempék ikon-színei" alfejezet.
+- Teszt bővítve (`HomeTile.test.tsx`): board vs. info csempe eltérő
+  ikon-doboz class-t kap, és a csempén belül a link marad az egyetlen
+  interaktív elem.
+
+Böngészőben verifikálva (1280 px és 390 px screenshot): asztalon mind az 5
+csempe egyenlő magasságú, a leírás akár 2 sorra nőhet, az ikon-dobozok
+egyértelműen eltérő pasztell színűek; mobilon a nagy, függőleges elrendezés
+változatlan.
+
+**Kapuk:** typecheck · lint · test (92 fájl / 1395 teszt) · e2e
+`public-paths.spec.ts` (32/32, chromium + mobile) — mind zöld.

@@ -17,6 +17,17 @@
   --color-text-3: var(--text-3);
   --color-line: var(--line);
 
+  --color-tile-board-bg: var(--tile-board-bg);
+  --color-tile-board-ink: var(--tile-board-ink);
+  --color-tile-gear-bg: var(--tile-gear-bg);
+  --color-tile-gear-ink: var(--tile-gear-ink);
+  --color-tile-spot-bg: var(--tile-spot-bg);
+  --color-tile-spot-ink: var(--tile-spot-ink);
+  --color-tile-provider-bg: var(--tile-provider-bg);
+  --color-tile-provider-ink: var(--tile-provider-ink);
+  --color-tile-info-bg: var(--tile-info-bg);
+  --color-tile-info-ink: var(--tile-info-ink);
+
   --color-safe: var(--safe);
   --color-safe-text: var(--safe-text);
   --color-safe-bg: var(--safe-bg);

@@ -2,6 +2,9 @@
   "nav": {
     "providers": "Szolgáltatók"
   },
+  "tile": {
+    "providers": "Iskolák, bérlés, túrák"
+  },
   "seo": {
     "list": {
       "title": "SUP-szolgáltatók — kölcsönzés, túra, oktatás, szállás | Suptime",

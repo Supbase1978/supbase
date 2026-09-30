@@ -2,6 +2,10 @@
   "nav": {
     "spots": "Spots"
   },
+  "tile": {
+    "spots": "Live SUP index",
+    "waterInfo": "Rules, safety"
+  },
   "list": {
     "title": "Spots",
     "lead": "Explore Hungary's SUP spots — current water conditions and SUP index for every location.",

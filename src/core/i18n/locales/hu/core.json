@@ -23,6 +23,9 @@
       "lead": "5 kérdés, 3 perc — ajánlunk 3 deszkát, indoklással.",
       "cta": "Kezdjük"
     },
+    "tiles": {
+      "label": "Böngéssz"
+    },
     "spots": {
       "title": "Vízkörülmények most",
       "viewAll": "Térkép",
