@@ -25,7 +25,7 @@
 | F2.4 Direkt bolti ár eltávolítása | ✅ kész (2026-07-30) | A deszka- és kiegészítő-adatlapról (fejléc-ár + „Hol kapható" blokk + JSON-LD `offers`) eltávolítva — felhasználói döntés, ld. F2.4-szakasz. A `board_prices` gyűjtés (catalog-watch) VÁLTOZATLAN, a Deszkaválasztó budget-szűrője/eredmény-ára is VÁLTOZATLAN (felhasználói döntés szerint) |
 | F1.10 Záró audit + élesítés | ✅ audit **26/26** (2026-07-27) | **`docs/AUDIT_F1.md`**: az audit két mérés-jellegű hiánya pótolva (vizuális regresszió 07-26, teljesítmény-budget 07-27). HÁTRA az F1 lezárásához a publikussá tétel — a lépések a `RUNBOOK.md` **élesítési checklistjében** (domain → Resend-SMTP → Turnstile → cégadatok → `SITE_PUBLIC=true`), mind felhasználói döntés/adat |
 | F2.5 Alapvető információk | ✅ kész + BŐVÍTVE + FORRÁSOLVA + ÉLESÍTVE (2026-09-26, `12fc812`) | `/alapinfo` + `/alapinfo/:viz`, 10 víz; 28 spot. 2026-09-26: forráslinkek minden víz/spot oldalon (`src/modules/spots/sources.ts`), negyedéves automatikus forrás-ellenőrzés (`source-check.yml` → GitHub issue); az első kör 6 tartalmi hibát javított (köztük a balatoni SUP-parttávolság). Források: `docs/VIZTESTEK_KUTATAS.md` |
-| F2.6 Kezdőlap tartalom | ✅ kész (2026-09-27, javítás 2026-09-28, csemperács 2026-09-29, csempe-finomhangolás 2026-09-29) | A design "Hajnali tótükör" 1a-signature-je (`_design-source/`) F1.0 óta implementálatlan maradt — a `home.tsx` puszta cím+alcím volt. Pótolva: hero-CTA a Deszkaválasztóhoz, „Vízkörülmények most" spotlight-rács (spots+weather összekötés route-rétegben, `evaluateSpotSnapshot` duplikálva a spotok.tsx mintájára), „Friss vélemények" teaser-rács (reviews+catalog összekötés, `getCatalogItemsByIds` — kind-AGNOSZTIKUS, a `deszkavalaszto.kind.test.ts` őrszem jelöléssel átengedve). Böngészőben verifikálva (desktop+mobil screenshot, valós adattal). Mellékesen talált `SpotCard` duplikált „Elavult adat" hiba (a `/spotok` élő oldalon is megvolt) másnap javítva. 2026-09-29: hero alá csemperács került (mobilon a felső nav-sáv vége kilógott) — részletek lent |
+| F2.6 Kezdőlap tartalom | ✅ kész (2026-09-27, javítás 2026-09-28, csemperács 2026-09-29, csempe-finomhangolás 2026-09-29, fejléc-margó igazítás + logójel 2026-09-30) | A design "Hajnali tótükör" 1a-signature-je (`_design-source/`) F1.0 óta implementálatlan maradt — a `home.tsx` puszta cím+alcím volt. Pótolva: hero-CTA a Deszkaválasztóhoz, „Vízkörülmények most" spotlight-rács (spots+weather összekötés route-rétegben, `evaluateSpotSnapshot` duplikálva a spotok.tsx mintájára), „Friss vélemények" teaser-rács (reviews+catalog összekötés, `getCatalogItemsByIds` — kind-AGNOSZTIKUS, a `deszkavalaszto.kind.test.ts` őrszem jelöléssel átengedve). Böngészőben verifikálva (desktop+mobil screenshot, valós adattal). Mellékesen talált `SpotCard` duplikált „Elavult adat" hiba (a `/spotok` élő oldalon is megvolt) másnap javítva. 2026-09-29: hero alá csemperács került (mobilon a felső nav-sáv vége kilógott) — részletek lent |
 
 ## ITINER a következő sessionnek (2026-07-28-i állapot)
 
@@ -5761,3 +5761,39 @@ változatlan.
 
 **Kapuk:** typecheck · lint · test (92 fájl / 1395 teszt) · e2e
 `public-paths.spec.ts` (32/32, chromium + mobile) — mind zöld.
+
+### Utó: fejléc-margó igazítás + logójel (2026-09-30)
+
+Két, egymástól független finomítás:
+
+- **Fejléc-margó igazítás:** a fejléc (`app/nav.tsx`) `px-4` vízszintes
+  margót használt, a lapok konténere viszont `sm:p-6`-ra vált 640 px fölött —
+  a kettő 8 px-nyit csúszott egymáshoz képest, a fejléc tartalma balrébb
+  ült, mint a lap törzse. Javítás: a nav `px-4 sm:px-6`-ra váltott (a lapok
+  `p-4 sm:p-6` mintáját követve), az `admin.deszka.$slug.tsx` (az egyetlen
+  eltérő, csak `px-4 py-6`-ot használó admin-oldal) igazodott hozzá. Új őr
+  az `app/routes/layout-width.test.ts`-ben: egy teszt a nav `px-4 sm:px-6`
+  jelenlétét ellenőrzi, egy másik minden (a keskeny auth-kártyák kivételével)
+  route-fájl `max-w-5xl` konténerén megköveteli a `p-4`/`sm:p-6` (vagy
+  `px-4`/`sm:px-6`) lépcsőt — eltérés esetén a teszt megnevezi a hibás
+  fájlt. A közös szabály dokumentálva `src/core/ui/layout.ts`-ben is.
+- **Logójel (`BrandMark`):** a felhasználó 5 makett közül választott
+  logójelet a fejléc a "Suptime" felirat elé, a favicon pedig önállóan
+  kapta meg. Új core-primitíva: `src/core/ui/BrandMark.tsx` (amber
+  napkorong + felülnézeti fehér deszka + párhuzamos sötét evezőlapát,
+  kizárólag márkatokenekből, `aria-hidden` — dekoratív, a fejléc-Link
+  akadálymentes neve marad "Suptime"), exportálva a `core/ui` barrelből,
+  teszt: `BrandMark.test.tsx`. `app/nav.tsx` a brand-Linken belül `gap-2`
+  flexbe rendezi a jelet és a feliratot. `public/favicon.svg` ugyanaz a
+  forma literál hex-színekkel (a statikus fájl a CSS-változókat nem tudja
+  feloldani), bekötve az `app/root.tsx` `links` exportjába
+  (`rel="icon" type="image/svg+xml"`). Részletek és a lapát-párhuzamosság
+  indoklása: `SUP_PLATFORM_FEJLESZTESI_DOKUMENTACIO.md` 2. fejezet,
+  „Logójel" alfejezet.
+
+Böngészőben verifikálva (1280 px és 390 px screenshot): a logójel a
+fejlécben a felirat mellett jelenik meg, a favicon a böngésző fülén
+látszik.
+
+**Kapuk:** typecheck · lint · test · e2e `public-paths.spec.ts`
+(chromium + mobile) — mind zöld.

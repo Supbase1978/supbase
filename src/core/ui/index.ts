@@ -7,6 +7,9 @@
 export { Button } from "./Button";
 export type { ButtonProps, ButtonVariant } from "./Button";
 
+export { BrandMark } from "./BrandMark";
+export type { BrandMarkProps } from "./BrandMark";
+
 export { Card } from "./Card";
 export type { CardProps } from "./Card";
 

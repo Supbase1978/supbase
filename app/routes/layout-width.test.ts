@@ -55,6 +55,24 @@ describe("lap-szélesség egységessége", () => {
     },
   );
 
+  it("a fejléc vízszintes margója a lapokéval azonos lépcsőket használ", () => {
+    const nav = readFileSync(join(process.cwd(), "app", "nav.tsx"), "utf8");
+    expect(nav).toMatch(/\bpx-4 sm:px-6\b/);
+  });
+
+  it.each(routeFiles().filter((f) => !NARROW_CARD_ROUTES.has(f)))(
+    "%s tartalom-konténere a fejléccel azonos vízszintes margót használ",
+    (file) => {
+      const source = readFileSync(join(ROUTES_DIR, file), "utf8");
+      const container = /className="(mx-auto[^"]*max-w-5xl[^"]*)"/.exec(source)?.[1];
+      if (!container) return;
+      const classes = container.split(/\s+/);
+      const base = classes.includes("p-4") || classes.includes("px-4");
+      const sm = classes.includes("sm:p-6") || classes.includes("sm:px-6");
+      expect(base && sm, `${file}: a konténer margója nem p-4/sm:p-6 ("${container}")`).toBe(true);
+    },
+  );
+
   it("a keskeny auth-kártyák szándékos kivételek maradnak", () => {
     for (const file of NARROW_CARD_ROUTES) {
       const source = readFileSync(join(ROUTES_DIR, file), "utf8");

@@ -2,6 +2,7 @@ import { useTranslation } from "react-i18next";
 import { Link, NavLink, useLocation } from "react-router";
 
 import { getLocaleFromPath, localizePath } from "@core/i18n";
+import { BrandMark } from "@core/ui";
 // A nav-bejegyzések a modul-manifesztekből jönnek (1.3 modul-szerződés):
 // új modul felvételekor ehhez a fájlhoz NEM kell nyúlni.
 import { modules } from "@modules/registry";
@@ -32,13 +33,14 @@ export function AppNav() {
         // szerint szereplő osztályt generálja). Hogy a fejléc és a lapok ne
         // csúszhassanak szét, az egyezést teszt őrzi:
         // app/routes/layout-width.test.ts + @core/ui/layout.
-        className="mx-auto flex max-w-5xl items-center gap-1 overflow-x-auto px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="mx-auto flex max-w-5xl items-center gap-1 overflow-x-auto px-4 sm:px-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         <Link
           to={localizePath("/", locale)}
-          className="flex min-h-11 shrink-0 items-center pr-3 font-semibold text-ink-deep"
+          className="flex min-h-11 shrink-0 items-center gap-2 pr-3 font-semibold text-ink-deep"
           style={{ fontFamily: "var(--font-display)" }}
         >
+          <BrandMark size={28} className="shrink-0" />
           {t("home.appName")}
         </Link>
         {primaryNav.map((entry) => (

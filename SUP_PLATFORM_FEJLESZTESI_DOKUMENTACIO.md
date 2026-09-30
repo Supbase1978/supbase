@@ -146,6 +146,19 @@ A Claude Design 2. körének kimenete. **Ezek az értékek véglegesek**, a `src
 6. **Kontraszt-kapuk** (a designban validálva): text 12,9:1 · text-2 7,0:1 · text-3 4,9:1 · CTA 7,6:1 · danger-text 6,3:1 · safe-text 6,2:1. Új szín-párosítás csak AA fölött.
 7. Amber CTA-n mindig sötét (`--text`) felirat; a `--danger` család kizárólag veszélyt jelölhet, interakciós elemen (gomb, link) tilos.
 
+**Logójel (`BrandMark`, 2026-09-30):** amber napkorong, benne felülnézeti
+fehér SUP-deszka orral felfelé, mellette PÁRHUZAMOSAN álló sötét evezőlapát —
+kizárólag márkatokenekből (`--ink-deep`, `--amber`, `--surface`, `--petrol`),
+a biztonsági (safe/caution/danger/stale) színek nem jelennek meg rajta. A
+lapát TUDATOSAN nem keresztezi a deszkát: egy keresztező lapát áthúzott/tiltó
+jelként olvasódna a "Tilos" státusz-ikonja mellett — összetéveszthetetlenség
+a biztonsági jelrendszertől itt is szempont, akárcsak a kezdőlap-csempék
+színeinél. A felhasználó 5 makett közül választotta ezt a változatot.
+Felhasználás: fejléc (`app/nav.tsx`, a "Suptime" felirat mellett, a Link
+dekoratív gyermekeként — a link akadálymentes neve változatlanul "Suptime")
+és favicon (`public/favicon.svg`, literál hex-színekkel, mert a statikus
+fájl CSS-változókat nem tud feloldani).
+
 **Kezdőlap-csempék ikon-színei (variant B, F2.6-utó, 2026-09-29):** az öt
 csempe (`HomeTile`) ikon-doboza csempénként saját pasztell háttér + azonos
 árnyalatú, sötétebb ikon-tinta párt kap (board=égkék, gear=homok/taupe,

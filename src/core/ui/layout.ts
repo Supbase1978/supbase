@@ -20,6 +20,10 @@ export const PAGE_MAX_WIDTH = "max-w-5xl";
 /** Teljes lap-konténer: középre igazítva, kanonikus szélességgel. */
 export const PAGE_CONTAINER = `mx-auto w-full ${PAGE_MAX_WIDTH}`;
 
+// A vízszintes belső margó is közös: fejléc `px-4 sm:px-6`, lapok `p-4 sm:p-6`.
+// Eltérés esetén a fejléc tartalma oldalra csúszik (640 px fölött `px-4` vs.
+// `sm:p-6` → 8 px volt). Az egyezést szintén a layout-width teszt őrzi.
+
 /**
  * Hosszú, folyamatos szöveghez (jogi oldalak, leírások) szűkebb sormérték.
  * A KÜLSŐ konténer marad a kanonikus szélességen — így a bal szél továbbra is

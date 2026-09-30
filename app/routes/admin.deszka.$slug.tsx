@@ -115,7 +115,7 @@ export default function AdminBoardEdit({ loaderData, actionData }: Route.Compone
   const [types, setTypes] = useState<string[]>(board.boardTypes);
 
   return (
-    <main className="mx-auto flex max-w-5xl flex-col gap-4 px-4 py-6">
+    <main className="mx-auto flex max-w-5xl flex-col gap-4 p-4 sm:p-6">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h1 className="text-xl font-semibold text-ink-deep">
           {[board.brandName, board.modelName].filter(Boolean).join(" ")}
