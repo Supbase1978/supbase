@@ -41,7 +41,9 @@
   },
   "stale": {
     "label": "Stale data",
-    "hint": "The reading is more than 30 minutes old — not current."
+    "hint": "The reading is more than 30 minutes old — not current.",
+    "lastReading": "Last reading: {{value}}",
+    "asOfSentence": "As of the last reading: {{sentence}}"
   },
   "flag": {
     "offshoreWind": "Offshore wind",
@@ -55,7 +57,18 @@
     "layerProtected": "Protected areas",
     "openDetail": "Details",
     "focusMap": "The spot's location on the map",
-    "loading": "Loading map…"
+    "loading": "Loading map…",
+    "directions": "Directions"
+  },
+  "refresh": {
+    "cta": "Refresh now",
+    "pending": "Refreshing…",
+    "result": {
+      "queued": "Refresh started — a few seconds",
+      "fresh": "The data is already fresh",
+      "throttled": "We just refreshed this — try again in a few minutes",
+      "unavailable": "Refresh isn't available right now"
+    }
   },
   "detail": {
     "season": "Season",

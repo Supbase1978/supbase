@@ -128,6 +128,58 @@ export function buildSnapshotRow(
   };
 }
 
+/** `parseSyncRequest` legfeljebb ennyi spot-id-t fogad el egy kérésben. */
+const MAX_SYNC_SPOT_IDS = 50;
+
+/** RFC 4122-alakú UUID (kis/nagybetű-érzéketlen — a Postgres is így adja vissza). */
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export type SyncRequestParseResult = { spotIds: string[] | null } | { error: string };
+
+/**
+ * A `weather-sync` HTTP-törzsének VALIDÁLÁSA (tiszta, I/O nélkül).
+ *
+ * `null`/`undefined`/`{}` (vagy `spot_ids` mező nélküli objektum) → `spotIds:
+ * null`, ami a hívó (index.ts) számára "minden spot" — ez a cron VÁLTOZATLAN
+ * viselkedése. `{ spot_ids: string[] }` → csak azok a spotok (a kézi
+ * frissítés RPC-je pontosan EGY elemű tömböt küld). Minden más alak (nem
+ * objektum, nem tömb, rossz típusú/alakú elem, túl sok elem) hibát ad — a
+ * hívó ezt 400-cal válaszolja, a batch el sem indul.
+ */
+export function parseSyncRequest(body: unknown): SyncRequestParseResult {
+  if (body === null || body === undefined) {
+    return { spotIds: null };
+  }
+  if (typeof body !== "object" || Array.isArray(body)) {
+    return { error: "A kérés törzsének objektumnak kell lennie (vagy üresnek)." };
+  }
+
+  const record = body as Record<string, unknown>;
+  if (!("spot_ids" in record) || record.spot_ids === undefined) {
+    return { spotIds: null };
+  }
+
+  const raw = record.spot_ids;
+  if (!Array.isArray(raw)) {
+    return { error: "A spot_ids mezőnek tömbnek kell lennie." };
+  }
+  if (raw.length === 0) {
+    return { error: "A spot_ids tömb nem lehet üres." };
+  }
+  if (raw.length > MAX_SYNC_SPOT_IDS) {
+    return { error: `A spot_ids legfeljebb ${MAX_SYNC_SPOT_IDS} elemű lehet.` };
+  }
+
+  const spotIds: string[] = [];
+  for (const item of raw) {
+    if (typeof item !== "string" || !UUID_PATTERN.test(item)) {
+      return { error: "A spot_ids minden elemének érvényes UUID-nak kell lennie." };
+    }
+    spotIds.push(item);
+  }
+  return { spotIds };
+}
+
 /**
  * A teljes batch. Spotonként külön try/catch: egy elhalás nem viszi a többit.
  * Determinisztikus, szekvenciális bejárás (a rate-limit-barát, kiszámítható

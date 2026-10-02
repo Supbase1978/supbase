@@ -34,6 +34,14 @@ describe("Button", () => {
     expect(button.className).toContain("bg-transparent");
   });
 
+  it("outline variáns petrol vonalas, átlátszó hátterű, petrol feliratú", () => {
+    render(<Button variant="outline">Frissítés</Button>);
+    const button = screen.getByRole("button", { name: "Frissítés" });
+    expect(button.className).toContain("border-petrol");
+    expect(button.className).toContain("bg-transparent");
+    expect(button.className).toContain("text-petrol-text");
+  });
+
   it("minden variáns legalább a --tap-min tap-méretet kapja", () => {
     render(
       <>

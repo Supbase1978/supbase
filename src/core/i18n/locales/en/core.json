@@ -7,7 +7,13 @@
   },
   "dataAge": {
     "updatedMinutesAgo": "updated {{minutes}} min ago",
-    "stale": "Outdated data — older than 30 minutes"
+    "stale": "Outdated data — older than 30 minutes",
+    "staleMinutesAgo_one": "Outdated data · updated {{count}} min ago",
+    "staleMinutesAgo_other": "Outdated data · updated {{count}} min ago",
+    "staleHoursAgo_one": "Outdated data · updated {{count}} h ago",
+    "staleHoursAgo_other": "Outdated data · updated {{count}} h ago",
+    "staleDaysAgo_one": "Outdated data · updated {{count}} day ago",
+    "staleDaysAgo_other": "Outdated data · updated {{count}} days ago"
   },
   "nav": {
     "home": "Home",

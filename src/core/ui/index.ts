@@ -4,7 +4,7 @@
  * ez a barrel a `@core/ui` belépési pontja (modulok innen importálhatnak).
  */
 
-export { Button } from "./Button";
+export { Button, buttonClassName } from "./Button";
 export type { ButtonProps, ButtonVariant } from "./Button";
 
 export { BrandMark } from "./BrandMark";
@@ -43,6 +43,13 @@ export type { ProductImageProps, ProductImageFrame } from "./ProductImage";
 export { ProductGallery } from "./ProductGallery";
 export type { ProductGalleryProps, GalleryImage } from "./ProductGallery";
 
-export { isStale, minutesSince, STALE_THRESHOLD_MINUTES } from "./data-age";
+export {
+  describeAge,
+  isStale,
+  minutesSince,
+  STALE_AGE_KEYS,
+  STALE_THRESHOLD_MINUTES,
+} from "./data-age";
+export type { AgeDescription, AgeUnit } from "./data-age";
 
 export { cx } from "./cx";

@@ -41,7 +41,9 @@
   },
   "stale": {
     "label": "Elavult adat",
-    "hint": "A mérés több mint 30 perce frissült — nem aktuális."
+    "hint": "A mérés több mint 30 perce frissült — nem aktuális.",
+    "lastReading": "Utolsó mérés: {{value}}",
+    "asOfSentence": "Utolsó mérés szerint: {{sentence}}"
   },
   "flag": {
     "offshoreWind": "Besodró szél",
@@ -55,7 +57,18 @@
     "layerProtected": "Védett területek",
     "openDetail": "Adatlap",
     "focusMap": "A spot helye a térképen",
-    "loading": "Térkép betöltése…"
+    "loading": "Térkép betöltése…",
+    "directions": "Útvonal"
+  },
+  "refresh": {
+    "cta": "Frissítés most",
+    "pending": "Frissítés…",
+    "result": {
+      "queued": "Frissítés elindítva — pár másodperc",
+      "fresh": "Az adat friss",
+      "throttled": "Nemrég frissítettük — próbáld pár perc múlva",
+      "unavailable": "A frissítés most nem elérhető"
+    }
   },
   "detail": {
     "season": "Szezon",

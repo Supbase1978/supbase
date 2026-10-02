@@ -151,6 +151,42 @@ export type InsertReportResult =
  * ellenőrzésben) — ez a validáció csak a barátságos hibaüzenetért van, hogy
  * ne egy nyers Postgres-hibakódot kapjon a felhasználó.
  */
+/**
+ * A `request_spot_refresh()` DB-függvény (3.1/`20260717099800`) lehetséges
+ * válaszai. `"unavailable"` a fallback MINDEN hiba- vagy ismeretlen-válasz
+ * esetén — ez a UI-nak soha nem ok a dobásra, legfeljebb egy barátságos
+ * "most nem sikerült" üzenetre.
+ */
+export type SpotRefreshResult = "queued" | "fresh" | "throttled" | "not_found" | "unavailable";
+
+const SPOT_REFRESH_RESULTS = new Set<SpotRefreshResult>([
+  "queued",
+  "fresh",
+  "throttled",
+  "not_found",
+  "unavailable",
+]);
+
+/**
+ * Kézi időjárás-frissítés kérése egy spotra. A függvény maga throttle-ol
+ * (10 perc) és Vault-kulccsal hívja meg a `weather-sync` Edge Functiont — ez a
+ * wrapper csak az RPC-hívás és a válasz szűkítése. SOHA nem dob: a hívó
+ * (route-action) mindig egy `SpotRefreshResult`-ot kap, a hibás/ismeretlen
+ * eset is `"unavailable"`-ként érkezik, hogy a UI egyetlen ágon kezelhesse.
+ */
+export async function requestSpotRefresh(
+  supabase: SupabaseClient,
+  spotId: string,
+): Promise<SpotRefreshResult> {
+  const { data, error } = await supabase.rpc("request_spot_refresh", {
+    p_spot_id: spotId,
+  });
+  if (error || typeof data !== "string" || !SPOT_REFRESH_RESULTS.has(data as SpotRefreshResult)) {
+    return "unavailable";
+  }
+  return data as SpotRefreshResult;
+}
+
 export async function insertReport(
   supabase: SupabaseClient,
   input: InsertReportInput,

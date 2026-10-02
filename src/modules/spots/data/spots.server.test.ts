@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { WeatherSnapshotRow } from "../types";
-import { getSpotBySlug, pickLatestPerSpot } from "./spots.server";
+import { getSpotBySlug, pickLatestPerSpot, requestSpotRefresh } from "./spots.server";
 
 function snapshot(overrides: Partial<WeatherSnapshotRow>): WeatherSnapshotRow {
   return {
@@ -81,5 +81,42 @@ describe("getSpotBySlug — slug-alak guard", () => {
     "",
   ])("érvénytelen slugra (%j) null, kliens-hívás nélkül", async (slug) => {
     await expect(getSpotBySlug(throwingClient, slug)).resolves.toBeNull();
+  });
+});
+
+describe("requestSpotRefresh — az RPC-válasz szűkítése, soha nem dob", () => {
+  const SPOT_ID = "11111111-1111-1111-1111-111111111111";
+
+  function clientWithRpcResult(data: unknown, error: { message: string } | null = null) {
+    return {
+      rpc: (name: string, args: Record<string, unknown>) => {
+        expect(name).toBe("request_spot_refresh");
+        expect(args).toEqual({ p_spot_id: SPOT_ID });
+        return Promise.resolve({ data, error });
+      },
+    } as unknown as SupabaseClient;
+  }
+
+  it.each(["queued", "fresh", "throttled", "not_found", "unavailable"] as const)(
+    "ismert RPC-válasz (%s) változatlanul átmegy",
+    async (result) => {
+      const client = clientWithRpcResult(result);
+      await expect(requestSpotRefresh(client, SPOT_ID)).resolves.toBe(result);
+    },
+  );
+
+  it("RPC-hiba esetén unavailable (nem dob)", async () => {
+    const client = clientWithRpcResult(null, { message: "connection error" });
+    await expect(requestSpotRefresh(client, SPOT_ID)).resolves.toBe("unavailable");
+  });
+
+  it("ismeretlen/váratlan válasz-string esetén unavailable", async () => {
+    const client = clientWithRpcResult("something-new");
+    await expect(requestSpotRefresh(client, SPOT_ID)).resolves.toBe("unavailable");
+  });
+
+  it("null adat (hiba nélkül is) esetén unavailable", async () => {
+    const client = clientWithRpcResult(null);
+    await expect(requestSpotRefresh(client, SPOT_ID)).resolves.toBe("unavailable");
   });
 });

@@ -7,7 +7,13 @@
   },
   "dataAge": {
     "updatedMinutesAgo": "frissítve {{minutes}} perce",
-    "stale": "Elavult adat — 30 percnél régebbi"
+    "stale": "Elavult adat — 30 percnél régebbi",
+    "staleMinutesAgo_one": "Elavult adat · {{count}} perce frissült",
+    "staleMinutesAgo_other": "Elavult adat · {{count}} perce frissült",
+    "staleHoursAgo_one": "Elavult adat · {{count}} órája frissült",
+    "staleHoursAgo_other": "Elavult adat · {{count}} órája frissült",
+    "staleDaysAgo_one": "Elavult adat · {{count}} napja frissült",
+    "staleDaysAgo_other": "Elavult adat · {{count}} napja frissült"
   },
   "nav": {
     "home": "Kezdőlap",

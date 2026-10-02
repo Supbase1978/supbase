@@ -24,7 +24,17 @@ import { PushToggle } from "@core/notifications/PushToggle";
 import { absoluteUrl, buildPageSeo } from "@core/seo/page-seo";
 import { placeJsonLd } from "@core/seo/jsonld";
 import { JsonLd } from "@core/seo/json-ld";
-import { Button, Card, DataAge, Gauge, minutesSince, SafetyNote, StatusBadge } from "@core/ui";
+import {
+  Button,
+  Card,
+  DataAge,
+  describeAge,
+  Gauge,
+  minutesSince,
+  SafetyNote,
+  STALE_AGE_KEYS,
+  StatusBadge,
+} from "@core/ui";
 import { SpotMap } from "@modules/spots/ui/SpotMap";
 import { StormAlertScreen } from "@modules/spots/ui/StormAlertScreen";
 import { WATER_STALE_MINUTES, WaterLevel } from "@modules/spots/ui/WaterLevel";
@@ -33,7 +43,11 @@ import {
   getSpotBySlug,
   insertReport,
   listReports,
+  requestSpotRefresh,
+  type SpotRefreshResult,
 } from "@modules/spots/data/spots.server";
+import { DirectionsLink } from "@modules/spots/ui/DirectionsLink";
+import { RefreshButton } from "@modules/spots/ui/RefreshButton";
 import { pointFromGeom } from "@modules/spots/data/wkb";
 import {
   isReportConditions,
@@ -224,7 +238,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
   };
 }
 
-type ActionResult =
+type ReportActionResult =
   | { ok: true }
   | {
       ok: false;
@@ -234,20 +248,60 @@ type ActionResult =
         | "reports.error";
     };
 
+interface RefreshActionResult {
+  refresh: SpotRefreshResult;
+}
+
+/**
+ * KÉT intent-ág, egyetlen route-actionben (a route-fájl a jelentés-beküldés
+ * ÉS a kézi időjárás-frissítés POST-ját is itt fogadja — a `RefreshButton`
+ * fetcherje és a jelentés-`Form` ugyanide küld, csak az `intent` mezőben
+ * térnek el):
+ *
+ *  - `intent=refresh` — PUBLIKUS (nincs `requireUser`): a kézi frissítés nem
+ *    felhasználó-tulajdonú tartalom, a visszaélés ellen a DB-oldali 10 perces
+ *    throttle véd (lásd `20260717099800_spots_manual_refresh.sql`), nem a
+ *    bejelentkezés. `{ refresh: SpotRefreshResult }`-ot ad vissza.
+ *  - `intent=report` — VÉDETT (requireUser + email-megerősítés), változatlan
+ *    logika.
+ *
+ * Minden más intent, vagy nem-POST hívás → 400 (nincs ilyen cselekvés).
+ */
 export async function action({ request, params }: Route.ActionArgs) {
   const slug = params.slug;
   if (!slug) {
     throw new Response("Not Found", { status: 404 });
+  }
+  if (request.method !== "POST") {
+    throw new Response("Bad Request", { status: 400 });
+  }
+
+  const { supabase, headers } = createSupabaseServerClient(request);
+  const formData = await request.formData();
+  const intent = formData.get("intent");
+
+  if (intent === "refresh") {
+    const spotRow = await getSpotBySlug(supabase, slug);
+    if (!spotRow) {
+      throw new Response("Not Found", { status: 404 });
+    }
+    const refresh = await requestSpotRefresh(supabase, spotRow.id);
+    return data<RefreshActionResult>({ refresh }, { headers });
+  }
+
+  if (intent !== "report") {
+    throw new Response("Bad Request", { status: 400 });
   }
 
   // requireUser-guard (kijelentkezes.tsx/belepes.tsx mintája): nincs session
   // → redirect a locale-helyes belépőre, redirectTo-val az aktuális útvonalra.
   const user = await requireUser(request);
 
-  const { supabase, headers } = createSupabaseServerClient(request);
-
   if (!isEmailConfirmed(user)) {
-    return data<ActionResult>({ ok: false, errorKey: "reports.confirmPrompt" }, { headers });
+    return data<ReportActionResult>(
+      { ok: false, errorKey: "reports.confirmPrompt" },
+      { headers },
+    );
   }
 
   const spotRow = await getSpotBySlug(supabase, slug);
@@ -255,13 +309,15 @@ export async function action({ request, params }: Route.ActionArgs) {
     throw new Response("Not Found", { status: 404 });
   }
 
-  const formData = await request.formData();
   const conditions = String(formData.get("conditions") ?? "");
   const noteRaw = formData.get("note");
   const note = typeof noteRaw === "string" && noteRaw.trim().length > 0 ? noteRaw.trim() : null;
 
   if (!isReportConditions(conditions)) {
-    return data<ActionResult>({ ok: false, errorKey: "reports.invalidConditions" }, { headers });
+    return data<ReportActionResult>(
+      { ok: false, errorKey: "reports.invalidConditions" },
+      { headers },
+    );
   }
 
   const result = await insertReport(supabase, {
@@ -272,11 +328,11 @@ export async function action({ request, params }: Route.ActionArgs) {
   });
 
   if (!result.ok) {
-    return data<ActionResult>({ ok: false, errorKey: result.errorKey }, { headers });
+    return data<ReportActionResult>({ ok: false, errorKey: result.errorKey }, { headers });
   }
 
   await recordEvent(supabase, request, "report_submitted");
-  return data<ActionResult>({ ok: true }, { headers });
+  return data<ReportActionResult>({ ok: true }, { headers });
 }
 
 export const meta: Route.MetaFunction = ({ data }) => data?.seo ?? [];
@@ -289,6 +345,19 @@ const STATUS_SEVERITY: Record<SpotStatus, "safe" | "caution" | "danger"> = {
   forbidden: "danger",
 };
 
+/**
+ * "Elavult adat · 38 perce/3 órája/2 napja frissült" — lásd a `SpotCard`
+ * azonos nevű helperének kommentjét (szándékos duplikáció, modul-szerződés:
+ * a route-réteg nem importálhat a spots-modul UI-belsejéből ezen felül).
+ */
+function staleAgeLabel(
+  fetchedAt: string,
+  t: (key: string, options?: Record<string, unknown>) => string,
+): string {
+  const age = describeAge(fetchedAt);
+  return t(STALE_AGE_KEYS[age.unit], { ns: "core", count: age.count });
+}
+
 export default function SpotDetailRoute({ loaderData, actionData }: Route.ComponentProps) {
   const { t, i18n } = useTranslation("spots");
   // A póráz-szabály KÖZÖS igény (spots + advisor), ezért a core namespace-ben
@@ -298,6 +367,11 @@ export default function SpotDetailRoute({ loaderData, actionData }: Route.Compon
   // útmutatóra mutat — a szöveg maga a core-ban marad (F2.3 1. szakasz).
   const { t: tCatalog } = useTranslation("catalog");
   const { spot, snapshot, evaluation, gaugeThresholds, reports, reportForm, jsonLd } = loaderData;
+  // Az actionData a jelentés-Form ÉS a RefreshButton (saját fetcherrel küldő)
+  // közös action-függvényéből jöhet — csak a `report`-ág válasza (`"ok" in`)
+  // tartozik EHHEZ a megjelenítéshez, a `refresh`-ágét a RefreshButton saját
+  // fetcher-állapota kezeli (lásd `RefreshButton.tsx`).
+  const reportResult = actionData && "ok" in actionData ? actionData : null;
 
   const formattedIndex = evaluation
     ? new Intl.NumberFormat(i18n.language, {
@@ -306,6 +380,27 @@ export default function SpotDetailRoute({ loaderData, actionData }: Route.Compon
       }).format(evaluation.index)
     : null;
   const statusLabel = evaluation ? t(`status.${evaluation.status}`) : null;
+
+  // Elavult adatnál a fejléc-jelvény SOHA nem állíthat aktuális státuszt
+  // (2. fejezet adatkor-szabály — lásd a `SpotCard` azonos nevű jelvényének
+  // kommentjét, szándékos duplikáció a modul-szerződés miatt). Forbidden+
+  // stale esetén is a semleges "Utolsó mérés" jelenik meg itt — a valódi,
+  // aktuális tiltást a `StormAlertScreen` adja, FÜGGETLENÜL a kortól (lásd
+  // lent, a komponens eleji feltételt), tehát a jelvény szelídítése itt nem
+  // gyengíti a figyelmeztetést.
+  const headerBadgeSeverity: "safe" | "caution" | "danger" | "stale" | null = evaluation
+    ? evaluation.stale
+      ? "stale"
+      : STATUS_SEVERITY[evaluation.status]
+    : null;
+  const headerBadgeLabel = evaluation
+    ? evaluation.stale
+      ? // Lásd SpotCard: elavult Tilos-állapotot sem tüntetünk el csendben.
+        t("stale.lastReading", {
+          value: evaluation.status === "forbidden" ? statusLabel : formattedIndex,
+        })
+      : `${statusLabel} · ${formattedIndex}`
+    : null;
 
   return (
     <main className="mx-auto flex min-h-svh max-w-5xl flex-col gap-6 p-4 sm:p-6">
@@ -334,11 +429,8 @@ export default function SpotDetailRoute({ loaderData, actionData }: Route.Compon
           >
             {spot.name}
           </h1>
-          {evaluation && statusLabel ? (
-            <StatusBadge
-              status={STATUS_SEVERITY[evaluation.status]}
-              label={`${statusLabel} · ${formattedIndex}`}
-            />
+          {evaluation && headerBadgeLabel && headerBadgeSeverity ? (
+            <StatusBadge status={headerBadgeSeverity} label={headerBadgeLabel} />
           ) : null}
         </div>
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-text-2">
@@ -346,19 +438,22 @@ export default function SpotDetailRoute({ loaderData, actionData }: Route.Compon
           <span>· {t(`waterType.${spot.waterType}`)}</span>
           {spot.difficulty ? <span>· {t(`difficulty.${spot.difficulty}`)}</span> : null}
         </div>
-        {evaluation ? (
-          <DataAge
-            label={
-              evaluation.stale
-                ? t("stale.label")
-                : t("dataAge.updatedMinutesAgo", {
-                    ns: "core",
-                    minutes: Math.max(0, Math.round(minutesSince(evaluation.fetchedAt))),
-                  })
-            }
-            stale={evaluation.stale}
-          />
-        ) : null}
+        <div className="flex flex-wrap items-center gap-3">
+          {evaluation ? (
+            <DataAge
+              label={
+                evaluation.stale
+                  ? staleAgeLabel(evaluation.fetchedAt, t)
+                  : t("dataAge.updatedMinutesAgo", {
+                      ns: "core",
+                      minutes: Math.max(0, Math.round(minutesSince(evaluation.fetchedAt))),
+                    })
+              }
+              stale={evaluation.stale}
+            />
+          ) : null}
+          <RefreshButton slug={spot.slug} />
+        </div>
       </header>
 
       <Card>
@@ -381,7 +476,14 @@ export default function SpotDetailRoute({ loaderData, actionData }: Route.Compon
               label={`${t("detail.supIndex")} ${formattedIndex}, ${statusLabel}`}
             />
             <p className="text-sm text-text-2">
-              {t(evaluation.reason.key, { ns: "weather", ...evaluation.reason.params })}
+              {evaluation.stale
+                ? t("stale.asOfSentence", {
+                    sentence: t(evaluation.reason.key, {
+                      ns: "weather",
+                      ...evaluation.reason.params,
+                    }),
+                  })
+                : t(evaluation.reason.key, { ns: "weather", ...evaluation.reason.params })}
             </p>
             {evaluation.stale ? (
               <div className="flex flex-col gap-1 rounded-[var(--radius-card)] bg-mist p-3">
@@ -593,9 +695,17 @@ export default function SpotDetailRoute({ loaderData, actionData }: Route.Compon
             ]}
             center={{ lat: spot.lat, lng: spot.lng }}
             zoom={12}
-            interactive={false}
+            // Nagyítható/mozgatható (korábban `interactive={false}` volt) —
+            // réteg-kapcsolók nélkül, mert egyetlen spot van rajta
+            // (`showLayerToggles={false}`). Érintőképernyőn egy ujj görgeti
+            // az oldalt, két ujj mozgatja a térképet; egérrel a görgő
+            // változatlanul közvetlenül nagyít (`cooperativeGestures`).
+            interactive
+            showLayerToggles={false}
+            cooperativeGestures
             className="h-[240px]"
           />
+          <DirectionsLink lat={spot.lat} lng={spot.lng} className="self-start" />
         </section>
       ) : null}
 
@@ -619,6 +729,7 @@ export default function SpotDetailRoute({ loaderData, actionData }: Route.Compon
         {reportForm.isLoggedIn ? (
           reportForm.isEmailConfirmed ? (
             <Form method="post" className="mt-2 flex flex-col gap-3">
+              <input type="hidden" name="intent" value="report" />
               <h3 className="font-semibold text-ink-deep">{t("reports.formTitle")}</h3>
               <label htmlFor="conditions" className="text-sm font-semibold text-text-2">
                 {t("reports.conditionsLabel")}
@@ -648,10 +759,10 @@ export default function SpotDetailRoute({ loaderData, actionData }: Route.Compon
               <Button type="submit" variant="primary">
                 {t("reports.submit")}
               </Button>
-              {actionData && !actionData.ok ? (
-                <StatusBadge status="caution" label={t(actionData.errorKey)} />
+              {reportResult && !reportResult.ok ? (
+                <StatusBadge status="caution" label={t(reportResult.errorKey)} />
               ) : null}
-              {actionData?.ok ? (
+              {reportResult?.ok ? (
                 <StatusBadge status="safe" label={t("reports.success")} />
               ) : null}
             </Form>

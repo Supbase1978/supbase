@@ -5797,3 +5797,72 @@ látszik.
 
 **Kapuk:** typecheck · lint · test · e2e `public-paths.spec.ts`
 (chromium + mobile) — mind zöld.
+
+### Kézi frissítés + pontos adatkor + térkép-nagyítás/útvonal (2026-10-02)
+
+A 30 perces frissítési ciklus mellé kézi "Frissítés most" gomb, pontos
+adatkor-felirat elavult állapotban, nagyítható/mozgatható térkép és
+"Útvonal" link érkezett — a backend (`requestSpotRefresh` /
+`request_spot_refresh()` DB-függvény, spotonkénti 10 perces throttle,
+`supabase/migrations/20260717099800_spots_manual_refresh.sql`) már korábban
+elkészült, ez a munkamenet a UI-oldalt kötötte be.
+
+- **Pontos adatkor elavultnál** (`src/core/ui/data-age.ts`, `describeAge`):
+  a puszta "Elavult adat" felirat napokkal régebbinek tűnhetett, mint
+  amennyi valójában eltelt. Az új helper percre/órára/napra bontja a kort
+  (< 60 perc → perc, < 24 óra → óra, egyébként nap; a bucket-választás a
+  KEREKÍTETT értéken alapul, hogy a kerekítés ne billentsen át egység-
+  határon — pl. 59,6 percből sosem lesz "60 perce"). A `core` namespace
+  `dataAge.stale{Minutes,Hours,Days}Ago_one/_other` plurálkulcsaiból a
+  `STALE_AGE_KEYS` térkép választ ("Elavult adat · 38 perce frissült" / "·
+  3 órája frissült" / "· 2 napja frissült", en: "Outdated data · updated 38
+  min ago" stb.) — a 30 perces küszöb és az "Elavult adat" szöveg
+  változatlan (biztonsági szabály), csak a kor került mellé. Hívási
+  helyek: `app/routes/spotok.$slug.tsx` fejléce és `SpotCard.tsx` (mindkettő
+  saját, szándékosan duplikált `staleAgeLabel` helperrel, a modul-szerződés
+  szerint).
+- **"Frissítés most" gomb** (`src/modules/spots/ui/RefreshButton.tsx`, új
+  `Button`-variáns: `outline`, petrol vonalas, NEM amber CTA, NEM danger):
+  saját `useFetcher`-rel POST-ol `intent=refresh`-sel a spot `/spotok/<slug>`
+  route-jára. A route-action (`spotok.$slug.tsx`) mostantól KÉT intent-ágat
+  kezel: `refresh` (PUBLIKUS — a kézi frissítés nem felhasználó-tulajdonú
+  tartalom, a visszaélés ellen a DB-oldali throttle véd, nem a bejelentkezés)
+  és `report` (változatlanul védett, a jelentés-`Form` most már
+  `intent=report` rejtett mezőt küld). Minden más intent vagy nem-POST
+  hívás 400-at ad. `queued` válasz után a kliens 6 és 15 másodperc múlva
+  `useRevalidator().revalidate()`-et hív (legfeljebb kétszer, unmountkor
+  törölve) — a snapshot aszinkron íródik be. A gomb a spot-adatlap fejlécén
+  ÉS a `SpotCard`-on is megjelenik; a kártyán a `Link`-en KÍVÜLI
+  testvér-elemként (gomb gombon/linken belül érvénytelen HTML lenne).
+- **Térkép-nagyítás** (`SpotMap.tsx`): `+/−` `NavigationControl`
+  (`showCompass: false`) MINDIG hozzáadódik, `top-left`-re (a réteg-
+  kapcsolók jobb felül maradnak); a gombok `--tap-min` méretet kapnak egy,
+  a komponens saját `.sup-spot-map` wrapper-osztályára szűkített
+  CSS-szabállyal (`app/app.css`), hogy ne szivárogjon a maplibre-gl globális
+  CSS-ére. A réteg-kapcsolók megjelenítése új, az `interactive`-től
+  FÜGGETLEN `showLayerToggles` propra került (alapértelmezetten az
+  `interactive`-et követi — visszafelé kompatibilis). A spot-adatlap
+  mini-térképe `interactive={false}` helyett mostantól nagyítható/
+  mozgatható (`interactive` + `showLayerToggles={false}`), új
+  `cooperativeGestures` prop mellett: érintőképernyőn (`pointer: coarse`)
+  egy ujj görgeti az oldalt, két ujj mozgatja a térképet, egérrel a görgő
+  változatlanul közvetlenül nagyít (a `matchMedia`-ellenőrzés csak akkor fut,
+  ha a hívó kérte a propot — a lista-térkép nem kapta meg, ott nincs
+  változás).
+- **"Útvonal" link** (`src/core/geo/directions.ts` — `buildDirectionsUrl`,
+  tiszta helper, unit-teszttel; `src/modules/spots/ui/DirectionsLink.tsx`):
+  SSR-en és a kezdeti kliens-renderen mindig a Google Maps-útvonaltervezőre
+  mutat (fail-safe, nincs hydration-eltérés), a kliens-effekt UA-sniffeléssel
+  (iPhone/iPad/Mac) Apple Maps-re vált. `target="_blank" rel="noopener
+  noreferrer"`, a térkép alatt, a spot-adatlapon.
+
+Új tesztek: `data-age.test.ts` (`describeAge` egység-határok), `Button.test.tsx`
+(`outline` variáns), `SpotMap.test.tsx` (nagyítógomb mindig jelen van,
+`showLayerToggles` függetlensége, `cooperativeGestures` touch/egér-ág),
+`DirectionsLink.test.tsx`, `directions.test.ts`, `RefreshButton.test.tsx`
+(submit-hívás, állapot→szöveg leképezés, revalidáció-ütemezés és
+-unmountolás — a valódi `useFetcher`-t jsdom+vitest alatt egy cross-realm
+`URLSearchParams`-hiba instabillá tette, ezért a teszt a hookot mockolja).
+
+**Kapuk:** typecheck · lint · test (96 fájl / 1483 teszt) · e2e
+`public-paths.spec.ts` (32/32, chromium + mobile) — mind zöld.

@@ -48,6 +48,23 @@ export interface SpotMapProps {
   onSelect?: (slug: string) => void;
   /** `false`: pan/zoom-interakció kikapcsolva (pl. adatlap mini-térkép, nem interaktív fókusz). */
   interactive?: boolean;
+  /**
+   * A "Spotok"/"Védett területek" réteg-kapcsolók megjelenítése — KÜLÖN
+   * prop az `interactive`-től, mert egy interaktív (nagyítható/mozgatható)
+   * mini-térképen (pl. a spot-adatlapon) nincs értelme réteget kapcsolni,
+   * egyetlen spot van rajta. Alapértelmezetten az `interactive` értékét
+   * követi (visszafelé kompatibilis a korábbi viselkedéssel).
+   */
+  showLayerToggles?: boolean;
+  /**
+   * Mobilon (`pointer: coarse`) egy ujj görgeti az OLDALT, két ujj mozgatja
+   * a TÉRKÉPET — beágyazott, nem egész-oldalas térképeknél (pl. a spot-
+   * adatlap mini-térképe) hasznos, hogy a felhasználó ne ragadjon bele
+   * véletlenül a térképbe görgetés közben. Asztali egérrel a görgő
+   * VÁLTOZATLANUL közvetlenül nagyít — ez a viselkedés csak érintőképernyőn
+   * aktiválódik (lásd a `mounted`-effektben a `matchMedia` ellenőrzést).
+   */
+  cooperativeGestures?: boolean;
   className?: string;
 }
 
@@ -349,6 +366,8 @@ export function SpotMap({
   zoom,
   onSelect,
   interactive = true,
+  showLayerToggles = interactive,
+  cooperativeGestures = false,
   className,
 }: SpotMapProps) {
   const { t } = useTranslation("spots");
@@ -381,6 +400,15 @@ export function SpotMap({
     void (async () => {
       const maplibregl = await import("maplibre-gl");
       if (cancelled || !containerRef.current) return;
+      // `cooperativeGestures` csak akkor él, ha a hívó kérte ÉS a böngésző
+      // durva (touch) mutatóeszközt jelez — egérrel a görgő mindig közvetlenül
+      // nagyít, a `matchMedia` csak a kliensen létezik (SSR-biztos, az effekt
+      // maga is csak kliensen fut).
+      const coarsePointer =
+        cooperativeGestures &&
+        typeof window !== "undefined" &&
+        window.matchMedia("(pointer: coarse)").matches;
+
       instance = new maplibregl.Map({
         container: containerRef.current,
         style: MAP_STYLE_URL,
@@ -390,7 +418,12 @@ export function SpotMap({
         // explicit `{}` a típus miatt (nem `boolean`), lásd MapOptions.
         attributionControl: {},
         interactive,
+        cooperativeGestures: coarsePointer,
       });
+      // +/− nagyítógomb MINDIG jelen van (iránytű nélkül — a kompasz itt
+      // felesleges, a térkép nem forog). A `top-left`, mert a réteg-kapcsolók
+      // (ha vannak) jobb felül ülnek, lásd lent.
+      instance.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-left");
       if (cancelled) {
         instance.remove();
         return;
@@ -461,8 +494,11 @@ export function SpotMap({
 
   return (
     <div
+      // `sup-spot-map`: scope-olt szelektor az app.css-ben a MapLibre
+      // nagyítógombok (`.maplibregl-ctrl-group button`) --tap-min méretéhez —
+      // a globális maplibre-gl.css-t NEM írjuk felül máshol.
       className={cx(
-        "relative min-h-[220px] w-full overflow-hidden rounded-[var(--radius-card)] bg-mist",
+        "sup-spot-map relative min-h-[220px] w-full overflow-hidden rounded-[var(--radius-card)] bg-mist",
         className,
       )}
     >
@@ -472,7 +508,7 @@ export function SpotMap({
           <LoadingWave label={t("map.loading")} />
         </div>
       ) : null}
-      {interactive ? (
+      {showLayerToggles ? (
         <div className="absolute right-3 top-3 z-10 flex flex-col gap-2">
           <LayerToggle
             active={showSpots}

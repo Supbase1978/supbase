@@ -13,7 +13,9 @@ import {
   Card,
   cx,
   DataAge,
+  describeAge,
   minutesSince,
+  STALE_AGE_KEYS,
   StatusBadge,
   Waterline,
   type StatusSeverity,
@@ -21,6 +23,7 @@ import {
 } from "@core/ui";
 
 import type { Difficulty, SpotStatus, WaterType } from "../types";
+import { RefreshButton } from "./RefreshButton";
 
 export interface SpotCardSpot {
   id: string;
@@ -62,6 +65,20 @@ const WATERLINE_STATE: Record<SpotStatus, WaterlineState> = {
   forbidden: "broken",
 };
 
+/**
+ * "Elavult adat · 38 perce/3 órája/2 napja frissült" — a `core` namespace
+ * `dataAge.stale*Ago` plurál-kulcsaiból, a `describeAge` egység-bontása
+ * alapján (lásd a `data-age.ts` fájl-fejlécét: a puszta "Elavult adat"
+ * felirat napokkal régebbinek tűnhetne, mint amennyi valójában eltelt).
+ */
+function staleAgeLabel(
+  fetchedAt: string,
+  t: (key: string, options?: Record<string, unknown>) => string,
+): string {
+  const age = describeAge(fetchedAt);
+  return t(STALE_AGE_KEYS[age.unit], { ns: "core", count: age.count });
+}
+
 export function SpotCard({ spot, evaluation, className }: SpotCardProps) {
   const { t, i18n } = useTranslation("spots");
 
@@ -80,13 +97,32 @@ export function SpotCard({ spot, evaluation, className }: SpotCardProps) {
       : WATERLINE_STATE[evaluation.status]
     : null;
 
-  // Elavult adatnál a StatusBadge már kiadja a rövid "Elavult adat" feliratot
-  // (szín + ikon + szöveg) — a DataAge itt NEM ismételheti szó szerint,
-  // hanem a `stale.hint`-tel magyarázza MIÉRT (a 30 perces küszöb), ugyanúgy,
-  // ahogy a spot-adatlap (spotok.$slug.tsx) a badge mellé teszi a hint-et.
+  // Elavult adatnál a fejléc-jelvény SOHA nem állíthat aktuális státuszt
+  // (2. fejezet adatkor-szabály: "cache-elt viharjelzés soha nem jelenhet meg
+  // aktuálisként" — ez a "Kiváló"/"Tilos" szóra is vonatkozik, nem csak a
+  // viharjelzésre). A `SpotMap` ugyanígy felülírja a vizuált stale-re
+  // (`effectiveVisual`), ez a leképezés ugyanazt az elvet követi a
+  // kártya-jelvényen: forbidden+stale esetén is a semleges "Utolsó mérés"
+  // jelenik meg, NEM a "Tilos" szó (a valódi, aktuális tiltás a teljes
+  // képernyős `StormAlertScreen`-ben ÉL, az nem a kor-jelzéstől függ).
+  const headerSeverity: StatusSeverity | null = evaluation
+    ? stale
+      ? "stale"
+      : STATUS_SEVERITY[evaluation.status]
+    : null;
+  const headerLabel = evaluation
+    ? stale
+      ? // Tilos (viharjelzés) utolsó állapotot elavultan sem tüntetünk el
+        // csendben — múlt időben, --stale színnel mondjuk ki.
+        t("stale.lastReading", {
+          value: evaluation.status === "forbidden" ? statusWord : formattedIndex,
+        })
+      : statusLabel
+    : null;
+
   const dataAgeLabel = evaluation
     ? stale
-      ? t("stale.hint")
+      ? staleAgeLabel(evaluation.fetchedAt, t)
       : t("dataAge.updatedMinutesAgo", {
           ns: "core",
           minutes: Math.max(0, Math.round(minutesSince(evaluation.fetchedAt))),
@@ -100,7 +136,7 @@ export function SpotCard({ spot, evaluation, className }: SpotCardProps) {
         waterlineState ? (
           <Waterline
             state={waterlineState}
-            label={`${t("detail.supIndex")} — ${statusLabel ?? t("status.unknown")}`}
+            label={`${t("detail.supIndex")} — ${headerLabel ?? t("status.unknown")}`}
           />
         ) : undefined
       }
@@ -108,8 +144,8 @@ export function SpotCard({ spot, evaluation, className }: SpotCardProps) {
       <Link to={`/spotok/${spot.slug}`} className="flex flex-col gap-2.5">
         <div className="flex items-start justify-between gap-3">
           <span className="text-lg font-semibold text-ink-deep">{spot.name}</span>
-          {evaluation && statusLabel ? (
-            <StatusBadge status={STATUS_SEVERITY[evaluation.status]} label={statusLabel} />
+          {evaluation && headerLabel && headerSeverity ? (
+            <StatusBadge status={headerSeverity} label={headerLabel} />
           ) : null}
         </div>
 
@@ -121,8 +157,16 @@ export function SpotCard({ spot, evaluation, className }: SpotCardProps) {
 
         {evaluation ? (
           <div className="flex flex-wrap items-center gap-2">
-            {stale ? <StatusBadge status="stale" label={t("stale.label")} /> : null}
-            {dataAgeLabel ? <DataAge label={dataAgeLabel} stale={stale} /> : null}
+            {/* Elavult adatnál EGY címke viszi az állapotot és a kort is
+                ("Elavult adat · 50 perce frissült") — külön DataAge mellette
+                ugyanazt ismételné. */}
+            {dataAgeLabel ? (
+              stale ? (
+                <StatusBadge status="stale" label={dataAgeLabel} />
+              ) : (
+                <DataAge label={dataAgeLabel} />
+              )
+            ) : null}
             {evaluation.flags.offshoreWind ? (
               <span
                 className={cx(
@@ -142,6 +186,10 @@ export function SpotCard({ spot, evaluation, className }: SpotCardProps) {
           <p className="text-sm text-text-3">{t("detail.noSnapshot")}</p>
         )}
       </Link>
+      {/* TESTVÉR-elemként a Linken KÍVÜL: a Link maga is kattintható (az
+          egész kártya az adatlapra visz), egy gomb beágyazása bele érvénytelen
+          HTML (interaktív elem interaktív elemben) lenne. */}
+      <RefreshButton slug={spot.slug} className="self-start" />
     </Card>
   );
 }

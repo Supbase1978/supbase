@@ -23,13 +23,39 @@ A `*/index.ts` héjak a repo `tsconfig`-jából **kizárva** (Deno-globálisok,
 
 ## Funkciók
 
-### `weather-sync` — óránkénti
+### `weather-sync` — 30 percenkénti (`0,30 * * * *`)
 Minden spotra lekéri az Open-Meteo aktuális adatait, kiszámítja a SUP-indexet (a
 `supindex.*` konfigot az `advisor_weights`-ből olvasva), és `weather_snapshots`
 sort ír (`source='open-meteo'`). A `storm_level` az AKTUÁLIS ismert szint: a spot
 utolsó snapshotjának `storm_level`-jét viszi tovább (viharjelzést a `storm-alert`
 cron állít). Hibatűrő: egy spot hibája nem buktatja a batchet; a válasz összegző
 JSON (`{ total, ok, failed, errors }`).
+
+**Kérés-törzs (opcionális, `parseSyncRequest`, `_shared/weather-sync.ts`):** `{}`
+vagy üres body → MINDEN spot (cron, változatlan viselkedés); `{ "spot_ids":
+["<uuid>", ...] }` → csak a felsorolt spotok (max 50, UUID-alak kötelező).
+Érvénytelen alak (nem objektum, nem tömb, rossz típusú/alakú elem, túl sok elem,
+üres tömb) → `400`, a batch el sem indul.
+
+**Kézi frissítés (spotonként, visszaélés-biztosan — `20260717099800`):** a
+webszerver (Netlify SSR) SZÁNDÉKOSAN nem kap service-role kulcsot, ezért a
+"Frissítsd most" gomb NEM hívhatja közvetlenül ezt az Edge Functiont. A folyam:
+
+1. A route-action az `src/modules/spots/data/spots.server.ts`
+   `requestSpotRefresh()` wrapperén át meghívja a `request_spot_refresh(p_spot_id
+   uuid)` SECURITY DEFINER DB-függvényt (anon ÉS authenticated hívhatja).
+2. A függvény 10 percenként enged spotonként legfeljebb egy frissítést
+   (`spot_refresh_requests` throttle-tábla, RLS policy nélkül zárva — csak a
+   függvényen át érhető el), és a Vault `edge_invoke_key`-jével, `pg_net`-tel
+   maga hívja meg ezt a functiont `{ "spot_ids": ["<a kért spot>"] }` törzzsel
+   — UGYANAZZAL az úttal és Authorization-mintával, mint a cron.
+3. Visszatérés a hívó felé: `queued` (elindult) · `fresh` (10 percnél nem
+   régebbi snapshot van, felesleges újrakérni) · `throttled` (túl gyakori
+   kérés) · `not_found` · `unavailable` (pl. hiányzó Vault-kulcs — a UI ezt is
+   barátságos üzenetként kezeli, SOHA nem dob).
+
+A 10 perces küszöb indoklása (Open-Meteo ingyenes keret, ~10 000 hívás/nap) a
+migráció kommentjében.
 
 ### `storm-alert` — 5 percenként a szezonban (ápr–okt)
 A BM OKF / OMSZ viharjelzés-oldal scrape-elése → körzetenkénti szint (0/1/2) →
@@ -151,7 +177,9 @@ Kétféle út; válassz egyet.
 ### A) Supabase Dashboard — Scheduled Functions (ajánlott)
 Dashboard → Edge Functions → adott függvény → **Schedules** → új cron:
 
-- `weather-sync`: `0 * * * *` (óránként, perc 0).
+- `weather-sync`: `0,30 * * * *` (30 percenként, a kézi frissítés gomb mellett
+  is friss marad az adat — lásd lentebb a `cron.alter_job`-ot, ha élesben már
+  fut az óránkénti verzió).
 - `storm-alert`: `*/5 * * * *` (5 percenként) — **de csak a szezonban**. A cron
   önmagában nem tud „ápr–okt”-ot; két lehetőség: (1) a szezon elején kézzel
   bekapcsolod, végén kikapcsolod; vagy (2) a hónapmezővel: `*/5 * * 4-10 *`
@@ -163,10 +191,10 @@ Előfeltétel: a `pg_cron` és `pg_net` extension engedélyezve (Dashboard →
 Database → Extensions). A függvény-URL és a kulcs behelyettesítendő.
 
 ```sql
--- Óránkénti weather-sync
+-- 30 percenkénti weather-sync
 select cron.schedule(
   'weather-sync-hourly',
-  '0 * * * *',
+  '0,30 * * * *',
   $$
   select net.http_post(
     url     := 'https://<PROJECT-REF>.supabase.co/functions/v1/weather-sync',
@@ -204,6 +232,19 @@ select cron.schedule(
 > scheduled-functions útját használd (A pont), vagy a kulcsot Vault/DB-settingből
 > (`current_setting(...)`) húzd, ne literálként.
 
+### Már élő óránkénti job átállítása 30 percesre
+
+Ha a `weather-sync-hourly` már fut élesben `0 * * * *` ütemmel (ez volt az
+eredeti beállítás), a job NEM törlendő/újra-létrehozandó — a jobname
+megmarad, csak az ütemezés változik:
+
+```sql
+select cron.alter_job(
+  job_id   := (select jobid from cron.job where jobname = 'weather-sync-hourly'),
+  schedule := '0,30 * * * *'
+);
+```
+
 ## Ami kézi/deploy-lépésnek marad
 
 - A tényleges `functions deploy` és a cron **bekötése** (ez a runbook, nem CI).
@@ -214,3 +255,9 @@ select cron.schedule(
   migráció kitolása. A HydroInfo vízállás-forrás (5.1/6, folyó-korrekció)
   továbbra is külön feladat.
 - Tenger-spot vízhő (`includeMarine=true`) — F1-ben minden belvíz-spot `false`.
+- **Kézi spot-frissítés élesítése**: a `20260717099800_spots_manual_refresh.sql`
+  migráció kitolása (`npm run sb -- db push`), a `weather-sync` ÚJRA-deployolása
+  (a `spot_ids`-szűrés kódja már benne van), és a cron átállítása 30 percesre
+  (`cron.alter_job`, lásd fent) — ezek nélkül a kézi gomb `unavailable`-t ad
+  (a DB-függvény hiánya miatt a kliens-RPC 404/42883-at kapna, amit a wrapper
+  `unavailable`-ként nyel el), illetve a snapshot 60 percig marad „fresh”-nek.

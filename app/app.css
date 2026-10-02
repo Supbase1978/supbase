@@ -50,3 +50,12 @@ body {
   color: var(--text);
   font-family: var(--font-body), sans-serif;
 }
+
+/* SpotMap (MapLibre) +/- nagyítógombok — min. 44px tap-target (--tap-min).
+   A szelektor a komponens saját `.sup-spot-map` wrapper-osztályára szűkítve,
+   hogy ne szivárogjon a MapLibre globális CSS-ének más (jövőbeli) haszná-
+   latára — lásd src/modules/spots/ui/SpotMap.tsx. */
+.sup-spot-map .maplibregl-ctrl-group button {
+  width: var(--tap-min);
+  height: var(--tap-min);
+}

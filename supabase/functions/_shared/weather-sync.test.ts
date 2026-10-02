@@ -8,10 +8,14 @@ import { DEFAULT_SUPINDEX_CONFIG } from "./sup-index.ts";
 import type { WeatherSnapshotDraft } from "./open-meteo.ts";
 import {
   buildSnapshotRow,
+  parseSyncRequest,
   runWeatherSync,
   type SyncSpot,
 } from "./weather-sync.ts";
 import type { WeatherSnapshotRow } from "./types.ts";
+
+const UUID_A = "11111111-1111-1111-1111-111111111111";
+const UUID_B = "22222222-2222-2222-2222-222222222222";
 
 function spot(id: string, over: Partial<SyncSpot> = {}): SyncSpot {
   return {
@@ -202,5 +206,83 @@ describe("folyó-spotok vízállás-korrekciója (5.1/6)", () => {
     );
     expect(inserted.map((r) => r.river_alert_level)).toEqual([2, null, null]);
     expect(inserted.map((r) => r.sup_index)).toEqual([2, 9, 10]);
+  });
+});
+
+describe("parseSyncRequest — kérés-törzs validálás", () => {
+  it.each([null, undefined])(
+    "%s body → spotIds: null (minden spot, a cron változatlan viselkedése)",
+    (body) => {
+      expect(parseSyncRequest(body)).toEqual({ spotIds: null });
+    },
+  );
+
+  it("üres objektum → spotIds: null", () => {
+    expect(parseSyncRequest({})).toEqual({ spotIds: null });
+  });
+
+  it("spot_ids: undefined mezővel rendelkező objektum → spotIds: null", () => {
+    expect(parseSyncRequest({ spot_ids: undefined })).toEqual({ spotIds: null });
+  });
+
+  it("érvényes UUID-tömb → pontosan azokat a spotIds-eket adja vissza", () => {
+    expect(parseSyncRequest({ spot_ids: [UUID_A, UUID_B] })).toEqual({
+      spotIds: [UUID_A, UUID_B],
+    });
+  });
+
+  it("egyetlen elemű tömb (a kézi frissítés RPC-je ezt küldi)", () => {
+    expect(parseSyncRequest({ spot_ids: [UUID_A] })).toEqual({ spotIds: [UUID_A] });
+  });
+
+  it.each([
+    ["sima string", "nem-objektum"],
+    ["szám", 42],
+    ["tömb (a body maga, nem spot_ids alatt)", [UUID_A]],
+  ])("nem-objektum body (%s) → hiba", (_label, body) => {
+    const result = parseSyncRequest(body);
+    expect("error" in result).toBe(true);
+  });
+
+  it("spot_ids nem tömb → hiba", () => {
+    const result = parseSyncRequest({ spot_ids: UUID_A });
+    expect("error" in result).toBe(true);
+  });
+
+  it("üres spot_ids tömb → hiba", () => {
+    const result = parseSyncRequest({ spot_ids: [] });
+    expect("error" in result).toBe(true);
+  });
+
+  it("51 elemű spot_ids tömb → hiba (max 50)", () => {
+    const tooMany = Array.from({ length: 51 }, (_, i) =>
+      `11111111-1111-1111-1111-${String(i).padStart(12, "0")}`,
+    );
+    const result = parseSyncRequest({ spot_ids: tooMany });
+    expect("error" in result).toBe(true);
+  });
+
+  it("pontosan 50 elemű spot_ids tömb → ELFOGADVA (határérték)", () => {
+    const fifty = Array.from({ length: 50 }, (_, i) =>
+      `11111111-1111-1111-1111-${String(i).padStart(12, "0")}`,
+    );
+    const result = parseSyncRequest({ spot_ids: fifty });
+    expect("error" in result).toBe(false);
+    expect("spotIds" in result && result.spotIds).toEqual(fifty);
+  });
+
+  it("nem-UUID-alakú elem a spot_ids-ben → hiba", () => {
+    const result = parseSyncRequest({ spot_ids: ["nem-egy-uuid"] });
+    expect("error" in result).toBe(true);
+  });
+
+  it("vegyes típusú elem (szám a tömbben) → hiba", () => {
+    const result = parseSyncRequest({ spot_ids: [UUID_A, 123] });
+    expect("error" in result).toBe(true);
+  });
+
+  it("nagybetűs UUID is elfogadott (kis/nagybetű-érzéketlen)", () => {
+    const result = parseSyncRequest({ spot_ids: [UUID_A.toUpperCase()] });
+    expect(result).toEqual({ spotIds: [UUID_A.toUpperCase()] });
   });
 });

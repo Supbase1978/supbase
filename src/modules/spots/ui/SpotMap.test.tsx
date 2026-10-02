@@ -30,6 +30,11 @@ vi.mock("maplibre-gl", () => {
     // futásban — a kezeletlen hiba viszont ELFEDHET valódi regressziót.
     once = vi.fn();
     off = vi.fn();
+    addControl = vi.fn();
+  }
+
+  class FakeNavigationControl {
+    constructor(public options: Record<string, unknown>) {}
   }
 
   class FakeMarker {
@@ -51,7 +56,12 @@ vi.mock("maplibre-gl", () => {
     }
   }
 
-  return { Map: FakeMap, Marker: FakeMarker, Popup: FakePopup };
+  return {
+    Map: FakeMap,
+    Marker: FakeMarker,
+    Popup: FakePopup,
+    NavigationControl: FakeNavigationControl,
+  };
 });
 
 const SPOTS: SpotMapMarker[] = [
@@ -125,5 +135,49 @@ describe("SpotMap", () => {
 
     const protectedToggle = screen.getByRole("button", { name: "Védett területek" });
     expect(protectedToggle.getAttribute("aria-pressed")).toBe("true");
+  });
+
+  it("interactive=true + showLayerToggles=false esetén nincs réteg-kapcsoló (pl. a spot-adatlap mini-térképe)", async () => {
+    render(withI18n(<SpotMap spots={SPOTS} interactive showLayerToggles={false} />));
+    await waitFor(() => expect(hoisted.instances).toHaveLength(1));
+    expect(screen.queryByRole("button", { name: "Spotok" })).toBeNull();
+  });
+
+  it("a +/- nagyítógomb MINDIG hozzáadódik, iránytű nélkül, top-left pozícióba", async () => {
+    render(withI18n(<SpotMap spots={SPOTS} interactive={false} />));
+    await waitFor(() => expect(hoisted.instances).toHaveLength(1));
+
+    const instance = hoisted.instances[0] as unknown as {
+      addControl: ReturnType<typeof vi.fn>;
+    };
+    expect(instance.addControl).toHaveBeenCalledTimes(1);
+    const [control, position] = instance.addControl.mock.calls[0] as [
+      { options: Record<string, unknown> },
+      string,
+    ];
+    expect(control.options).toEqual({ showCompass: false });
+    expect(position).toBe("top-left");
+  });
+
+  it("cooperativeGestures=true ÉS durva (touch) mutatóeszköznél bekapcsolja a kooperatív gesztusokat", async () => {
+    vi.stubGlobal(
+      "matchMedia",
+      vi.fn().mockReturnValue({ matches: true } as unknown as MediaQueryList),
+    );
+    render(withI18n(<SpotMap spots={SPOTS} cooperativeGestures />));
+    await waitFor(() => expect(hoisted.instances).toHaveLength(1));
+    expect(hoisted.instances[0]?.options.cooperativeGestures).toBe(true);
+    vi.unstubAllGlobals();
+  });
+
+  it("cooperativeGestures=true, de egér (finom mutatóeszköz) mellett NEM kapcsol be — a görgő közvetlenül nagyít", async () => {
+    vi.stubGlobal(
+      "matchMedia",
+      vi.fn().mockReturnValue({ matches: false } as unknown as MediaQueryList),
+    );
+    render(withI18n(<SpotMap spots={SPOTS} cooperativeGestures />));
+    await waitFor(() => expect(hoisted.instances).toHaveLength(1));
+    expect(hoisted.instances[0]?.options.cooperativeGestures).toBe(false);
+    vi.unstubAllGlobals();
   });
 });

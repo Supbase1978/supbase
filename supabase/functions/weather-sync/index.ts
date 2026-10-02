@@ -1,10 +1,18 @@
 /**
- * weather-sync — Deno Edge Function (vékony héj), óránkénti cron.
+ * weather-sync — Deno Edge Function (vékony héj), 30 percenkénti cron
+ * (`0,30 * * * *`) ÉS kézi, egy-spotos hívás (`request_spot_refresh()` RPC,
+ * `supabase/migrations/20260717099800_spots_manual_refresh.sql`).
  *
  * FELELŐSSÉG: valós I/O bekötése a _shared TISZTA batch-logikájába. Minden
- * érdemi döntés (SUP-index, hibatűrés, sor-építés) a `_shared/weather-sync.ts`-
- * ben él, Vitesttel tesztelve. Ez a fájl NEM tesztelt és NEM typecheckelt a repo
- * `tsc`-jével (Deno-runtime; kizárva a tsconfigból) — Deno deploy fordítja.
+ * érdemi döntés (SUP-index, hibatűrés, sor-építés, body-validálás) a
+ * `_shared/weather-sync.ts`-ben él, Vitesttel tesztelve. Ez a fájl NEM tesztelt
+ * és NEM typecheckelt a repo `tsc`-jével (Deno-runtime; kizárva a tsconfigból)
+ * — Deno deploy fordítja.
+ *
+ * KÉRÉS-TÖRZS (opcionális): `{}` vagy üres body → MINDEN spot (cron,
+ * változatlan viselkedés); `{ "spot_ids": ["<uuid>", ...] }` → csak azok (a
+ * kézi frissítés RPC-je pontosan egy elemű tömböt küld). Érvénytelen alak →
+ * 400, a batch el sem indul (`parseSyncRequest`, `_shared/weather-sync.ts`).
  *
  * ENV (Supabase automatikusan injektálja): SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY.
  * A service_role kulcs megkerüli az RLS-t — a weather_snapshots-ba csak így írható.
@@ -20,6 +28,7 @@ import {
   type AdvisorWeightRow,
 } from "../_shared/sup-index.ts";
 import {
+  parseSyncRequest,
   runWeatherSync,
   type RiverGaugeState,
   type SyncSpot,
@@ -82,7 +91,30 @@ function stormLevelOf(value: unknown): StormLevel {
   return value === 1 ? 1 : value === 2 ? 2 : 0;
 }
 
-Deno.serve(async () => {
+Deno.serve(async (req) => {
+  // 0) Kérés-törzs validálása ELSŐKÉNT — érvénytelen alaknál a batch el sem
+  // indul (nincs felesleges DB-/Open-Meteo-hívás egy rossz kérésért).
+  let rawBody: unknown = null;
+  const bodyText = await req.text();
+  if (bodyText.length > 0) {
+    try {
+      rawBody = JSON.parse(bodyText);
+    } catch {
+      return new Response(
+        JSON.stringify({ error: "Érvénytelen JSON a kérés törzsében." }),
+        { status: 400, headers: { "content-type": "application/json" } },
+      );
+    }
+  }
+  const parsedRequest = parseSyncRequest(rawBody);
+  if ("error" in parsedRequest) {
+    return new Response(JSON.stringify({ error: parsedRequest.error }), {
+      status: 400,
+      headers: { "content-type": "application/json" },
+    });
+  }
+  const { spotIds } = parsedRequest;
+
   const url = Deno.env.get("SUPABASE_URL");
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   if (!url || !serviceKey) {
@@ -104,9 +136,15 @@ Deno.serve(async () => {
   const config = parseSupIndexConfig((weightRows ?? []) as AdvisorWeightRow[]);
 
   // 2) Spotok (PostGIS geom → GeoJSON a PostgREST-től: coordinates [lon, lat]).
-  const { data: spotRows, error: spotErr } = await supabase
+  // `spotIds === null` → minden spot (cron, változatlan viselkedés); egyébként
+  // csak a kért spot(ok) — lásd `parseSyncRequest` (kézi frissítés RPC).
+  let spotsQuery = supabase
     .from("spots")
     .select("id, water_type, shore_bearing_deg, geom, vizugy_tsz");
+  if (spotIds !== null) {
+    spotsQuery = spotsQuery.in("id", spotIds);
+  }
+  const { data: spotRows, error: spotErr } = await spotsQuery;
   if (spotErr) {
     return new Response(JSON.stringify({ error: spotErr.message }), {
       status: 500,
