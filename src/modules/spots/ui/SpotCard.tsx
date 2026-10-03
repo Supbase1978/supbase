@@ -13,9 +13,8 @@ import {
   Card,
   cx,
   DataAge,
-  describeAge,
   minutesSince,
-  STALE_AGE_KEYS,
+  staleAgeLabel,
   StatusBadge,
   Waterline,
   type StatusSeverity,
@@ -64,20 +63,6 @@ const WATERLINE_STATE: Record<SpotStatus, WaterlineState> = {
   danger: "broken",
   forbidden: "broken",
 };
-
-/**
- * "Elavult adat · 38 perce/3 órája/2 napja frissült" — a `core` namespace
- * `dataAge.stale*Ago` plurál-kulcsaiból, a `describeAge` egység-bontása
- * alapján (lásd a `data-age.ts` fájl-fejlécét: a puszta "Elavult adat"
- * felirat napokkal régebbinek tűnhetne, mint amennyi valójában eltelt).
- */
-function staleAgeLabel(
-  fetchedAt: string,
-  t: (key: string, options?: Record<string, unknown>) => string,
-): string {
-  const age = describeAge(fetchedAt);
-  return t(STALE_AGE_KEYS[age.unit], { ns: "core", count: age.count });
-}
 
 export function SpotCard({ spot, evaluation, className }: SpotCardProps) {
   const { t, i18n } = useTranslation("spots");

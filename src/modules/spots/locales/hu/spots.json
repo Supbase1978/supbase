@@ -45,6 +45,11 @@
     "lastReading": "Utolsó mérés: {{value}}",
     "asOfSentence": "Utolsó mérés szerint: {{sentence}}"
   },
+  "staleAlert": {
+    "title": "Utolsó ismert állapot: viharjelzés",
+    "body": "{{age}} frissült adat szerint viharjelzés volt érvényben. Indulás előtt ellenőrizd a hivatalos forrást.",
+    "sourceLink": "Hivatalos forrás megtekintése"
+  },
   "flag": {
     "offshoreWind": "Besodró szél",
     "offshoreWindHint": "A szél a part felől a nyílt víz felé sodor — a parttól ne távolodj el.",
@@ -65,6 +70,7 @@
     "pending": "Frissítés…",
     "result": {
       "queued": "Frissítés elindítva — pár másodperc",
+      "updated": "Frissítve",
       "fresh": "Az adat friss",
       "throttled": "Nemrég frissítettük — próbáld pár perc múlva",
       "unavailable": "A frissítés most nem elérhető"

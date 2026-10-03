@@ -19,6 +19,7 @@
  */
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
+import { isServiceRoleRequest } from "../_shared/auth.ts";
 import {
   fetchOpenMeteoSnapshot,
   type WeatherSnapshotDraft,
@@ -92,6 +93,17 @@ function stormLevelOf(value: unknown): StormLevel {
 }
 
 Deno.serve(async (req) => {
+  // -1) Szerepkör-ellenőrzés A LEGELSŐ lépés — a gateway `verify_jwt`-je csak
+  // az aláírást nézi, bármely bejelentkezett user access tokenje átmenne
+  // rajta. Ezt a functiont KIZÁRÓLAG a cron és a `request_spot_refresh()`
+  // DB-függvény hívhatja, service_role JWT-vel (lásd `_shared/auth.ts`).
+  if (!isServiceRoleRequest(req.headers.get("authorization"))) {
+    return new Response(JSON.stringify({ error: "forbidden" }), {
+      status: 403,
+      headers: { "content-type": "application/json" },
+    });
+  }
+
   // 0) Kérés-törzs validálása ELSŐKÉNT — érvénytelen alaknál a batch el sem
   // indul (nincs felesleges DB-/Open-Meteo-hívás egy rossz kérésért).
   let rawBody: unknown = null;

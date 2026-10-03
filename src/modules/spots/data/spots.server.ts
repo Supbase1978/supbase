@@ -9,10 +9,15 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   isReportConditions,
   type ReportConditions,
+  type SpotRefreshResult,
   type SpotReportRow,
   type SpotRow,
   type WeatherSnapshotRow,
 } from "../types";
+
+// Re-exportálva, hogy a hívók (pl. `RefreshButton`) a modul `types.ts`
+// publikus típus-felületéből importálhassák, ne a `.server` adatrétegből.
+export type { SpotRefreshResult } from "../types";
 
 export async function listSpots(supabase: SupabaseClient): Promise<SpotRow[]> {
   const { data, error } = await supabase
@@ -151,14 +156,6 @@ export type InsertReportResult =
  * ellenőrzésben) — ez a validáció csak a barátságos hibaüzenetért van, hogy
  * ne egy nyers Postgres-hibakódot kapjon a felhasználó.
  */
-/**
- * A `request_spot_refresh()` DB-függvény (3.1/`20260717099800`) lehetséges
- * válaszai. `"unavailable"` a fallback MINDEN hiba- vagy ismeretlen-válasz
- * esetén — ez a UI-nak soha nem ok a dobásra, legfeljebb egy barátságos
- * "most nem sikerült" üzenetre.
- */
-export type SpotRefreshResult = "queued" | "fresh" | "throttled" | "not_found" | "unavailable";
-
 const SPOT_REFRESH_RESULTS = new Set<SpotRefreshResult>([
   "queued",
   "fresh",

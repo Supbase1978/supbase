@@ -116,3 +116,13 @@ export type WaterTrend = "rising" | "falling" | "stable";
 
 /** Árvízvédelmi készültségi fok: 0 = nincs · 1/2/3 = I./II./III. fok. */
 export type RiverAlertLevel = 0 | 1 | 2 | 3;
+
+/**
+ * A `request_spot_refresh()` DB-függvény (3.1/`20260717099800`) lehetséges
+ * válaszai. `"unavailable"` a fallback MINDEN hiba- vagy ismeretlen-válasz
+ * esetén — ez a UI-nak soha nem ok a dobásra, legfeljebb egy barátságos
+ * "most nem sikerült" üzenetre. A típus ide (nem a `data/spots.server.ts`-be)
+ * tartozik, hogy a `RefreshButton` (és más UI) a modul publikus
+ * típus-felületéből, ne a szerver-adatrétegből importálja.
+ */
+export type SpotRefreshResult = "queued" | "fresh" | "throttled" | "not_found" | "unavailable";

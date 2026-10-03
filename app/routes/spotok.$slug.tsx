@@ -25,18 +25,20 @@ import { absoluteUrl, buildPageSeo } from "@core/seo/page-seo";
 import { placeJsonLd } from "@core/seo/jsonld";
 import { JsonLd } from "@core/seo/json-ld";
 import {
+  ageAgoLabel,
   Button,
   Card,
   DataAge,
-  describeAge,
   Gauge,
   minutesSince,
   SafetyNote,
-  STALE_AGE_KEYS,
+  staleAgeLabel,
   StatusBadge,
 } from "@core/ui";
 import { SpotMap } from "@modules/spots/ui/SpotMap";
 import { StormAlertScreen } from "@modules/spots/ui/StormAlertScreen";
+import { StormAlertStaleBanner } from "@modules/spots/ui/StormAlertStaleBanner";
+import { officialStormSourceUrl } from "@modules/spots/stormSourceUrl";
 import { WATER_STALE_MINUTES, WaterLevel } from "@modules/spots/ui/WaterLevel";
 import {
   getLatestSnapshot,
@@ -44,7 +46,6 @@ import {
   insertReport,
   listReports,
   requestSpotRefresh,
-  type SpotRefreshResult,
 } from "@modules/spots/data/spots.server";
 import { DirectionsLink } from "@modules/spots/ui/DirectionsLink";
 import { RefreshButton } from "@modules/spots/ui/RefreshButton";
@@ -52,6 +53,7 @@ import { pointFromGeom } from "@modules/spots/data/wkb";
 import {
   isReportConditions,
   REPORT_CONDITIONS,
+  type SpotRefreshResult,
   type SpotRow,
   type SpotStatus,
   type WeatherSnapshotRow,
@@ -283,7 +285,10 @@ export async function action({ request, params }: Route.ActionArgs) {
   if (intent === "refresh") {
     const spotRow = await getSpotBySlug(supabase, slug);
     if (!spotRow) {
-      throw new Response("Not Found", { status: 404 });
+      // NEM 404: a `RefreshButton` fetcherből hívja, ami egy válasz-DTO-t vár
+      // (nem navigáció) — egy dobott 404 a hívó oldali hibahatárt ütné el
+      // ahelyett, hogy a gomb a barátságos "most nem elérhető" üzenetet adná.
+      return data<RefreshActionResult>({ refresh: "not_found" }, { headers });
     }
     const refresh = await requestSpotRefresh(supabase, spotRow.id);
     return data<RefreshActionResult>({ refresh }, { headers });
@@ -345,19 +350,6 @@ const STATUS_SEVERITY: Record<SpotStatus, "safe" | "caution" | "danger"> = {
   forbidden: "danger",
 };
 
-/**
- * "Elavult adat · 38 perce/3 órája/2 napja frissült" — lásd a `SpotCard`
- * azonos nevű helperének kommentjét (szándékos duplikáció, modul-szerződés:
- * a route-réteg nem importálhat a spots-modul UI-belsejéből ezen felül).
- */
-function staleAgeLabel(
-  fetchedAt: string,
-  t: (key: string, options?: Record<string, unknown>) => string,
-): string {
-  const age = describeAge(fetchedAt);
-  return t(STALE_AGE_KEYS[age.unit], { ns: "core", count: age.count });
-}
-
 export default function SpotDetailRoute({ loaderData, actionData }: Route.ComponentProps) {
   const { t, i18n } = useTranslation("spots");
   // A póráz-szabály KÖZÖS igény (spots + advisor), ezért a core namespace-ben
@@ -384,10 +376,12 @@ export default function SpotDetailRoute({ loaderData, actionData }: Route.Compon
   // Elavult adatnál a fejléc-jelvény SOHA nem állíthat aktuális státuszt
   // (2. fejezet adatkor-szabály — lásd a `SpotCard` azonos nevű jelvényének
   // kommentjét, szándékos duplikáció a modul-szerződés miatt). Forbidden+
-  // stale esetén is a semleges "Utolsó mérés" jelenik meg itt — a valódi,
-  // aktuális tiltást a `StormAlertScreen` adja, FÜGGETLENÜL a kortól (lásd
-  // lent, a komponens eleji feltételt), tehát a jelvény szelídítése itt nem
-  // gyengíti a figyelmeztetést.
+  // stale esetén is a semleges "Utolsó mérés" jelenik meg itt — a valódi
+  // figyelmeztetést lent a `StormAlertStaleBanner` (stale: múlt időben,
+  // --stale jelöléssel) VAGY a `StormAlertScreen` (friss: aktuális, teljes
+  // képernyős riasztás) adja, a KORTÓL FÜGGŐEN (lásd lent, a komponens eleji
+  // feltételt, 2026-10-02 felhasználói döntés) — a jelvény szelídítése itt
+  // nem gyengíti a figyelmeztetést, mert a banner/screen ugyanúgy megjelenik.
   const headerBadgeSeverity: "safe" | "caution" | "danger" | "stale" | null = evaluation
     ? evaluation.stale
       ? "stale"
@@ -405,20 +399,33 @@ export default function SpotDetailRoute({ loaderData, actionData }: Route.Compon
   return (
     <main className="mx-auto flex min-h-svh max-w-5xl flex-col gap-6 p-4 sm:p-6">
       {jsonLd ? <JsonLd data={jsonLd} /> : null}
-      {/* Teljes képernyős, NEM eldugható riasztás a tartalom FÖLÉ (2. fejezet
-          4. pont; F1.3-reviewer m5). KÉT OK: II. fokú viharjelzés VAGY III.
-          fokú árvízi készültség — a szöveg és a menekülési tanács ehhez
-          igazodik. Ha mindkettő fennáll, a viharjelzés győz: a szél az
-          azonnal ható tényező. */}
+      {/* FRISS forbidden → teljes képernyős, NEM eldugható riasztás a
+          tartalom FÖLÉ (2. fejezet 4. pont; F1.3-reviewer m5). KÉT OK: II.
+          fokú viharjelzés VAGY III. fokú árvízi készültség — a szöveg és a
+          menekülési tanács ehhez igazodik. Ha mindkettő fennáll, a
+          viharjelzés győz: a szél az azonnal ható tényező.
+          ELAVULT (30 percnél régebbi) forbidden → NEM ez jelenik meg: cache-
+          elt viharjelzés SOHA nem jelenhet meg aktuálisként (2. fejezet
+          adatkor-szabály). Helyette a `StormAlertStaleBanner` — feltűnő,
+          teljes szélességű, de NEM modális sáv, MÚLT IDŐBEN, --stale
+          jelöléssel, a hivatalos forrásra mutató linkkel (2026-10-02
+          felhasználói döntés). */}
       {evaluation?.status === "forbidden" && snapshot ? (
-        <StormAlertScreen
-          variant={snapshot.stormLevel === 2 ? "storm" : "flood"}
-          spotName={spot.name}
-          source={snapshot.source}
-          updatedAt={snapshot.fetchedAt}
-          gustKmh={snapshot.gustKmh}
-          waterLevelCm={snapshot.waterLevelCm}
-        />
+        evaluation.stale ? (
+          <StormAlertStaleBanner
+            ageLabel={ageAgoLabel(evaluation.fetchedAt, t)}
+            sourceUrl={officialStormSourceUrl(spot.stormWarningRegion)}
+          />
+        ) : (
+          <StormAlertScreen
+            variant={snapshot.stormLevel === 2 ? "storm" : "flood"}
+            spotName={spot.name}
+            source={snapshot.source}
+            updatedAt={snapshot.fetchedAt}
+            gustKmh={snapshot.gustKmh}
+            waterLevelCm={snapshot.waterLevelCm}
+          />
+        )
       ) : null}
 
       <header className="flex flex-col gap-2">
@@ -473,7 +480,16 @@ export default function SpotDetailRoute({ loaderData, actionData }: Route.Compon
               value={evaluation.index}
               thresholds={gaugeThresholds}
               stale={evaluation.stale}
-              label={`${t("detail.supIndex")} ${formattedIndex}, ${statusLabel}`}
+              // Elavultnál a mérce aria-labelje SE állítson aktuális
+              // státuszt — ugyanaz a szöveg, mint a fejléc-jelvényé
+              // (`headerBadgeLabel`) ugyanerre az esetre.
+              label={
+                evaluation.stale
+                  ? t("stale.lastReading", {
+                      value: evaluation.status === "forbidden" ? statusLabel : formattedIndex,
+                    })
+                  : `${t("detail.supIndex")} ${formattedIndex}, ${statusLabel}`
+              }
             />
             <p className="text-sm text-text-2">
               {evaluation.stale

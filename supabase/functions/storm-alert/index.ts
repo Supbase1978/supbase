@@ -17,6 +17,7 @@
  */
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
+import { isServiceRoleRequest } from "../_shared/auth.ts";
 import type { PushSubscriptionRow } from "../_shared/push-notify.ts";
 import {
   parseSupIndexConfig,
@@ -96,7 +97,17 @@ function resolveVapid(): VapidKeys | null {
   return { publicKey, privateKey, subject };
 }
 
-Deno.serve(async () => {
+Deno.serve(async (req) => {
+  // Szerepkör-ellenőrzés A LEGELSŐ lépés — lásd `weather-sync/index.ts` azonos
+  // megjegyzését és `_shared/auth.ts`-t: a gateway `verify_jwt`-je csak az
+  // aláírást nézi, ide kizárólag a cron (service_role) hívhat be.
+  if (!isServiceRoleRequest(req.headers.get("authorization"))) {
+    return new Response(JSON.stringify({ error: "forbidden" }), {
+      status: 403,
+      headers: { "content-type": "application/json" },
+    });
+  }
+
   const url = Deno.env.get("SUPABASE_URL");
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   if (!url || !serviceKey) {

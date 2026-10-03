@@ -142,7 +142,7 @@ A Claude Design 2. körének kimenete. **Ezek az értékek véglegesek**, a `src
 2. **Vízmérce** (10 szegmens): kizárólag részletező nézetekben (spot-adatlap SUP-index bontás, Közös nevező-eloszlás). Kártya = vonal, adatlap = mérce; a kettő ugyanazt az indexet mutatja.
 3. **Státusz mindig szín + ikon + szöveg** hármasban jelenik meg, soha nem csak színnel.
 4. **II. fokú viharjelzés** = teljes képernyős, nem eldugható riasztás, "MIT TEGYÉL" lépésekkel és vízimentő-hívás gombbal (+36 30 383 8383), forrás- és időbélyeg-felirattal.
-5. **Adatkor**: minden időjárás/vízadat mellett `frissítve X perce`; 30 percnél régebbi adat automatikusan "Elavult adat" state-be vált (vonal szaggatottra, mérce csíkozottra). Cache-elt viharjelzés SOHA nem jelenhet meg aktuálisként.
+5. **Adatkor**: minden időjárás/vízadat mellett `frissítve X perce`; 30 percnél régebbi adat automatikusan "Elavult adat" state-be vált (vonal szaggatottra, mérce csíkozottra). Cache-elt viharjelzés SOHA nem jelenhet meg aktuálisként. (2026-10-02 felhasználói döntés) Ha a legutóbbi mérés `forbidden` (II. fokú viharjelzés/III. fokú árvízi készültség) ÉS elavult, a teljes képernyős, aktuális `StormAlertScreen` helyett egy feltűnő, teljes szélességű, de NEM modális, MÚLT IDEJŰ figyelmeztetés jelenik meg (`--stale` jelölés + óra-ikon + "Utolsó ismert állapot" szöveg), a hivatalos forrásra mutató linkkel — friss `forbidden` esetén változatlanul a teljes képernyős riasztás él.
 6. **Kontraszt-kapuk** (a designban validálva): text 12,9:1 · text-2 7,0:1 · text-3 4,9:1 · CTA 7,6:1 · danger-text 6,3:1 · safe-text 6,2:1. Új szín-párosítás csak AA fölött.
 7. Amber CTA-n mindig sötét (`--text`) felirat; a `--danger` család kizárólag veszélyt jelölhet, interakciós elemen (gomb, link) tilos.
 

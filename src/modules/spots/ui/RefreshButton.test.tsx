@@ -1,6 +1,6 @@
 import type { ReactElement } from "react";
 
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { I18nextProvider } from "react-i18next";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -17,7 +17,10 @@ import "@modules/spots/i18n";
  */
 const hoisted = vi.hoisted(() => ({
   submit: vi.fn(),
-  revalidate: vi.fn(),
+  // `.mockResolvedValue`: a komponens a `revalidate()` Promise-ára `.then`-t
+  // hív (a "Frissítve"-váltáshoz) — plain `vi.fn()` `undefined`-et adna,
+  // amin a `.then` elhasalna.
+  revalidate: vi.fn().mockResolvedValue(undefined),
   fetcher: { state: "idle" as "idle" | "submitting" | "loading", data: undefined as unknown },
 }));
 
@@ -102,6 +105,21 @@ describe("RefreshButton", () => {
     expect(hoisted.revalidate).toHaveBeenCalledTimes(2);
     vi.advanceTimersByTime(30_000);
     expect(hoisted.revalidate).toHaveBeenCalledTimes(2);
+  });
+
+  it("'queued' üzenet az ELSŐ revalidáció lezárásakor 'Frissítve' állapotra vált", async () => {
+    vi.useFakeTimers();
+    hoisted.fetcher.data = { refresh: "queued" };
+    render(withI18n(<RefreshButton slug="tihany" />));
+
+    expect(screen.getByText("Frissítés elindítva — pár másodperc")).not.toBeNull();
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(6_000);
+    });
+
+    expect(screen.queryByText("Frissítés elindítva — pár másodperc")).toBeNull();
+    expect(screen.getByText("Frissítve")).not.toBeNull();
   });
 
   it("unmountkor törli az ütemezett revalidáció-timereket", () => {

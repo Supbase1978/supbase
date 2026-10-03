@@ -14,16 +14,22 @@
  * komponens KIZÁRÓLAG a fetcher-küldést és az állapot-visszajelzést adja,
  * így újrafelhasználható a spot-kártyán (`SpotCard`) ÉS a spot-adatlapon is.
  *
+ * A `queued` üzenet NEM maradhat kiírva örökre az után, hogy a revalidáció
+ * lezajlott (a felhasználó szemszögéből megtévesztő lenne — a frissítés már
+ * megtörtént, de a gomb még "indítva" szöveget mutatna): az ELSŐ ütemezett
+ * revalidáció LEZÁRÁSA után "Frissítve" állapotra vált (`refresh.result.
+ * updated`).
+ *
  * TOKEN-SZABÁLY: petrol vonalas (`outline`) gomb — NEM amber CTA (nem
  * elsődleges cselekvés), NEM `--danger` (interakciós elemen tilos).
  */
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useFetcher, useRevalidator } from "react-router";
 
 import { buttonClassName, cx } from "@core/ui";
 
-import type { SpotRefreshResult } from "../data/spots.server";
+import type { SpotRefreshResult } from "../types";
 
 export interface RefreshButtonProps {
   /** A spot URL-slugja (már locale-feloldva, a hívó loaderéből) — az action célja `/spotok/<slug>`. */
@@ -46,6 +52,9 @@ const RESULT_KEYS: Record<SpotRefreshResult, string> = {
   not_found: "refresh.result.unavailable",
   unavailable: "refresh.result.unavailable",
 };
+
+/** A `queued` → "Frissítve" átváltás üzenet-kulcsa (lásd a fájl-fejléc kommentjét). */
+const UPDATED_RESULT_KEY = "refresh.result.updated";
 
 function RefreshIcon() {
   return (
@@ -77,17 +86,28 @@ export function RefreshButton({ slug, className }: RefreshButtonProps) {
   const busy = fetcher.state !== "idle";
   const result = fetcher.data?.refresh;
 
+  // `queued` után, az ELSŐ revalidáció LEZÁRÁSAKOR "Frissítve"-re váltunk
+  // (lásd a fájl-fejléc kommentjét) — új `queued` válasznál (új fetcherData-
+  // azonosság) visszaáll, hogy a következő kör is "Frissítés elindítva"-val
+  // kezdjen.
+  const [justUpdated, setJustUpdated] = useState(false);
+
   // `queued`-nál a snapshot aszinkron íródik be — két revalidáció-kísérlet
   // ütemezve, unmountkor/új eredménynél törölve (nem szivároghat timer).
   const fetcherData = fetcher.data;
   useEffect(() => {
     if (fetcherData?.refresh !== "queued") return;
+    setJustUpdated(false);
+    let cancelled = false;
     const timers = REVALIDATE_DELAYS_MS.map((delay) =>
       setTimeout(() => {
-        void revalidator.revalidate();
+        void revalidator.revalidate().then(() => {
+          if (!cancelled) setJustUpdated(true);
+        });
       }, delay),
     );
     return () => {
+      cancelled = true;
       timers.forEach(clearTimeout);
     };
     // A revalidator-referencia React Router-stabil; csak az ÚJ `queued`
@@ -95,7 +115,7 @@ export function RefreshButton({ slug, className }: RefreshButtonProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fetcherData]);
 
-  const messageKey = result ? RESULT_KEYS[result] : null;
+  const messageKey = justUpdated ? UPDATED_RESULT_KEY : result ? RESULT_KEYS[result] : null;
 
   return (
     <div className={cx("flex flex-wrap items-center gap-2", className)}>

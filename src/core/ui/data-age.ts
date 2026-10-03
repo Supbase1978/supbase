@@ -67,9 +67,9 @@ export interface AgeDescription {
  *
  * Küszöbök: < 60 perc → perc, < 24 óra → óra, egyébként nap. A kerekítés
  * egység-határon átbillenhetne (pl. 59.6 perc kerekítve 60 percre) — ezért a
- * bucketet a PONTOS (nem kerekített) értékkel választjuk, a megjelenített
- * számot pedig a kiválasztott egységben kerekítjük; így sosem jelenik meg
- * "60 perce" vagy "24 órája".
+ * bucket-választás a KEREKÍTETT értéken alapul (nem a nyersen): a megjelenített
+ * számot és az egységet is ugyanabból a kerekített értékből vesszük; így sosem
+ * jelenik meg "60 perce" vagy "24 órája".
  *
  * Érvénytelen/jövőbeli dátumnál biztonsági okból 0 perces korral tér vissza
  * (lásd `isStale` hasonló indoklását) — a hívó ettől függetlenül az
@@ -112,3 +112,47 @@ export const STALE_AGE_KEYS: Record<AgeUnit, string> = {
   hour: "dataAge.staleHoursAgo",
   day: "dataAge.staleDaysAgo",
 };
+
+/**
+ * "Elavult adat · 38 perce/3 órája/2 napja frissült" — a `core` namespace
+ * `dataAge.stale*Ago` plurál-kulcsaiból, a `describeAge` egység-bontása
+ * alapján. Korábban két hívó (`SpotCard`, `app/routes/spotok.$slug.tsx`)
+ * duplikálta ugyanezt a pár sort — innen importálva egy helyen él. A `t`
+ * paramétert a hívó adja (react-i18next `useTranslation`), ez a fájl nem
+ * importál i18n-könyvtárat.
+ */
+export function staleAgeLabel(
+  fetchedAt: string,
+  t: (key: string, options?: Record<string, unknown>) => string,
+): string {
+  const age = describeAge(fetchedAt);
+  return t(STALE_AGE_KEYS[age.unit], { ns: "core", count: age.count });
+}
+
+/**
+ * `describeAge().unit` → `core` namespace i18n-plurálkulcs a MEZTELEN
+ * ("2 órája" / "45 perce") korfelirathoz — a `STALE_AGE_KEYS`-től eltérően
+ * NEM tartalmazza az "Elavult adat" előtagot és a "frissült" utótagot, mert
+ * a hívó MONDATBA ágyazza (pl. a `StormAlertStaleBanner` "{{age}} frissült
+ * adat szerint viharjelzés volt érvényben" szövegébe, ahol a "frissült" már
+ * a mondat része, duplikálná a szót).
+ */
+export const AGE_AGO_KEYS: Record<AgeUnit, string> = {
+  minute: "dataAge.minutesAgo",
+  hour: "dataAge.hoursAgo",
+  day: "dataAge.daysAgo",
+};
+
+/**
+ * "2 órája" / "45 perce" / "3 napja" — a `core` namespace `dataAge.*Ago`
+ * plurál-kulcsaiból, a `describeAge` egység-bontása alapján. Lásd
+ * `AGE_AGO_KEYS` fejléc-kommentjét: szándékosan NEM a `staleAgeLabel`
+ * mondatkész felirata, hanem egy mondatba illeszthető, önálló időtartam.
+ */
+export function ageAgoLabel(
+  fetchedAt: string,
+  t: (key: string, options?: Record<string, unknown>) => string,
+): string {
+  const age = describeAge(fetchedAt);
+  return t(AGE_AGO_KEYS[age.unit], { ns: "core", count: age.count });
+}

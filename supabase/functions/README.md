@@ -21,6 +21,20 @@ A `*/index.ts` héjak a repo `tsconfig`-jából **kizárva** (Deno-globálisok,
 `jsr:` importok) — ezeket a Deno deploy fordítja. A `_shared` viszont a repo
 `tsc`-jével typecheckelt és Vitesttel tesztelt.
 
+## Szerepkör-ellenőrzés — miért 403 bejelentkezett userre is?
+
+A Supabase gateway `verify_jwt = true` beállítása **csak az aláírást**
+ellenőrzi — bármely érvényes projekt-JWT (akár egy bejelentkezett user
+access tokenje) átmegy rajta, a DB-oldali throttle-t (`request_spot_refresh()`)
+megkerülve hívhatná közvetlenül a functiont. Mindkét function (`weather-sync`,
+`storm-alert`) ezért a `Deno.serve` handler ELSŐ lépéseként ellenőrzi, hogy a
+hívó `role` claimje `service_role`-e (`_shared/auth.ts`,
+`isServiceRoleRequest`) — enélkül `403 {"error":"forbidden"}` a válasz, még a
+body-parse és minden DB-/hálózati hívás előtt. Ide KIZÁRÓLAG a pg_cron és a
+`request_spot_refresh()` SECURITY DEFINER DB-függvény hívhat be (Vault
+`edge_invoke_key`, service_role JWT) — sem anon, sem bejelentkezett user
+tokenje nem jogosult, mert az aláírás már igazolt, csak a jogkör (role) nem.
+
 ## Funkciók
 
 ### `weather-sync` — 30 percenkénti (`0,30 * * * *`)

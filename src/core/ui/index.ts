@@ -44,9 +44,12 @@ export { ProductGallery } from "./ProductGallery";
 export type { ProductGalleryProps, GalleryImage } from "./ProductGallery";
 
 export {
+  ageAgoLabel,
+  AGE_AGO_KEYS,
   describeAge,
   isStale,
   minutesSince,
+  staleAgeLabel,
   STALE_AGE_KEYS,
   STALE_THRESHOLD_MINUTES,
 } from "./data-age";

@@ -45,6 +45,11 @@
     "lastReading": "Last reading: {{value}}",
     "asOfSentence": "As of the last reading: {{sentence}}"
   },
+  "staleAlert": {
+    "title": "Last known status: storm warning",
+    "body": "Based on data updated {{age}}, a storm warning was in effect. Check the official source before you head out.",
+    "sourceLink": "View the official source"
+  },
   "flag": {
     "offshoreWind": "Offshore wind",
     "offshoreWindHint": "The wind pushes from the shore toward open water — do not drift away from the shore.",
@@ -65,6 +70,7 @@
     "pending": "Refreshing…",
     "result": {
       "queued": "Refresh started — a few seconds",
+      "updated": "Updated",
       "fresh": "The data is already fresh",
       "throttled": "We just refreshed this — try again in a few minutes",
       "unavailable": "Refresh isn't available right now"

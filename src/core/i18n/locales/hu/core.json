@@ -13,7 +13,13 @@
     "staleHoursAgo_one": "Elavult adat · {{count}} órája frissült",
     "staleHoursAgo_other": "Elavult adat · {{count}} órája frissült",
     "staleDaysAgo_one": "Elavult adat · {{count}} napja frissült",
-    "staleDaysAgo_other": "Elavult adat · {{count}} napja frissült"
+    "staleDaysAgo_other": "Elavult adat · {{count}} napja frissült",
+    "minutesAgo_one": "{{count}} perce",
+    "minutesAgo_other": "{{count}} perce",
+    "hoursAgo_one": "{{count}} órája",
+    "hoursAgo_other": "{{count}} órája",
+    "daysAgo_one": "{{count}} napja",
+    "daysAgo_other": "{{count}} napja"
   },
   "nav": {
     "home": "Kezdőlap",
