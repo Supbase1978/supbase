@@ -131,6 +131,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
       slug: pickTranslated(board.slug, locale),
       modelName: board.model_name,
       modelYear: board.model_year,
+      colors: board.colors ?? [],
       brandName: board.brand?.name ?? null,
       boardType: board.board_type,
       lengthCm: board.length_cm,
@@ -331,6 +332,11 @@ export default function BoardDetailRoute({ loaderData, actionData }: Route.Compo
           />
           <SpecItem label={t("spec.stabilityIndex")} value={board.stabilityIndex} />
         </dl>
+        {board.colors.length > 0 ? (
+          <p className="mt-3 text-sm text-text-2">
+            {t("detail.colors")}: {board.colors.join(", ")}
+          </p>
+        ) : null}
         {board.description ? (
           <p className="mt-3 text-sm text-text-2">{board.description}</p>
         ) : null}

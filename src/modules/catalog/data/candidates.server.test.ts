@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 
-import { buildAccessoryInsert, buildBoardInsert } from "./candidates.server";
+import type { SupabaseClient } from "@supabase/supabase-js";
+
+import { buildAccessoryInsert, buildBoardInsert, mergeCandidate } from "./candidates.server";
 import { modelYearLabel } from "../model-years";
 import type { ExtractedBoardData } from "../types";
 
@@ -263,5 +265,63 @@ describe("buildBoardInsert — modellév-lista", () => {
     );
     expect(payload.model_year).toBeNull();
     expect(payload.model_years).toEqual([]);
+  });
+});
+
+describe("mergeCandidate — színváltozatok", () => {
+  /** Minimális lánc-mock: rögzíti a boards.update patch-ét. */
+  function fakeClient(targetColors: string[] | null) {
+    const state: { patch: Record<string, unknown> | null } = { patch: null };
+    const chain = (table: string, mode: "select" | "update" | "insert") => {
+      const api: Record<string, unknown> = {};
+      const self = () => api;
+      for (const m of ["select", "eq"]) api[m] = self;
+      api.update = (patch: Record<string, unknown>) => {
+        if (table === "boards") state.patch = patch;
+        return chain(table, "update");
+      };
+      api.insert = () => Promise.resolve({ error: null });
+      api.maybeSingle = () => {
+        if (table === "catalog_candidates") {
+          return Promise.resolve({
+            data: { id: "c1", source_id: "s1", extracted: { ...EXTRACTED, modelYear: null, priceHuf: null } },
+            error: null,
+          });
+        }
+        if (table === "boards") {
+          return Promise.resolve({
+            data: { model_year: null, model_years: null, colors: targetColors },
+            error: null,
+          });
+        }
+        return Promise.resolve({ data: { name: "Bolt" }, error: null });
+      };
+      api.then = (resolve: (v: unknown) => void) => resolve({ error: null });
+      void mode;
+      return api;
+    };
+    const client = { from: (table: string) => chain(table, "select") } as unknown as SupabaseClient;
+    return { client, state };
+  }
+
+  const base = { candidateId: "c1", boardId: "b1", reviewerId: "u1" };
+
+  it("hozzáfűzi az új színeket, a duplikátumot kiszűri", async () => {
+    const { client, state } = fakeClient(["Cruise Red"]);
+    const result = await mergeCandidate(client, {
+      ...base,
+      colors: ["cruise red", " Cruise Blue ", ""],
+    });
+    expect(result.ok).toBe(true);
+    expect(state.patch?.colors).toEqual(["Cruise Red", "Cruise Blue"]);
+  });
+
+  it("üres vagy hiányzó input nem ír colors-t", async () => {
+    for (const colors of [undefined, [], ["  "]]) {
+      const { client, state } = fakeClient(["Cruise Red"]);
+      await mergeCandidate(client, { ...base, colors });
+      expect(state.patch).not.toBeNull();
+      expect(state.patch).not.toHaveProperty("colors");
+    }
   });
 });

@@ -51,6 +51,7 @@
   "detail": {
     "description": "Description",
     "specs": "Specs",
+    "colors": "Available colors",
     "manual": "Manual"
   },
   "admin": {
@@ -71,6 +72,8 @@
     "typeLabel": "Board type",
     "typeHint": "Source: {{source}}. This drives the Board selector's purpose matching, so review it.",
     "mergeLabel": "Merge into an existing board",
+    "colorsLabel": "Colors (optional)",
+    "colorsPlaceholder": "e.g. Cruise Red, Cruise Blue",
     "approve": "Approve — new board",
     "approveAccessory": "Approve — new gear",
     "merge": "Merge",

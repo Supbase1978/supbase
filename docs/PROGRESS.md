@@ -4134,9 +4134,11 @@ egyezik a gyártói adatlappal.
 153 korábbi), ebből **338-nak van teherbírása** és 228-nak teljes az adata.
 Munkalista: `for_validate/2026-08-19-validalando-deszkak.html` (144 tétel).
 
-**Következő lépés (nyitott):** az `aquamarina.com` felvétele forrásként, hogy
-a 110 kereskedői Aqua Marina jelölt hiányzó mezői is gyártói adatból
-töltődjenek.
+**Következő lépés (LEZÁRVA — lásd alább, „Új forrás: `Aqua Marina (gyártói)`"):** az
+`aquamarina.com` felvétele forrásként, hogy a 110 kereskedői Aqua Marina
+jelölt hiányzó mezői is gyártói adatból töltődjenek. A recept
+(`tools/catalog-watch/sources/aqua-marina.ts`) a repóban és az adatbázisban is
+él; `sync-sources` ellenőrzés 2026-10-07: 20 változatlan, 0 írandó.
 
 ### F2.1-utó-17 — kivitel-bontás + JSON-LD nélküli gyártói oldalak (2026-08-19)
 
@@ -5533,7 +5535,8 @@ dangling objektumait mutatta), a négy CI-láb zöld. Egyetlen dolgot rontott el
 (`/var/folders/zz/…` = a root temp-je), amitől a vitest mind a 83 fájlon
 `EACCES`-szel elhasalt. Nem kódhiba — TMPDIR-átirányítással azonnal zöld.
 
-Maradt a nyitott F2.1-03: az `esbuild` kritikus a fejlesztői fában.
+Maradt a nyitott F2.1-03: az `esbuild` kritikus a fejlesztői fában. *(LEZÁRVA
+ugyanebben a szakaszban, lásd lent: vite 7.3.6 / esbuild 0.28.2.)*
 
 ### A frissítés maga: unalmas volt, és ez a jó hír
 
@@ -5866,3 +5869,43 @@ elkészült, ez a munkamenet a UI-oldalt kötötte be.
 
 **Kapuk:** typecheck · lint · test (96 fájl / 1483 teszt) · e2e
 `public-paths.spec.ts` (32/32, chromium + mobile) — mind zöld.
+
+## Színváltozatok — `boards.colors` (2026-10-07)
+
+Az állapotfelmérés két régi „nyitott" tételről kimutatta, hogy már lezárt:
+**F2.1-03** (esbuild → vite 7.3.6, `npm ls esbuild` = 0.28.2) és az
+**`aquamarina.com` forrás** (recept a repóban, `sync-sources`: 20 változatlan,
+0 írandó). A szövegükben a „nyitott" jelölés csak a szakasz-bevezetőkben
+maradt meg; javítva.
+
+**Új: színváltozatok egy sorban.** A színváltozatok (pl. Bluefin „Cruise Red" /
+„Cruise Blue") ugyanaz a deszka, külön katalógus-sorként szétforgácsolnák a
+Közös nevező-adatot és a Deszkaválasztó-ajánlást.
+
+- **Adat:** `boards.colors text[] not null default '{}'`
+  (`supabase/migrations/20260717099900_catalog_boards_colors.sql`, additív).
+  NEM enum és NEM fordítható jsonb: a színnév márkánként egyedi tulajdonnév
+  („Gecko"), nincs hu/en párja. A `model_year`-hez hasonlóan a szín a sorhoz
+  kötődik.
+- **Feltöltés:** az admin „Összefésülés" űrlapján új, opcionális, vesszővel
+  elválasztott `colors` mező (`app/routes/admin.katalogus.tsx`). A MODERÁTOR
+  írja be — **automatikus névelemzés szándékosan NINCS**: a Starboard
+  modellnév-utótagja (Blue Carbon, Starlite…) KIVITEL (Construction), nem
+  szín; a kinyerés összevonná őket. A `mergeCandidate`
+  (`candidates.server.ts`) HOZZÁFŰZ, nem ír felül; kis-/nagybetű-független
+  duplikátum-szűrés, az eredeti írásmód és sorrend marad. Korlát: legfeljebb
+  12 szín, egyenként ≤ 40 karakter (`src/modules/catalog/colors.ts`).
+- **Megjelenítés:** a deszka-adatlap Paraméterek kártyáján „Elérhető színek:
+  …" sor, csak ha a lista nem üres (`catalog:detail.colors`, hu+en).
+- **Tesztek:** `colors.test.ts` (parse, merge), `candidates.server.test.ts`
+  (hozzáfűzés, duplikátum, üres input nem ír). Az adatlap-sorra nincs teszt
+  (a route-nak nincs meglévő adatlap-tesztje).
+- **Élesbe:** a migrációt külön kell alkalmazni (`npm run sb -- db push`);
+  Docker nincs, a CI `rls-tests` lába ellenőrzi.
+
+**Nyitva (külön kör):** `npm audit` — 8 találat (3 kritikus: `tinypool` →
+vitest 5 major, `maplibre-gl`; magas: `undici`, `js-yaml`, `brace-expansion`,
+`source-map-js`; közepes: `@vitest/mocker`). Az `npm audit fix` a nem-breaking
+részt javíthatja.
+
+**Kapuk:** typecheck · lint · test (102 fájl / 1523 teszt) — mind zöld.

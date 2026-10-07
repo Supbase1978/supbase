@@ -16,6 +16,7 @@ import { slugify } from "@core/text/slug";
 
 import { buildFamilyTypeMap, type TypedExample } from "../family-type";
 import { stripBoardOnlySpecs } from "../accessory-specs";
+import { mergeColors } from "../colors";
 import { modelYearLabel } from "../model-years";
 import { GEAR_CATEGORIES, type GearCategory } from "../gear";
 import type {
@@ -446,13 +447,14 @@ export async function approveCandidate(
  */
 export async function mergeCandidate(
   supabase: SupabaseClient,
-  input: { candidateId: string; boardId: string; reviewerId: string },
+  input: { candidateId: string; boardId: string; reviewerId: string; colors?: string[] },
 ): Promise<ModerationResult> {
   const candidate = await loadPendingCandidate(supabase, input.candidateId);
   if (!candidate?.extracted) {
     return { ok: false, errorKey: "admin.error.notFound" };
   }
   const extracted = candidate.extracted;
+  const newColors = (input.colors ?? []).map((c) => c.trim()).filter((c) => c !== "");
 
   const patch: Record<string, unknown> = { last_seen_at: new Date().toISOString() };
   if (extracted.inStock !== null) {
@@ -465,21 +467,32 @@ export async function mergeCandidate(
   // különben a korábbi évet néző használó azt hiszi, nincs meg a deszkája.
   // A `model_year` a LEGFRISSEBB marad: a Deszkaválasztó frissesség-pontozása
   // egyetlen számmal dolgozik.
-  if (extracted.modelYear !== null) {
+  if (extracted.modelYear !== null || newColors.length > 0) {
     const { data: target } = await supabase
       .from("boards")
       // kind-AGNOSZTIKUS: a merge-célpontot a moderátor választotta ki, és
       // ELSŐDLEGES KULCSRA kérdezünk — a `kind` itt nem szűkít, viszont
       // kizárná a kiegészítő-ág összefésülését (egy evező-jelölt evezőbe megy).
-      .select("model_year, model_years")
+      .select("model_year, model_years, colors")
       .eq("id", input.boardId)
       .maybeSingle();
-    const current = target as { model_year: number | null; model_years: number[] | null } | null;
-    const years = new Set(current?.model_years ?? []);
-    if (current?.model_year) years.add(current.model_year);
-    years.add(extracted.modelYear);
-    patch.model_years = [...years].sort((a, b) => a - b);
-    patch.model_year = Math.max(...years);
+    const current = target as {
+      model_year: number | null;
+      model_years: number[] | null;
+      colors: string[] | null;
+    } | null;
+    if (extracted.modelYear !== null) {
+      const years = new Set(current?.model_years ?? []);
+      if (current?.model_year) years.add(current.model_year);
+      years.add(extracted.modelYear);
+      patch.model_years = [...years].sort((a, b) => a - b);
+      patch.model_year = Math.max(...years);
+    }
+    // SZÍNVÁLTOZATOK: a moderátor adja meg (nincs automatikus névelemzés);
+    // hozzáfűzés, nem felülírás — a korábban felvett színek megmaradnak.
+    if (newColors.length > 0) {
+      patch.colors = mergeColors(current?.colors, newColors);
+    }
   }
   const { error: boardError } = await supabase
     .from("boards")

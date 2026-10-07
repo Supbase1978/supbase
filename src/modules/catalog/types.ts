@@ -80,6 +80,11 @@ export interface CatalogItemRowBase {
    * frissesség-pontozása egyetlen számmal dolgozik).
    */
   model_years: number[] | null;
+  /**
+   * Elérhető színváltozatok (szabad szöveg, márkánként egyedi nevek). NEM
+   * kivitel: a Construction külön sor. A moderátor tölti az Összefésülésnél.
+   */
+  colors: string[] | null;
   slug: Record<string, string>;
   length_cm: number | null;
   width_cm: number | null;

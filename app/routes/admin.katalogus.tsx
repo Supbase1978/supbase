@@ -34,6 +34,7 @@ import {
   submitModeratorNotes,
   setBoardGallery,
 } from "@modules/catalog/data/candidates.server";
+import { parseColorsInput } from "@modules/catalog/colors";
 import { stripBoardOnlySpecs } from "@modules/catalog/accessory-specs";
 import { findDuplicateHints } from "@modules/catalog/data/duplicate-hints";
 import { inferBoardType } from "@modules/catalog/family-type";
@@ -185,7 +186,12 @@ export async function action({ request }: Route.ActionArgs) {
     }
     case "merge":
       result = boardId
-        ? await mergeCandidate(supabase, { candidateId, boardId, reviewerId: user.id })
+        ? await mergeCandidate(supabase, {
+            candidateId,
+            boardId,
+            reviewerId: user.id,
+            colors: parseColorsInput(String(formData.get("colors") ?? "")),
+          })
         : { ok: false, errorKey: "admin.error.noBoard" };
       break;
     case "reject":
@@ -710,6 +716,16 @@ function CandidateCard({
               </option>
             ))}
           </select>
+        </label>
+        <label className="flex flex-col gap-1 text-sm">
+          <span className="font-medium text-text">{t("admin.colorsLabel")}</span>
+          <input
+            type="text"
+            name="colors"
+            maxLength={600}
+            placeholder={t("admin.colorsPlaceholder")}
+            className="rounded-lg border border-line bg-surface px-2 py-1.5 text-sm text-text"
+          />
         </label>
         <Button type="submit" variant="secondary">
           {t("admin.merge")}

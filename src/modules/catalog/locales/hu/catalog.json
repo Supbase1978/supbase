@@ -51,6 +51,7 @@
   "detail": {
     "description": "Leírás",
     "specs": "Paraméterek",
+    "colors": "Elérhető színek",
     "manual": "Kézikönyv"
   },
   "admin": {
@@ -71,6 +72,8 @@
     "typeLabel": "Deszkatípus",
     "typeHint": "Forrás: {{source}}. Ez vezérli a Deszkaválasztó cél-illesztését, ezért nézd át.",
     "mergeLabel": "Összefésülés meglévő deszkával",
+    "colorsLabel": "Színek (opcionális)",
+    "colorsPlaceholder": "pl. Cruise Red, Cruise Blue",
     "approve": "Jóváhagyás — új deszka",
     "approveAccessory": "Jóváhagyás — új felszerelés",
     "merge": "Összefésülés",

@@ -200,6 +200,7 @@ create table boards (
   brand_id uuid references brands not null,
   model_name text not null,
   model_year int,                         -- Totalcar-analógia: évjárat/verzió!
+  colors text[] not null default '{}',    -- színváltozatok (nyers tulajdonnév, NEM kivitel); moderátor tölti az Összefésülésnél
   slug jsonb not null,                    -- {"hu":"vandor-11-4-tura","en":"..."} — SEO
   board_type text not null check (board_type in
     ('allround','touring','race','yoga','kids','fishing','river')),
