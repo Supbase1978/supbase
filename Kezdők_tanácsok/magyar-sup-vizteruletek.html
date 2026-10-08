@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="hu" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="Magyarországi SUP-vízterületek, országos szabályok, helyi korlátozások és ellenőrzési lista.">
+<meta name="color-scheme" content="light dark">
+<title>Magyarországi SUP-vízterületek és szabályok</title>
+<link rel="preconnect" href="https://api.fontshare.com">
+<link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700&f[]=boska@500,700&display=swap" rel="stylesheet">
+<style>
+/* Art direction: vízügyi kutatási kézikönyv → nyugodt, hiteles, terepen is gyorsan áttekinthető.
+   Paletta: ködös neutrális felületek, mély vízzöld hangsúly. Tipográfia: Boska + Satoshi. Sűrűség: kiegyensúlyozott. */
+:root,[data-theme="light"]{
+ --bg:#f4f7f5;--surface:#ffffff;--surface-2:#e9efec;--surface-offset:#edf3f0;--dynamic:#dce7e2;
+ --text:#14201c;--muted:#4d5d56;--faint:#6e7c76;--inverse:#fff;--border:#c7d2cd;--divider:#d5ded9;
+ --primary:#006b5e;--primary-hover:#005349;--primary-hi:#d6ebe5;--warn:#8a5315;--warn-hi:#f5e5cc;--danger:#8f2d37;--danger-hi:#f2dadd;
+ --success:#27613e;--success-hi:#dcecdf;--gray-hi:#e7ebe9;
+ --shadow:0 12px 30px rgb(24 46 37/.08);--font-display:'Boska',Georgia,serif;--font-body:'Satoshi','Segoe UI',sans-serif;
+ --xs:clamp(.75rem,.7rem + .25vw,.875rem);--sm:clamp(.875rem,.8rem + .35vw,1rem);--base:clamp(1rem,.95rem + .25vw,1.125rem);
+ --lg:clamp(1.125rem,1rem + .75vw,1.5rem);--xl:clamp(1.5rem,1.2rem + 1.25vw,2.25rem);--2xl:clamp(2.2rem,1.4rem + 3vw,4rem);
+ --s1:.25rem;--s2:.5rem;--s3:.75rem;--s4:1rem;--s5:1.25rem;--s6:1.5rem;--s8:2rem;--s10:2.5rem;--s12:3rem;--s16:4rem;
+ --r-sm:.375rem;--r-md:.5rem;--r-lg:.75rem;--r-xl:1rem;--ease:180ms cubic-bezier(.16,1,.3,1)
+}
+[data-theme="dark"]{
+ --bg:#121816;--surface:#18201d;--surface-2:#202a26;--surface-offset:#1d2723;--dynamic:#2b3833;
+ --text:#e4ebe8;--muted:#b5c0bb;--faint:#98a59f;--inverse:#10201b;--border:#3b4a44;--divider:#2d3934;
+ --primary:#78c8b8;--primary-hover:#9ad9cd;--primary-hi:#243f38;--warn:#e2ae69;--warn-hi:#483b28;--danger:#ec9299;--danger-hi:#4d2d31;
+ --success:#84c99a;--success-hi:#284034;--gray-hi:#2c3531;--shadow:0 12px 30px rgb(0 0 0/.3)
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}html{scroll-behavior:smooth;scroll-padding-top:5rem;-webkit-text-size-adjust:none}body{min-height:100dvh;background:var(--bg);color:var(--text);font:400 var(--base)/1.65 var(--font-body);text-rendering:optimizeLegibility}a{color:var(--primary);text-underline-offset:.18em}a:hover{color:var(--primary-hover)}button,input,select{font:inherit;color:inherit}button{cursor:pointer}h1,h2{font-family:var(--font-display);line-height:1.08;text-wrap:balance}h1{font-size:var(--2xl);max-width:15ch}h2{font-size:var(--xl);margin-bottom:var(--s5)}h3{font-size:var(--lg);line-height:1.25;margin-bottom:var(--s3)}p,li{max-width:74ch;text-wrap:pretty}.skip{position:absolute;left:-9999px}.skip:focus{left:var(--s4);top:var(--s4);z-index:20;background:var(--surface);padding:var(--s3) var(--s4);border-radius:var(--r-md)}
+.topbar{position:sticky;top:0;z-index:10;border-bottom:1px solid var(--divider);background:color-mix(in oklab,var(--bg) 90%,transparent);backdrop-filter:blur(14px)}.topbar-inner{max-width:1200px;margin:auto;min-height:64px;padding:var(--s2) var(--s5);display:flex;align-items:center;justify-content:space-between;gap:var(--s4)}.brand{display:flex;align-items:center;gap:var(--s3);font-weight:700;color:var(--text);text-decoration:none}.brand svg{width:36px;height:36px;color:var(--primary)}.actions{display:flex;gap:var(--s2)}.icon-btn,.print-btn{min-width:44px;min-height:44px;border:1px solid var(--border);background:var(--surface);border-radius:var(--r-md);display:inline-flex;align-items:center;justify-content:center;padding:0 var(--s3);transition:background var(--ease),border-color var(--ease)}.icon-btn:hover,.print-btn:hover{background:var(--surface-2);border-color:var(--primary)}
+.hero{max-width:1200px;margin:auto;padding:clamp(var(--s12),8vw,7rem) var(--s5) var(--s12);display:grid;grid-template-columns:minmax(0,1.5fr) minmax(260px,.7fr);gap:var(--s12);align-items:end}.eyebrow{font-size:var(--xs);font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--primary);margin-bottom:var(--s5)}.lead{font-size:var(--lg);color:var(--muted);max-width:60ch;margin-top:var(--s6)}.meta{padding:var(--s6);background:var(--surface);border:1px solid var(--border);border-radius:var(--r-xl);box-shadow:var(--shadow)}.meta dt{font-size:var(--xs);font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--faint);margin-top:var(--s4)}.meta dt:first-child{margin-top:0}.meta dd{font-weight:500;margin-top:var(--s1)}
+.layout{max-width:1200px;margin:auto;padding:0 var(--s5) var(--s16);display:grid;grid-template-columns:240px minmax(0,1fr);gap:var(--s10)}.toc{position:sticky;top:88px;align-self:start;padding:var(--s5);border:1px solid var(--border);background:var(--surface);border-radius:var(--r-lg)}.toc strong{display:block;margin-bottom:var(--s3)}.toc a{display:block;padding:var(--s2) 0;font-size:var(--sm);color:var(--muted);text-decoration:none}.toc a:hover{color:var(--primary)}main{min-width:0}.section{padding:var(--s10) 0;border-top:1px solid var(--divider);content-visibility:auto}.section:first-child{border-top:0;padding-top:0}.section>p+p{margin-top:var(--s4)}.callout{margin:var(--s6) 0;padding:var(--s5);background:var(--primary-hi);border-radius:var(--r-lg)}.callout strong{color:var(--primary)}.warning{background:var(--warn-hi)}.warning strong{color:var(--warn)}ul,ol{padding-left:var(--s6);margin:var(--s4) 0}li+li{margin-top:var(--s2)}
+.rules{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--s4);margin-top:var(--s6)}.rule{padding:var(--s5);background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg)}.rule b{display:block;margin-bottom:var(--s2)}
+.toolbar{display:flex;flex-wrap:wrap;gap:var(--s3);margin:var(--s6) 0}.field{flex:1 1 250px}.field label{display:block;font-size:var(--xs);font-weight:700;color:var(--muted);margin-bottom:var(--s1)}input,select{width:100%;min-height:44px;padding:0 var(--s3);border:1px solid var(--border);border-radius:var(--r-md);background:var(--surface)}input:focus-visible,select:focus-visible,button:focus-visible,a:focus-visible{outline:2px solid var(--primary);outline-offset:3px}.count{font-size:var(--sm);color:var(--muted);margin-bottom:var(--s3)}.table-wrap{overflow:auto;border:1px solid var(--border);border-radius:var(--r-lg);background:var(--surface)}table{border-collapse:collapse;width:100%;min-width:760px}th,td{padding:var(--s3) var(--s4);text-align:left;vertical-align:top;border-bottom:1px solid var(--divider)}th{position:sticky;top:0;background:var(--surface-2);font-size:var(--xs);text-transform:uppercase;letter-spacing:.06em}tr:last-child td{border-bottom:0}.status{display:inline-flex;align-items:center;gap:var(--s2);white-space:nowrap;font-size:var(--xs);font-weight:700}.dot{width:.65rem;height:.65rem;border-radius:50%;background:currentColor}.green{color:var(--success)}.yellow{color:var(--warn)}.orange{color:#b45f0a}.red{color:var(--danger)}.gray{color:var(--faint)}
+.legend{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--s3);margin:var(--s5) 0}.legend div{padding:var(--s4);border:1px solid var(--border);border-radius:var(--r-md);background:var(--surface)}.legend b{display:block;margin-bottom:var(--s1)}
+.checklist{list-style:none;padding:0}.checklist li{position:relative;padding:var(--s3) var(--s4) var(--s3) 2.75rem;border-bottom:1px solid var(--divider)}.checklist li::before{content:'□';position:absolute;left:var(--s3);font-size:1.25rem;color:var(--primary)}.sources{font-size:var(--sm)}.sources li{overflow-wrap:anywhere}.note{font-size:var(--sm);color:var(--muted)}.badge{display:inline-block;padding:.15rem .55rem;border-radius:999px;background:var(--surface-2);font-size:var(--xs);font-weight:700}.footer{border-top:1px solid var(--divider);padding:var(--s8) var(--s5);text-align:center;color:var(--muted);font-size:var(--sm)}.no-results{display:none;padding:var(--s8);text-align:center;color:var(--muted)}
+@media(max-width:850px){.hero{grid-template-columns:1fr}.layout{grid-template-columns:1fr}.toc{position:static}.rules,.legend{grid-template-columns:1fr}.print-btn span{display:none}}@media(max-width:520px){.hero,.layout{padding-left:var(--s4);padding-right:var(--s4)}.topbar-inner{padding-left:var(--s4);padding-right:var(--s4)}.brand span{font-size:var(--sm)}h1{font-size:clamp(2.3rem,12vw,3.4rem)}}
+@media print{.topbar,.toc,.toolbar,.count,.no-results{display:none!important}body{background:#fff;color:#111;font-size:10.5pt}.hero,.layout{display:block;max-width:none;padding:12mm}.hero{padding-bottom:5mm}.meta{box-shadow:none;margin-top:8mm}.section{content-visibility:visible;break-inside:auto;padding:6mm 0}.table-wrap{overflow:visible;border-color:#aaa}table{min-width:0;font-size:8pt}th{position:static}.rule,.callout,.legend div{break-inside:avoid}.footer{padding:5mm}a{color:#111;text-decoration:none}a[href^="http"]::after{content:" (" attr(href) ")";font-size:7pt;overflow-wrap:anywhere}}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
+</style>
+</head>
+<body>
+<a class="skip" href="#tartalom">Ugrás a tartalomra</a>
+<header class="topbar"><div class="topbar-inner">
+<a class="brand" href="#top" aria-label="Vissza az oldal elejére">
+<svg viewBox="0 0 48 48" role="img" aria-label="SUP vízhullám embléma" fill="none"><path d="M7 29c7-7 12 7 19 0s12 7 19 0" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><path d="M10 37c6-5 10 5 16 0s10 5 16 0" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><path d="M27 8l-7 17M29 8l-7 17" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M28 6l5 4-7 2z" fill="currentColor"/></svg>
+<span>SUP Magyarország · kutatási anyag</span></a>
+<div class="actions"><button class="print-btn" type="button" data-print aria-label="Nyomtatás vagy mentés PDF-be"><span>Nyomtatás</span></button><button class="icon-btn" type="button" data-theme-toggle aria-label="Váltás sötét módra" title="Világos/sötét mód"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></button></div>
+</div></header>
+<section class="hero" id="top">
+<div><p class="eyebrow">Országos kutatási összefoglaló</p><h1>Magyarországi SUP-vízterületek és szabályok</h1><p class="lead">Folyók, tavak, tározók és holtágak előzetes SUP-besorolása, országos jogi alapokkal, helyi ellenőrzési szempontokkal és indulás előtti ellenőrzőlistával.</p></div>
+<dl class="meta"><dt>Állapot</dt><dd>2026. szeptember 26.</dd><dt>Terjedelem</dt><dd>Országos áttekintés, kiemelt víztestekkel</dd><dt>Használat</dt><dd>Túra-előkészítéshez; nem hatósági engedély</dd></dl>
+</section>
+<div class="layout">
+<nav class="toc" aria-label="Tartalomjegyzék"><strong>Tartalom</strong><a href="#lenyeg">Lényeg röviden</a><a href="#alapszabalyok">Országos szabályok</a><a href="#folyok">Folyók és nagy tavak</a><a href="#tavak">Tavak és tározók</a><a href="#pest">Pest környéke</a><a href="#kulon">Külön ellenőrzendő</a><a href="#statusz">Státuszrendszer</a><a href="#checklist">Indulási ellenőrzőlista</a><a href="#forrasok">Források</a></nav>
+<main id="tartalom">
+<section class="section" id="lenyeg"><h2>Lényeg röviden</h2>
+<p>Nincs olyan egyetlen, hivatalos országos lista, amely minden magyarországi víztestre megmondaná, hogy SUP-pal használható-e. A vízre szállást egyszerre befolyásolhatja a Hajózási Szabályzat, az aktuális hajózási hirdetmény, a viharjelzés, a vízterület tulajdonosának vagy üzemeltetőjének házirendje, a természetvédelmi kezelés és az időszakos hatósági korlátozás.</p>
+<p>A Vízgyűjtő-gazdálkodási Tervben szereplő „víztest” környezetvédelmi-vízügyi nyilvántartási egység. Ettől még egy kis csatorna, időszakos vízfolyás, ivóvíztározó vagy üzemi tó nem válik automatikusan szabadidős SUP-helyszínné. Magyarország teljes területét 12 vízügyi igazgatóság fedi le; bizonytalan állami víznél az illetékes VIZIG az egyik első ellenőrzési pont.<sup><a href="#src-10">[10]</a></sup></p>
+<div class="callout"><strong>Biztonságos döntési elv:</strong> csak akkor tekints egy vízterületet biztosan használhatónak, ha az országos szabályok mellett az adott napi helyi korlátozást, vízállást, időjárást és üzemeltetői előírást is ellenőrizted.</div>
+<div class="warning callout"><strong>Fontos:</strong> a „kijelölt természetes fürdőhely” nem egyenlő a saját SUP korlátlan használatának engedélyével. A strand házirendje elkülönítheti vagy meg is tilthatja a vízi sporteszközöket.</div>
+</section>
+<section class="section" id="alapszabalyok"><h2>Országos alapszabályok</h2>
+<p>A víziközlekedés rendjét az 57/2011. (XI. 22.) NFM rendelet mellékleteként kiadott Hajózási Szabályzat határozza meg.<sup><a href="#src-1">[1]</a></sup> A SUP gyakorlati besorolása és a rá alkalmazott előírások helyzettől, vízterülettől és használati módtól is függhet, ezért a helyi vízirendészeti tájékoztatás elsőbbséget élvez.</p>
+<div class="rules">
+<article class="rule"><b>Személyi feltételek</b><p>A használó legyen úszni tudó, megfelelő fizikai állapotú, ismerje az útvonalat, az időjárást és a víz sajátosságait. Gyermeknél különösen fontos a megfelelő méretű mentőmellény és a közvetlen felügyelet.</p></article>
+<article class="rule"><b>Mellény vagy leash</b><p>A 2023-as módosítást követő vízirendészeti tájékoztatók szerint a legalább 14 éves, úszni tudó használón emberi erővel hajtott vízi sporteszközön legalább úszást segítő mellény vagy biztonsági bokapánt szükséges; 14 év alatt vagy úszni nem tudónál mentőmellény kell.<sup><a href="#src-2">[2]</a></sup></p></article>
+<article class="rule"><b>Alkohol</b><p>Alkohol vagy más vezetési képességet rontó szer hatása alatt ne indulj el. Az egyensúly, reakcióidő és döntéshozatal romlása SUP-on közvetlen életveszélyt okozhat.</p></article>
+<article class="rule"><b>Hajóút és elsőbbség</b><p>A SUP nem akadályozhatja a nagyhajók, kompok és más korlátozott manőverezőképességű járművek közlekedését. A hajóutat a lehető legrövidebben, megfelelő körültekintéssel szabad keresztezni.</p></article>
+<article class="rule"><b>Műtárgyak és kikötők</b><p>Tarts biztonságos távolságot kikötőktől, kompátkelőktől, zsilipektől, vízlépcsőktől, hidaktól, vízkivételi művektől, munkaterületektől és bójákkal lezárt részekről.</p></article>
+<article class="rule"><b>Éjszaka és látási viszonyok</b><p>Sötétben, ködben, zivatarban és korlátozott látásnál a vízre szállás kerülendő; az esetlegesen szükséges fény- és jelzőeszközök hiánya további jogi és biztonsági kockázat.</p></article>
+</div>
+<h3 style="margin-top:2rem">Viharjelzés</h3><p>A Balatonon, Velencei-tavon, Tisza-tavon és Fertő tavon szezonális viharjelző szolgálat működik. Elsőfokú jelzésnél — percenként 45 villanás — a parttól legfeljebb 500 méterre szabad eltávolodni; másodfoknál — percenként 90 villanás — vízi sporteszközzel sem szabad közlekedni.<sup><a href="#src-3">[3]</a></sup><sup><a href="#src-4">[4]</a></sup></p>
+</section>
+<section class="section" id="folyok"><h2>Folyók és nagy tavak</h2>
+<p>Az alábbi besorolások túratervezési kiindulópontok. A „használható” megjelölés sem mentesít az aznapi vízállás, hajózási hirdetmények, természetvédelmi lezárások és időjárás ellenőrzése alól.</p>
+<div class="table-wrap"><table class="water-table"><thead><tr><th>Vízterület</th><th>Előzetes státusz</th><th>Legfontosabb feltétel</th></tr></thead><tbody>
+<tr data-status="yellow"><td><b>Balaton</b></td><td><span class="status yellow"><span class="dot"></span>Sárga · szabályozott</span></td><td>Viharjelzés, parttávolság, hajóutak, kikötők és a kompút kerülése. Elsőfoknál legfeljebb 500 m, másodfoknál tilos.<sup><a href="#src-3">[3]</a></sup></td></tr>
+<tr data-status="yellow"><td><b>Velencei-tó</b></td><td><span class="status yellow"><span class="dot"></span>Sárga · szabályozott</span></td><td>Viharjelzés, strandházirend és nádasvédelmi szabályok; elsőfoknál 500 m, másodfoknál tilos.<sup><a href="#src-4">[4]</a></sup></td></tr>
+<tr data-status="yellow"><td><b>Tisza-tó</b></td><td><span class="status yellow"><span class="dot"></span>Sárga · útvonalfüggő</span></td><td>Viharjelzés, természetvédelmi zónák, sekély részek, növényzet, hajózócsatornák és műtárgyak. Helyismeret nélkül vezetett túra ajánlott.</td></tr>
+<tr data-status="orange"><td><b>Fertő tó</b></td><td><span class="status orange"><span class="dot"></span>Narancs · egyeztetendő</span></td><td>Viharjelzés, országhatár, kiterjedt nádasok és fokozott természetvédelmi érintettség; az indulási pont és útvonal külön ellenőrzendő.<sup><a href="#src-9">[9]</a></sup></td></tr>
+<tr data-status="yellow"><td><b>Duna, Budapest területén kívül</b></td><td><span class="status yellow"><span class="dot"></span>Sárga · haladóknak</span></td><td>Erős sodrás, sarkantyúk, örvények, hajóforgalom, kompok és változó vízállás. Kezdőknek nem önálló túraterep.</td></tr>
+<tr data-status="orange"><td><b>Duna budapesti főága</b></td><td><span class="status orange"><span class="dot"></span>Narancs · hatósági egyeztetés</span></td><td>Intenzív nagyhajó-forgalom és összetett helyi kockázatok. Csak aktuális vízirendészeti tájékoztatás, megfelelő gyakorlat és szükség szerint szervezett program alapján tervezd.</td></tr>
+<tr data-status="yellow"><td><b>Szentendrei-Duna</b></td><td><span class="status yellow"><span class="dot"></span>Sárga · használható</span></td><td>Hajózási víziút; kompok, kikötők, motoros forgalom és strandok miatt gondos útvonaltervezés szükséges.</td></tr>
+<tr data-status="yellow"><td><b>Ráckevei–Soroksári-Duna</b></td><td><span class="status yellow"><span class="dot"></span>Sárga · használható</span></td><td>Zsilipek, hidak, strandok, horgászhelyek és természetvédelmi részek. A helyi kezelői szabályokat külön ellenőrizd.</td></tr>
+<tr data-status="yellow"><td><b>Mosoni-Duna</b></td><td><span class="status yellow"><span class="dot"></span>Sárga · szakaszfüggő</span></td><td>Sodrás, duzzasztás, műtárgyak és hajóforgalom; a városi és strandközeli szakaszokon külön figyelem szükséges.</td></tr>
+<tr data-status="yellow"><td><b>Tisza</b></td><td><span class="status yellow"><span class="dot"></span>Sárga · szakaszfüggő</span></td><td>Sodrás, kompok, uszadék, vízállás, homokpadok és nehéz partmegközelítés. A visszajutást ne a sodrással szembeni evezésre alapozd.</td></tr>
+<tr data-status="yellow"><td><b>Hármas-Körös</b></td><td><span class="status yellow"><span class="dot"></span>Sárga · szakaszfüggő</span></td><td>Folyóvízi kockázatok, hajóforgalom és műtárgyak; Gyomaendrődnél kijelölt strand is működik.</td></tr>
+<tr data-status="yellow"><td><b>Maros</b></td><td><span class="status yellow"><span class="dot"></span>Sárga · haladóknak</span></td><td>Gyors sodrás, zátonyok, uszadék és gyorsan változó meder. Aktuális vízállás és helyismeret nélkül ne indulj.</td></tr>
+<tr data-status="orange"><td><b>Dráva</b></td><td><span class="status orange"><span class="dot"></span>Narancs · engedélyköteles lehet</span></td><td>Határvíz és nemzeti parki terület; belépés, kikötés és túraútvonal természetvédelmi, határrendészeti vagy szervezői engedélyhez kapcsolódhat.</td></tr>
+<tr data-status="orange"><td><b>Mura</b></td><td><span class="status orange"><span class="dot"></span>Narancs · engedélyköteles lehet</span></td><td>Határvízi, természetvédelmi és erős folyóvízi kockázatok; kizárólag részletes helyi egyeztetés után.</td></tr>
+</tbody></table></div>
+</section>
+<section class="section" id="tavak"><h2>Tavak, tározók és holtágak</h2>
+<div class="toolbar"><div class="field"><label for="search">Keresés a vízterületek között</label><input id="search" type="search" placeholder="Például: Pécsi-tó, Deseda, holtág…"></div><div class="field"><label for="filter">Státusz szűrése</label><select id="filter"><option value="all">Minden státusz</option><option value="green">Zöld</option><option value="yellow">Sárga</option><option value="orange">Narancs</option><option value="red">Piros</option><option value="gray">Szürke</option></select></div></div><p class="count" id="count" aria-live="polite"></p>
+<div class="table-wrap"><table class="searchable water-table"><thead><tr><th>Vízterület</th><th>Státusz</th><th>Megállapítás</th></tr></thead><tbody>
+<tr data-status="green"><td><b>Pécsi-tó, Orfű</b></td><td><span class="status green"><span class="dot"></span>Zöld · igazolt</span></td><td>A hivatalos orfűi oldal vízi sportokat és SUP-lehetőséget ismertet; rendezvények és versenyek időszakában lezárás lehet.<sup><a href="#src-5">[5]</a></sup></td></tr>
+<tr data-status="green"><td><b>Deseda-tó</b></td><td><span class="status green"><span class="dot"></span>Zöld · igazolt</span></td><td>A Kaposvári Vízügyi Sport Club szolgáltatásai között vízi sporteszközök és kölcsönzés szerepel; a helyi üzemrend követendő.<sup><a href="#src-6">[6]</a></sup></td></tr>
+<tr data-status="yellow"><td><b>Tatai Öreg-tó</b></td><td><span class="status yellow"><span class="dot"></span>Sárga · természetvédelmi</span></td><td>Vízisportokra használt, de Ramsari és helyi természetvédelmi terület; madárvédelmi és rendezvényi korlátozások lehetnek.<sup><a href="#src-7">[7]</a></sup></td></tr>
+<tr data-status="yellow"><td><b>Szelidi-tó</b></td><td><span class="status yellow"><span class="dot"></span>Sárga · helyi szabály</span></td><td>Dokumentált vízisport-helyszín és védett természeti terület; az indulási pontot és a strand szabályait ellenőrizni kell.<sup><a href="#src-8">[8]</a></sup></td></tr>
+<tr data-status="gray"><td><b>Bánki-tó</b></td><td><span class="status gray"><span class="dot"></span>Szürke · ellenőrzendő</span></td><td>Kijelölt strand található rajta, de a saját SUP bevitele és a strandterület használata üzemeltetői kérdés.</td></tr>
+<tr data-status="gray"><td><b>Arlói-tó</b></td><td><span class="status gray"><span class="dot"></span>Szürke · ellenőrzendő</span></td><td>Nyilvántartott természetes fürdővíz; a SUP-ot az aktuális üzemeltetői házirend alapján kell ellenőrizni.</td></tr>
+<tr data-status="gray"><td><b>Hársas-tó</b></td><td><span class="status gray"><span class="dot"></span>Szürke · ellenőrzendő</span></td><td>Kijelölt természetes fürdőhely; saját SUP használata és vízre szállás külön helyi engedélyhez köthető.</td></tr>
+<tr data-status="gray"><td><b>Vadása-tó</b></td><td><span class="status gray"><span class="dot"></span>Szürke · ellenőrzendő</span></td><td>Kijelölt fürdőhely; a strandházirend és vízkezelői előírás vizsgálandó.</td></tr>
+<tr data-status="gray"><td><b>Szajki-tavak</b></td><td><span class="status gray"><span class="dot"></span>Szürke · tavanként</span></td><td>A tórendszer nem minden tagja azonos rendeltetésű; kizárólag az üzemeltető által megjelölt vízfelület használható.</td></tr>
+<tr data-status="gray"><td><b>Sárvíz-tó, Gersekarát</b></td><td><span class="status gray"><span class="dot"></span>Szürke · ellenőrzendő</span></td><td>Kijelölt természetes fürdőhely; SUP-ra külön helyi megerősítés szükséges.</td></tr>
+<tr data-status="orange"><td><b>Kustánszegi-víztározó</b></td><td><span class="status orange"><span class="dot"></span>Narancs · üzemeltető</span></td><td>Tározónál az üzemeltetési szabályzat és az aktuális vízszint elsődleges; előzetes engedély nélkül ne indulj.</td></tr>
+<tr data-status="orange"><td><b>Szálkai-víztározó</b></td><td><span class="status orange"><span class="dot"></span>Narancs · üzemeltető</span></td><td>Kijelölt természetes fürdővíz található rajta, de a SUP használatát az üzemeltetőnél kell ellenőrizni.</td></tr>
+<tr data-status="yellow"><td><b>Fadd–Dombori Holt-Duna</b></td><td><span class="status yellow"><span class="dot"></span>Sárga · feltételes</span></td><td>Kijelölt fürdőhelyek és intenzív rekreáció; az aktuális vízminőséget, strandzónát és helyi házirendet ellenőrizni kell.</td></tr>
+<tr data-status="yellow"><td><b>Mártélyi Holt-Tisza</b></td><td><span class="status yellow"><span class="dot"></span>Sárga · természetvédelmi</span></td><td>Fürdőhely és érzékeny holtági környezet; madárvédelmi, vízállási és üzemeltetői korlátozás lehetséges.</td></tr>
+<tr data-status="yellow"><td><b>Szikrai Holt-Tisza, Tőserdő</b></td><td><span class="status yellow"><span class="dot"></span>Sárga · természetvédelmi</span></td><td>Kijelölt szabadstrand mellett védett környezet; a szezonális vízállás és helyi szabályok ellenőrzendők.</td></tr>
+<tr data-status="gray"><td><b>Kunfehértói-tó</b></td><td><span class="status gray"><span class="dot"></span>Szürke · házirend</span></td><td>Hivatalos természetes fürdőhely; a saját vízi sporteszköz használatát a strand szabályozhatja.</td></tr>
+<tr data-status="gray"><td><b>Vadkerti-tó</b></td><td><span class="status gray"><span class="dot"></span>Szürke · házirend</span></td><td>Hivatalos természetes fürdőhely; helyi házirend és elkülönített sportzóna ellenőrzendő.</td></tr>
+<tr data-status="orange"><td><b>Kecskeméti záportározó-tó</b></td><td><span class="status orange"><span class="dot"></span>Narancs · műszaki tározó</span></td><td>Fürdőhely működhet rajta, de műszaki rendeltetésű tározóként külön üzemeltetési feltétele lehet.</td></tr>
+<tr data-status="gray"><td><b>Szent János-tó, Mórahalom</b></td><td><span class="status gray"><span class="dot"></span>Szürke · házirend</span></td><td>Nyilvántartott természetes fürdőhely; saját SUP bevitele nem következik automatikusan a fürdési engedélyből.</td></tr>
+<tr data-status="orange"><td><b>István-tó, Nyékládháza</b></td><td><span class="status orange"><span class="dot"></span>Narancs · bányató</span></td><td>Bányatóként a tulajdonosi, üzemeltetői és partbiztonsági szabály meghatározó.</td></tr>
+<tr data-status="orange"><td><b>Achilles-tó, Győr-Gyirmót</b></td><td><span class="status orange"><span class="dot"></span>Narancs · üzemeltető</span></td><td>Hivatalos fürdőhely lehet, de magán- vagy üzemi házirend korlátozhatja a SUP-ot.</td></tr>
+</tbody></table><div class="no-results" id="no-results">Nincs a feltételeknek megfelelő vízterület.</div></div>
+</section>
+<section class="section" id="pest"><h2>Pest környéki tavak</h2>
+<p>A 2026-os Pest vármegyei fürdőhelyi tájékoztatásban többek között a Lupa-tó, a Gyömrői Tófürdő, a veresegyházi Malom-tó, a Domonyvölgyi D-Beach, a Rukkel-tó, a dunaharaszti Kék Horgásztó, a Brendon-tó és a Pázsit-tó szerepel.<sup><a href="#src-11">[11]</a></sup> Ezek SUP-szempontból lehetséges jelöltek, de a belépés, a saját eszköz bevitele, a vízre szállás és az elkülönített sportzóna kérdésében mindig az adott üzemeltető aktuális házirendje dönt.</p>
+<p>A Délegyházi-tavaknál különösen fontos a tó és a strand pontos azonosítása: ugyanazon tórendszeren belül eltérhet a tulajdonos, az üzemeltetés és a szezonális nyitvatartás. Korábbi működés vagy közösségi médiában látható SUP-fotó nem igazolja az aktuális engedélyt.</p>
+</section>
+<section class="section" id="kulon"><h2>Külön ellenőrzendő víztípusok</h2>
+<ul>
+<li><b>Bányatavak:</b> gyakori a magántulajdon, az instabil vagy meredek partfal, a hirtelen mélyülés és a kizárólag kijelölt területen engedélyezett vízhasználat.</li>
+<li><b>Horgásztavak:</b> a horgászati engedély, csónakhasználat vagy csónakbérlés nem jelent automatikus SUP-jogosultságot; a deszka a horgászrenddel is ütközhet.</li>
+<li><b>Ivóvíztározók:</b> vízbázis-védelmi és közegészségügyi okból korlátozottak vagy teljesen lezártak lehetnek.</li>
+<li><b>Árvízcsúcs-csökkentő és öntözési tározók:</b> vízszintjük, áramlásuk és üzemrendjük gyorsan változhat; a műtárgyak külön veszélyt jelentenek.</li>
+<li><b>Holtágak:</b> állami, önkormányzati, társulati, horgászegyesületi vagy magánkezelésben is lehetnek; a használati jog holtáganként eltér.</li>
+<li><b>Nemzeti parki és Natura 2000 vizek:</b> a területi érintettség a hivatalos keresőben vizsgálható, majd az igazgatóság kezelési szabályait is ellenőrizni kell.<sup><a href="#src-9">[9]</a></sup></li>
+<li><b>Csatornák és kisvízfolyások:</b> víztestként nyilvántartottak lehetnek, miközben zsilipek, műtárgyak, növényzet, sodrás, vízminőség vagy kezelői tiltás miatt SUP-ra alkalmatlanok.</li>
+</ul>
+</section>
+<section class="section" id="statusz"><h2>Minősítési rendszer</h2>
+<div class="legend">
+<div><b class="green">Zöld</b>Hiteles forrás alapján dokumentált SUP- vagy evezős használat; az általános és helyi szabályok továbbra is kötelezők.</div>
+<div><b class="yellow">Sárga</b>Használható, de helyi, szezonális, viharjelzési, természetvédelmi vagy útvonalfüggő korlátozással.</div>
+<div><b class="orange">Narancs</b>Előzetes üzemeltetői, tulajdonosi, vízügyi, természetvédelmi vagy rendészeti egyeztetés szükséges.</div>
+<div><b class="red">Piros</b>Tiltott, lezárt vagy a vizsgált célra fizikailag elfogadhatatlanul veszélyes terület.</div>
+<div><b class="gray">Szürke</b>Nincs elegendő, naprakész hiteles információ; írásos megerősítés nélkül ne tekintsd engedélyezettnek.</div>
+</div>
+</section>
+<section class="section" id="checklist"><h2>Indulási ellenőrzőlista</h2>
+<ol class="checklist">
+<li>Azonosítottam a vízterület pontos nevét, szakaszát és a tervezett be- és kiszállóhelyet.</li>
+<li>Ellenőriztem a tulajdonost vagy üzemeltetőt, a strandházirendet és a nyitvatartást.</li>
+<li>Megnéztem az aktuális hajózási hirdetményt, lezárásokat és rendezvényeket.</li>
+<li>Ellenőriztem a természetvédelmi érintettséget és az esetleges belépési, kikötési vagy útvonalengedélyt.</li>
+<li>Megnéztem a vízállást, vízhőmérsékletet, szélelőrejelzést, radar- és zivatarhelyzetet.</li>
+<li>Viharjelzéses tavon ellenőriztem az aktuális jelzési fokozatot.</li>
+<li>Viszek megfelelő mellényt vagy az adott helyzetben elfogadott leash-t; folyóvízen a leash típusa kioldható, gyorskioldós rendszer legyen.</li>
+<li>Van nálam vízálló tokban feltöltött telefon, azonosító, ivóvíz, alap elsősegély és szükség szerint fényjelző.</li>
+<li>Valaki tudja a tervezett útvonalamat, indulási és várható visszaérkezési időmet.</li>
+<li>Az útvonalat nem a maximális erőnlétemre, hanem tartalékkal és menekülési pontokkal terveztem.</li>
+</ol>
+<div class="callout"><strong>Folyóvízi kiegészítés:</strong> hagyományos bokára kötött spirál-leash sodrásban beakadhat. Folyón csak megfelelő gyakorlat, gyorskioldós deréköv és helyismeret mellett használj pórázt; a mellény ettől függetlenül alapfelszerelés.</div>
+</section>
+<section class="section" id="forrasok"><h2>Források és ellenőrzési pontok</h2>
+<ol class="sources">
+<li id="src-1"><a href="https://net.jogtar.hu/jogszabaly?docid=a1100057.nfm" target="_blank" rel="noopener noreferrer">57/2011. (XI. 22.) NFM rendelet — Hajózási Szabályzat</a></li>
+<li id="src-2"><a href="https://www.maritime.hu/manager/Informaciok/T%C3%A1j%C3%A9koztat%C3%B3%20Balatoni%20V%C3%ADzirend%C3%A9szet.pdf" target="_blank" rel="noopener noreferrer">Balatoni Vízirendészet tájékoztatója — emberi erővel hajtott vízi sporteszközök</a></li>
+<li id="src-3"><a href="https://www.police.hu/hu/hirek-es-informaciok/bkkb/aktualis/ma-van-a-vizbefulladas-megelozesenek-vilagnapja-0" target="_blank" rel="noopener noreferrer">Rendőrség — vízbiztonság és viharjelzési távolság</a></li>
+<li id="src-4"><a href="https://www.police.hu/hu/hirek-es-informaciok/bkkb/aktualis/hasznos-tanacsok-a-velencei-tavon-vizi-eszkozt-hasznaloknak" target="_blank" rel="noopener noreferrer">Rendőrség — Velencei-tavi vízi eszközös tanácsok</a></li>
+<li id="src-5"><a href="https://orfu.hu/zold-ritmusban/vizi-sportok/" target="_blank" rel="noopener noreferrer">Orfű hivatalos oldala — vízi sportok a Pécsi-tavon</a></li>
+<li id="src-6"><a href="https://egeszseges.kaposvar.hu/cikk/deseda" target="_blank" rel="noopener noreferrer">Kaposvár — Deseda szabadidős és sportlehetőségek</a></li>
+<li id="src-7"><a href="https://tata.hu/mindennapok/tatai-oreg-to/" target="_blank" rel="noopener noreferrer">Tata Város — Tatai Öreg-tó</a></li>
+<li id="src-8"><a href="https://www.szelidi-to.hu/programok_hun.html" target="_blank" rel="noopener noreferrer">Szelidi-tó — programok és vízi tevékenységek</a></li>
+<li id="src-9"><a href="https://termeszetvedelem.hu/kereso/natura-2000/" target="_blank" rel="noopener noreferrer">Természetvédelem.hu — Natura 2000 területkereső</a></li>
+<li id="src-10"><a href="https://www.ovf.hu/kapcsolat/igazgatosagok" target="_blank" rel="noopener noreferrer">Országos Vízügyi Főigazgatóság — a 12 vízügyi igazgatóság elérhetősége</a></li>
+<li id="src-11"><a href="https://kormanyhivatalok.hu/kormanyhivatalok/budapest/megye/hirek/hir/termeszetes-furdohelyek-budapesten-es-pest-varmegyeben-0" target="_blank" rel="noopener noreferrer">Kormányhivatal — természetes fürdőhelyek Budapesten és Pest vármegyében, 2026</a></li>
+<li id="src-12"><a href="https://nngyk.gov.hu/hu/?view=category&id=685" target="_blank" rel="noopener noreferrer">NNGYK — természetes fürdők és vízminőségi tájékoztatók</a></li>
+<li id="src-13"><a href="https://net.jogtar.hu/jogszabaly?docid=a0300030.kor" target="_blank" rel="noopener noreferrer">30/2003. (III. 18.) Korm. rendelet — környezetvédelmi víziközlekedési korlátozások</a></li>
+</ol>
+<p class="note" style="margin-top:1.5rem">A forráslinkek internetkapcsolattal nyithatók meg. Jogszabály vagy helyi rendelkezés változása esetén mindig a megnyitás napján hatályos hivatalos szöveg és a helyszíni jelzés az irányadó.</p>
+</section>
+</main></div>
+<footer class="footer">Összeállítva túratervezési és kutatási célra · Utolsó frissítés: 2026. szeptember 26. · Nem minősül jogi vagy hatósági állásfoglalásnak.</footer>
+<script>
+(()=>{
+ const root=document.documentElement, toggle=document.querySelector('[data-theme-toggle]');
+ let theme=window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';
+ const icon=t=>t==='dark'?'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>':'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';
+ const setTheme=t=>{theme=t;root.dataset.theme=t;toggle.innerHTML=icon(t);toggle.setAttribute('aria-label',t==='dark'?'Váltás világos módra':'Váltás sötét módra')};
+ setTheme(theme);toggle.addEventListener('click',()=>setTheme(theme==='dark'?'light':'dark'));
+ document.querySelector('[data-print]').addEventListener('click',()=>window.print());
+ const search=document.querySelector('#search'), filter=document.querySelector('#filter'), rows=[...document.querySelectorAll('.searchable tbody tr')], count=document.querySelector('#count'), empty=document.querySelector('#no-results');
+ const update=()=>{const q=search.value.trim().toLocaleLowerCase('hu'),f=filter.value;let shown=0;rows.forEach(row=>{const ok=(!q||row.textContent.toLocaleLowerCase('hu').includes(q))&&(f==='all'||row.dataset.status===f);row.hidden=!ok;if(ok)shown++});count.textContent=`${shown} vízterület látható`;empty.style.display=shown?'none':'block'};
+ search.addEventListener('input',update);filter.addEventListener('change',update);update();
+})();
+</script>
+</body></html>
