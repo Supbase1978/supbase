@@ -5900,12 +5900,23 @@ Közös nevező-adatot és a Deszkaválasztó-ajánlást.
 - **Tesztek:** `colors.test.ts` (parse, merge), `candidates.server.test.ts`
   (hozzáfűzés, duplikátum, üres input nem ír). Az adatlap-sorra nincs teszt
   (a route-nak nincs meglévő adatlap-tesztje).
-- **Élesbe:** a migrációt külön kell alkalmazni (`npm run sb -- db push`);
-  Docker nincs, a CI `rls-tests` lába ellenőrzi.
+- **Élesbe:** a migráció alkalmazva (`migration list` szerint a
+  `20260717099900` local ÉS remote egyezik).
 
-**Nyitva (külön kör):** `npm audit` — 8 találat (3 kritikus: `tinypool` →
-vitest 5 major, `maplibre-gl`; magas: `undici`, `js-yaml`, `brace-expansion`,
-`source-map-js`; közepes: `@vitest/mocker`). Az `npm audit fix` a nem-breaking
-részt javíthatja.
+## npm audit — teljes lezárás (2026-10-08)
 
-**Kapuk:** typecheck · lint · test (102 fájl / 1523 teszt) — mind zöld.
+A 8 találat (3 kritikus, 4 magas, 1 közepes) nulláig javítva.
+
+- `npm audit fix`: `brace-expansion`, `js-yaml`, `source-map-js`, `undici`
+  (nem-breaking, csak lockfile).
+- `npm audit fix --force`: `maplibre-gl` → 6.13.0, `vitest` (+ `@vitest/mocker`,
+  `tinypool`) → 5.0.3 (major-váltás, `package.json` is frissült).
+- **vitest 5 migráció:** az `environmentMatchGlobs` opció megszűnt.
+  `vitest.config.ts` most `test.projects`-et használ (`extends` alapértelmezetten
+  örökli a root configot — pluginok, aliasok): egy `dom` projekt
+  (`**/*.test.tsx` → jsdom) és egy `node` projekt (`**/*.test.ts` → node).
+- Ellenőrzés: `typecheck` · `lint` · `test` (102 fájl / 1523 teszt, vitest 5-ön
+  is mind zöld) · `build:web` (production build hibátlan).
+
+**Kapuk:** typecheck · lint · test (102 fájl / 1523 teszt) · build:web — mind
+zöld. `npm audit`: 0 találat.
