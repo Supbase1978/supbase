@@ -9,9 +9,10 @@ import { privacyDocument } from "@core/legal/content";
 import { LegalPage } from "@core/legal/LegalPage";
 
 import type { Route } from "./+types/adatvedelem";
+import { normalizedUrl } from "@core/http/request-url";
 
 export async function loader({ request }: Route.LoaderArgs) {
-  const locale = getLocaleFromPath(new URL(request.url).pathname);
+  const locale = getLocaleFromPath(normalizedUrl(request).pathname);
   const doc = privacyDocument[locale];
   const seo = buildPageSeo({
     request,
@@ -23,7 +24,7 @@ export async function loader({ request }: Route.LoaderArgs) {
   return { locale, seo };
 }
 
-export const meta: Route.MetaFunction = ({ data }) => data?.seo ?? [];
+export const meta: Route.MetaFunction = ({ loaderData }) => loaderData?.seo ?? [];
 
 export default function PrivacyRoute({ loaderData }: Route.ComponentProps) {
   return <LegalPage document={privacyDocument[loaderData.locale]} />;

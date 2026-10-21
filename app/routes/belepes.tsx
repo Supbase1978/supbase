@@ -22,6 +22,7 @@ import { AuthNotice } from "../auth/AuthNotice";
 import { OAuthButtons } from "../auth/OAuthButtons";
 import { useAuthT } from "../auth/auth-i18n";
 import type { Route } from "./+types/belepes";
+import { normalizedUrl } from "@core/http/request-url";
 
 function readCaptchaToken(formData: FormData): string | undefined {
   if (!isTurnstileEnabled()) {
@@ -32,7 +33,7 @@ function readCaptchaToken(formData: FormData): string | undefined {
 }
 
 export async function loader({ request }: Route.LoaderArgs) {
-  const url = new URL(request.url);
+  const url = normalizedUrl(request);
   const redirectTo = safeRedirect(url.searchParams.get("redirectTo"), "/");
   const user = await getUser(request);
   if (user) {

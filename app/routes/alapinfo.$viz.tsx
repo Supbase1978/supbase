@@ -35,6 +35,7 @@ import { sourceListItems, WATER_SOURCES } from "@modules/spots/sources";
 import { SourceList } from "@modules/spots/ui/SourceList";
 
 import type { Route } from "./+types/alapinfo.$viz";
+import { normalizedUrl } from "@core/http/request-url";
 
 export async function loader({ request, params }: Route.LoaderArgs) {
   const viz = params.viz;
@@ -42,7 +43,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
     throw new Response("Not Found", { status: 404 });
   }
 
-  const locale = getLocaleFromPath(new URL(request.url).pathname);
+  const locale = getLocaleFromPath(normalizedUrl(request).pathname);
   const { supabase } = createSupabaseServerClient(request);
   await recordEvent(supabase, request, "page_view");
 
@@ -68,7 +69,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
   return { seo, water: viz, sources };
 }
 
-export const meta: Route.MetaFunction = ({ data }) => data?.seo ?? [];
+export const meta: Route.MetaFunction = ({ loaderData }) => loaderData?.seo ?? [];
 
 function numberedList(
   t: (key: string) => string,

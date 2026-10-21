@@ -11,9 +11,10 @@ import { createSupabaseServerClient } from "@core/auth/supabase.server";
 import { safeRedirect } from "@core/auth/session.server";
 
 import type { Route } from "./+types/auth.callback";
+import { normalizedUrl } from "@core/http/request-url";
 
 export async function loader({ request }: Route.LoaderArgs) {
-  const url = new URL(request.url);
+  const url = normalizedUrl(request);
   const code = url.searchParams.get("code");
   const redirectTo = safeRedirect(url.searchParams.get("redirectTo"), "/");
 

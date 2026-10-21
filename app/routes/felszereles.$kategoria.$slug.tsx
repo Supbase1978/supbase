@@ -38,6 +38,7 @@ import { ReviewSummary } from "@modules/reviews/ui/ReviewSummary";
 import { getReviewDimensions, isFlagReason } from "@modules/reviews/types";
 
 import type { Route } from "./+types/felszereles.$kategoria.$slug";
+import { normalizedUrl } from "@core/http/request-url";
 
 function parseRating(value: FormDataEntryValue | null): number | null {
   if (typeof value !== "string" || value.trim() === "") {
@@ -64,7 +65,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
     throw new Response("Not Found", { status: 404 });
   }
 
-  const locale = getLocaleFromPath(new URL(request.url).pathname);
+  const locale = getLocaleFromPath(normalizedUrl(request).pathname);
   const { supabase } = createSupabaseServerClient(request);
   await recordEvent(supabase, request, "page_view");
 
@@ -217,7 +218,7 @@ export async function action({ request, params }: Route.ActionArgs) {
     : data<ActionResult>({ ok: false, errorKey: result.errorKey }, { headers });
 }
 
-export const meta: Route.MetaFunction = ({ data }) => data?.seo ?? [];
+export const meta: Route.MetaFunction = ({ loaderData }) => loaderData?.seo ?? [];
 
 const RATING_OPTIONS = [1, 2, 3, 4, 5] as const;
 

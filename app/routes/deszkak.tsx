@@ -13,9 +13,10 @@ import { listBoards } from "@modules/catalog/data/boards.server";
 import { BoardCard } from "@modules/catalog/ui/BoardCard";
 
 import type { Route } from "./+types/deszkak";
+import { normalizedUrl } from "@core/http/request-url";
 
 export async function loader({ request }: Route.LoaderArgs) {
-  const locale = getLocaleFromPath(new URL(request.url).pathname);
+  const locale = getLocaleFromPath(normalizedUrl(request).pathname);
   const { supabase } = createSupabaseServerClient(request);
   await recordEvent(supabase, request, "page_view");
 
@@ -48,7 +49,7 @@ export async function loader({ request }: Route.LoaderArgs) {
   return { items, seo };
 }
 
-export const meta: Route.MetaFunction = ({ data }) => data?.seo ?? [];
+export const meta: Route.MetaFunction = ({ loaderData }) => loaderData?.seo ?? [];
 
 export default function BoardsListRoute({ loaderData }: Route.ComponentProps) {
   const { t } = useTranslation("catalog");

@@ -29,7 +29,7 @@ import { createBrotliCompress, createGzip, constants as zlibConstants } from "no
 
 const ROOT = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const CLIENT_DIR = join(ROOT, "build", "client");
-const SERVER_ENTRY = join(ROOT, "build", "server", "server.js");
+const SERVER_ENTRY = join(ROOT, "build", "server", "index.js");
 const PORT = Number(process.argv[2] ?? process.env.PORT ?? 3000);
 
 const MIME = {
@@ -138,7 +138,9 @@ function toWebRequest(req, origin) {
   });
 }
 
-const handler = (await import(pathToFileURL(SERVER_ENTRY).href)).default;
+// Az adapter (v4) a függvényben pontosan ezt csinálja: createRequestHandler({ build }).
+const { createRequestHandler } = await import("@netlify/vite-plugin-react-router/serverless");
+const handler = createRequestHandler({ build: await import(pathToFileURL(SERVER_ENTRY).href) });
 
 const server = createServer((req, res) => {
   const origin = `http://${req.headers.host ?? `localhost:${PORT}`}`;

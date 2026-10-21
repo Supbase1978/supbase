@@ -56,6 +56,7 @@ import { AdvisorWizard } from "@modules/advisor/ui/AdvisorWizard";
 
 import { recommendGearFor } from "./deszkavalaszto.gear";
 import type { Route } from "./+types/deszkavalaszto";
+import { normalizedUrl } from "@core/http/request-url";
 
 function oneOf<T extends string>(
   value: FormDataEntryValue | null,
@@ -74,7 +75,7 @@ const USES: AdvisorUse[] = ["allround", "tura", "verseny", "joga", "horgasz"];
 const STORAGES: StorageChoice[] = ["any", "inflatable_only"];
 
 export async function loader({ request }: Route.LoaderArgs) {
-  const url = new URL(request.url);
+  const url = normalizedUrl(request);
   const locale = getLocaleFromPath(url.pathname);
   const t = serverT(locale, "advisor");
   const seo = buildPageSeo({
@@ -245,7 +246,7 @@ export async function action({ request }: Route.ActionArgs) {
   throw redirect(`/deszkavalaszto?${searchParamsFromInputs(inputs).toString()}`);
 }
 
-export const meta: Route.MetaFunction = ({ data }) => data?.seo ?? [];
+export const meta: Route.MetaFunction = ({ loaderData }) => loaderData?.seo ?? [];
 
 export default function AdvisorRoute({ loaderData }: Route.ComponentProps) {
   const { t: tCore } = useTranslation("core");

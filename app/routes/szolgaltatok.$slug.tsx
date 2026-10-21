@@ -25,6 +25,7 @@ import {
 import type { ProviderServiceType } from "@modules/providers/types";
 
 import type { Route } from "./+types/szolgaltatok.$slug";
+import { normalizedUrl } from "@core/http/request-url";
 
 function trimmedOrNull(value: FormDataEntryValue | null): string | null {
   return typeof value === "string" && value.trim().length > 0 ? value.trim() : null;
@@ -36,7 +37,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
     throw new Response("Not Found", { status: 404 });
   }
 
-  const locale = getLocaleFromPath(new URL(request.url).pathname);
+  const locale = getLocaleFromPath(normalizedUrl(request).pathname);
   const { supabase } = createSupabaseServerClient(request);
   await recordEvent(supabase, request, "page_view");
 
@@ -128,7 +129,7 @@ export async function action({ request, params }: Route.ActionArgs) {
   return data<ActionResult>(result, { headers });
 }
 
-export const meta: Route.MetaFunction = ({ data }) => data?.seo ?? [];
+export const meta: Route.MetaFunction = ({ loaderData }) => loaderData?.seo ?? [];
 
 export default function ProviderProfileRoute({ loaderData, actionData }: Route.ComponentProps) {
   const { t } = useTranslation("providers");

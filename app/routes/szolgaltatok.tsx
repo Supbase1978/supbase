@@ -19,9 +19,10 @@ import { ProviderCard, type ProviderCardData } from "@modules/providers/ui/Provi
 import { PROVIDER_SERVICE_TYPES, type ProviderServiceType } from "@modules/providers/types";
 
 import type { Route } from "./+types/szolgaltatok";
+import { normalizedUrl } from "@core/http/request-url";
 
 export async function loader({ request }: Route.LoaderArgs) {
-  const locale = getLocaleFromPath(new URL(request.url).pathname);
+  const locale = getLocaleFromPath(normalizedUrl(request).pathname);
   const { supabase } = createSupabaseServerClient(request);
   await recordEvent(supabase, request, "page_view");
 
@@ -49,7 +50,7 @@ export async function loader({ request }: Route.LoaderArgs) {
   return { items, seo };
 }
 
-export const meta: Route.MetaFunction = ({ data }) => data?.seo ?? [];
+export const meta: Route.MetaFunction = ({ loaderData }) => loaderData?.seo ?? [];
 
 export default function ProvidersListRoute({ loaderData }: Route.ComponentProps) {
   const { t } = useTranslation("providers");

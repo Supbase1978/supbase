@@ -17,6 +17,7 @@ import { getLocaleFromPath, localizePath } from "@core/i18n";
 import { isSupabaseConfigured } from "./env";
 import { defaultRole, hasRole, isRole, type Role } from "./roles";
 import { createSupabaseServerClient } from "./supabase.server";
+import { normalizedUrl } from "@core/http/request-url";
 
 const LOGIN_PATH = "/belepes";
 
@@ -125,7 +126,7 @@ export async function requireRole(request: Request, required: Role): Promise<Use
  * tesztelhető a hálózat érintése nélkül.
  */
 export function buildLoginRedirect(request: Request): string {
-  const url = new URL(request.url);
+  const url = normalizedUrl(request);
   const locale = getLocaleFromPath(url.pathname);
   const loginPath = localizePath(LOGIN_PATH, locale);
   const params = new URLSearchParams({ redirectTo: url.pathname + url.search });

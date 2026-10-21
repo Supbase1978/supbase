@@ -34,6 +34,7 @@ import { evaluateSnapshot } from "@modules/weather/sup-index/reading";
 import type { SupIndexInput } from "@modules/weather/sup-index/types";
 
 import type { Route } from "./+types/spotok";
+import { normalizedUrl } from "@core/http/request-url";
 
 interface SpotListItemEvaluation {
   index: number;
@@ -107,7 +108,7 @@ function evaluateSpotSnapshot(
 }
 
 export async function loader({ request }: Route.LoaderArgs) {
-  const locale = getLocaleFromPath(new URL(request.url).pathname);
+  const locale = getLocaleFromPath(normalizedUrl(request).pathname);
   const { supabase } = createSupabaseServerClient(request);
   await recordEvent(supabase, request, "page_view");
 
@@ -151,7 +152,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 /** A szűrőchipek sorrendje — a spots.water_type CHECK-értékei (3.1). */
 const WATER_TYPE_FILTERS: readonly WaterType[] = ["to", "folyo", "holtag", "csatorna"];
 
-export const meta: Route.MetaFunction = ({ data }) => data?.seo ?? [];
+export const meta: Route.MetaFunction = ({ loaderData }) => loaderData?.seo ?? [];
 
 export default function SpotsListRoute({ loaderData }: Route.ComponentProps) {
   const { t } = useTranslation("spots");

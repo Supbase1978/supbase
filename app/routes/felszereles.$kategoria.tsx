@@ -31,6 +31,7 @@ import {
 import { AccessoryCard } from "@modules/catalog/ui/AccessoryCard";
 
 import type { Route } from "./+types/felszereles.$kategoria";
+import { normalizedUrl } from "@core/http/request-url";
 
 export async function loader({ request, params }: Route.LoaderArgs) {
   const kategoria = params.kategoria;
@@ -38,7 +39,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
     throw new Response("Not Found", { status: 404 });
   }
 
-  const locale = getLocaleFromPath(new URL(request.url).pathname);
+  const locale = getLocaleFromPath(normalizedUrl(request).pathname);
   const { supabase } = createSupabaseServerClient(request);
   await recordEvent(supabase, request, "page_view");
 
@@ -69,7 +70,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
   };
 }
 
-export const meta: Route.MetaFunction = ({ data }) => data?.seo ?? [];
+export const meta: Route.MetaFunction = ({ loaderData }) => loaderData?.seo ?? [];
 
 /** A biztonsági blokk melyik forrásból építkezik — a UI ez alapján dönt. */
 function safetySourceFor(category: GearCategory): "core-leash" | "core-pfd" | "own" | null {

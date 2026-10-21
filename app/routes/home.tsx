@@ -38,6 +38,7 @@ import { buildHomeTiles } from "~/home-tiles";
 import { modules } from "@modules/registry";
 
 import type { Route } from "./+types/home";
+import { normalizedUrl } from "@core/http/request-url";
 
 const homeTiles = buildHomeTiles(modules);
 
@@ -108,7 +109,7 @@ interface HomeReviewItem {
 }
 
 export async function loader({ request }: Route.LoaderArgs) {
-  const locale = getLocaleFromPath(new URL(request.url).pathname);
+  const locale = getLocaleFromPath(normalizedUrl(request).pathname);
   const { supabase } = createSupabaseServerClient(request);
   await recordEvent(supabase, request, "page_view");
 
@@ -184,7 +185,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 }
 
 // Locale-helyes SEO-meta a loaderből (F1.8): title/description/OG + canonical + hreflang.
-export const meta: Route.MetaFunction = ({ data }) => data?.seo ?? [];
+export const meta: Route.MetaFunction = ({ loaderData }) => loaderData?.seo ?? [];
 
 export default function Home({ loaderData }: Route.ComponentProps) {
   const { t } = useTranslation("core");

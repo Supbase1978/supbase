@@ -23,6 +23,7 @@ import { AuthNotice } from "../auth/AuthNotice";
 import { OAuthButtons } from "../auth/OAuthButtons";
 import { useAuthT } from "../auth/auth-i18n";
 import type { Route } from "./+types/regisztracio";
+import { normalizedUrl } from "@core/http/request-url";
 
 function readCaptchaToken(formData: FormData): string | undefined {
   if (!isTurnstileEnabled()) {
@@ -41,7 +42,7 @@ const DISPLAY_NAME_MIN = 3;
 const DISPLAY_NAME_MAX = 40;
 
 export async function loader({ request }: Route.LoaderArgs) {
-  const url = new URL(request.url);
+  const url = normalizedUrl(request);
   const redirectTo = safeRedirect(url.searchParams.get("redirectTo"), "/");
   const user = await getUser(request);
   if (user) {

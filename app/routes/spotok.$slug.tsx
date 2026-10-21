@@ -67,6 +67,7 @@ import { evaluateSnapshot } from "@modules/weather/sup-index/reading";
 import type { SupIndexInput } from "@modules/weather/sup-index/types";
 
 import type { Route } from "./+types/spotok.$slug";
+import { normalizedUrl } from "@core/http/request-url";
 
 interface SpotDetailEvaluation {
   index: number;
@@ -126,7 +127,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
     throw new Response("Not Found", { status: 404 });
   }
 
-  const locale = getLocaleFromPath(new URL(request.url).pathname);
+  const locale = getLocaleFromPath(normalizedUrl(request).pathname);
   const { supabase } = createSupabaseServerClient(request);
   await recordEvent(supabase, request, "page_view");
 
@@ -340,7 +341,7 @@ export async function action({ request, params }: Route.ActionArgs) {
   return data<ReportActionResult>({ ok: true }, { headers });
 }
 
-export const meta: Route.MetaFunction = ({ data }) => data?.seo ?? [];
+export const meta: Route.MetaFunction = ({ loaderData }) => loaderData?.seo ?? [];
 
 const STATUS_SEVERITY: Record<SpotStatus, "safe" | "caution" | "danger"> = {
   safe: "safe",

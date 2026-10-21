@@ -22,6 +22,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { isbot } from "isbot";
 
 import type { AnalyticsEvent } from "./events";
+import { normalizedUrl } from "@core/http/request-url";
 
 /** Ennyi ideig várunk az esemény rögzítésére; utána feladjuk. */
 const RECORD_TIMEOUT_MS = 1_500;
@@ -85,7 +86,7 @@ export async function recordEvent(
     return false;
   }
 
-  const path = options.path ?? pathWithoutQuery(request.url);
+  const path = options.path ?? pathWithoutQuery(normalizedUrl(request).href);
 
   try {
     const call = supabase.rpc("record_analytics_event", {
