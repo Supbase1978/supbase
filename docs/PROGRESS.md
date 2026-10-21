@@ -15,7 +15,7 @@
 | F1.5 Catalog + Reviews | ✅ kész (2026-07-21) | catalog+reviews modulok, deszka-lista/adatlap, „Közös nevező"-blokk RatingBar-okkal (átnevezve: Népítélet→Közös nevező, színkiemelt evező-szójáték), e-mail-gate-elt vélemény+flag flow, admin-moderáció, catalog-watch séma-előkészítés. Vélemény-flow bejelentkezett teszt-fiókkal ÉLESBEN verifikálva (Közös nevező adattal renderel) |
 | F1.6 Advisor | ✅ kész (2026-07-21) | algo-engineer (kétrétegű algoritmus) + ui-builder/karmester (wizard + eredmény + route + session-log); wizard end-to-end élesben verifikálva. Admin-moderáció böngészőben VERIFIKÁLVA (2026-07-24, lásd F1.6-szakasz) — az admin-ág teljesen zöld |
 | F1.7 Providers | ✅ kész (2026-07-24) | directory-lista + profil + lead-form + saját-listing (claim/regisztráció) + admin-hitelesítő panel; mind az 5 flow böngészőben élesben verifikálva. Részletek lent |
-| F1.8 SEO-réteg | ✅ mag kész (2026-07-24) | loader-alapú meta+hreflang, JSON-LD, sitemap+robots, consent (user_consents migráció + regisztrációs checkbox + re-consent), ÁSZF+adatvédelmi. HÁTRA: OG-kép-generálás + persona-landingek (F1.8b) + a consent-migráció éles push. Részletek lent |
+| F1.8 SEO-réteg | ✅ mag kész (2026-07-24) | loader-alapú meta+hreflang, JSON-LD, sitemap+robots, consent (user_consents migráció + regisztrációs checkbox + re-consent), ÁSZF+adatvédelmi. Persona-landingek ✅ (2026-10-21, ld. lent); a dinamikus OG-kártya szándékosan kimarad (ld. F1.10/8). Részletek lent |
 | F1.9 Push + viharjelzés | ✅ kész (2026-07-25) | teljes web push-pipeline (VAPID + RFC 8291 natív Web Cryptóval, npm nélkül), storm-alert push-ág, feliratkozó-UI, m4 `observed_at`. Élesítve (5 migráció + secretek + deploy) és **böngészőben végponttól végpontig verifikálva: a viharjelzés-push megérkezett**. Részletek lent |
 | F1.11 Folyó-vízállás (5.1/6) | ✅ kész + élesítve (2026-07-27) | vizugy.hu (OVF) REST API, HIVATALOS árvízvédelmi készültségi küszöbökkel; a fix −1 folyó-büntetés helyett fokozat-alapú index-plafon. Élesben verifikálva, cron írja. + F1.11b: póráz-figyelmeztetés folyóvízre |
 | F1.12 Analitika (süti-mentes) | ✅ kész + élesítve (2026-07-28) | `analytics_events` + definer-RPC + `/admin/analitika`. Nincs süti/IP/azonosító → nincs egyéni tölcsér, csak darabszám. Robot/DNT/dev nem számol |
@@ -5920,3 +5920,57 @@ A 8 találat (3 kritikus, 4 magas, 1 közepes) nulláig javítva.
 
 **Kapuk:** typecheck · lint · test (102 fájl / 1523 teszt) · build:web — mind
 zöld. `npm audit`: 0 találat.
+
+## Elhalasztott tételek köre — react-router 8, persona-landingek (2026-10-21)
+
+**react-router 7.18 → 8.5.0** (`52cb888`, helyben commitolva, MÉG NEM pusholva/deployolva).
+
+- A 7.x future flagek (`v8_*`) a v8-ban alapértelmezettek, a `react-router.config.ts`
+  változatlan maradt. A `meta` `data` argumentum → `loaderData` (15 route).
+- **`v8_passThroughRequests`:** a `request.url` nyers (`.data`, `?_routes`, `?index`).
+  Új `normalizedUrl(request)` (`src/core/http/request-url.ts`, tesztelt) adja vissza
+  a korábbi normalizált URL-t a locale-felismeréshez, az analitikához (különben
+  `/deszkak.data` útvonalak szennyezték volna a statisztikát) és a belépő-redirecthez.
+- **Netlify-adapter 3.1.1 → 4.0.0 kötelező a v8-hoz:** az Environment API-val a
+  szerver-build `build/server/index.js` lett (a 3.x még a régi `server.js`-re
+  mutatott volna → éles 500). A köztes „v7 + flagek + adapter 3” állapot NEM
+  deployolható. `scripts/serve-build.mjs` az adapter `createRequestHandler`-ét hívja.
+- **Node ≥ 22.22.0** kell (RR8 `engines`); `package.json` frissítve. A helyi gép
+  22.20.0-n van — a pre-commit/typecheck figyelmeztet (működik), de frissítendő.
+  CI (`node-version: 22`) és Netlify (`NODE_VERSION = "22"`) a legfrissebb 22.x-et
+  kapja; az első deploy logjában ELLENŐRIZNI a Node-verziót.
+- **Lockfile frissen feloldva:** a régi lock + `npm install` ERESOLVE-t adott
+  (`--legacy-peer-deps` elvetve: kidobta az auto-peer-eket, pl. `@testing-library/dom`).
+  `npm ci` ellenőrizve. Mellékesen vite 7.3.7 (launch-editor audit-találat).
+- Ellenőrzés: typecheck · lint · test (1536) · production build lokálisan kiszolgálva
+  (`serve-build.mjs`) ellen: public-paths e2e 32/32 + a11y zöld (chromium + mobile).
+  A dev-szerver elleni e2e instabil (hideg fordítás + lassú SSD) — release-ellenőrzéshez
+  a production buildet használd (`E2E_BASE_URL=http://localhost:3100`).
+- **Playwright-böngésző:** az `npm ci` újabb Playwrightot hozott, `npx playwright install chromium` kellett.
+
+**Persona-landingek** (`5d53126`): `/deszkavalaszto/:persona` — `kezdo-100-kg-felett`,
+`csaladi`, `folyami` (`src/modules/advisor/personas.ts`). A méretek és a top-3 deszka
+a VALÓDI ajánlóból jönnek a persona példa-bemenetével; a szöveg a repóban már
+forrásolt megfogalmazásokra épül (a folyami oldal a core `safety.riverLeash` blokkot
+mutatja). Sitemap + belső linkek a wizard-oldalon, hu+en. Az adatbetöltés közös
+route-segédbe került (`deszkavalaszto.data.server.ts`). Új e2e + axe.
+A példa-súlyok (105/80/80 kg) termék-feltevések — a szövegek jóváhagyása a felhasználóé.
+
+**Advisor ár-padló — MÉRVE, NEM épült meg.** Katalógus: 521 deszka, de csak 39
+árrekord 24 deszkára (~5%): allround 16, touring 5, race 2, többi ≤1. Az
+eloszlás-alapú küszöb ezen a mintán zaj és torzítás (csak a crawlolt boltok árai).
+Az akadály már nem a katalógus mérete, hanem az ÁR-LEFEDETTSÉG; a bolti árak
+gyűjtése pedig háttérbe szorult (F2.4). Holt kódot nem építettünk. Újranyitás:
+ha típusonként ≥ ~20 árral rendelkező deszka van, vagy másik jelet (pl. konstrukció)
+választunk a „rendeltetés-jelzéshez”.
+
+**Capacitor-váz — SZÁNDÉKOSAN NEM készült, döntés kell.** (1) A `build:native` már a
+mai változtatások ELŐTT is elbukott: SPA-módban minden route szerver-`loader`/`action`-je
+érvénytelen (`SPA Mode: 2 invalid route export(s)`), vagyis a „natív SPA-mód megvan”
+állítás nem igaz — a wrapper előtt a route-ok kliens-oldalivá alakítása kell.
+(2) Az Expo hivatalos `expo-web-to-native` skillje (github.com/expo/skills) NEM
+Capacitor-t ad: Expo/React Native héj + `'use dom'` DOM-komponensek, képernyőnként
+natívra cserélve (`@expo/ui`, Expo Router). Ez a spec 1.1 szerinti Capacitor-döntés
+felülvizsgálata, és az adatréteg (SSR-loaderek) újraírását igényli. Dönteni kell:
+Capacitor (SPA-átalakítással) vs Expo.
+
