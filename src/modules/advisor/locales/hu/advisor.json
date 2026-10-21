@@ -119,5 +119,52 @@
     "glide": "Siklás",
     "build": "Minőség",
     "value": "Ár-érték"
+  },
+  "persona": {
+    "exampleLabel": "Példa-adatok",
+    "exampleSummary": "{{weight}} kg · {{level}} · {{water}}",
+    "exampleWithPassenger": "{{weight}} kg · {{level}} · {{water}} · utas: {{passenger}}",
+    "tipsTitle": "Mire figyelj",
+    "sizingTitle": "Mekkora deszka kell?",
+    "topTitle": "A példához illő deszkák",
+    "topNone": "Jelenleg nincs a feltételeknek megfelelő deszka a katalógusban.",
+    "ctaPreset": "Teljes ajánlás ezekkel az adatokkal",
+    "ctaOwn": "Add meg a saját adataidat",
+    "disclaimer": "A példa-adatok szemléltetnek: a saját súlyoddal, magasságoddal és utasoddal más lehet az ajánlás.",
+    "moreTitle": "Más helyzetek",
+    "wizardLinksTitle": "Gyakori helyzetek",
+    "kezdo-100-kg-felett": {
+      "title": "SUP kezdőknek 100 kg felett",
+      "seoTitle": "SUP kezdőknek 100 kg felett — melyik deszka bírja? | Suptime",
+      "seoDescription": "Kezdő vagy, és 100 kg felett vagy? Megmutatjuk, mekkora térfogat, hossz és terhelhetőség kell, és a katalógusból mely deszkák felelnek meg.",
+      "lead": "Ha 100 kg felett kezdesz, nem az a kérdés, hogy „melyik deszka szép”, hanem hogy melyik viszi el biztonságosan a súlyodat. Egy 105 kg-os kezdő példáján mutatjuk meg, mit számol a Deszkaválasztó.",
+      "tips": [
+        "A testsúly a deszka térfogatát (felhajtóerő), a magasság a hosszát határozza meg — nagyobb súlyhoz nagyobb térfogat kell.",
+        "A terhelhetőség biztonsági korlát: a deszkának a te súlyodat kényelmes ráhagyással kell bírnia, ezen nem érdemes lazítani.",
+        "Kezdőként a széles, stabil deszka a magabiztosabb választás."
+      ]
+    },
+    "csaladi": {
+      "title": "Családi SUP tanácsadó",
+      "seoTitle": "Családi SUP tanácsadó — deszka gyerekkel közös evezéshez | Suptime",
+      "seoDescription": "Gyerekkel evezel? Megmutatjuk, mekkora terhelhetőségű és térfogatú deszka kell kettőtöknek, és a katalógusból mely deszkák felelnek meg.",
+      "lead": "Utassal a terhelés a te súlyodból és az utas becsült súlyából jön össze. A példában egy 80 kg-os szülő viszi magával a gyereket egy védett kisvízen.",
+      "tips": [
+        "Utas esetén a mérvadó terhelés a te súlyod plusz az utas becsült súlya — a Deszkaválasztó ezzel számol. Ha az utas ennél lényegesen nehezebb, add hozzá a saját testsúlyodhoz.",
+        "A terhelhetőség biztonsági korlát: ezen nem érdemes lazítani.",
+        "Védett kisvízen kezdjetek, és válasszatok széles, stabil deszkát."
+      ]
+    },
+    "folyami": {
+      "title": "Folyami SUP választó",
+      "seoTitle": "Folyami SUP választó — deszka és biztonság folyóvízre | Suptime",
+      "seoDescription": "Folyón evezel? Megmutatjuk, milyen deszka illik hozzád, és mit kell tudnod a pórázról és a mentőmellényről sodró vízen.",
+      "lead": "Folyón más szabályok érvényesek, mint állóvízen. A példa egy 80 kg-os, haladó evezőt mutat; a biztonsági tudnivalókat lent külön kiemeljük.",
+      "tips": [
+        "A testsúly a deszka térfogatát (felhajtóerő), a magasság a hosszát határozza meg.",
+        "A terhelhetőség biztonsági korlát: ezen nem érdemes lazítani.",
+        "Folyón a póráz típusa és a mentőmellény külön tudnivaló — lásd lent."
+      ]
+    }
   }
 }

@@ -24,9 +24,8 @@ import { createSupabaseServerClient } from "@core/auth/supabase.server";
 import { getLocaleFromPath, pickTranslated, serverT } from "@core/i18n";
 import { buildPageSeo } from "@core/seo/page-seo";
 import { Card, SafetyNote } from "@core/ui";
-import { listBoards, listCheapestPriceByBoard } from "@modules/catalog/data/boards.server";
 import { computeReviewAggregate, toTen } from "@modules/reviews/aggregate";
-import { listAllPublishedReviews } from "@modules/reviews/data/reviews.server";
+import { ADVISOR_PERSONAS } from "@modules/advisor/personas";
 import { loadAdvisorConfig } from "@modules/advisor/select/config.server";
 import {
   explainNoMatch,
@@ -45,7 +44,6 @@ import {
   type AdvisorDimensionScores,
   type AdvisorInputs,
   type AdvisorUse,
-  type BoardForAdvisor,
   type Experience,
   type Passenger,
   type StorageChoice,
@@ -54,6 +52,7 @@ import {
 import { AdvisorResult, type AdvisorResultBoard } from "@modules/advisor/ui/AdvisorResult";
 import { AdvisorWizard } from "@modules/advisor/ui/AdvisorWizard";
 
+import { loadAdvisorCatalog } from "./deszkavalaszto.data.server";
 import { recommendGearFor } from "./deszkavalaszto.gear";
 import type { Route } from "./+types/deszkavalaszto";
 import { normalizedUrl } from "@core/http/request-url";
@@ -98,42 +97,8 @@ export async function loader({ request }: Route.LoaderArgs) {
     return { seo, results: null, sizing: null, noMatchReason: null, water: null, gearItems: null };
   }
 
-  const [boards, cheapest, publishedReviews] = await Promise.all([
-    listBoards(supabase),
-    listCheapestPriceByBoard(supabase),
-    listAllPublishedReviews(supabase),
-  ]);
-
-  // Vélemények boardonként → Közös nevező-aggregátum.
-  const reviewsByBoard = new Map<string, typeof publishedReviews>();
-  for (const review of publishedReviews) {
-    const list = reviewsByBoard.get(review.board_id) ?? [];
-    list.push(review);
-    reviewsByBoard.set(review.board_id, list);
-  }
-
-  const boardsForAdvisor: BoardForAdvisor[] = boards.map((board) => {
-    const agg = computeReviewAggregate(reviewsByBoard.get(board.id) ?? []);
-    return {
-      id: board.id,
-      boardType: board.board_type,
-      // A deszka MINDEN kategóriája (F2.1-utó-43). Üres tömb = a
-      // `board_types` bevezetése előttről származó sor: onnan az egyértékű
-      // besorolás az egyetlen elem.
-      boardTypes: board.board_types.length > 0 ? board.board_types : [board.board_type],
-      volumeL: board.volume_l,
-      widthCm: board.width_cm,
-      lengthCm: board.length_cm,
-      thicknessCm: board.thickness_cm,
-      maxLoadKg: board.max_load_kg,
-      inflatable: board.inflatable,
-      modelYear: board.model_year,
-      priceHuf: cheapest.get(board.id) ?? null,
-      reviewAvg: agg.avgOverall,
-      reviewCount: agg.count,
-      ratingValueAvg: agg.perDimension.value,
-    };
-  });
+  const { boards, cheapest, reviewsByBoard, boardsForAdvisor } =
+    await loadAdvisorCatalog(supabase);
 
   const config = await loadAdvisorConfig(supabase);
   const ranked = recommendBoards(boardsForAdvisor, inputs, config, 5);
@@ -251,6 +216,7 @@ export const meta: Route.MetaFunction = ({ loaderData }) => loaderData?.seo ?? [
 export default function AdvisorRoute({ loaderData }: Route.ComponentProps) {
   const { t: tCore } = useTranslation("core");
   const { t: tCatalog } = useTranslation("catalog");
+  const { t: tAdvisor } = useTranslation("advisor");
 
   if (loaderData.results) {
     return (
@@ -299,5 +265,28 @@ export default function AdvisorRoute({ loaderData }: Route.ComponentProps) {
       </main>
     );
   }
-  return <AdvisorWizard />;
+  return (
+    <>
+      <AdvisorWizard />
+      {/* Persona-landingek belső linkjei (F1.8b): a crawler és a tanácstalan
+          látogató innen éri el a kész helyzet-oldalakat. */}
+      <nav aria-labelledby="advisor-personas" className="mx-auto max-w-5xl p-4 sm:p-6">
+        <h2 id="advisor-personas" className="text-lg font-semibold text-ink-deep">
+          {tAdvisor("persona.wizardLinksTitle")}
+        </h2>
+        <ul className="mt-2 flex flex-col gap-1">
+          {ADVISOR_PERSONAS.map((persona) => (
+            <li key={persona.slug}>
+              <Link
+                to={`/deszkavalaszto/${persona.slug}`}
+                className="font-semibold text-petrol-text underline"
+              >
+                {tAdvisor(`persona.${persona.slug}.title`)}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </nav>
+    </>
+  );
 }

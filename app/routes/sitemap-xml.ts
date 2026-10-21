@@ -11,6 +11,7 @@ import { pickTranslated } from "@core/i18n";
 import { defaultLocale } from "@core/i18n/config";
 import { siteOrigin } from "@core/seo/page-seo";
 import { buildSitemapXml, STATIC_SITEMAP_PATHS } from "@core/seo/sitemap";
+import { ADVISOR_PERSONAS } from "@modules/advisor/personas";
 import { listAccessories, listBoards } from "@modules/catalog/data/boards.server";
 import { listProviders } from "@modules/providers/data/providers.server";
 import { listSpots } from "@modules/spots/data/spots.server";
@@ -30,6 +31,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   // path-nak; a locale-prefixet a sitemap-builder teszi hozzá (lásd sitemap.ts).
   const paths = [
     ...STATIC_SITEMAP_PATHS,
+    ...ADVISOR_PERSONAS.map((p) => `/deszkavalaszto/${p.slug}`),
     ...boards.map((b) => `/deszkak/${pickTranslated(b.slug, defaultLocale)}`),
     // F2.3 2. szakasz: termékszintű kiegészítők (MOST 0 sor, a katalógus még üres).
     ...accessories.map(

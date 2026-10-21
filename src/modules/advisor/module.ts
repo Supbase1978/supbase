@@ -12,7 +12,11 @@ import type { ModuleManifest } from "@core/module-contract";
 
 export const advisorModule: ModuleManifest = {
   id: "advisor",
-  routes: [{ path: "deszkavalaszto", file: "routes/deszkavalaszto.tsx" }],
+  routes: [
+    { path: "deszkavalaszto", file: "routes/deszkavalaszto.tsx" },
+    // Persona-landingek (F1.8b): előre kitöltött helyzetek, indexelhető oldalként.
+    { path: "deszkavalaszto/:persona", file: "routes/deszkavalaszto.$persona.tsx" },
+  ],
   nav: [{ labelKey: "nav.advisor", path: "/deszkavalaszto", placement: "primary", order: 5 }],
   i18nNamespace: "advisor",
 };

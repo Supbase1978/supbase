@@ -103,6 +103,28 @@ test.describe("Publikus felület", () => {
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
   });
 
+  test("persona-landingek: h1, példa-ajánlás, CTA a wizardra; a folyami oldalon póráz-figyelmeztetés", async ({
+    page,
+  }) => {
+    for (const slug of ["kezdo-100-kg-felett", "csaladi", "folyami"]) {
+      const response = await page.goto(`/deszkavalaszto/${slug}`);
+      expect(response?.status(), slug).toBe(200);
+      await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+      await expect(page.locator('a[href^="/deszkavalaszto?suly="]')).toBeVisible();
+    }
+    await expect(page.getByText("Folyóvízen más póráz kell")).toBeVisible();
+  });
+
+  test("a Deszkaválasztó wizard-oldala linkeli a persona-landingeket", async ({ page }) => {
+    await page.goto("/deszkavalaszto");
+    await expect(page.locator('a[href="/deszkavalaszto/csaladi"]')).toBeAttached();
+  });
+
+  test("ismeretlen persona 404-et ad (nem 500-at)", async ({ page }) => {
+    const response = await page.goto("/deszkavalaszto/ilyen-persona-nincs-is");
+    expect(response?.status()).toBe(404);
+  });
+
   test("ismeretlen felszerelés-kategória 404-et ad (nem 500-at)", async ({ page }) => {
     const response = await page.goto("/felszereles/ilyen-kategoria-nincs-is");
     expect(response?.status()).toBe(404);

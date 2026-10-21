@@ -34,6 +34,8 @@ const KEY_SCREENS: { name: string; path: string }[] = [
   { name: "spot-lista", path: "/spotok" },
   { name: "szolgáltatók", path: "/szolgaltatok" },
   { name: "Deszkaválasztó wizard", path: "/deszkavalaszto" },
+  { name: "persona-landing: kezdő 100 kg felett", path: "/deszkavalaszto/kezdo-100-kg-felett" },
+  { name: "persona-landing: folyami", path: "/deszkavalaszto/folyami" },
   { name: "belépés", path: "/belepes" },
   { name: "regisztráció", path: "/regisztracio" },
   { name: "ÁSZF", path: "/aszf" },

@@ -119,5 +119,52 @@
     "glide": "Glide",
     "build": "Build",
     "value": "Value"
+  },
+  "persona": {
+    "exampleLabel": "Example inputs",
+    "exampleSummary": "{{weight}} kg · {{level}} · {{water}}",
+    "exampleWithPassenger": "{{weight}} kg · {{level}} · {{water}} · passenger: {{passenger}}",
+    "tipsTitle": "What to look for",
+    "sizingTitle": "What size of board?",
+    "topTitle": "Boards that fit the example",
+    "topNone": "There is currently no board in the catalogue that meets these conditions.",
+    "ctaPreset": "Full recommendation for these inputs",
+    "ctaOwn": "Enter your own details",
+    "disclaimer": "The example inputs are illustrative: with your own weight, height and passenger the recommendation may differ.",
+    "moreTitle": "Other situations",
+    "wizardLinksTitle": "Common situations",
+    "kezdo-100-kg-felett": {
+      "title": "SUP for beginners over 100 kg",
+      "seoTitle": "SUP for beginners over 100 kg — which board can carry you? | Suptime",
+      "seoDescription": "A beginner over 100 kg? See what volume, length and load rating you need, and which boards in our catalogue fit.",
+      "lead": "If you start above 100 kg, the question is not which board looks nice but which one carries your weight safely. We show what the Board Advisor calculates for a 105 kg beginner.",
+      "tips": [
+        "Body weight determines the board's volume (buoyancy), height determines its length — more weight needs more volume.",
+        "The load rating is a safety limit: the board must carry your weight with comfortable margin, so do not compromise on it.",
+        "As a beginner, a wide, stable board is the more confident choice."
+      ]
+    },
+    "csaladi": {
+      "title": "Family SUP advisor",
+      "seoTitle": "Family SUP advisor — a board for paddling with a child | Suptime",
+      "seoDescription": "Paddling with a child? See what load rating and volume the two of you need, and which boards in our catalogue fit.",
+      "lead": "With a passenger the load is your weight plus the passenger's estimated weight. The example is an 80 kg parent taking a child out on sheltered water.",
+      "tips": [
+        "With a passenger the relevant load is your weight plus the passenger's estimated weight — the Board Advisor calculates with that. If the passenger is much heavier, add it to your own weight.",
+        "The load rating is a safety limit: do not compromise on it.",
+        "Start on sheltered water and choose a wide, stable board."
+      ]
+    },
+    "folyami": {
+      "title": "River SUP advisor",
+      "seoTitle": "River SUP advisor — board and safety for flowing water | Suptime",
+      "seoDescription": "Paddling on a river? See which board suits you, and what to know about leashes and life jackets in flowing water.",
+      "lead": "Rivers follow different rules than still water. The example is an 80 kg intermediate paddler; the safety essentials are highlighted below.",
+      "tips": [
+        "Body weight determines the board's volume (buoyancy), height determines its length.",
+        "The load rating is a safety limit: do not compromise on it.",
+        "On a river the type of leash and a life jacket need separate attention — see below."
+      ]
+    }
   }
 }
