@@ -22,18 +22,27 @@ const ICON_TABLE = [
   ["Thickness", `4.75" / 12 cm`, `4.75" / 12 cm`, `4.75" / 12 cm`],
   ["Tail Width", `17.9" / 45.5 cm`, `18.1" / 46 cm`, `20.1" / 51 cm`],
   ["Volume", "328L", "299L", "272L"],
-  ["Fin Set Up", "3 pcs. Drop US Box (Roll)", "3 pcs. Drop US Box (Roll)", "3 pcs. Drop US Box (Roll)"],
+  [
+    "Fin Set Up",
+    "3 pcs. Drop US Box (Roll)",
+    "3 pcs. Drop US Box (Roll)",
+    "3 pcs. Drop US Box (Roll)",
+  ],
   ["Weight", "12.10 kg (Est.)", "11.10 kg (Est.)", "9.30 kg (Est.)"],
   ["Construction", "Deluxe", "Deluxe", "Deluxe"],
 ];
 
 describe("sizeKeyFromHeader", () => {
   it("a fejlécből csak a dimenziót veszi, a modellnevet eldobja", () => {
-    expect(sizeKeyFromHeader(`14'0" x 32" iCON`)).toBe(normalizeSizeKey(`14'0" x 32"`));
+    expect(sizeKeyFromHeader(`14'0" x 32" iCON`)).toBe(
+      normalizeSizeKey(`14'0" x 32"`),
+    );
   });
 
   it("kezeli a szóköz NÉLKÜL tapadó modellnevet (Whopper élesben)", () => {
-    expect(sizeKeyFromHeader(`10'0" x 34"WHOPPER`)).toBe(normalizeSizeKey(`10'0" x 34"`));
+    expect(sizeKeyFromHeader(`10'0" x 34"WHOPPER`)).toBe(
+      normalizeSizeKey(`10'0" x 34"`),
+    );
   });
 
   it("kezeli a göndör idézőjeleket és a hosszú modellnevet", () => {
@@ -49,7 +58,9 @@ describe("sizeKeyFromHeader", () => {
 
   it("a Shopify variáns-címkéjével EGYEZŐ kulcsot ad (ez köti össze a kettőt)", () => {
     // shopify.ts a `12'0" X 34"` alakot állítja elő (nagy X, szóközökkel).
-    expect(sizeKeyFromHeader(`12'0" x 34" GO`)).toBe(normalizeSizeKey(`12'0" X 34"`));
+    expect(sizeKeyFromHeader(`12'0" x 34" GO`)).toBe(
+      normalizeSizeKey(`12'0" X 34"`),
+    );
   });
 });
 
@@ -92,7 +103,12 @@ describe("parseSpecTable", () => {
     });
 
     const small = specs.get(normalizeSizeKey(`10'8" x 33"`));
-    expect(small).toMatchObject({ thicknessCm: 12, weightKg: 9.3, maxLoadKg: 120, volumeL: 272 });
+    expect(small).toMatchObject({
+      thicknessCm: 12,
+      weightKg: 9.3,
+      maxLoadKg: 120,
+      volumeL: 272,
+    });
   });
 
   it("a `Tail Width` sort NEM veszi szélességnek", () => {
@@ -110,8 +126,14 @@ describe("parseSpecTable", () => {
     // Élesben mért Whopper-cella: több érték egy cellában.
     const whopper = [
       ["Model", `10'0" x 34"WHOPPER`],
-      ["Volume", "Blue Carbon, Starlite: 174 LLite Tech Wave, Rhino: 168 LASAP: 183 L"],
-      ["Weight", "Blue Carbon: 10.4 kg (Est.)Starlite: 11.2 kg (Est.)Lite Tech: 11.0 kg (Est.)"],
+      [
+        "Volume",
+        "Blue Carbon, Starlite: 174 LLite Tech Wave, Rhino: 168 LASAP: 183 L",
+      ],
+      [
+        "Weight",
+        "Blue Carbon: 10.4 kg (Est.)Starlite: 11.2 kg (Est.)Lite Tech: 11.0 kg (Est.)",
+      ],
       ["Thickness", `4.3" / 10.9 cm`],
     ];
     const specs = parseSpecTable(whopper);
@@ -139,7 +161,9 @@ describe("parseSpecTable", () => {
       ["Model", `10'0" x 34" X`],
       ["Thickness", `4.75"`], // nincs `/ … cm`
     ];
-    expect(parseSpecTable(table).get(normalizeSizeKey(`10'0" x 34"`))?.thicknessCm).toBeNull();
+    expect(
+      parseSpecTable(table).get(normalizeSizeKey(`10'0" x 34"`))?.thicknessCm,
+    ).toBeNull();
   });
 
   it("nem spec-tábla (tartozéklista) esetén üres térkép", () => {
@@ -198,7 +222,9 @@ const ROAMER_TABLE = [
 
 describe("parseSpecTable — teherbírás-címkék (élesben mért hibák)", () => {
   it("a `Gross Load Weight` a TEHERBÍRÁS, nem a deszka súlya", () => {
-    const entry = parseSpecTable(ROAMER_TABLE).get(normalizeSizeKey(`14'0" x 28.5"`));
+    const entry = parseSpecTable(ROAMER_TABLE).get(
+      normalizeSizeKey(`14'0" x 28.5"`),
+    );
     expect(entry?.maxLoadKg).toBe(130);
     // A deszka saját súlya a külön „Weight" sorból jön.
     expect(entry?.weightKg).toBe(13.93);
@@ -206,7 +232,9 @@ describe("parseSpecTable — teherbírás-címkék (élesben mért hibák)", () 
 
   it("a gyártó saját, önmagával konzisztens vastagságát átveszi", () => {
     // 11.6" = 29.4 cm — szokatlan, de a gyártó ezt közli, és a két egység egyezik.
-    const entry = parseSpecTable(ROAMER_TABLE).get(normalizeSizeKey(`14'0" x 28.5"`));
+    const entry = parseSpecTable(ROAMER_TABLE).get(
+      normalizeSizeKey(`14'0" x 28.5"`),
+    );
     expect(entry?.thicknessCm).toBe(29.4);
   });
 
@@ -237,7 +265,9 @@ describe("parseSpecTable — teherbírás-címkék (élesben mért hibák)", () 
 describe("parseRiderWeightKg — több kivitel egy cellában", () => {
   it("a LEGKISEBB felső határt veszi, nem a legnagyobbat", () => {
     // Deluxe 105 kg-ig, Deluxe Lite viszont csak 85 kg-ig terhelhető.
-    expect(parseRiderWeightKg("Deluxe: 60-105 kgDeluxe Lite: 50-85 kg")).toBe(85);
+    expect(parseRiderWeightKg("Deluxe: 60-105 kgDeluxe Lite: 50-85 kg")).toBe(
+      85,
+    );
   });
 
   it("egyetlen tartománynál változatlanul a felső határ", () => {
@@ -256,14 +286,29 @@ describe("parseRiderWeightKg — több kivitel egy cellában", () => {
 
 describe("parseSpecTable — All Star iSUP (a felhasználó által mutatott tábla)", () => {
   const ALL_STAR = [
-    ["Model", `14'0" x 28" ALL STAR`, `14'0" x 26" ALL STAR`, `14'0" x 24.5" ALL STAR`],
+    [
+      "Model",
+      `14'0" x 28" ALL STAR`,
+      `14'0" x 26" ALL STAR`,
+      `14'0" x 24.5" ALL STAR`,
+    ],
     ["Consructions Available", "Deluxe", "DeluxeDeluxe Lite", "Deluxe"],
-    ["Rider Weight", "60-115 kg", "Deluxe: 60-105 kgDeluxe Lite: 50-85 kg", "50-90 kg"],
+    [
+      "Rider Weight",
+      "60-115 kg",
+      "Deluxe: 60-105 kgDeluxe Lite: 50-85 kg",
+      "50-90 kg",
+    ],
     ["Length", `14'0" / 426.7 cm`, `14'0" / 426.7 cm`, `14'0" / 426.7 cm`],
     ["Width", `28" / 71.1 cm`, `26" / 66 cm`, `24.5" / 62.2 cm`],
     ["Thickness", `6" / 15 cm`, `6" / 15 cm`, `6" / 15 cm`],
     ["Volume", "367 L", "323 L", "310 L"],
-    ["Weight (Tolerance +/- 5%)", "11.2 kg", "Deluxe: 10.5 kg Deluxe Lite: 9.60 kg", "9.9 kg"],
+    [
+      "Weight (Tolerance +/- 5%)",
+      "11.2 kg",
+      "Deluxe: 10.5 kg Deluxe Lite: 9.60 kg",
+      "9.9 kg",
+    ],
   ];
 
   it("az egy-kivitelű oszlopokat HIÁNYTALANUL kiolvassa", () => {
@@ -283,7 +328,9 @@ describe("parseSpecTable — All Star iSUP (a felhasználó által mutatott táb
   });
 
   it("a több-kivitelű oszlopnál a SÚLY marad üres, a teherbírás a szigorúbb", () => {
-    const middle = parseSpecTable(ALL_STAR).get(normalizeSizeKey(`14'0" x 26"`));
+    const middle = parseSpecTable(ALL_STAR).get(
+      normalizeSizeKey(`14'0" x 26"`),
+    );
     // Két különböző súly (10.5 / 9.60) — nem tippelünk.
     expect(middle?.weightKg).toBeNull();
     // De a teherbírás megvan, a BIZTONSÁGOS (kisebb) értékkel.
@@ -326,7 +373,9 @@ describe("cellForConstruction", () => {
     // és mindegyik EGYETLEN kivitelé. A Rhino-jelölt így az ASAP oszlopából
     // vette a súlyt: 13,22 helyett 11,9 kg.
     expect(cellForConstruction("ASAP: 11.9 kg (Avg.)", "Rhino")).toBe("");
-    expect(cellForConstruction("Rhino: 13.22 kg (Est.)", "Rhino")).toBe("13.22 kg (Est.)");
+    expect(cellForConstruction("Rhino: 13.22 kg (Est.)", "Rhino")).toBe(
+      "13.22 kg (Est.)",
+    );
   });
 
   it("VESSZŐVEL felsorolt kivitelek mindegyikére érvényes az érték", () => {
@@ -334,7 +383,12 @@ describe("cellForConstruction", () => {
     // címke-mintába, ezért a felsorolás eleje a MEGELŐZŐ szegmens értékébe
     // csúszik — mindkét helyről ki kell olvasni.
     const volume = "Starlite, Lite Tech, Blue Carbon,Limited Series: 172 L";
-    for (const c of ["Starlite", "Lite Tech", "Blue Carbon", "Limited Series"]) {
+    for (const c of [
+      "Starlite",
+      "Lite Tech",
+      "Blue Carbon",
+      "Limited Series",
+    ]) {
       expect(cellForConstruction(volume, c), c).toBe("172 L");
     }
     expect(cellForConstruction(volume, "Rhino")).toBe("");
@@ -354,21 +408,54 @@ describe("parseSpecTable — kivitelenként PONTOS adat", () => {
   ];
 
   it("a Deluxe a saját súlyát és teherbírását kapja", () => {
-    const entry = parseSpecTable(ALL_STAR_26, "Deluxe").get(normalizeSizeKey(`14'0" x 26"`));
+    const entry = parseSpecTable(ALL_STAR_26, "Deluxe").get(
+      normalizeSizeKey(`14'0" x 26"`),
+    );
     expect(entry?.weightKg).toBe(10.5);
     expect(entry?.maxLoadKg).toBe(105);
   });
 
   it("a Deluxe Lite a sajátját — így egyik érték sem vész el és nem is torzul", () => {
-    const entry = parseSpecTable(ALL_STAR_26, "Deluxe Lite").get(normalizeSizeKey(`14'0" x 26"`));
+    const entry = parseSpecTable(ALL_STAR_26, "Deluxe Lite").get(
+      normalizeSizeKey(`14'0" x 26"`),
+    );
     expect(entry?.weightKg).toBe(9.6);
     expect(entry?.maxLoadKg).toBe(85);
   });
 
   it("a kivitel-független mező mindkettőnél ugyanaz", () => {
-    const deluxe = parseSpecTable(ALL_STAR_26, "Deluxe").get(normalizeSizeKey(`14'0" x 26"`));
-    const lite = parseSpecTable(ALL_STAR_26, "Deluxe Lite").get(normalizeSizeKey(`14'0" x 26"`));
+    const deluxe = parseSpecTable(ALL_STAR_26, "Deluxe").get(
+      normalizeSizeKey(`14'0" x 26"`),
+    );
+    const lite = parseSpecTable(ALL_STAR_26, "Deluxe Lite").get(
+      normalizeSizeKey(`14'0" x 26"`),
+    );
     expect(deluxe?.volumeL).toBe(323);
     expect(lite?.volumeL).toBe(323);
+  });
+});
+
+describe("parseSpecTable — The Wall (élesben mért, 2026-10-23)", () => {
+  // A hüvelyk jele itt KÉT sima aposztróf, a vastagság pedig „12 + 5 cm"
+  // (süllyesztett álló-felület), a súly „(Avg.)" jelzésű.
+  const rows = [
+    ["Model", "14'0'' x 30''", "14'0'' x 28''", "12'6'' x 28''"],
+    ["Rider Weight", "60-115 kg", "55-110 kg", "50-90 kg"],
+    ["Length", "14'0\" / 426.7 cm", "14'0\" / 426.7 cm", "12'6\" / 381 cm"],
+    ["Width", '30" / 76.2 cm', '28" / 71.1 cm', '28" / 71.1 cm'],
+    ["Thickness (cm)", "12 + 5 cm", "12 + 5 cm", "12 + 5 cm"],
+    ["Tail Width (cm)", "42.4 cm", "44.7 cm", "44.2 cm"],
+    ["Volume", "324 L", "302 L", "269 L"],
+    ["Weight", "13.1 kg (Avg.)", "12.6 kg (Avg.)", "11.4 kg (Avg.)"],
+  ];
+
+  it("felismeri a két aposztrófos fejlécet, és méretenként ad adatot", () => {
+    const table = parseSpecTable(rows);
+    expect([...table.keys()]).toEqual(["14'0x30", "14'0x28", "12'6x28"]);
+    const wall30 = table.get("14'0x30");
+    expect(wall30?.weightKg).toBe(13.1);
+    expect(wall30?.volumeL).toBe(324);
+    expect(wall30?.maxLoadKg).toBe(115);
+    expect(wall30?.widthCm).toBe(76.2);
   });
 });

@@ -60,13 +60,23 @@ const ROW_LABELS = {
  *  - „Carbon Footprint (kgCO2e)" végképp nem súly.
  * A sor akkor számít az adott mezőnek, ha a címke NEM tartalmaz kizáró szót.
  */
-const ROW_EXCLUSIONS: Partial<Record<keyof typeof ROW_LABELS, readonly string[]>> = {
+const ROW_EXCLUSIONS: Partial<
+  Record<keyof typeof ROW_LABELS, readonly string[]>
+> = {
   widthCm: ["tail"],
   weightKg: ["rider", "carbon", "footprint", "load", "payload", "capacity"],
 };
 
 function normalizeQuotes(text: string): string {
-  return text.replace(/[‘’ʼ]/g, "'").replace(/[“”″]/g, '"');
+  return (
+    text
+      .replace(/[‘’ʼ′]/g, "'")
+      // Élesben mért (star-board.com The Wall): a hüvelyk jele KÉT sima aposztróf
+      // (`14'0'' x 30''`). Idézőjellé alakítjuk, különben a fejléc nem ismerhető
+      // fel méretként, és a TELJES tábla kimarad.
+      .replace(/''/g, '"')
+      .replace(/[“”″]/g, '"')
+  );
 }
 
 /**
@@ -76,7 +86,9 @@ function normalizeQuotes(text: string): string {
  */
 export function sizeKeyFromHeader(header: string): string | null {
   const normalized = normalizeQuotes(header);
-  const match = normalized.match(/(\d{1,2}'\s*\d{0,2}"?)\s*[xX×]\s*(\d{1,3}(?:\.\d+)?)"?/);
+  const match = normalized.match(
+    /(\d{1,2}'\s*\d{0,2}"?)\s*[xX×]\s*(\d{1,3}(?:\.\d+)?)"?/,
+  );
   if (!match) return null;
   return normalizeSizeKey(`${match[1]} x ${match[2]}`);
 }
@@ -119,10 +131,13 @@ function parseSingleNumber(cell: string, unit: "kg" | "l"): number | null {
   //  - „…: 174 LLite Tech Wave, Rhino: 168 LASAP: 183 L" — itt viszont VALÓBAN
   //    három érték van, és ezt a tapadó minta helyesen fogja meg (a `L` után
   //    nincs szóhatár, de a szám ELŐTTE van).
-  const pattern = unit === "kg" ? /\d+(?:[.,]\d+)?\s*kg/gi : /\d+(?:[.,]\d+)?\s*l/gi;
+  const pattern =
+    unit === "kg" ? /\d+(?:[.,]\d+)?\s*kg/gi : /\d+(?:[.,]\d+)?\s*l/gi;
   const matches = [...cell.matchAll(pattern)];
   if (matches.length !== 1) return null;
-  const value = Number((matches[0]?.[0] ?? "").replace(/[^\d.,]/g, "").replace(",", "."));
+  const value = Number(
+    (matches[0]?.[0] ?? "").replace(/[^\d.,]/g, "").replace(",", "."),
+  );
   return Number.isFinite(value) ? value : null;
 }
 
@@ -146,7 +161,8 @@ export function parseRiderWeightKg(cell: string): number | null {
 
   // Ésszerűségi korlát: emberi testsúly-tartomány. Egy elgépelt/rossz oszlopból
   // származó 900 kg-ot nem írunk be.
-  const plausible = (values: number[]) => values.filter((n) => n >= 20 && n <= 400);
+  const plausible = (values: number[]) =>
+    values.filter((n) => n >= 20 && n <= 400);
 
   const kgPlausible = plausible(kgNumbers);
   if (kgPlausible.length > 0) {
@@ -190,13 +206,17 @@ export function parseRiderWeightKg(cell: string): number | null {
  * Ha a cella nem bont kivitelre (`„11.2 kg"`), változatlanul visszaadjuk —
  * az érték mindegyik kivitelre érvényes.
  */
-export function cellForConstruction(cell: string, construction: string | null): string {
+export function cellForConstruction(
+  cell: string,
+  construction: string | null,
+): string {
   // Szegmens-határok: „Valami:" alakú címkék. A címke NAGYBETŰVEL kezdődik —
   // ez a horgony, mert a gyártó gyakran elválasztó nélkül fűzi össze a
   // szegmenseket: „60-105 kgDeluxe Lite: 50-85 kg". Kisbetűt is megengedve a
   // minta a „kg"-ot is a következő címke elejének hinné, és levágná az
   // előző érték mértékegységét.
-  const labelPattern = /([A-ZÀ-Þ][A-Za-zÀ-ÿ.+-]*(?:[ \t]+[A-Za-zÀ-ÿ.+-]+)*)[ \t]*:[ \t]*/g;
+  const labelPattern =
+    /([A-ZÀ-Þ][A-Za-zÀ-ÿ.+-]*(?:[ \t]+[A-Za-zÀ-ÿ.+-]+)*)[ \t]*:[ \t]*/g;
   const matches = [...cell.matchAll(labelPattern)];
   if (matches.length === 0) return cell;
 
@@ -207,7 +227,10 @@ export function cellForConstruction(cell: string, construction: string | null): 
     const start = (current.index ?? 0) + current[0].length;
     const next = matches[i + 1];
     const end = next?.index ?? cell.length;
-    segments.push({ label: (current[1] ?? "").trim(), value: cell.slice(start, end).trim() });
+    segments.push({
+      label: (current[1] ?? "").trim(),
+      value: cell.slice(start, end).trim(),
+    });
   }
   if (segments.length === 0) return cell;
 
@@ -284,7 +307,8 @@ function fieldForLabel(rawLabel: string): keyof typeof ROW_LABELS | null {
     keyof typeof ROW_LABELS,
     readonly string[],
   ][]) {
-    const excluded = ROW_EXCLUSIONS[field]?.some((word) => label.includes(word)) ?? false;
+    const excluded =
+      ROW_EXCLUSIONS[field]?.some((word) => label.includes(word)) ?? false;
     if (excluded) continue;
     if (needles.some((needle) => label.includes(needle))) return field;
   }
@@ -350,7 +374,9 @@ export function parseSpecTable(
     }
     // Csak akkor szűkítünk, ha a keresett kivitelt legalább egy oszlop KIMONDJA
     // — különben (címkézetlen tábla) minden oszlop marad, a régi viselkedéssel.
-    const anyExplicit = [...columns.keys()].some((index) => claimedBy.get(index) === false);
+    const anyExplicit = [...columns.keys()].some(
+      (index) => claimedBy.get(index) === false,
+    );
     if (!anyExplicit) claimedBy.clear();
   }
 
@@ -385,7 +411,8 @@ export function parseSpecTable(
         }
         case "maxLoadKg": {
           const value = parseRiderWeightKg(cell);
-          if (value !== null && specs.maxLoadKg === null) specs.maxLoadKg = value;
+          if (value !== null && specs.maxLoadKg === null)
+            specs.maxLoadKg = value;
           break;
         }
       }
