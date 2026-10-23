@@ -5974,3 +5974,13 @@ natívra cserélve (`@expo/ui`, Expo Router). Ez a spec 1.1 szerinti Capacitor-d
 felülvizsgálata, és az adatréteg (SSR-loaderek) újraírását igényli. Dönteni kell:
 Capacitor (SPA-átalakítással) vs Expo.
 
+
+## Supabase explicit Data API grant (2026-10-30-i változás) — 2026-10-23
+
+A Supabase október 30-tól a `public` sémában újonnan létrehozott táblákhoz nem ad automatikus jogot (anon/authenticated/service_role). A meglévő éles táblák jogai nem változnak; a friss projekteket, preview-ágakat és a `supabase db reset`-et érinti.
+
+- Élesben mért jogkép: minden app-tábla/nézet anon+authenticated+service_role `all` (RLS véd); `spot_refresh_log` / `spot_refresh_requests` csak service_role.
+- Új migráció: `20260717100000_core_explicit_data_api_grants.sql` — ezt a képet rögzíti (élesben no-op).
+- Őrszem: `tools/migrations/grants.test.ts` — minden migrációban létrehozott `public` táblához/nézethez kell explicit `grant`; új táblánál a saját migráció végére kerüljön.
+- ÉLESRE TOLÁS (`npm run sb -- db push --linked`) még nincs: a migráció no-op, de a migrációs naplóhoz kell, és október 30. előtt meg kell lennie.
+- Nyitott: a jogok szándékosan az élő állapotot tükrözik (anon `all`); least-privilege szűkítés (pl. nézeteken csak select) külön, pgTAP-pal ellenőrzött lépés.
