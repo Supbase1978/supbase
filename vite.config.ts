@@ -19,4 +19,8 @@ export default defineConfig({
     // használják, és az edge-runtime váltás külön verifikációt igényelne.
     ...(isNativeBuild ? [] : [netlifyReactRouter()]),
   ],
+  // Dev: ezeket előre csomagoljuk. Ha a Vite menet közben fedezi fel őket, újra-
+  // optimalizál, és a böngészőben két React-példány marad ("Invalid hook call",
+  // useMemo null a I18nextProvider-ben).
+  optimizeDeps: { include: ["react-i18next", "i18next"] },
 });
