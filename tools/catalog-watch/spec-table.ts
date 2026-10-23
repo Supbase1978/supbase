@@ -112,7 +112,7 @@ export function normalizeSizeKey(text: string): string {
  * a cm-t, ahol akarta.
  */
 function parseSlashCm(cell: string): number | null {
-  const match = cell.match(/\/\s*(\d+(?:[.,]\d+)?)\s*cm/i);
+  const match = cell.match(/\/\s*(\d+(?:[.,]\d+)?)\+?\s*cm/i);
   if (!match) return null;
   const value = Number((match[1] ?? "").replace(",", "."));
   return Number.isFinite(value) ? value : null;

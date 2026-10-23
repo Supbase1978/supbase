@@ -459,3 +459,20 @@ describe("parseSpecTable — The Wall (élesben mért, 2026-10-23)", () => {
     expect(wall30?.widthCm).toBe(76.2);
   });
 });
+
+describe("parseSpecTable — iGO 11'2\" x 31+\" (élesben mért, 2026-10-24)", () => {
+  // Íves idézőjelek, és a szélesség „31+\" / 78.7+ cm" (a „+" a cm előtt).
+  const rows = [
+    ["Model", "11’2” x 31+” iGO", "10’8” x 33” iGO"],
+    ["Rider Weight", "45-100 kg", "Deluxe: 45-120 kg"],
+    ["Width", '31+" / 78.7+ cm', '33" / 83.8 cm'],
+    ["Weight (Tolerance +/- 5%)", "9.7 kg", "Deluxe: 9.6 kg"],
+  ];
+
+  it("a „+” jeles szélességet is beolvassa", () => {
+    const igo = parseSpecTable(rows, "Deluxe").get("11'2x31");
+    expect(igo?.widthCm).toBe(78.7);
+    expect(igo?.maxLoadKg).toBe(100);
+    expect(igo?.weightKg).toBe(9.7);
+  });
+});
