@@ -476,3 +476,32 @@ describe("parseSpecTable — iGO 11'2\" x 31+\" (élesben mért, 2026-10-24)", (
     expect(igo?.weightKg).toBe(9.7);
   });
 });
+
+describe("cellForConstruction — iGO 11'2\" (élesben mért, 2025/2024-es oldal)", () => {
+  const rider =
+    "DDC: Up to 110 kg Deluxe: Up to 100 kg Deluxe Sun, Wave: Up to 80 kg Deluxe Lite: Up to 85 kg";
+
+  it("a „Deluxe Sun, Wave:” felsorolás mindkét tagja a 80 kg-os szegmenst kapja", () => {
+    expect(parseRiderWeightKg(cellForConstruction(rider, "Deluxe Sun"))).toBe(80);
+    expect(parseRiderWeightKg(cellForConstruction(rider, "Deluxe Wave"))).toBe(80);
+  });
+
+  it("a sima Deluxe NEM kapja meg a Sun/Wave értékét, és fordítva", () => {
+    expect(parseRiderWeightKg(cellForConstruction(rider, "Deluxe"))).toBe(100);
+    expect(parseRiderWeightKg(cellForConstruction(rider, "Deluxe Lite"))).toBe(85);
+  });
+
+  it("a DDC rövidítés a Deluxe Double Chamber", () => {
+    expect(parseRiderWeightKg(cellForConstruction(rider, "Deluxe Double Chamber"))).toBe(110);
+  });
+
+  it("a záró-zárójeles kivitel (2024) a SAJÁT értékét adja, az alap-érték a többinek", () => {
+    const cell = "45-100 kg 45-80 kg (DSC Sun)";
+    expect(parseRiderWeightKg(cellForConstruction(cell, "Deluxe Sun"))).toBe(80);
+    expect(parseRiderWeightKg(cellForConstruction(cell, "Deluxe Lite"))).toBe(100);
+  });
+
+  it("a (Est.)/(Avg.) becslés-jelzés nem kivitel", () => {
+    expect(cellForConstruction("12.10 kg (Est.)", "Deluxe")).toBe("12.10 kg (Est.)");
+  });
+});

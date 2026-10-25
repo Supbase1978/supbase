@@ -192,6 +192,40 @@ export function parseRiderWeightKg(cell: string): number | null {
 }
 
 /**
+ * A gyártó rövidítései a kivitel-címkékben (élesben mért, star-board.com
+ * 2024/2025-ös iGO-oldal): `DDC` = Deluxe Double Chamber, `DSC` = Deluxe
+ * (Single Chamber). Egységes alakra hozzuk, hogy a jelölt kivitel-nevével
+ * (`Deluxe Double Chamber`, `Deluxe Sun`) összeilleszthető legyen.
+ */
+function canonLabel(label: string): string {
+  const text = label.toLowerCase().replace(/\s+/g, " ").trim();
+  if (text === "ddc") return "deluxe double chamber";
+  return text.replace(/^dsc\b/, "deluxe");
+}
+
+/**
+ * Záró-zárójeles kivitel-jelölés: `„45-100 kg 45-80 kg (DSC Sun)"` — az
+ * alap-érték áll elöl, a zárójeles kivitelé külön. A `(Est.)`/`(Avg.)`
+ * becslés-jelzés, NEM kivitel. Ha a cella ilyen, a kért kivitelre szűkítjük:
+ * a zárójeles szegmens értéke, különben az alap-érték. Máskor `null`.
+ */
+function cellByParenthetical(cell: string, wanted: string): string | null {
+  const pattern =
+    /(\d+(?:[.,]\d+)?(?:\s*-\s*\d+(?:[.,]\d+)?)?\s*(?:kg|l)?)\s*\(([^)]+)\)/gi;
+  const tagged = [...cell.matchAll(pattern)].filter(
+    (m) => !/^\s*(est|avg|approx|tbc|tolerance)/i.test(m[2] ?? ""),
+  );
+  if (tagged.length === 0) return null;
+  for (const match of tagged) {
+    const label = canonLabel(match[2] ?? "");
+    if (label === wanted) return (match[1] ?? "").trim();
+  }
+  let base = cell;
+  for (const match of tagged) base = base.replace(match[0], " ");
+  return base.replace(/\s+/g, " ").trim();
+}
+
+/**
  * Egy cella KIVITEL szerinti szűkítése.
  *
  * A gyártó néha egyetlen cellába zsúfolja több kivitel adatát — élesben mért
@@ -218,7 +252,11 @@ export function cellForConstruction(
   const labelPattern =
     /([A-ZÀ-Þ][A-Za-zÀ-ÿ.+-]*(?:[ \t]+[A-Za-zÀ-ÿ.+-]+)*)[ \t]*:[ \t]*/g;
   const matches = [...cell.matchAll(labelPattern)];
-  if (matches.length === 0) return cell;
+  if (matches.length === 0) {
+    if (construction === null) return cell;
+    const wantedText = canonLabel(construction);
+    return cellByParenthetical(cell, wantedText) ?? cell;
+  }
 
   const segments: { label: string; value: string }[] = [];
   for (let i = 0; i < matches.length; i += 1) {
@@ -240,7 +278,7 @@ export function cellForConstruction(
     return cell;
   }
 
-  const wanted = construction.toLowerCase().replace(/\s+/g, " ").trim();
+  const wanted = canonLabel(construction);
   // EGY SZEGMENS TÖBB KIVITELÉ is lehet: a gyártó vesszővel sorolja fel őket
   // („Starlite, Lite Tech, Blue Carbon,Limited Series: 172 L"). A címke-mintába
   // a vessző nem fér bele, ezért a felsorolásból csak az UTOLSÓ tag illeszkedik,
@@ -254,18 +292,24 @@ export function cellForConstruction(
   const labelsOf = (index: number): string[] => {
     const current = matches[index];
     if (!current) return [];
-    const own = (current[1] ?? "").toLowerCase().replace(/\s+/g, " ").trim();
+    const own = canonLabel(current[1] ?? "");
     const previous = index > 0 ? matches[index - 1] : null;
     const zoneStart = previous ? (previous.index ?? 0) + previous[0].length : 0;
     const zone = cell.slice(zoneStart, current.index ?? 0);
     if (!zone.trimEnd().endsWith(",")) return [own];
     const extra = zone
       .split(",")
-      .map((part) => part.toLowerCase().replace(/\s+/g, " ").trim())
-      // A zóna ELEJÉN az előző szegmens értéke is ott lehet („174 L…") — a
-      // számmal kezdődő tag nem kivitel-név.
+      // Az előző szegmens ÉRTÉKE a zóna elején áll („Up to 100 kg Deluxe Sun",
+      // „174 LLite Tech Wave"): a mértékegységig levágjuk, a maradék a címke.
+      .map((part) =>
+        canonLabel(part.replace(/^.*?\d+(?:[.,]\d+)?\s*(?:kg|l|cm)\s*/i, "")),
+      )
       .filter((part) => part !== "" && !/^\d/.test(part));
-    return [...extra, own];
+    // Egy szavas utolsó tag („Deluxe Sun, Wave") az első tag előtagját örökli.
+    const prefix = extra[0]?.split(" ")[0];
+    const inherited =
+      prefix && !own.includes(" ") && !extra.includes(own) ? [`${prefix} ${own}`] : [];
+    return [...extra, own, ...inherited];
   };
 
   // 1) teljes egyezés, 2) a kivitel-név ELEJE (a tábla rövidíthet: a

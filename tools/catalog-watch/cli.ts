@@ -38,6 +38,7 @@ import type { ProductClassification } from "./normalize.ts";
 import { probeSource } from "./probe.ts";
 import { createBrowserFetcher } from "./browser-fetch.ts";
 import { createRenderFetcher } from "./render.ts";
+import { planSpecFill, SPEC_FIELDS, type SpecField, type SpecValues } from "./backfill-specs.ts";
 import {
   formatIncompleteReport,
   formatIncompleteReportHtml,
@@ -156,6 +157,11 @@ Parancsok:
                                     mező (teherbírás, térfogat) — a többi a
                                     moderátornál marad. ALAPÉRTELMEZÉSBEN
                                     DRY-RUN; írni csak --apply-vel ír.
+  backfill-specs --brand N         HIÁNYZÓ MŰSZAKI ADATOK pótlása a gyártói
+      [--apply] [--limit N]        spec-táblából az ÉLŐ sorokra és a FÜGGŐ
+                                    jelöltekre (a crawl csak új jelöltet ír).
+                                    Csak ÜRES mezőt tölt, meglévőt nem ír
+                                    felül. Alapból DRY-RUN; --apply ír.
   backfill-images [--apply]        TERMÉKKÉP-visszatöltés a már élő sorokra.
       [--all] [--limit N]           A crawl a JELÖLTET írja, a jóváhagyott
       [--brand N] [--refetch]
@@ -2097,11 +2103,163 @@ async function main(): Promise<void> {
     case "prune-shared-images":
       await commandPruneSharedImages(args);
       break;
+    case "backfill-specs":
+      return commandBackfillSpecs(args);
     case "list-incomplete":
       return commandListIncomplete(args);
     default:
       console.log(HELP);
   }
+}
+
+const BOARD_COLUMN: Record<SpecField, string> = {
+  lengthCm: "length_cm",
+  widthCm: "width_cm",
+  thicknessCm: "thickness_cm",
+  volumeL: "volume_l",
+  weightKg: "weight_kg",
+  maxLoadKg: "max_load_kg",
+};
+
+/** A termékoldal URL-je a `?variant=…` nélkül — egy oldal = egy renderelés. */
+function productPageUrl(url: string): string {
+  return url.split("?")[0] ?? url;
+}
+
+/**
+ * Hiányzó műszaki adatok pótlása a gyártói spec-táblából (ld. `backfill-specs.ts`).
+ * Célpont: az adott gyártó ÉLŐ deszkái (a sor jóváhagyott/összevont jelöltjének
+ * oldaláról) és a FÜGGŐ jelöltek. Csak üres mezőt tölt; alapból DRY-RUN.
+ */
+async function commandBackfillSpecs(args: Args): Promise<void> {
+  const brand = flag(args, "brand");
+  if (!brand) throw new Error("Kötelező: --brand <gyártó>.");
+  const apply = flag(args, "apply") === "true";
+  const limit = flagNumber(args, "limit");
+  const client = connect();
+
+  type Target = {
+    kind: "board" | "candidate";
+    id: string;
+    name: string;
+    url: string;
+    current: SpecValues;
+    extracted?: Record<string, unknown>;
+  };
+  const targets: Target[] = [];
+
+  const { data: boardRows, error: boardError } = await client
+    .from("boards")
+    .select("id, model_name, model_year, kind, length_cm, width_cm, thickness_cm, volume_l, weight_kg, max_load_kg, brand:brands!inner(name)")
+    .ilike("brand.name", brand);
+  if (boardError) throw new Error(`boards olvasás: ${boardError.message}`);
+  const boards = (boardRows ?? []).filter((row) => row.kind === "board");
+  const links = await listCandidatesForBoards(client, boards.map((row) => row.id as string));
+  for (const row of boards) {
+    const current = {} as SpecValues;
+    for (const field of SPEC_FIELDS) {
+      const value = (row as Record<string, unknown>)[BOARD_COLUMN[field]];
+      current[field] = typeof value === "number" ? value : null;
+    }
+    if (SPEC_FIELDS.every((field) => current[field] !== null)) continue;
+    // A SOR ÉVJÁRATÁHOZ ILLŐ oldal az elsődleges: egy sornak lehet régebbi évjáratú
+    // (összevont) jelöltje is, annak a táblája MÁS adatot közölhet (iGO Wave:
+    // 2024-ben a teherbírás 100 kg, 2025-ben 80 kg).
+    const linked = links.filter(
+      (entry) => entry.boardId === row.id && entry.url && ["approved", "merged"].includes(entry.status),
+    );
+    const year = row.model_year as number | null;
+    const link =
+      linked.find((entry) => year !== null && (entry.url ?? "").includes(`/products/${year}-`)) ??
+      linked.at(0);
+    if (!link?.url) continue;
+    targets.push({ kind: "board", id: row.id as string, name: row.model_name as string, url: link.url, current });
+  }
+
+  const { data: candRows, error: candError } = await client
+    .from("catalog_candidates")
+    .select("id, url, extracted, locked_fields")
+    .eq("status", "pending");
+  if (candError) throw new Error(`catalog_candidates olvasás: ${candError.message}`);
+  for (const row of candRows ?? []) {
+    const extracted = (row.extracted ?? {}) as Record<string, unknown>;
+    if (String(extracted.brandName ?? "").toLowerCase() !== brand.toLowerCase()) continue;
+    const specs = (extracted.specs ?? {}) as Record<string, unknown>;
+    const current = {} as SpecValues;
+    for (const field of SPEC_FIELDS) {
+      current[field] = typeof specs[field] === "number" ? (specs[field] as number) : null;
+    }
+    if (SPEC_FIELDS.every((field) => current[field] !== null)) continue;
+    if (typeof row.url !== "string") continue;
+    targets.push({
+      kind: "candidate",
+      id: row.id as string,
+      name: String(extracted.modelName ?? ""),
+      url: row.url,
+      current,
+      extracted,
+    });
+  }
+
+  const selected = limit === undefined ? targets : targets.slice(0, limit);
+  console.log(
+    `${apply ? "" : "[DRY-RUN] "}${selected.length} hiányos sor (${brand}) — ` +
+      `${new Set(selected.map((t) => productPageUrl(t.url))).size} termékoldal…\n`,
+  );
+
+  const renderer = createRenderFetcher();
+  const cache = new Map<string, string[][][] | null>();
+  let filled = 0;
+  let untouched = 0;
+  try {
+    for (const target of selected) {
+      const page = productPageUrl(target.url);
+      if (!cache.has(page)) {
+        await sleep(DEFAULT_MIN_DELAY_MS);
+        // A renderelés esetenként elsőre nem hozza a TablePress-táblát: 2x próbáljuk.
+        let tables = await renderer.renderTables(page);
+        if (!tables) {
+          await sleep(DEFAULT_MIN_DELAY_MS * 3);
+          tables = await renderer.renderTables(page);
+        }
+        cache.set(page, tables);
+      }
+      const tables = cache.get(page);
+      const fill = tables ? planSpecFill(target.name, target.current, tables) : {};
+      const keys = Object.keys(fill) as SpecField[];
+      if (keys.length === 0) {
+        untouched += 1;
+        const reason = !tables
+          ? "a spec-tábla nem töltődött be"
+          : "a tábla nem tartalmazza ezt a méretet/kivitelt";
+        console.log(`  – ${target.kind === "board" ? "ÉLŐ" : "jelölt"} ${target.name}: ${reason}`);
+        continue;
+      }
+      filled += 1;
+      console.log(
+        `  ✓ ${target.kind === "board" ? "ÉLŐ" : "jelölt"} ${target.name}: ` +
+          keys.map((k) => `${k}=${fill[k]}`).join(", "),
+      );
+      if (!apply) continue;
+      if (target.kind === "board") {
+        const patch: Record<string, number> = {};
+        for (const key of keys) patch[BOARD_COLUMN[key]] = fill[key] as number;
+        const { error } = await client.from("boards").update(patch).eq("id", target.id);
+        if (error) throw new Error(`boards update: ${error.message}`);
+      } else {
+        const specs = { ...((target.extracted?.specs ?? {}) as Record<string, unknown>), ...fill };
+        const { error } = await client
+          .from("catalog_candidates")
+          .update({ extracted: { ...target.extracted, specs } })
+          .eq("id", target.id);
+        if (error) throw new Error(`catalog_candidates update: ${error.message}`);
+      }
+    }
+  } finally {
+    await renderer.close();
+  }
+  console.log(`\n${filled} sor ${apply ? "frissítve" : "frissülne"}, ${untouched} marad üresen.`);
+  if (!apply) console.log("(semmi nem íródott az adatbázisba — írni: --apply)");
 }
 
 main().catch((error: unknown) => {
