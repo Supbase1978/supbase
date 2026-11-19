@@ -73,6 +73,16 @@ export function createRenderFetcher(): RenderFetcher {
   async function getBrowser(): Promise<Browser> {
     if (!browserPromise) {
       browserPromise = chromium.launch({ headless: true });
+      // A böngésző HIÁNYÁT (telepítetlen Chromium: `npx playwright install
+      // chromium`) egyszer, hangosan jelezzük — a renderelők null-ra fordítják a
+      // hibát, és enélkül a futás csendben „üres táblát" ad (élesben mért tévút).
+      browserPromise.catch((error: unknown) => {
+        console.warn(
+          `FIGYELEM: a böngésző nem indult el, a renderelés nem működik: ${
+            error instanceof Error ? error.message.split("\n")[0] : String(error)
+          }`,
+        );
+      });
     }
     return browserPromise;
   }

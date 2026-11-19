@@ -158,7 +158,8 @@ Parancsok:
                                     moderátornál marad. ALAPÉRTELMEZÉSBEN
                                     DRY-RUN; írni csak --apply-vel ír.
   backfill-specs --brand N         HIÁNYZÓ MŰSZAKI ADATOK pótlása a gyártói
-      [--apply] [--limit N]        spec-táblából az ÉLŐ sorokra és a FÜGGŐ
+      [--apply] [--limit N]        spec-táblából
+      [--delay MS]                 (oldalak közti szünet, alap 1000) az ÉLŐ sorokra és a FÜGGŐ
                                     jelöltekre (a crawl csak új jelöltet ír).
                                     Csak ÜRES mezőt tölt, meglévőt nem ír
                                     felül. Alapból DRY-RUN; --apply ír.
@@ -2136,6 +2137,7 @@ async function commandBackfillSpecs(args: Args): Promise<void> {
   if (!brand) throw new Error("Kötelező: --brand <gyártó>.");
   const apply = flag(args, "apply") === "true";
   const limit = flagNumber(args, "limit");
+  const delayMs = flagNumber(args, "delay") ?? DEFAULT_MIN_DELAY_MS;
   const client = connect();
 
   type Target = {
@@ -2215,11 +2217,12 @@ async function commandBackfillSpecs(args: Args): Promise<void> {
     for (const target of selected) {
       const page = productPageUrl(target.url);
       if (!cache.has(page)) {
-        await sleep(DEFAULT_MIN_DELAY_MS);
-        // A renderelés esetenként elsőre nem hozza a TablePress-táblát: 2x próbáljuk.
+        await sleep(delayMs);
+        // A renderelés esetenként nem hozza a TablePress-táblát (gyors egymás
+        // utáni lekérésnél a gyártó oldala lassít): növekvő várakozással 3x próbáljuk.
         let tables = await renderer.renderTables(page);
-        if (!tables) {
-          await sleep(DEFAULT_MIN_DELAY_MS * 3);
+        for (let attempt = 1; !tables && attempt < 3; attempt += 1) {
+          await sleep(delayMs * 3 * attempt);
           tables = await renderer.renderTables(page);
         }
         cache.set(page, tables);
@@ -2243,7 +2246,11 @@ async function commandBackfillSpecs(args: Args): Promise<void> {
       if (!apply) continue;
       if (target.kind === "board") {
         const patch: Record<string, number> = {};
-        for (const key of keys) patch[BOARD_COLUMN[key]] = fill[key] as number;
+        // A `boards` oszlopai a súly kivételével EGÉSZ számok (a jóváhagyás is kerekít).
+        for (const key of keys) {
+          const value = fill[key] as number;
+          patch[BOARD_COLUMN[key]] = key === "weightKg" ? value : Math.round(value);
+        }
         const { error } = await client.from("boards").update(patch).eq("id", target.id);
         if (error) throw new Error(`boards update: ${error.message}`);
       } else {
